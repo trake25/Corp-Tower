@@ -57,21 +57,22 @@ rediscovery is not normal execution.
 
 `policy/CODEX.md`, `policy/IMPLEMENT.md`, and `policy/FIX.md` are Planner-side policy sources.
 
-Planner selects IMPLEMENT or FIX, then loads only optional policy that actually applies. Task-close,
-ownership, telemetry, QA, coverage, receipts, orchestration, strict execution, and similar optional
-systems are not universal Codex knowledge.
+Planner selects IMPLEMENT or FIX, then loads only optional policy that actually applies. Telemetry,
+QA, coverage, receipts, orchestration, strict execution, and similar optional systems are not
+universal Codex knowledge. Standalone ownership/task-close utilities remain deterministic legacy
+tooling rather than agent-supported Planner/Codex process routes.
 
 ## F. Process controls
 
-BARE defaults task ownership, task-close, telemetry, workflow inefficiency flagging, executable QA,
-permanent QA coverage, and public QA receipt OFF. Plan archival remains ON.
+Agent-supported BARE defaults telemetry, workflow inefficiency flagging, executable QA, permanent QA
+coverage, and public QA receipt OFF. Plan archival remains ON.
 
 Default-OFF means invisible to Codex. An enabled process contributes only its selected compact task
 policy and deterministic mechanics.
 
-Task-close requires ownership. Workflow inefficiency flagging requires telemetry. ORCHESTRATED
-execution requires ownership. These dependencies are Planner/tooling concerns and are not taught by
-`AGENTS.md`.
+Workflow inefficiency flagging requires telemetry. ORCHESTRATED execution is a parent
+reasoning/execution shape and does not imply a process override or deterministic scope lifecycle.
+These routing details are Planner concerns and are not taught by `AGENTS.md`.
 
 Plan archival is a default deterministic completion mechanic, independent from task-close.
 
@@ -88,9 +89,10 @@ skills.
 Normal execution is one Codex run. Planner selects ORCHESTRATED only when bounded decomposition
 materially improves context efficiency or integration control.
 
-When selected, the plan carries worker responsibilities, dependencies, explicit write claims,
-shared invariants, execution waves, scoped verification, and parent integration criteria. Parent
-ownership is required; task-close remains separately optional.
+When selected, the plan carries worker responsibilities, dependencies, planned non-overlapping
+writes, shared invariants, execution waves, scoped verification, handoffs, and parent integration
+criteria. The parent coordinates sequencing and overlap avoidance through reasoning and remains
+responsible for the integrated result.
 
 ## I. Review
 

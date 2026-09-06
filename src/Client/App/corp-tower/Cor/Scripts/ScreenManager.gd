@@ -14,6 +14,7 @@ const PrivateLobbyScreenScene := preload("res://Cor/Scenes/PrivateLobbyScreen.ts
 const PlayScreenScene := preload("res://Cor/Scenes/GameUI.tscn")
 const MenuScreenScene := preload("res://Cor/Scenes/MenuScreen.tscn")
 const DEBUG_CONTEXT_NONE := ""
+const DEBUG_CONTEXT_HOME := "home"
 const DEBUG_CONTEXT_SIGN_IN := "sign_in"
 const DEBUG_CONTEXT_LOBBY := "lobby"
 const DEBUG_CONTEXT_PLAY := "play"
@@ -22,6 +23,27 @@ const DEBUG_BUTTON_DRAG_THRESHOLD := 6.0
 const DEBUG_BUTTON_MARGIN := 12.0
 const DRAG_POINTER_MOUSE := -1
 const DRAG_POINTER_NONE := -2
+const SPECTATOR_PERSONALITIES := ["climber", "engineer", "opportunist"]
+const SPECTATOR_PRESET_MIXED := 0
+const SPECTATOR_PRESET_THREE_CLIMBERS := 1
+const SPECTATOR_PRESET_THREE_ENGINEERS := 2
+const SPECTATOR_PRESET_THREE_OPPORTUNISTS := 3
+const SPECTATOR_PRESET_CUSTOM := 4
+const SPECTATOR_TRAIT_KEYS := ["reactionMs", "skill", "riskTolerance", "greed", "repairAwareness", "powerUse"]
+const SPECTATOR_PROFILE_DEFAULTS := {
+	"climber": {
+		"personality": "climber", "reactionMs": 1400, "skill": 0.78,
+		"riskTolerance": 0.45, "greed": 0.76, "repairAwareness": 0.32, "powerUse": 0.30
+	},
+	"engineer": {
+		"personality": "engineer", "reactionMs": 1750, "skill": 0.86,
+		"riskTolerance": 0.16, "greed": 0.30, "repairAwareness": 0.90, "powerUse": 0.46
+	},
+	"opportunist": {
+		"personality": "opportunist", "reactionMs": 1250, "skill": 0.72,
+		"riskTolerance": 0.58, "greed": 0.92, "repairAwareness": 0.43, "powerUse": 0.74
+	}
+}
 
 @onready var screen_container: Control = $ScreenContainer
 @onready var startup_splash: TextureRect = %StartupSplash
@@ -41,6 +63,16 @@ var debug_context := DEBUG_CONTEXT_NONE
 var startup_handoff_complete := false
 var startup_resume_pending := false
 var gameplay_input_blocked := false
+var home_spectator_setup: Control = null
+var home_spectator_selectors: Array = []
+var home_spectator_start_button: Button = null
+var home_spectator_status_label: Label = null
+var home_spectator_profiles: Array = []
+var home_spectator_preset_selector: OptionButton = null
+var home_spectator_edit_selector: OptionButton = null
+var home_spectator_editing_bot_index := 0
+var home_spectator_trait_labels: Dictionary = {}
+var home_spectator_trait_sliders: Dictionary = {}
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
@@ -54,6 +86,7 @@ func _ready() -> void:
 	NetworkManager.recovery_recovered.connect(_on_recovery_recovered)
 	NetworkManager.recovery_unavailable.connect(_on_recovery_unavailable)
 	NetworkManager.resume_only_failed.connect(_on_resume_only_failed)
+	NetworkManager.spectator_start_rejected.connect(_on_spectator_start_rejected)
 	auto_dismiss_modal.dismissed.connect(_on_auto_dismiss_modal_dismissed)
 	auto_dismiss_modal.confirmed.connect(_on_auto_dismiss_modal_dismissed)
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
@@ -266,7 +299,7 @@ func show_home_screen() -> void:
 	screen.rankings_requested.connect(_on_home_rankings_requested)
 	screen.settings_requested.connect(_on_home_settings_requested)
 	_set_overlay(screen)
-	_set_debug_context(DEBUG_CONTEXT_NONE)
+	_set_debug_context(DEBUG_CONTEXT_HOME)
 
 func _on_home_private_server_requested() -> void:
 	show_private_server_screen()
@@ -285,6 +318,14 @@ func _on_home_rankings_requested() -> void:
 
 func _on_home_settings_requested() -> void:
 	show_settings_screen()
+
+func _on_spectator_start_rejected(data) -> void:
+	if home_spectator_setup == null or not is_instance_valid(home_spectator_setup):
+		return
+
+	if home_spectator_status_label != null:
+		home_spectator_status_label.text = "Could not start: " + str(data.get("reason", "rejected"))
+	_set_home_spectator_setup_enabled(true)
 
 func show_rankings_screen() -> void:
 	var screen := RankingsScreenScene.instantiate()
@@ -519,6 +560,7 @@ func _complete_startup_handoff() -> void:
 func _clear_overlay() -> void:
 	find_match_active = false
 	_clear_private_entry_loader()
+	_clear_home_spectator_setup()
 
 	if current_overlay != null and is_instance_valid(current_overlay):
 		current_overlay.queue_free()
@@ -565,10 +607,18 @@ func update_debug_button_availability() -> void:
 		(debug_context == DEBUG_CONTEXT_LOBBY or debug_context == DEBUG_CONTEXT_PLAY)
 		and has_play_instance
 		and NetworkManager.is_conn_estab
+		and not NetworkManager.spectator_active
 		and not NetworkManager.is_recovering()
 		and not gameplay_input_blocked
 	)
-	debug_button.disabled = not sign_in_debug_available and not game_debug_available
+	var home_debug_available := (
+		EndpointConfig.DEBUG_UI_ENABLED
+		and debug_context == DEBUG_CONTEXT_HOME
+		and current_overlay != null
+		and is_instance_valid(current_overlay)
+		and current_overlay.scene_file_path == HomeScreenScene.resource_path
+	)
+	debug_button.disabled = not sign_in_debug_available and not game_debug_available and not home_debug_available
 
 func reset_debug_button_position() -> void:
 	debug_button.position = Vector2(
@@ -628,7 +678,315 @@ func _on_debug_button_tapped() -> void:
 	if debug_button.disabled:
 		return
 
-	if debug_context == DEBUG_CONTEXT_SIGN_IN and current_overlay != null and is_instance_valid(current_overlay) and current_overlay.has_method("toggle_debug_overlay"):
+	if debug_context == DEBUG_CONTEXT_HOME:
+		_toggle_home_spectator_setup()
+	elif debug_context == DEBUG_CONTEXT_SIGN_IN and current_overlay != null and is_instance_valid(current_overlay) and current_overlay.has_method("toggle_debug_overlay"):
 		current_overlay.call("toggle_debug_overlay")
 	elif play_instance != null and is_instance_valid(play_instance) and play_instance.has_method("toggle_debug_overlay"):
 		play_instance.call("toggle_debug_overlay")
+
+func _toggle_home_spectator_setup() -> void:
+	if not EndpointConfig.DEBUG_UI_ENABLED:
+		return
+
+	if home_spectator_setup != null and is_instance_valid(home_spectator_setup):
+		_clear_home_spectator_setup()
+		return
+
+	if current_overlay == null or not is_instance_valid(current_overlay) or current_overlay.scene_file_path != HomeScreenScene.resource_path:
+		return
+
+	var panel := PanelContainer.new()
+	panel.name = "HomeSpectatorSetup"
+	panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	panel.position = Vector2(-185, 64)
+	panel.size = Vector2(370, 520)
+	panel.z_index = 100
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(scroll)
+
+	var rows := VBoxContainer.new()
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rows.add_theme_constant_override("separation", 8)
+	scroll.add_child(rows)
+
+	var title := Label.new()
+	title.text = "Bot Spectator Match"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 20)
+	rows.add_child(title)
+
+	var help := Label.new()
+	help.text = "Choose a lineup, then fine-tune one bot at a time."
+	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rows.add_child(help)
+
+	home_spectator_profiles = _spectator_default_lineup()
+	var preset_row := HBoxContainer.new()
+	var preset_label := Label.new()
+	preset_label.text = "Preset"
+	preset_label.custom_minimum_size.x = 68
+	preset_row.add_child(preset_label)
+	home_spectator_preset_selector = OptionButton.new()
+	home_spectator_preset_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	home_spectator_preset_selector.add_item("Mixed")
+	home_spectator_preset_selector.add_item("Three Climbers")
+	home_spectator_preset_selector.add_item("Three Engineers")
+	home_spectator_preset_selector.add_item("Three Opportunists")
+	home_spectator_preset_selector.add_item("Custom")
+	home_spectator_preset_selector.select(SPECTATOR_PRESET_MIXED)
+	home_spectator_preset_selector.item_selected.connect(_on_home_spectator_preset_selected)
+	preset_row.add_child(home_spectator_preset_selector)
+	rows.add_child(preset_row)
+
+	home_spectator_selectors = []
+	for i in range(3):
+		var selector_row := HBoxContainer.new()
+		var selector_label := Label.new()
+		selector_label.text = "Bot " + str(i + 1)
+		selector_label.custom_minimum_size.x = 68
+		selector_row.add_child(selector_label)
+		var selector := OptionButton.new()
+		selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		for personality in SPECTATOR_PERSONALITIES:
+			selector.add_item(_spectator_personality_title(personality))
+		selector.select(i)
+		selector.item_selected.connect(_on_home_spectator_personality_selected.bind(i))
+		selector_row.add_child(selector)
+		rows.add_child(selector_row)
+		home_spectator_selectors.append(selector)
+
+	var editor_rule := HSeparator.new()
+	rows.add_child(editor_rule)
+	var edit_row := HBoxContainer.new()
+	var edit_label := Label.new()
+	edit_label.text = "Edit traits"
+	edit_label.custom_minimum_size.x = 68
+	edit_row.add_child(edit_label)
+	home_spectator_edit_selector = OptionButton.new()
+	home_spectator_edit_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for i in range(3):
+		home_spectator_edit_selector.add_item("Bot " + str(i + 1))
+	home_spectator_edit_selector.select(0)
+	home_spectator_edit_selector.item_selected.connect(_on_home_spectator_edit_bot_selected)
+	edit_row.add_child(home_spectator_edit_selector)
+	rows.add_child(edit_row)
+
+	home_spectator_trait_labels = {}
+	home_spectator_trait_sliders = {}
+	_add_home_spectator_trait_row(rows, "Reaction", "reactionMs", 250.0, 10000.0, 50.0)
+	_add_home_spectator_trait_row(rows, "Skill", "skill", 0.0, 1.0, 0.01)
+	_add_home_spectator_trait_row(rows, "Risk", "riskTolerance", 0.0, 1.0, 0.01)
+	_add_home_spectator_trait_row(rows, "Greed", "greed", 0.0, 1.0, 0.01)
+	_add_home_spectator_trait_row(rows, "Repair", "repairAwareness", 0.0, 1.0, 0.01)
+	_add_home_spectator_trait_row(rows, "Power", "powerUse", 0.0, 1.0, 0.01)
+	_refresh_home_spectator_trait_editor()
+
+	home_spectator_status_label = Label.new()
+	home_spectator_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	home_spectator_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rows.add_child(home_spectator_status_label)
+
+	var actions := HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	actions.add_theme_constant_override("separation", 10)
+	var cancel_button := Button.new()
+	cancel_button.text = "Cancel"
+	cancel_button.pressed.connect(_clear_home_spectator_setup)
+	actions.add_child(cancel_button)
+	home_spectator_start_button = Button.new()
+	home_spectator_start_button.text = "Start Spectating"
+	home_spectator_start_button.pressed.connect(_on_home_spectator_start_pressed)
+	actions.add_child(home_spectator_start_button)
+	rows.add_child(actions)
+
+	home_spectator_setup = panel
+	screen_container.add_child(panel)
+
+func _clear_home_spectator_setup() -> void:
+	if home_spectator_setup != null and is_instance_valid(home_spectator_setup):
+		home_spectator_setup.queue_free()
+
+	home_spectator_setup = null
+	home_spectator_selectors = []
+	home_spectator_start_button = null
+	home_spectator_status_label = null
+	home_spectator_profiles = []
+	home_spectator_preset_selector = null
+	home_spectator_edit_selector = null
+	home_spectator_editing_bot_index = 0
+	home_spectator_trait_labels = {}
+	home_spectator_trait_sliders = {}
+
+func _on_home_spectator_start_pressed() -> void:
+	var profiles := _selected_spectator_profiles()
+	if not NetworkManager.start_bot_spectator_match(profiles):
+		if home_spectator_status_label != null:
+			home_spectator_status_label.text = "Unable to begin spectator setup."
+		return
+
+	if home_spectator_status_label != null:
+		home_spectator_status_label.text = "Starting spectator match..."
+	_set_home_spectator_setup_enabled(false)
+
+func _selected_spectator_profiles() -> Array:
+	if home_spectator_profiles.size() != 3:
+		return []
+
+	var profiles: Array = []
+	for profile_value in home_spectator_profiles:
+		if typeof(profile_value) != TYPE_DICTIONARY:
+			return []
+		profiles.append((profile_value as Dictionary).duplicate(true))
+
+	return profiles
+
+func _spectator_personality_title(personality: String) -> String:
+	return personality.capitalize()
+
+func _spectator_default_lineup() -> Array:
+	return [
+		_spectator_default_profile("climber"),
+		_spectator_default_profile("engineer"),
+		_spectator_default_profile("opportunist")
+	]
+
+func _spectator_default_profile(personality: String) -> Dictionary:
+	var defaults: Dictionary = SPECTATOR_PROFILE_DEFAULTS.get(personality, {})
+	return defaults.duplicate(true)
+
+func _on_home_spectator_preset_selected(preset_index: int) -> void:
+	if preset_index == SPECTATOR_PRESET_CUSTOM:
+		return
+
+	var personality := ""
+	match preset_index:
+		SPECTATOR_PRESET_MIXED:
+			home_spectator_profiles = _spectator_default_lineup()
+		SPECTATOR_PRESET_THREE_CLIMBERS:
+			personality = "climber"
+		SPECTATOR_PRESET_THREE_ENGINEERS:
+			personality = "engineer"
+		SPECTATOR_PRESET_THREE_OPPORTUNISTS:
+			personality = "opportunist"
+		_:
+			return
+
+	if personality != "":
+		home_spectator_profiles = [
+			_spectator_default_profile(personality),
+			_spectator_default_profile(personality),
+			_spectator_default_profile(personality)
+		]
+
+	_sync_home_spectator_personality_selectors()
+	_refresh_home_spectator_trait_editor()
+
+func _on_home_spectator_personality_selected(personality_index: int, bot_index: int) -> void:
+	if bot_index < 0 or bot_index >= home_spectator_profiles.size():
+		return
+
+	var index: int = clampi(personality_index, 0, SPECTATOR_PERSONALITIES.size() - 1)
+	home_spectator_profiles[bot_index] = _spectator_default_profile(SPECTATOR_PERSONALITIES[index])
+	_mark_home_spectator_profiles_custom()
+	if bot_index == home_spectator_editing_bot_index:
+		_refresh_home_spectator_trait_editor()
+
+func _on_home_spectator_edit_bot_selected(bot_index: int) -> void:
+	home_spectator_editing_bot_index = clampi(bot_index, 0, 2)
+	_refresh_home_spectator_trait_editor()
+
+func _add_home_spectator_trait_row(
+	rows: VBoxContainer,
+	title: String,
+	key: String,
+	minimum: float,
+	maximum: float,
+	step: float
+) -> void:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.custom_minimum_size.x = 116
+	label.text = title
+	row.add_child(label)
+	var slider := HSlider.new()
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.min_value = minimum
+	slider.max_value = maximum
+	slider.step = step
+	slider.value_changed.connect(_on_home_spectator_trait_changed.bind(key))
+	row.add_child(slider)
+	rows.add_child(row)
+	home_spectator_trait_labels[key] = label
+	home_spectator_trait_sliders[key] = slider
+
+func _on_home_spectator_trait_changed(value: float, key: String) -> void:
+	if home_spectator_editing_bot_index < 0 or home_spectator_editing_bot_index >= home_spectator_profiles.size():
+		return
+
+	var profile: Dictionary = home_spectator_profiles[home_spectator_editing_bot_index]
+	profile[key] = int(roundi(value)) if key == "reactionMs" else clampf(value, 0.0, 1.0)
+	home_spectator_profiles[home_spectator_editing_bot_index] = profile
+	_mark_home_spectator_profiles_custom()
+	_refresh_home_spectator_trait_editor()
+
+func _refresh_home_spectator_trait_editor() -> void:
+	if home_spectator_editing_bot_index < 0 or home_spectator_editing_bot_index >= home_spectator_profiles.size():
+		return
+
+	var profile: Dictionary = home_spectator_profiles[home_spectator_editing_bot_index]
+	for key in SPECTATOR_TRAIT_KEYS:
+		var slider: HSlider = home_spectator_trait_sliders.get(key, null) as HSlider
+		var label: Label = home_spectator_trait_labels.get(key, null) as Label
+		if slider != null:
+			slider.set_value_no_signal(float(profile.get(key, 0.0)))
+		if label != null:
+			label.text = _home_spectator_trait_label(key, profile.get(key, 0.0))
+
+func _home_spectator_trait_label(key: String, value: Variant) -> String:
+	var title: String = {
+		"reactionMs": "Reaction",
+		"skill": "Skill",
+		"riskTolerance": "Risk",
+		"greed": "Greed",
+		"repairAwareness": "Repair",
+		"powerUse": "Power"
+	}.get(key, key)
+	return title + ": " + (str(int(value)) + " ms" if key == "reactionMs" else "%.2f" % float(value))
+
+func _sync_home_spectator_personality_selectors() -> void:
+	for i in range(mini(home_spectator_selectors.size(), home_spectator_profiles.size())):
+		var selector: OptionButton = home_spectator_selectors[i]
+		var profile: Dictionary = home_spectator_profiles[i]
+		var personality_index := SPECTATOR_PERSONALITIES.find(str(profile.get("personality", "")))
+		if selector != null and personality_index >= 0:
+			selector.select(personality_index)
+
+func _mark_home_spectator_profiles_custom() -> void:
+	if home_spectator_preset_selector != null:
+		home_spectator_preset_selector.select(SPECTATOR_PRESET_CUSTOM)
+
+func _set_home_spectator_setup_enabled(enabled: bool) -> void:
+	if home_spectator_start_button != null:
+		home_spectator_start_button.disabled = not enabled
+	if home_spectator_preset_selector != null:
+		home_spectator_preset_selector.disabled = not enabled
+	if home_spectator_edit_selector != null:
+		home_spectator_edit_selector.disabled = not enabled
+	for selector in home_spectator_selectors:
+		if selector != null:
+			selector.disabled = not enabled
+	for slider in home_spectator_trait_sliders.values():
+		if slider != null:
+			slider.disabled = not enabled

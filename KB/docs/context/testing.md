@@ -13,7 +13,7 @@ source: scripts/qa-gate.mjs#selectQa
 When executable QA is enabled for the task, `qa-gate` selects verification from explicit task-owned paths rather than the dirty tree. A changed test runs itself; shared or unmapped runtime code can widen to the affected domain.
 Server checks include syntax plus mapped Node tests, client checks include host-matching Godot smoke and mapped GUT, and infra/docs/site-only work does not inherit game suites without runtime risk.
 
-When executable QA is disabled, task-close does not run those selected regression suites solely for closure. Required ownership, patch integrity, and task-triggered KB/generated consistency remain separate from optional executable QA.
+When executable QA is disabled, ordinary completion does not run those selected regression suites solely for closure. Required patch integrity and task-triggered KB/generated consistency remain separate from optional executable QA; valid legacy task-close manifests retain their explicitly selected QA behavior.
 
 <!-- kb
 id: testing.server.coverage
@@ -104,7 +104,7 @@ adjacent: gameplay.bots.calibration
 -->
 ## Balance tools
 
-Balance Simulator, Stability Probe, and Impact Probe are tuning instruments rather than pass/fail authorities. Host-aware wrappers control resource/time budgets and temporary output. The simulator uses the real engine/bot path; bot rejection of collapse makes bot collapse rate a poor stability calibration signal.
+Balance Simulator, Stability Probe, and Impact Probe are tuning instruments rather than pass/fail authorities. Host-aware wrappers control resource/time budgets and temporary output. The simulator uses the same normalized profile-driven Bot Manager path as spectator matches and supports mixed, three-Climber, three-Engineer, three-Opportunist, or custom exact-three lineups. Collapse and completion rates are observations for tuning, not pass thresholds or exact human calibration.
 
 <!-- kb
 id: testing.automation.protocol
@@ -131,16 +131,18 @@ adjacent: automation.orchestration.ownership
 ## Automation protocol coverage
 
 Automation tests protect Planner-to-plan policy isolation, absence of runtime skill routing,
-process-control resolution, optional task ownership/task-close, orchestration write exclusion,
-explicit publication scope, standalone plan archival, generated KB consistency, bounded
-observability, receipt sanitization, and safety gates.
+agent-supported process-control resolution, compatibility behavior of standalone task
+ownership/task-close utilities, parent-coordinated orchestration write exclusion, explicit
+publication scope, standalone plan archival, generated KB consistency, bounded observability,
+receipt sanitization, and safety gates.
 
 Policy-routing coverage proves `AGENTS.md` contains only universal execution rules, default-OFF
 optional processes are not universal runtime policy, Planner-side policy sources contain no skill
 routing, and the active `.claude/skills/` tree is retired.
 
-Focused lifecycle tests prove lightweight ownership works without close-out, task-close runs only
-when selected, telemetry-enabled sessions work without requiring task-close, and default telemetry
+Focused lifecycle tests preserve the standalone utilities' compatibility contracts: lightweight
+ownership works without close-out and valid task-close manifests run only when explicitly selected.
+They also prove telemetry-enabled sessions do not require task-close and default telemetry
 dispatches no project hooks. Publication/receipt/archive fixtures prove those mechanics remain
 usable without adopting unrelated dirty-tree state.
 

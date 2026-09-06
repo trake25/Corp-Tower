@@ -1,7 +1,7 @@
 # Agent Automation
 
-Scope: bounded repository retrieval, Planner-to-Codex execution handoff, deterministic task
-close-out, KB Tree automation, agent observability, and explicitly authorized Git publication.
+Scope: bounded repository retrieval, Planner-to-Codex execution handoff, standalone compatibility
+tooling for older task lifecycles, KB Tree automation, agent observability, and explicitly authorized Git publication.
 Product behavior remains in product-domain concepts.
 
 <!-- kb
@@ -30,7 +30,7 @@ alias: execution-oriented plan
 source: policy/PLANNER.md#Policy selection
 source: policy/PLANNER.md#Defaults and selected policy
 source: policy/PLANNER.md#Standard Phase 2 format
-source: policy/CODEX.md#Repository process defaults
+source: policy/CODEX.md#Agent-supported repository process defaults
 adjacent: automation.retrieval.direct
 adjacent: automation.orchestration.execution
 adjacent: automation.task-close.process-controls
@@ -46,10 +46,10 @@ The execution architecture has three layers: `AGENTS.md` contains only universal
 Phase 2 plan contains only task-selected policy; the KB/source handoff contains domain and task-scope
 knowledge. Runtime skills are not an authority layer.
 
-Default-OFF optional processes are absent from the plan and Codex runtime context. Planner includes
-an optional process or execution policy only when it is enabled or otherwise materially selected for
-the task. Normal single-run execution is implicit. Plan archival remains enabled by default as a
-deterministic completion mechanic rather than universal process-policy prose.
+Default-OFF agent-supported processes are absent from the plan and Codex runtime context. Planner
+includes an optional process or execution policy only when it is enabled or otherwise materially
+selected for the task. Normal single-run execution is implicit. Plan archival remains enabled by
+default as a deterministic completion mechanic rather than universal process-policy prose.
 
 <!-- kb
 id: automation.retrieval.protocol
@@ -159,21 +159,23 @@ adjacent: automation.task-close.scope
 -->
 ## Task ownership
 
-Task ownership is an optional lightweight write-scope process independent from task-close. When
-selected, it acquires one explicit parent scope from planned task paths before edits, may amend that
-scope only for a proven direct dependency, and releases it after integrated completion.
+Task ownership is a standalone lightweight write-scope compatibility utility independent from
+task-close. It remains available for valid plans/manifests that already selected it: those tasks
+acquire one explicit parent scope from planned task paths before edits, may amend that scope only for
+a proven direct dependency, and release it after integrated completion. Current Planner policy does
+not route task ownership as an agent-supported process.
 
-Ownership authority never comes from the dirty working tree. Active claims reject provable
-incompatible overlap and keep private state under `.agent-state`. Parent ownership release fails
-closed while subordinate orchestration worker claims remain active. When ownership is not selected,
-no ownership policy or lifecycle is present in Codex runtime context.
+Ownership authority never comes from the dirty working tree. Active compatibility claims reject
+provable incompatible overlap and keep private state under `.agent-state`. Parent ownership release
+fails closed while subordinate orchestration worker claims remain active. Without a valid existing
+ownership contract, no ownership lifecycle is inferred from orchestration or dirty-tree state.
 
 <!-- kb
 id: automation.orchestration.execution
 alias: orchestrated execution
 alias: multi-agent implementation
 source: policy/PLANNER.md#Execution-shape planning
-source: policy/CODEX.md#Do not enable task-close merely because execution is orchestrated.
+source: policy/CODEX.md#Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.
 source: policy/REVIEWER.md#Integrated QA
 adjacent: automation.planning.phase2
 adjacent: automation.orchestration.ownership
@@ -183,34 +185,36 @@ adjacent: automation.task-close.lifecycle
 
 Normal execution is a single Codex run and carries no orchestration policy. Planner selects
 ORCHESTRATED only when semantic decomposition materially reduces context reconstruction or
-integration risk, then compiles only the required orchestration and ownership policy into the Phase
-2 plan.
+integration risk, then compiles only the required orchestration rules into the Phase 2 plan.
 
 The parent plan remains behavior authority. It defines worker responsibilities, dependencies,
-shared invariants, explicit write claims, dependency-aware waves, scoped verification, and parent
-integration criteria. Worker context remains bounded to its unit. Runtime skills do not provide
-worker roles or domain policy.
+shared invariants, planned non-overlapping write responsibilities, dependency-aware waves, scoped
+verification, and parent integration criteria. The parent coordinates sequencing, handoffs, overlap
+avoidance, and final integration through its reasoning. Worker context remains bounded to its unit.
+Runtime skills do not provide worker roles or domain policy.
 
 <!-- kb
 id: automation.orchestration.ownership
 alias: worker scope
 alias: parallel ownership
-source: policy/CODEX.md#Do not enable task-close merely because execution is orchestrated.
+source: policy/CODEX.md#Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.
 source: scripts/lib/orchestration-scope.mjs#claimWorkerScope
 source: scripts/lib/orchestration-scope.mjs#finalizeOrchestrationScope
 source: scripts/lib/task-ownership.mjs#resolveTaskOwnership
 adjacent: automation.orchestration.execution
 adjacent: automation.task-close.scope
 -->
-## Orchestration ownership
+## Orchestration coordination
 
-ORCHESTRATED execution requires explicit parent task ownership. Parallel workers may share read
-evidence but may not hold overlapping write claims. Deterministic tooling rejects sibling overlap
-and never derives authority from the dirty tree. Shared writable paths use one owner or serialized
-execution.
+ORCHESTRATED execution is a parent reasoning and execution shape, not a deterministic ownership
+lifecycle. Parallel workers may share read evidence, but the parent assigns non-overlapping
+concurrent writes and serializes shared writable paths. It remains responsible for worker
+sequencing, handoffs, overlap avoidance, verification, and the integrated result.
 
-Worker claims are subordinate locks, not independent task lifecycles. Task-close remains separately
-optional. The parent owns integrated scope, worker-claim resolution, and final integration.
+The standalone ownership and orchestration-scope helpers remain compatible with valid existing
+plans that explicitly selected them. In that compatibility path, worker claims are subordinate
+locks rather than independent task lifecycles and tooling rejects sibling overlap. Those helpers
+are not required or implicitly enabled merely because execution is ORCHESTRATED.
 
 <!-- kb
 id: automation.task-close.lifecycle
@@ -223,14 +227,15 @@ adjacent: automation.task-close.process-controls
 -->
 ## Task-close lifecycle
 
-Task-close is optional deterministic close-out selected only when `task_close=ON`; that selection
-requires task ownership. When selected, the lifecycle runs `prepare → review → close`, with `amend`
-reserved for a proven direct dependency discovered after prepare.
+Task-close is standalone deterministic compatibility tooling for valid plans/manifests that already
+selected `task_close=ON`; that legacy selection requires task ownership. Its lifecycle runs
+`prepare → review → close`, with `amend` reserved for a proven direct dependency discovered
+after prepare. Current Planner policy does not route task-close as an agent-supported process.
 
-A normal lifecycle runs prepare once before edits, review once when authored changes are final, and
-close once after required verification. Review/close retry only after repairing a returned blocker.
-Task-close is not a checkpoint or status mechanism. When not selected, task-close policy and
-commands are absent from normal Codex runtime context.
+A valid compatibility lifecycle runs prepare once before edits, review once when authored changes
+are final, and close once after required verification. Review/close retry only after repairing a
+returned blocker. Task-close is not a checkpoint or status mechanism and is not inferred for new
+plans or normal Codex runtime context.
 
 Valid pre-migration manifests retain the lifecycle semantics under which they were created.
 
@@ -248,14 +253,18 @@ adjacent: automation.task-close.scope
 -->
 ## Task process controls
 
-Process controls are Planner-selected task policy, not universal Codex knowledge. BARE defaults to
-task ownership, task-close, telemetry, workflow inefficiency flagging, executable QA, permanent QA
-coverage, and public QA receipt OFF; plan archival remains ON. ALL enables every process.
+The current Planner's agent-supported process controls are telemetry, workflow inefficiency
+flagging, executable QA, permanent QA coverage, and public QA receipt, all default OFF; plan
+archival remains ON. Those are task policy rather than universal Codex knowledge. Everything ON
+enables the five agent-supported default-OFF controls.
 
 A default-OFF process is omitted from the Phase 2 plan and Codex runtime context. Planner loads only
-the policy section for an enabled/non-default process. `task_close=ON` requires
-`task_ownership=ON`; workflow inefficiency flagging requires telemetry. Invalid combinations fail
-closed rather than silently enabling another process.
+the policy section for an enabled/non-default process. Workflow inefficiency flagging requires
+telemetry, and invalid combinations fail closed rather than silently enabling another process.
+
+The standalone task tooling retains `task_ownership` and `task_close` fields so valid
+pre-migration manifests remain deterministic. Within that compatibility schema,
+`task_close=ON` requires `task_ownership=ON`; new Planner plans do not emit either control.
 
 Corp Tower telemetry hooks remain non-auto-discovered and are injected only for telemetry-enabled
 sessions through the deterministic launcher. Optional process selection never grants Git/deployment
@@ -273,16 +282,17 @@ adjacent: automation.orchestration.ownership
 -->
 ## Task-close scope
 
-Task-close scope exists only when task-close is selected. It binds the task's explicit ownership
-authority, process contract, optional plan, and selected verification/receipt inputs. Scope is never
-derived from the dirty working tree.
+A task-close scope exists only for a valid compatibility manifest that selected task-close. It
+binds the task's explicit ownership authority, process contract, optional plan, and selected
+verification/receipt inputs. Scope is never derived from the dirty working tree.
 
 Review validates final authored/source scope and owns bounded regeneration/protection of only concept
 maps affected by exact source grants or changed authored concept owners. Generated maps remain
 tooling-owned derived output.
 
-When task-close is absent, selected lightweight ownership and task-triggered generated consistency
-operate independently; neither creates an implicit close lifecycle.
+Outside that compatibility lifecycle, required verification and task-triggered generated
+consistency run directly from the approved plan. Neither orchestration nor ordinary completion
+creates an implicit close lifecycle.
 
 <!-- kb
 id: automation.task-close.verification
@@ -293,8 +303,8 @@ adjacent: testing.selection.local
 -->
 ## Task-close verification
 
-When task-close is selected, close verifies reviewed authored scope and its bounded protected
-generated outputs, plus any verification policy selected for the task.
+For a valid compatibility manifest that selected task-close, close verifies reviewed authored scope
+and its bounded protected generated outputs, plus any verification policy selected for the task.
 
 When task-close is not selected, required correctness checks run directly from the plan and actual
 changed scope. BARE does not create a close lifecycle merely to host verification. Known

@@ -1,4 +1,5 @@
 const GameEngine = require("./Game_Engine");
+const BotManager = require("./Bot_Manager");
 const crypto = require("crypto");
 const GameConfig = require("./Game_Config");
 const DebugConfig = require("./Debug_Config");
@@ -11,6 +12,7 @@ const PRIVATE_SERVER_ID_LENGTH = 8;
 const PRIVATE_SERVER_ID_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const PRIVATE_SERVER_ID_ATTEMPTS = 64;
 const PRIVATE_DISPLAY_NAME_MAX_LENGTH = 24;
+const SPECTATOR_ROOM_MODE = "bot_spectator";
 
 class LobbyManager {
     constructor(stateStore = new RedisState()) {
@@ -87,6 +89,13 @@ class LobbyManager {
     privateEntryFor(reconnectRequest = {}) {
         const entryMode = String(reconnectRequest.entryMode || "public");
 
+        if (entryMode === "bot_spectator") {
+            return {
+                entryMode,
+                botProfiles: reconnectRequest.botProfiles
+            };
+        }
+
         if (entryMode !== "private_create" && entryMode !== "private_join") {
             return { entryMode: "public" };
         }
@@ -118,6 +127,18 @@ class LobbyManager {
 
     isPrivateRoom(room) {
         return Boolean(room && room.roomMode === "private");
+    }
+
+    isSpectatorRoom(room) {
+        return Boolean(room && room.roomMode === SPECTATOR_ROOM_MODE);
+    }
+
+    isSpectatorObserver(player) {
+        return Boolean(
+            player?.isSpectator &&
+            this.isSpectatorRoom(player.room) &&
+            player.room.observer === player
+        );
     }
 
     privateTimerKey(roomId, playerId) {
@@ -259,6 +280,24 @@ class LobbyManager {
     async addPlayer(player) {
         this.resetParticipantState(player);
         this.connectedPlayers.set(player.id, player);
+
+        if (player.privateEntry?.entryMode === "bot_spectator") {
+            const botProfiles = BotManager.normalizeBotLineup(
+                player.privateEntry.botProfiles,
+                { requireCompleteProfiles: true }
+            );
+
+            if (!botProfiles) {
+                this.sendPlayer(player, {
+                    type: "spectator_start_rejected",
+                    reason: "invalid_bot_profiles"
+                });
+                return;
+            }
+
+            await this.createBotSpectatorRoom(player, botProfiles);
+            return;
+        }
 
         if (player.privateEntry?.entryMode === "private_create") {
             await this.createPrivateRoom(player, player.privateEntry);
@@ -477,6 +516,13 @@ class LobbyManager {
         const disconnected = await this.stateStore.markSessionDisconnected(player);
 
         if (disconnected === false) {
+            return;
+        }
+
+        if (this.isSpectatorObserver(player)) {
+            await this.closeRoom(player.room, "spectator_disconnected");
+            this.resetBotCounterIfIdle();
+            console.log(`${player.id} disconnected from a spectator match`);
             return;
         }
 
@@ -971,6 +1017,7 @@ class LobbyManager {
         player.blocks = player.blocks || [];
         player.lastPlacementTime = player.lastPlacementTime || 0;
         player.botLoopLevel = null;
+        player.isSpectator = false;
         player.room = null;
     }
 
@@ -1000,6 +1047,9 @@ class LobbyManager {
             return;
         }
 
+        const spectatorMatch = this.isSpectatorRoom(room);
+        const spectatorObserver = spectatorMatch ? room.observer : null;
+
         const closeMessage = {
             type: "room_closed",
             reason
@@ -1019,7 +1069,7 @@ class LobbyManager {
         this.cancelPrivateStartCountdown(room);
         this.cancelAllPrivateLobbyDisconnectTimers(room.id);
 
-        if (this.isRoomOwner(existingRoom)) {
+        if (this.isRoomOwner(existingRoom) && !spectatorMatch) {
             await this.stateStore.publishRoom(room.id, closeMessage);
         }
 
@@ -1029,8 +1079,10 @@ class LobbyManager {
             activeRoom => activeRoom.id !== room.id
         );
 
-        await this.stateStore.deleteRoom(room.id);
-        await this.stateStore.removeOpenRoom(room.id);
+        if (!spectatorMatch) {
+            await this.stateStore.deleteRoom(room.id);
+            await this.stateStore.removeOpenRoom(room.id);
+        }
 
         if (this.isPrivateRoom(room)) {
             await this.stateStore.deletePrivateInvite(room.privateServerId, room.id);
@@ -1065,11 +1117,27 @@ class LobbyManager {
             }
         });
 
-        if (this.stateStore.unsubscribeFromRoom) {
+        if (spectatorObserver) {
+            const connectedObserver = this.connectedPlayers.get(spectatorObserver.id);
+            const notificationObserver = connectedObserver || spectatorObserver;
+            const shouldNotify = this.isConnectedRealPlayer(notificationObserver);
+
+            this.resetParticipantState(spectatorObserver);
+            if (connectedObserver && connectedObserver !== spectatorObserver) {
+                this.resetParticipantState(connectedObserver);
+            }
+            room.observer = null;
+
+            if (shouldNotify) {
+                this.sendPlayer(notificationObserver, closeMessage);
+            }
+        }
+
+        if (!spectatorMatch && this.stateStore.unsubscribeFromRoom) {
             await this.stateStore.unsubscribeFromRoom(room.id);
         }
 
-        if (this.stateStore.unsubscribeFromRoomActions) {
+        if (!spectatorMatch && this.stateStore.unsubscribeFromRoomActions) {
             await this.stateStore.unsubscribeFromRoomActions(room.id);
         }
 
@@ -1169,7 +1237,9 @@ class LobbyManager {
 
         if (!GameConfig.debugBotsEnabled) {
             this.rooms.forEach(room => {
-                room.engine.stopBots();
+                if (!this.isSpectatorRoom(room)) {
+                    room.engine.stopBots();
+                }
             });
         }
 
@@ -1214,7 +1284,9 @@ class LobbyManager {
         if (key === "debugBotsEnabled" || key === "debugBotCount") {
             if (!GameConfig.debugBotsEnabled) {
                 this.rooms.forEach(room => {
-                    room.engine.stopBots();
+                    if (!this.isSpectatorRoom(room)) {
+                        room.engine.stopBots();
+                    }
                 });
             }
 
@@ -1231,7 +1303,11 @@ class LobbyManager {
 
     async restartRoomsAtDebugStartLevel() {
         await Promise.all(this.rooms.map(async room => {
-            if (!room.engine?.room || room.engine.room.state === "closed") {
+            if (
+                !room.engine?.room ||
+                room.engine.room.state === "closed" ||
+                this.isSpectatorRoom(room)
+            ) {
                 return;
             }
 
@@ -1245,7 +1321,11 @@ class LobbyManager {
 
     async restartRoomsAtCurrentLevel() {
         await Promise.all(this.rooms.map(async room => {
-            if (!room.engine?.room || room.engine.room.state === "closed") {
+            if (
+                !room.engine?.room ||
+                room.engine.room.state === "closed" ||
+                this.isSpectatorRoom(room)
+            ) {
                 return;
             }
 
@@ -1259,13 +1339,19 @@ class LobbyManager {
         }));
     }
 
-    createBot() {
-        return {
+    createBot(botProfile = null) {
+        const bot = {
             id: "BOT" + this.botCounter++,
             score: 0,
             lastPlacementTime: 0,
             isBot: true
         };
+
+        if (botProfile) {
+            bot.botProfile = BotManager.normalizeBotProfile(botProfile);
+        }
+
+        return bot;
     }
 
     fillRoomWithBotsIfNeeded(room) {
@@ -1284,7 +1370,7 @@ class LobbyManager {
     }
 
     async syncRoomBots(room) {
-        if (this.isPrivateRoom(room)) {
+        if (this.isPrivateRoom(room) || this.isSpectatorRoom(room)) {
             return;
         }
 
@@ -1330,7 +1416,11 @@ class LobbyManager {
 
     async refreshMatchmaking() {
         for (const room of this.rooms) {
-            if (room.matchStarted || this.isPrivateRoom(room)) {
+            if (
+                room.matchStarted ||
+                this.isPrivateRoom(room) ||
+                this.isSpectatorRoom(room)
+            ) {
                 continue;
             }
 
@@ -1619,11 +1709,24 @@ class LobbyManager {
             players: engine.room.players,
             engine: engine,
             roomMode: options.roomMode || "public",
+            observer: null,
             privateServerId: null,
             privatePassword: "",
             hostPlayerId: null,
             privateStartDeadlineAt: 0
         };
+        const spectatorMatch = this.isSpectatorRoom(room);
+
+        if (spectatorMatch) {
+            if (!options.observer) {
+                throw new Error("Spectator room requires an observer");
+            }
+
+            room.observer = options.observer;
+            room.observer.isSpectator = true;
+            room.observer.room = room;
+            engine.room.isSpectatorMatch = true;
+        }
 
         if (this.isPrivateRoom(room)) {
             room.privateServerId = await this.generatePrivateServerId(room.id);
@@ -1633,7 +1736,7 @@ class LobbyManager {
 
         engine.room.id = room.id;
 
-        room.matchStarted = false;
+        room.matchStarted = spectatorMatch;
         room.readyPlayerIds = new Set();
         room.lobbyDeadlineAt = 0;
 
@@ -1656,13 +1759,18 @@ class LobbyManager {
         });
 
         this.rooms.push(room);
-        await this.subscribeRoom(room.id);
 
-        if (!this.isPrivateRoom(room)) {
+        if (!spectatorMatch) {
+            await this.subscribeRoom(room.id);
+        }
+
+        if (!this.isPrivateRoom(room) && !spectatorMatch) {
             this.fillRoomWithBotsIfNeeded(room);
         }
 
-        if (this.isPrivateRoom(room)) {
+        if (spectatorMatch) {
+            await this.stateStore.removeOpenRoom(room.id);
+        } else if (this.isPrivateRoom(room)) {
             await this.stateStore.removeOpenRoom(room.id);
         } else if (room.players.length >= GameConfig.playersPerRoom) {
             room.lobbyDeadlineAt = Date.now() + GameConfig.lobbyReadyTimeoutMs;
@@ -1672,12 +1780,16 @@ class LobbyManager {
             await this.stateStore.markRoomOpen(room.id);
         }
 
-        await this.stateStore.saveRoom(room, true);
+        if (!spectatorMatch) {
+            await this.stateStore.saveRoom(room, true);
+        }
 
-        await Promise.all(roomPlayers
-            .filter(player => !player.isBot)
-            .map(player => this.savePlayerRoomSession(player, room))
-        );
+        if (!spectatorMatch) {
+            await Promise.all(roomPlayers
+                .filter(player => !player.isBot)
+                .map(player => this.savePlayerRoomSession(player, room))
+            );
+        }
 
         console.log(`Room ${room.id} created with ${room.players.length} players`);
 
@@ -1688,6 +1800,8 @@ class LobbyManager {
 
             await this.sendRoomJoinedMessage(player, room);
         }
+
+        return room;
     }
 
     async savePlayerRoomSession(player, room) {
@@ -1703,6 +1817,29 @@ class LobbyManager {
             connectionId: player.connectionId,
             connected: this.isConnectedRealPlayer(player)
         });
+    }
+
+    async createBotSpectatorRoom(observer, botProfiles) {
+        const bots = botProfiles.map(profile => this.createBot(profile));
+        const room = await this.createRoom(bots, {
+            roomMode: SPECTATOR_ROOM_MODE,
+            observer
+        });
+
+        const payload = await this.buildRoomJoinedPayload(room);
+
+        this.sendPlayer(observer, {
+            ...payload,
+            playerId: observer.id,
+            reconnectToken: observer.sessionId,
+            reconnectTtlSeconds: this.stateStore.getReconnectTtlSeconds(),
+            blocks: [],
+            spectator: true,
+            matchStarted: true
+        });
+
+        room.engine.startLevel();
+        return room;
     }
 
     async sendRoomJoinedMessage(player, room) {
@@ -1733,7 +1870,7 @@ class LobbyManager {
             drawPileCount: (engine.room.drawPile || []).length,
             nextDrawBlock: engine.getNextDrawBlock(),
             roster: roster,
-            matchStarted: false,
+            matchStarted: Boolean(room.matchStarted),
             lobby: this.buildLobbyPayload(room),
             privateLobby: this.buildPrivateLobbyPayload(room)
         };
@@ -1824,7 +1961,7 @@ class LobbyManager {
     async toggleLobbyReady(player) {
         const room = player.room;
 
-        if (!room || room.matchStarted) {
+        if (!room || room.matchStarted || this.isSpectatorObserver(player)) {
             return;
         }
 
@@ -1945,7 +2082,7 @@ class LobbyManager {
     async leaveLobby(player) {
         const room = player.room;
 
-        if (!room || room.matchStarted) {
+        if (!room || room.matchStarted || this.isSpectatorObserver(player)) {
             return;
         }
 
@@ -1985,6 +2122,22 @@ class LobbyManager {
         }
 
         await this.evictLobbyPlayer(room, player, "player_left_lobby");
+    }
+
+    async leaveSpectatorRoom(observer) {
+        if (!this.isSpectatorObserver(observer)) {
+            return;
+        }
+
+        const room = observer.room;
+
+        this.sendPlayer(observer, {
+            type: "game_left",
+            destination: "home"
+        });
+        room.observer = null;
+        this.resetParticipantState(observer);
+        await this.closeRoom(room, "spectator_left", "home");
     }
 
     async leaveGameForRoom(room, player, connectionId) {
@@ -2089,7 +2242,12 @@ class LobbyManager {
     async kickPrivatePlayer(player, targetPlayerId) {
         const room = player?.room;
 
-        if (!room || !this.isPrivateRoom(room) || room.matchStarted) {
+        if (
+            !room ||
+            this.isSpectatorObserver(player) ||
+            !this.isPrivateRoom(room) ||
+            room.matchStarted
+        ) {
             return;
         }
 
@@ -2252,14 +2410,21 @@ class LobbyManager {
                 const room =
                     this.rooms.find(activeRoom => activeRoom.id === engineRoom.id);
 
-                if (room) {
+                if (room && !this.isSpectatorRoom(room)) {
                     await this.stateStore.saveRoom(
                         room,
                         room.ownerPodId === this.stateStore.getPodId()
                     );
                 }
             },
-            onRoomMessage: async (roomId, message) => {
+            onRoomMessage: async (roomId, message, transient = {}) => {
+                const room = this.rooms.find(activeRoom => activeRoom.id === roomId);
+
+                if (this.isSpectatorRoom(room)) {
+                    this.sendSpectatorGameState(room, message, transient.botInsight || null);
+                    return;
+                }
+
                 await this.stateStore.publishRoom(roomId, message);
             },
             onLevelOutcome: async outcome => {
@@ -2274,6 +2439,20 @@ class LobbyManager {
 
                 await this.closeRoom(room, reason, destination);
             }
+        });
+    }
+
+    sendSpectatorGameState(room, gameState, botInsight = null) {
+        const observer = room?.observer;
+
+        if (!observer || !this.isSpectatorObserver(observer)) {
+            return;
+        }
+
+        this.sendPlayer(observer, {
+            ...gameState,
+            spectator: true,
+            botInsight
         });
     }
 
@@ -2590,6 +2769,13 @@ class LobbyManager {
             return;
         }
 
+        if (this.isSpectatorObserver(player)) {
+            if (action?.type === "leave_game") {
+                await this.leaveSpectatorRoom(player);
+            }
+            return;
+        }
+
         const room = player.room;
 
         if (!room) {
@@ -2614,6 +2800,15 @@ class LobbyManager {
 
     async resyncState(player, requestId = "") {
         if (!await this.isCurrentPlayerConnection(player)) {
+            return;
+        }
+
+        if (this.isSpectatorObserver(player)) {
+            this.sendSpectatorGameStateSnapshot(
+                player.room,
+                player,
+                typeof requestId === "string" ? requestId : ""
+            );
             return;
         }
 
@@ -2667,6 +2862,24 @@ class LobbyManager {
             ...snapshot,
             targetPlayerId: playerId,
             targetConnectionId: connectionId
+        });
+    }
+
+    sendSpectatorGameStateSnapshot(room, observer, requestId = "") {
+        if (!this.isSpectatorRoom(room) || room.observer !== observer) {
+            return;
+        }
+
+        const snapshot = room.engine?.buildGameStateSnapshot(requestId);
+
+        if (!snapshot) {
+            return;
+        }
+
+        this.sendPlayer(observer, {
+            ...snapshot,
+            spectator: true,
+            botInsight: null
         });
     }
 

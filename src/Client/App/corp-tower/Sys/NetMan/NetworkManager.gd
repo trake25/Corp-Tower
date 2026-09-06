@@ -29,6 +29,9 @@ var pending_private_display_name := ""
 var pending_private_server_id := ""
 var pending_private_password := ""
 var private_entry_in_flight := false
+var spectator_active := false
+var spectator_start_in_flight := false
+var pending_bot_profiles: Array = []
 var resume_only_request := false
 
 var player_id := ""
@@ -58,6 +61,8 @@ const LATENCY_PROBE_INTERVAL_SECONDS := 1.0
 const LATENCY_PROBE_TIMEOUT_MS := 5000
 const SERVER_URL := EndpointConfig.PRIMARY
 const STREAMING_MATCH_STATES := ["starting", "playing"]
+const SPECTATOR_ENTRY_MODE := "bot_spectator"
+const SPECTATOR_PERSONALITIES := ["climber", "engineer", "opportunist"]
 
 signal status_changed(text)
 signal room_joined(data)
@@ -75,10 +80,12 @@ signal recovery_unavailable(data)
 signal private_join_failed(data)
 signal private_entry_failed(data)
 signal resume_only_failed(data)
+signal spectator_start_rejected(data)
 
 func connect_server(is_auto_reconnect := false, preserve_entry := false, resume_only := false):
 	if not is_auto_reconnect and not preserve_entry:
 		_clear_pending_private_entry()
+		_clear_pending_spectator_entry()
 
 	if resume_only:
 		resume_only_request = true
@@ -119,13 +126,17 @@ func connect_server(is_auto_reconnect := false, preserve_entry := false, resume_
 			_fail_private_entry("connection_failed")
 			status_changed.emit("Disconnected")
 			client_status.emit("[Connect]")
+		elif _has_spectator_entry_in_flight():
+			_reject_spectator_start("connection_failed")
+			status_changed.emit("Disconnected")
+			client_status.emit("[Connect]")
 		elif is_auto_reconnect or resume_only_request:
 			schedule_auto_reconnect()
 		else:
 			status_changed.emit("Disconnected")
 			client_status.emit("[Connect]")
 
-func disconnect_server(clear_private_entry := true):
+func disconnect_server(clear_private_entry := true, clear_spectator_entry := true):
 	status_changed.emit("Disconnecting...")
 	manual_disconnect_requested = true
 	connect_after_close = false
@@ -139,6 +150,8 @@ func disconnect_server(clear_private_entry := true):
 	reset_latency_probe()
 	if clear_private_entry:
 		_clear_pending_private_entry()
+	if clear_spectator_entry:
+		_clear_spectator_state()
 	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		ws.close()
 
@@ -154,6 +167,25 @@ func create_private_server(display_name: String, password: String) -> bool:
 func join_private_server(display_name: String, server_id: String, password: String) -> bool:
 	return _begin_private_entry("private_join", display_name, server_id, password)
 
+func start_bot_spectator_match(bot_profiles: Array) -> bool:
+	if spectator_active or spectator_start_in_flight or private_entry_in_flight:
+		return false
+
+	var normalized_profiles := _normalize_spectator_profiles(bot_profiles)
+	if normalized_profiles.size() != 3:
+		return false
+
+	abandon_room_identity()
+	_clear_private_lobby_tracking()
+	reset_match_tracking()
+	auto_reconnect_enabled = false
+	auto_reconnect_delay_remaining = -1.0
+	pending_entry_mode = SPECTATOR_ENTRY_MODE
+	pending_bot_profiles = normalized_profiles
+	spectator_start_in_flight = true
+	_connect_with_pending_entry()
+	return true
+
 func _begin_private_entry(mode: String, display_name: String, server_id: String, password: String) -> bool:
 	if private_entry_in_flight:
 		return false
@@ -161,12 +193,12 @@ func _begin_private_entry(mode: String, display_name: String, server_id: String,
 	abandon_room_identity()
 	_set_private_entry(mode, display_name, server_id, password)
 	private_entry_in_flight = true
-	_connect_with_private_entry()
+	_connect_with_pending_entry()
 	return true
 
-func _connect_with_private_entry() -> void:
+func _connect_with_pending_entry() -> void:
 	if is_conn_estab or is_connecting:
-		disconnect_server(false)
+		disconnect_server(false, false)
 		if ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
 			if ws.get_ready_state() != WebSocketPeer.STATE_CLOSING:
 				ws.close()
@@ -184,13 +216,27 @@ func _set_private_entry(mode: String, display_name: String, server_id: String, p
 
 func _clear_pending_private_entry() -> void:
 	private_entry_in_flight = false
-	pending_entry_mode = "public"
 	pending_private_display_name = ""
 	pending_private_server_id = ""
 	pending_private_password = ""
+	if pending_entry_mode.begins_with("private_"):
+		pending_entry_mode = "public"
+
+func _clear_pending_spectator_entry() -> void:
+	spectator_start_in_flight = false
+	pending_bot_profiles = []
+	if pending_entry_mode == SPECTATOR_ENTRY_MODE:
+		pending_entry_mode = "public"
+
+func _clear_spectator_state() -> void:
+	spectator_active = false
+	_clear_pending_spectator_entry()
 
 func _has_private_entry_in_flight() -> bool:
 	return private_entry_in_flight and pending_entry_mode.begins_with("private_")
+
+func _has_spectator_entry_in_flight() -> bool:
+	return spectator_start_in_flight and pending_entry_mode == SPECTATOR_ENTRY_MODE
 
 func _fail_private_entry(reason: String) -> void:
 	if not _has_private_entry_in_flight():
@@ -201,6 +247,67 @@ func _fail_private_entry(reason: String) -> void:
 		"entryMode": pending_entry_mode
 	})
 	_clear_pending_private_entry()
+
+func _reject_spectator_start(reason: String) -> void:
+	if not spectator_start_in_flight and not spectator_active:
+		return
+
+	var transport_is_live := (
+		is_conn_estab
+		or is_connecting
+		or ws.get_ready_state() == WebSocketPeer.STATE_OPEN
+		or ws.get_ready_state() == WebSocketPeer.STATE_CONNECTING
+		or ws.get_ready_state() == WebSocketPeer.STATE_CLOSING
+	)
+	_clear_spectator_state()
+	if transport_is_live:
+		disconnect_server()
+	spectator_start_rejected.emit({"reason": reason})
+
+func _normalize_spectator_profiles(bot_profiles: Array) -> Array:
+	if bot_profiles.size() != 3:
+		return []
+
+	var normalized: Array = []
+	for profile_value in bot_profiles:
+		if typeof(profile_value) != TYPE_DICTIONARY:
+			return []
+
+		var profile: Dictionary = profile_value
+		var personality := str(profile.get("personality", ""))
+		var reaction_value = profile.get("reactionMs", null)
+		if (
+			not SPECTATOR_PERSONALITIES.has(personality)
+			or (typeof(reaction_value) != TYPE_INT and typeof(reaction_value) != TYPE_FLOAT)
+		):
+			return []
+
+		var reaction_number := float(reaction_value)
+		var reaction_ms := int(reaction_number)
+		if (
+			not is_finite(reaction_number)
+			or reaction_number != float(reaction_ms)
+			or reaction_ms < 250
+			or reaction_ms > 10000
+		):
+			return []
+
+		var normalized_profile := {
+			"personality": personality,
+			"reactionMs": reaction_ms
+		}
+		for key in ["skill", "riskTolerance", "greed", "repairAwareness", "powerUse"]:
+			var value = profile.get(key, null)
+			if typeof(value) != TYPE_INT and typeof(value) != TYPE_FLOAT:
+				return []
+			var numeric_value := float(value)
+			if not is_finite(numeric_value) or numeric_value < 0.0 or numeric_value > 1.0:
+				return []
+			normalized_profile[key] = numeric_value
+
+		normalized.append(normalized_profile)
+
+	return normalized
 
 func _clear_private_lobby_tracking() -> void:
 	private_lobby_active = false
@@ -224,7 +331,7 @@ func is_private_lobby_active() -> bool:
 	return private_lobby_active
 
 func kick_private_player(target_player_id: String) -> void:
-	if not is_conn_estab or is_recovering():
+	if spectator_active or not is_conn_estab or is_recovering():
 		return
 
 	ws.send_text(JSON.stringify({
@@ -233,7 +340,7 @@ func kick_private_player(target_player_id: String) -> void:
 	}))
 
 func place_block(block_index, column := -1, origin_y := -1):
-	if not is_conn_estab or is_recovering():
+	if spectator_active or not is_conn_estab or is_recovering():
 		return
 
 	var data = {
@@ -248,13 +355,13 @@ func place_block(block_index, column := -1, origin_y := -1):
 	ws.send_text(JSON.stringify(data))
 
 func send_ready():
-	if not is_conn_estab or is_recovering():
+	if spectator_active or not is_conn_estab or is_recovering():
 		return
 
 	ws.send_text(JSON.stringify({"type": "ready"}))
 
 func leave_lobby():
-	if not is_conn_estab or is_recovering():
+	if spectator_active or not is_conn_estab or is_recovering():
 		return
 
 	ws.send_text(JSON.stringify({"type": "leave_lobby"}))
@@ -281,6 +388,9 @@ func load_reconnect_identity():
 		profile_file.store_string(profile_id)
 
 func has_saved_room_identity() -> bool:
+	if spectator_active:
+		return false
+
 	load_reconnect_identity()
 	return player_id != "" and reconnect_token != ""
 
@@ -295,6 +405,9 @@ func generate_uuid_v4() -> String:
 	]
 
 func save_reconnect_identity(data):
+	if spectator_active:
+		return
+
 	player_id = str(data.get("playerId", player_id))
 	reconnect_token = str(data.get("reconnectToken", reconnect_token))
 
@@ -318,14 +431,20 @@ func send_reconnect_request():
 		"resumeOnly": resume_only_request
 	}
 
-	if pending_entry_mode != "public":
+	if pending_entry_mode.begins_with("private_"):
 		data["privateDisplayName"] = pending_private_display_name
 		data["privateServerId"] = pending_private_server_id
 		data["privatePassword"] = pending_private_password
+	elif pending_entry_mode == SPECTATOR_ENTRY_MODE:
+		data["botProfiles"] = pending_bot_profiles
 
 	ws.send_text(JSON.stringify(data))
 
 func update_auto_reconnect_state(data):
+	if spectator_active:
+		auto_reconnect_enabled = false
+		return
+
 	var players = data.get("players", [])
 	var has_bot = false
 
@@ -404,6 +523,7 @@ func abandon_room_identity() -> void:
 	_clear_room_identity()
 
 func accept_game_left(data) -> void:
+	_clear_spectator_state()
 	reset_match_tracking()
 	_clear_private_lobby_tracking()
 	_clear_room_identity()
@@ -431,7 +551,7 @@ func recovery_timeout_ms() -> int:
 	)
 
 func begin_recovery(force_reconnect := false) -> void:
-	if manual_disconnect_requested or not match_active or recovery_state != "healthy":
+	if spectator_active or manual_disconnect_requested or not match_active or recovery_state != "healthy":
 		return
 
 	recovery_state = "resyncing"
@@ -524,7 +644,7 @@ func mark_recovery_unavailable(reason: String, resume_unavailable := false) -> v
 	})
 
 func send_quick_chat(slot: int) -> void:
-	if !is_conn_estab or is_recovering():
+	if spectator_active or !is_conn_estab or is_recovering():
 		return
 
 	ws.send_text(JSON.stringify({
@@ -533,7 +653,7 @@ func send_quick_chat(slot: int) -> void:
 	}))
 
 func activate_power(slot: int) -> void:
-	if is_conn_estab and not is_recovering():
+	if not spectator_active and is_conn_estab and not is_recovering():
 		ws.send_text(JSON.stringify({"type": "activate_power", "slot": slot}))
 
 func _notification(what: int) -> void:
@@ -546,7 +666,7 @@ func _notification(what: int) -> void:
 				return
 			var backgrounded_seconds = (Time.get_ticks_msec() - background_since_msec) / 1000.0
 			background_since_msec = -1
-			if not match_active:
+			if spectator_active or not match_active:
 				return
 			begin_recovery(backgrounded_seconds >= BACKGROUND_STALE_THRESHOLD_SECONDS)
 
@@ -569,10 +689,14 @@ func accept_game_state(data) -> bool:
 
 	last_game_state_msec = Time.get_ticks_msec()
 	match_active = true
+	if bool(data.get("spectator", false)):
+		spectator_active = true
 	return true
 
 func check_stale_game_state(now_msec: int) -> void:
 	if (
+		not spectator_active
+		and
 		match_active
 		and recovery_state == "healthy"
 		and background_since_msec < 0
@@ -620,13 +744,20 @@ func _process(delta: float) -> void:
 		match data.type:
 			"room_created":
 				resume_only_request = false
-				save_reconnect_identity(data)
+				var room_is_spectator := bool(data.get("spectator", false))
+				if room_is_spectator:
+					spectator_active = true
+					_clear_pending_spectator_entry()
+				else:
+					save_reconnect_identity(data)
 				auto_reconnect_attempts = 0
 				match_active = bool(data.get("matchStarted", false))
 				_update_private_lobby_tracking(data)
 				_clear_pending_private_entry()
 				room_joined.emit(data)
 			"room_resumed":
+				if spectator_active:
+					continue
 				resume_only_request = false
 				save_reconnect_identity(data)
 				auto_reconnect_attempts = 0
@@ -673,6 +804,7 @@ func _process(delta: float) -> void:
 				if destination_by_player.has(player_id):
 					data["destination"] = str(destination_by_player[player_id])
 				reset_match_tracking()
+				_clear_spectator_state()
 				_clear_private_lobby_tracking()
 				_clear_room_identity()
 				auto_reconnect_enabled = false
@@ -680,6 +812,8 @@ func _process(delta: float) -> void:
 				room_closed.emit(data)
 			"game_left":
 				accept_game_left(data)
+			"spectator_start_rejected":
+				_reject_spectator_start(str(data.get("reason", "rejected")))
 			"private_join_rejected":
 				private_join_failed.emit(data)
 				_clear_pending_private_entry()
@@ -723,7 +857,16 @@ func _process(delta: float) -> void:
 				ws = WebSocketPeer.new()
 				connect_server(false, pending_entry_mode != "public")
 			elif was_connecting:
-				if _has_private_entry_in_flight() and not manual_disconnect_requested:
+				if spectator_active:
+					_clear_spectator_state()
+					reset_match_tracking()
+					status_changed.emit("Disconnected")
+					client_status.emit("[Connect]")
+				elif _has_spectator_entry_in_flight() and not manual_disconnect_requested:
+					_reject_spectator_start("transport_closed")
+					status_changed.emit("Disconnected")
+					client_status.emit("[Connect]")
+				elif _has_private_entry_in_flight() and not manual_disconnect_requested:
 					_fail_private_entry("transport_closed")
 					status_changed.emit("Disconnected")
 					client_status.emit("[Connect]")
@@ -740,7 +883,7 @@ func _process(delta: float) -> void:
 					client_status.emit("[Connect]")
 
 func update_config(key, value):
-	if not is_conn_estab or is_recovering():
+	if spectator_active or not is_conn_estab or is_recovering():
 		return
 
 	var data = {

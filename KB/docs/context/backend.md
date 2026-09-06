@@ -55,7 +55,7 @@ adjacent: network.room.public
 -->
 ## Public matchmaking
 
-Public rooms have three seats and may include debug bots. They start only when full and ready. Open-room seating runs under the matchmaking lock, and a pod that claims a room it cannot own must return the id before trying another.
+Public rooms have three seats and may include debug bots. They start only when full and ready. Open-room seating runs under the matchmaking lock, and a pod that claims a room it cannot own must return the id before trying another. Bot spectator matches bypass this seating and open-room path entirely.
 
 <!-- kb
 id: backend.lobby.private
@@ -67,6 +67,19 @@ adjacent: network.room.private
 ## Private rooms
 
 Private rooms reserve three human seats and never enter public matchmaking or bot fill. Invite, fixed host, readiness, connection phases, and deadlines persist. The host alone may kick. Transport loss unreaddies and reserves a seat through recovery rather than treating it as an intentional leave.
+
+<!-- kb
+id: backend.lobby.bot-spectator
+alias: bot spectator room
+alias: spectator room lifecycle
+source: src/Server/app/Lobby_Manager.js#createBotSpectatorRoom
+source: src/Server/app/Lobby_Manager.js#closeRoom
+adjacent: network.room.bot-spectator
+adjacent: backend.bots.preview
+-->
+## Bot spectator rooms
+
+A debug-gated bot spectator launch creates one transient, match-local room with exactly three normalized bot actors and one observer outside the gameplay roster. It is never advertised for seating, persisted, hydrated, or saved as a resumable session. Observer leave, disconnect, or terminal completion closes the whole room and retires its bot timers.
 
 <!-- kb
 id: backend.lobby.cross-pod
@@ -138,7 +151,7 @@ adjacent: gameplay.debug.tuning
 
 `Debug_Config.js` is the live-write boundary for server tuning. It rejects unknown keys, clamps values, enforces allowed values and dependent bounds, then Lobby Manager reconciles affected rooms and broadcasts the authoritative snapshot.
 
-Live-writable tuning, designer-authored calibration, and true contracts are different classes. Derived physical constants are not exposed simply because a debug UI exists.
+Live-writable tuning, designer-authored calibration, and true contracts are different classes. Derived physical constants are not exposed simply because a debug UI exists. Spectator bot profiles are match-local actor data and do not mutate global debug configuration.
 
 <!-- kb
 id: backend.engine.lifecycle
@@ -281,12 +294,15 @@ Pose pivots dependent presentation sections at stressed interfaces while leaving
 id: backend.bots.preview
 alias: Bot Manager
 alias: bot candidate preview
+alias: bot profiles
+source: src/Server/app/Bot_Manager.js#normalizeBotProfile
 source: src/Server/app/Bot_Manager.js#chooseBotAction
 adjacent: gameplay.bots.scoring
+adjacent: gameplay.bots.personalities
 -->
-## Bot preview
+## Bot profiles and preview
 
-Bots enumerate legal brick, column, and release-row combinations, preview through the real engine, and place through the same action path as players. A bounded shortlist limits expensive support-graph evaluation.
+Bot Manager normalizes Climber, Engineer, and Opportunist profiles with reaction, skill, risk, greed/cooperation, repair-awareness, and Power-use traits. Bots enumerate legal brick, column, and release-row combinations, preview through the real engine, and act through the same authoritative action, timing, and cooldown path as players. A bounded shortlist limits expensive support-graph evaluation; profile skill/noise permits occasional imperfect choices without bypassing authoritative collapse rules.
 
 <!-- kb
 id: backend.config.values

@@ -59,6 +59,7 @@ var armed_snap: Dictionary = {}
 var is_armed: bool = false
 var last_tap_ms: int = 0
 var selected_card_style: StyleBoxFlat = null
+var spectator_mode := false
 
 func bind_nodes(binder) -> void:
 	draw_pile_name_label = binder.require_node("DrawPileNameLabel") as Label
@@ -137,6 +138,9 @@ func _drag_grip_offset() -> Vector2:
 	return tower_stack_fallback.call("drag_grip_offset")
 
 func handle_input(event: InputEvent) -> void:
+	if spectator_mode:
+		return
+
 	PointerEventsScript.note_event(event)
 
 	if is_block_dragging:
@@ -243,6 +247,9 @@ func can_place_block(index: int) -> bool:
 	return is_placement_input_allowed()
 
 func is_placement_input_allowed() -> bool:
+	if spectator_mode:
+		return false
+
 	if (
 		tower_stack_fallback != null
 		and tower_stack_fallback.has_method("is_collapse_input_blocked")
@@ -420,6 +427,25 @@ func set_parallel_placement(enabled: bool) -> void:
 		tower_drop_zone.gui_input.connect(handler)
 	elif !enabled and tower_drop_zone.gui_input.is_connected(handler):
 		tower_drop_zone.gui_input.disconnect(handler)
+
+func set_spectator_mode(enabled: bool) -> void:
+	if spectator_mode == enabled:
+		return
+
+	spectator_mode = enabled
+	cancel_block_drag()
+
+	for button in inventory_buttons:
+		if button != null:
+			button.visible = not spectator_mode
+			if spectator_mode:
+				button.disabled = true
+
+	if tower_drop_zone != null:
+		tower_drop_zone.mouse_filter = (
+			Control.MOUSE_FILTER_IGNORE if spectator_mode
+			else (Control.MOUSE_FILTER_STOP if parallel_placement else Control.MOUSE_FILTER_PASS)
+		)
 
 func _handle_card_tap(event: InputEvent, index: int) -> void:
 	if !_is_primary_press(event) or !_accept_tap():
@@ -712,7 +738,8 @@ func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS)
 		var preview: Control = block_previews[i]
 		preview.cell_color = local_player_color
 
-		if i >= active_inventory_slots:
+		button.visible = not spectator_mode
+		if spectator_mode or i >= active_inventory_slots:
 			button.disabled = true
 			button.text = ""
 			preview.clear_block()

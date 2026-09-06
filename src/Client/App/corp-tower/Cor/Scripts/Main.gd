@@ -59,7 +59,11 @@ var background_parallax: Control
 var platform_parallax: Control
 var demo_mode_label: Label
 var hamburger_button: TextureButton
+var bot_insight_panel: Control
+var bot_insight_label: Label
+var bot_insight_button: Button
 var external_overlay_input_blocked := false
+var bot_insight_enabled := true
 
 func _ready() -> void:
 	tuning = UiTuningScript.new()
@@ -104,6 +108,8 @@ func _ready() -> void:
 		return
 
 	hamburger_button.pressed.connect(_on_hamburger_pressed)
+	if bot_insight_button != null:
+		bot_insight_button.pressed.connect(_on_bot_insight_toggle_pressed)
 	demo_mode_label.visible = EndpointConfig.DEMO_MODE_ENABLED
 
 	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers, tutorial, accessibility)
@@ -120,8 +126,8 @@ func _ready() -> void:
 	quest.setup(players_ctx, match_state, popovers, should_block_popovers)
 	summary.quest_text_provider = quest.get_quest_summary_text
 	summary.on_summary_ended = visual_fx.end_beat
-	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_popovers, tutorial.on_chat_sent)
-	power.setup(NetworkManager, popovers, score_popups, should_block_popovers, tutorial.on_power_activated)
+	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_participant_popovers, tutorial.on_chat_sent)
+	power.setup(NetworkManager, popovers, score_popups, should_block_participant_popovers, tutorial.on_power_activated)
 	tutorial.setup({
 		"tower_stack": tower_stack,
 		"inventory": inventory,
@@ -166,6 +172,9 @@ func should_block_popovers() -> bool:
 		or tutorial_menu.is_menu_visible()
 	)
 
+func should_block_participant_popovers() -> bool:
+	return NetworkManager.spectator_active or should_block_popovers()
+
 func should_block_tower_navigation() -> bool:
 	return (
 		external_overlay_input_blocked
@@ -192,6 +201,9 @@ func bind_ui_nodes() -> void:
 	platform_parallax = binder.require_node("PlatformArt") as Control
 	demo_mode_label = binder.require_node("DemoModeLabel") as Label
 	hamburger_button = binder.require_node("HamburgerButton") as TextureButton
+	bot_insight_panel = binder.optional_node("BotInsightPanel") as Control
+	bot_insight_label = binder.optional_node("BotInsightLabel") as Label
+	bot_insight_button = binder.optional_node("BotInsightButton") as Button
 
 	top_bar.bind_nodes(binder)
 	tower_navigation.bind_nodes(binder)
@@ -210,6 +222,7 @@ func bind_ui_nodes() -> void:
 	missing_required_nodes = binder.missing
 
 func reset_ui() -> void:
+	_apply_spectator_mode(false)
 	top_bar.reset_indicators()
 	match_state.current_match_state = ""
 	inventory.last_placement_sent_at_ms = 0
@@ -282,6 +295,7 @@ func _on_room_joined(data) -> void:
 		update_room(data)
 
 func update_room(data) -> void:
+	_apply_spectator_mode(bool(data.get("spectator", NetworkManager.spectator_active)))
 	players_ctx.roster = data.get("roster", [])
 	top_bar.update_top_bar_display(int(data.get("level", 0)), int(data.get("level", 0)), "starting", 0)
 	match_state.current_level = int(data.get("level", 0))
@@ -313,6 +327,7 @@ func update_room(data) -> void:
 	)
 
 func update_room_closed(_data) -> void:
+	_apply_spectator_mode(false)
 	match_state.current_match_state = ""
 	players_ctx.roster = []
 	inventory.last_placement_sent_at_ms = 0
@@ -356,6 +371,9 @@ func _on_tutorial_menu_exit() -> void:
 func update_game_state(data) -> void:
 	if match_state.tutorial_mode:
 		return
+
+	_apply_spectator_mode(bool(data.get("spectator", NetworkManager.spectator_active)))
+	update_bot_insight(data)
 
 	if bool(data.get("snapshot", false)):
 		inventory.cancel_block_drag()
@@ -480,6 +498,61 @@ func update_game_state(data) -> void:
 	else:
 		summary.cancel_pending_level_summary()
 		summary.hide_level_summary()
+
+func _apply_spectator_mode(enabled: bool) -> void:
+	if inventory != null:
+		inventory.set_spectator_mode(enabled)
+	if summary != null:
+		summary.set_spectator_mode(enabled)
+	if enabled and popovers != null:
+		popovers.close_active()
+	if bot_insight_panel != null:
+		bot_insight_panel.visible = enabled
+	if bot_insight_button != null:
+		bot_insight_button.text = "Bot Insight: " + ("ON" if bot_insight_enabled else "OFF")
+	if not enabled and bot_insight_label != null:
+		bot_insight_label.text = ""
+
+func _on_bot_insight_toggle_pressed() -> void:
+	bot_insight_enabled = not bot_insight_enabled
+	if bot_insight_button != null:
+		bot_insight_button.text = "Bot Insight: " + ("ON" if bot_insight_enabled else "OFF")
+	if not bot_insight_enabled and bot_insight_label != null:
+		bot_insight_label.text = ""
+
+func update_bot_insight(data) -> void:
+	if not NetworkManager.spectator_active or bot_insight_label == null:
+		return
+
+	var insight_value = data.get("botInsight", null)
+	if not bot_insight_enabled or typeof(insight_value) != TYPE_DICTIONARY:
+		bot_insight_label.text = ""
+		return
+
+	bot_insight_label.text = format_bot_insight(insight_value as Dictionary)
+
+func format_bot_insight(insight: Dictionary) -> String:
+	var bot_id := str(insight.get("botId", "Bot"))
+	var bot_name: String = str(players_ctx.display_name(bot_id))
+	if bot_name == "":
+		bot_name = bot_id
+
+	var cue: String = bot_name + " · " + str(insight.get("personality", "bot")).capitalize()
+	var intent := str(insight.get("intent", ""))
+	if intent != "":
+		cue += ": " + intent
+	if insight.has("expectedPoints"):
+		cue += " · +" + str(roundi(float(insight.get("expectedPoints", 0))))
+	if insight.has("heightGain"):
+		cue += " · H+" + str(roundi(float(insight.get("heightGain", 0))))
+	if insight.has("stability"):
+		cue += " · S" + str(roundi(float(insight.get("stability", 0))))
+	if bool(insight.get("bad", false)):
+		cue += " · bad call"
+	elif bool(insight.get("risky", false)):
+		cue += " · risky"
+
+	return cue
 
 func update_debug_config(config) -> void:
 	debug_panel.apply_config(config)

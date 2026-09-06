@@ -131,6 +131,14 @@ async function handleMessage(player, message) {
         return;
     }
 
+    if (
+        player.isSpectator &&
+        data.type !== "resync_state" &&
+        data.type !== "leave_game"
+    ) {
+        return;
+    }
+
     if (data.type === "update_config") {
         await lobbyManager.updateDebugConfig(data.key, data.value);
         return;

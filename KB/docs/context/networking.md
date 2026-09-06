@@ -76,6 +76,20 @@ adjacent: ui.private-lobby.presentation
 Private-lobby transport loss unreaddies and reserves the seat through recovery/grace rather than replacing the player. Lobby state, deadlines, invite, host, and reserved-seat phases persist so the live owner can restore the lobby after hydration.
 
 <!-- kb
+id: network.room.bot-spectator
+alias: bot spectator launch
+alias: spectator_start_rejected
+source: src/Server/app/Server.js#handleMessage
+source: src/Server/app/Lobby_Manager.js#createBotSpectatorRoom
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#start_bot_spectator_match
+adjacent: backend.lobby.bot-spectator
+adjacent: ui.debug.entry
+-->
+## Bot spectator launch
+
+Debug-enabled clients request `bot_spectator` explicitly before ordinary participant seating and send exactly three independently configured profiles. The server validates and normalizes the launch, returns an explicit rejection for invalid or disabled entry, and creates the observer outside `room.players`. Participant-only placement, Power, chat, ready, kick, and debug-write messages cannot mutate a spectator room; resync and intentional leave remain available. Spectator identity is not saved for automatic recovery, and leaving retires the transient room.
+
+<!-- kb
 id: network.room.cross-pod
 alias: cross pod routing
 source: src/Server/app/Lobby_Manager.js#dispatchRoomAction
@@ -118,7 +132,7 @@ source: src/Server/app/Server.js#handleMessage
 -->
 ## Message families
 
-Server traffic is organized into session assignment, lobby lifecycle, complete `game_state`, validated `debug_config`, targeted `game_left`, and terminal `room_closed`. Client actions include reconnect/resync, lobby/leave actions, private host kick, placement, Power, quick chat, and debug update.
+Server traffic is organized into session assignment, lobby lifecycle, complete `game_state`, validated `debug_config`, targeted spectator launch rejection, targeted `game_left`, and terminal `room_closed`. Client actions include reconnect/resync, explicit bot-spectator launch, lobby/leave actions, private host kick, placement, Power, quick chat, and debug update.
 
 Stateful actions are validated against room, identity, current connection, lifecycle, cooldown, and domain rules.
 
@@ -159,7 +173,7 @@ adjacent: hud.controller.state-application
 -->
 ## Snapshot contract
 
-`game_state` is complete enough to redraw or resume the authoritative room without local gameplay reconstruction. It carries lifecycle/deadlines, grid and site, inventory/supply, tower lifecycle and support presentation, component summaries/pose, roster/scores, synchronized visual hooks, transient event arrays, side quest, summaries, and canonical Impact status.
+`game_state` is complete enough to redraw or resume the authoritative room without local gameplay reconstruction. It carries lifecycle/deadlines, grid and site, inventory/supply, tower lifecycle and support presentation, component summaries/pose, roster/scores, synchronized visual hooks, transient event arrays, side quest, summaries, and canonical Impact status. Observer delivery marks the spectator view and may add one transient bot insight; authoritative Level Summary may include compact bot behavior totals.
 
 <!-- kb
 id: network.state.grid-site
@@ -194,7 +208,7 @@ adjacent: backend.engine.power-events
 -->
 ## Transient events
 
-Score, chat, and Power events are id-deduplicated transient arrays. They are consumed after broadcast and are not persisted or replayed during recovery.
+Score, chat, and Power events are id-deduplicated transient arrays. They are consumed after broadcast and are not persisted or replayed during recovery. Bot insight is likewise observer-only and broadcast-local; a spectator resync deliberately sends it as null rather than replaying an earlier decision.
 
 <!-- kb
 id: network.state.revision

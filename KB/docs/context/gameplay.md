@@ -326,7 +326,20 @@ source: src/Server/app/Bot_Manager.js#startBots
 -->
 ## Cooperative bot behavior
 
-MVP-greedy behavior takes the best non-collapsing personal transaction. Cooperative behavior first stays near the best stability, then maximizes authoritative score. After satisfying its own Impact share it may prefer useful repair or wait so a short teammate can claim scarce Height. Zero-height repair is considered only while its support region remains in the normal active tower view.
+MVP-greedy and cooperative strategies remain compatibility modes. MVP-greedy takes the best non-collapsing personal transaction. Cooperative behavior first stays near the best stability, then maximizes authoritative score. After satisfying its own Impact share it may prefer useful repair or wait so a short teammate can claim scarce Height. Zero-height repair is considered only while its support region remains in the normal active tower view.
+
+<!-- kb
+id: gameplay.bots.personalities
+alias: bot personalities
+alias: Climber Engineer Opportunist
+source: src/Server/app/Bot_Manager.js#normalizeBotProfile
+source: src/Server/app/Bot_Manager.js#chooseBotAction
+adjacent: backend.bots.preview
+adjacent: gameplay.bots.calibration
+-->
+## Profile-driven bot behavior
+
+Climbers prioritize height and personal Impact progress, Engineers prioritize stability and repair, and Opportunists protect Impact viability before favoring high-value selfish gains. Reaction delay, skill/noise, risk tolerance, greed/cooperation, repair awareness, and Power use vary independently per bot. Collapse avoidance remains strong but not absolute, so a bounded low-skill or risk-driven mistake is possible while the server remains authoritative.
 
 <!-- kb
 id: gameplay.bots.calibration
@@ -338,4 +351,4 @@ adjacent: testing.balance.tools
 -->
 ## Bot calibration limit
 
-Bot candidate selection rejects collapsing moves, so simulated bot collapse rate cannot calibrate human stability difficulty. Use stability distributions and Impact outcomes for automated balance evidence, and use human playtests for messy gap-filling behavior.
+Profile-driven bots can make bounded imperfect or risky choices, so simulator collapse rate is an observation rather than a pass threshold or exact human calibration. Use stability distributions and Impact outcomes for automated balance evidence, and human playtests for messy gap-filling behavior.

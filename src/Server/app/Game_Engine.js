@@ -132,6 +132,11 @@ class GameEngine {
         ) + 1;
 
         const includeTransientEvents = options.includeTransientEvents !== false;
+        this.commitBotDecisionOutcomes();
+
+        const botInsight = includeTransientEvents
+            ? this.consumeBotInsight()
+            : null;
         const gameState = this.buildGameState({
             scoreEvents: includeTransientEvents ? this.consumeScoreEvents() : [],
             quickChatEvents: includeTransientEvents ? this.consumeQuickChatEvents() : [],
@@ -139,7 +144,7 @@ class GameEngine {
         });
 
         if (this.onRoomMessage) {
-            this.onRoomMessage(this.room.id, gameState);
+            this.onRoomMessage(this.room.id, gameState, { botInsight });
         }
 
         this.room.players.forEach(player => {
@@ -149,6 +154,10 @@ class GameEngine {
 
             player.ws.send(JSON.stringify(gameState));
         });
+
+        if (this.room.isSpectatorMatch && this.room.state === "game_completed") {
+            this.requestRoomClose("game_completed", "home");
+        }
     }
 
     createRoom(players) {
@@ -192,6 +201,10 @@ class GameEngine {
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
             pendingPowerEvents: [],
+            pendingBotInsight: null,
+            pendingBotDecisionOutcomes: {},
+            botDecisionSequence: 0,
+            botBehavior: {},
             sideQuest: null,
             criticalSaveClaimKeys: {},
             scoreEventSeq: 0
@@ -277,6 +290,10 @@ class GameEngine {
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
             pendingPowerEvents: [],
+            pendingBotInsight: null,
+            pendingBotDecisionOutcomes: {},
+            botDecisionSequence: 0,
+            botBehavior: {},
             sideQuest: snapshot.state.sideQuest || null,
             criticalSaveClaimKeys: snapshot.state.criticalSaveClaimKeys || {},
             scoreEventSeq: 0
@@ -368,6 +385,126 @@ class GameEngine {
         this.onLevelOutcome(outcome).catch(error => {
             console.error("Level outcome recording failed:", error.message);
         });
+    }
+
+    recordBotDecision(bot, decision) {
+        if (!this.room || !bot?.isBot || !decision || typeof decision !== "object") {
+            return;
+        }
+
+        const personality = ["climber", "engineer", "opportunist"].includes(
+            decision.personality
+        )
+            ? decision.personality
+            : bot.botProfile?.personality || "climber";
+        const normalized = {
+            personality,
+            intent: typeof decision.intent === "string" ? decision.intent : "wait",
+            expectedPoints: Math.max(0, Math.round(Number(decision.expectedPoints) || 0)),
+            heightGain: Math.max(0, Math.round(Number(decision.heightGain) || 0)),
+            stability: Math.max(0, Math.round(Number(decision.stability) || 0)),
+            risky: Boolean(decision.risky),
+            bad: Boolean(decision.bad)
+        };
+        const behavior = this.room.botBehavior || (this.room.botBehavior = {});
+        const botStats = behavior[bot.id] || (behavior[bot.id] = {
+            personality,
+            riskyDecisions: 0,
+            badDecisions: 0,
+            causedCollapse: 0,
+            waits: 0,
+            powerUses: 0,
+            criticalSaves: 0
+        });
+
+        botStats.personality = personality;
+        botStats.riskyDecisions += normalized.risky ? 1 : 0;
+        botStats.badDecisions += normalized.bad ? 1 : 0;
+        botStats.waits += normalized.intent === "wait" ? 1 : 0;
+
+        this.room.botDecisionSequence = Math.max(
+            0, Number(this.room.botDecisionSequence) || 0
+        ) + 1;
+        this.room.pendingBotInsight = {
+            sequence: this.room.botDecisionSequence,
+            botId: bot.id,
+            ...normalized
+        };
+        this.room.pendingBotDecisionOutcomes = this.room.pendingBotDecisionOutcomes || {};
+        this.room.pendingBotDecisionOutcomes[bot.id] = {
+            intent: normalized.intent,
+            fallenBlockIds: this.getFallenBlockIds(),
+            criticalSavePoints: Number(bot.scoreBreakdown?.criticalSave || 0),
+            powerInventoryCount: Array.isArray(bot.powerInventory)
+                ? bot.powerInventory.length
+                : 0
+        };
+
+        // A wait has no gameplay mutation to trigger the normal redraw boundary.
+        if (normalized.intent === "wait") {
+            this.broadcastGameState();
+        }
+    }
+
+    getFallenBlockIds() {
+        return new Set((this.room?.towerBlocks || []).flatMap(entry => {
+            if (entry?.towerState !== "fallen") {
+                return [];
+            }
+
+            const id = String(entry.block?.id ?? entry.blockId ?? "");
+            return id ? [id] : [];
+        }));
+    }
+
+    commitBotDecisionOutcomes() {
+        const outcomes = this.room?.pendingBotDecisionOutcomes;
+
+        if (!outcomes || typeof outcomes !== "object") {
+            return;
+        }
+
+        const fallenBlockIds = this.getFallenBlockIds();
+
+        Object.entries(outcomes).forEach(([botId, outcome]) => {
+            const bot = this.room.players.find(player => player.id === botId);
+            const stats = this.room.botBehavior?.[botId];
+
+            if (!bot || !stats) {
+                return;
+            }
+
+            if (
+                outcome.intent !== "wait" &&
+                [...fallenBlockIds].some(id => !outcome.fallenBlockIds.has(id))
+            ) {
+                stats.causedCollapse += 1;
+            }
+
+            if (Number(bot.scoreBreakdown?.criticalSave || 0) > outcome.criticalSavePoints) {
+                stats.criticalSaves += 1;
+            }
+
+            if (
+                outcome.intent === "power" &&
+                Array.isArray(bot.powerInventory) &&
+                bot.powerInventory.length < outcome.powerInventoryCount
+            ) {
+                stats.powerUses += 1;
+            }
+        });
+
+        this.room.pendingBotDecisionOutcomes = {};
+    }
+
+    consumeBotInsight() {
+        const insight = this.room?.pendingBotInsight || null;
+
+        if (this.room) {
+            this.room.pendingBotInsight = null;
+        }
+
+        return insight;
     }
 
     queueQuickChat(player, slot) {
@@ -537,6 +674,9 @@ class GameEngine {
         this.room.endsAt = this.room.startsAt + this.room.levelDurationMs;
         this.room.lastLevelSummary = null;
         this.room.pendingScoreEvents = this.room.pendingScoreEvents || [];
+        this.room.pendingBotInsight = null;
+        this.room.pendingBotDecisionOutcomes = {};
+        this.room.botBehavior = {};
         this.room.criticalSaveClaimKeys = {};
         this.setupSideQuest();
         this.grantDefaultPowers();
@@ -991,7 +1131,46 @@ class GameEngine {
     getPlayerScoreMap() { return Scoring.getPlayerScoreMap(this); }
     getTeamLevelScore() { return Scoring.getTeamLevelScore(this); }
     getPlayerBonusBreakdown(player) { return Scoring.getPlayerBonusBreakdown(this, player); }
-    buildLevelSummary(options) { return Scoring.buildLevelSummary(this, options); }
+    buildLevelSummary(options) {
+        this.commitBotDecisionOutcomes();
+        const summary = Scoring.buildLevelSummary(this, options);
+
+        if (!this.room.isSpectatorMatch) {
+            return summary;
+        }
+
+        const impactStatus = this.getImpactScoreStatus();
+
+        summary.botBehavior = this.room.players
+            .filter(player => player.isBot)
+            .map(player => {
+                const breakdown = player.scoreBreakdown || {};
+                const stats = this.room.botBehavior?.[player.id] || {};
+                const impactPlayer = impactStatus?.players?.find(candidate => {
+                    return candidate.id === player.id;
+                });
+
+                return {
+                    id: player.id,
+                    personality: stats.personality || player.botProfile?.personality || "climber",
+                    score: Number(player.score || 0),
+                    height: Number(player.contributedHeight || 0),
+                    recovery: Number(breakdown.recovery || 0),
+                    reinforcement: Number(breakdown.structural || 0),
+                    criticalSaves: Number(stats.criticalSaves || 0),
+                    impactContribution: Number(player.impactContribution || 0) +
+                        Number(player.levelImpactContribution || 0),
+                    impactMet: Boolean(impactPlayer?.met),
+                    riskyDecisions: Number(stats.riskyDecisions || 0),
+                    badDecisions: Number(stats.badDecisions || 0),
+                    causedCollapse: Number(stats.causedCollapse || 0),
+                    waits: Number(stats.waits || 0),
+                    powerUses: Number(stats.powerUses || 0)
+                };
+            });
+
+        return summary;
+    }
     recordScoreBreakdown(player, key, points) { return Scoring.recordScoreBreakdown(this, player, key, points); }
     getActionUnit(level) { return Scoring.getActionUnit(this, level); }
     getExpectedNormalUsefulScoreForLevel(level) { return Scoring.getExpectedNormalUsefulScoreForLevel(this, level); }

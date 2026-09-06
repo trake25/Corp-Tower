@@ -201,11 +201,13 @@ id: ui.debug.entry
 alias: debug button
 alias: debug panel entry
 source: src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd#toggle
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_toggle_home_spectator_setup
 adjacent: backend.lobby.debug-config
+adjacent: network.room.bot-spectator
 -->
 ## Debug entry
 
-The debug entry is build-gated and changes categories by screen: authentication controls on Sign-in, bots in lobby, and gameplay tuning in Play. Drag position persists within the intended app/room lifecycle. Client gating never replaces server authorization of debug writes.
+The floating debug entry is build-gated and context-sensitive. On Home it opens a compact Bot Spectator Match setup with mixed/single-personality presets, three independent personality selectors, and per-bot reaction, skill, risk, greed, repair, and Power traits. Sign-in authentication controls and participant Play tuning retain their existing contexts; spectator Play does not expose gameplay tuning. Drag position persists within the intended app/room lifecycle, and client gating never replaces server authorization.
 
 <!-- kb
 id: ui.constraint.scene-order

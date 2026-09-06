@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:131-146` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:131-148` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -33,7 +33,7 @@ Owner: `KB/docs/context/testing.md:105-108` → **Balance tools**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/tools/Balance_Run.js` | `planRun` | 73 | `sed -n 61,93p src/Server/tools/Balance_Run.js` |
-| `src/Server/tools/Balance_Simulator.js` | `simulateSmartPlay` | 105 | `sed -n 93,125p src/Server/tools/Balance_Simulator.js` |
+| `src/Server/tools/Balance_Simulator.js` | `simulateSmartPlay` | 145 | `sed -n 133,165p src/Server/tools/Balance_Simulator.js` |
 | `src/Server/tools/Stability_Probe.js` | `run` | 255 | `sed -n 243,275p src/Server/tools/Stability_Probe.js` |
 | `src/Server/tools/Impact_Balance_Probe.js` | `runImpactProbe` | 138 | `sed -n 126,158p src/Server/tools/Impact_Balance_Probe.js` |
 
@@ -77,7 +77,7 @@ Adjacent concepts: none
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:153-156` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:155-158` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -87,7 +87,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:166-169` → **Release gates**
+Owner: `KB/docs/context/testing.md:168-171` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

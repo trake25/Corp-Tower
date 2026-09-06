@@ -44,7 +44,7 @@ When all numbered design items are approved, proceed to `#PLAN-PHASE-1#`.
 
 Use for tooling, repository workflow, QA infrastructure, agent workflow, KB/retrieval systems, CI/build tooling, documentation systems, maintenance infrastructure, and other non-player-facing technical workflow work.
 
-Summarize intended behavior as technical product behavior, including only relevant inputs, outputs, ownership, deterministic behavior, failure/fallback handling, boundaries, safety, and security.
+Summarize intended behavior as technical product behavior, including only relevant inputs, outputs, deterministic behavior, failure/fallback handling, boundaries, safety, and security.
 
 When all numbered design items are approved, proceed to `#PLAN-PHASE-1#`.
 
@@ -73,7 +73,7 @@ Domain/task-scope knowledge comes from the KB Tree, never from runtime skills.
 Optional execution/process policy is selected only when it actually applies:
 - If the user requests process customization or "everything ON", read `policy/CODEX.md#PROCESS-ROUTER#`.
 - If a specific non-default process is enabled, read `policy/CODEX.md#PROCESS-ROUTER#` for its exact plan encoding, then read only that process's exact section.
-- If ORCHESTRATED execution is selected, read `policy/CODEX.md#ORCHESTRATION#` and the ownership section it requires.
+- If ORCHESTRATED execution is selected, read `policy/CODEX.md#ORCHESTRATION#`.
 - If strict execution is selected, read `policy/CODEX.md#STRICT-EXECUTION#`.
 
 A default-OFF process is absent from the Phase 2 plan and absent from Codex runtime context. Do not name, explain, disable, or route through an optional process merely because its tooling exists.
@@ -105,7 +105,7 @@ Plan archival is enabled by repository default. Treat it as a deterministic comp
 
 Use the default single-run shape unless semantic decomposition materially reduces reconstruction/integration risk enough to justify coordination.
 
-Select ORCHESTRATED only when that benefit is real. ORCHESTRATED requires the non-default ownership process; encode `task_ownership=ON` exactly once and compile the ownership and orchestration rules into the task plan. Do not enable any other optional process merely because orchestration is selected.
+Select ORCHESTRATED only when that benefit is real. Orchestration is a parent reasoning/execution shape, not a deterministic scope lifecycle. When selected, state `Execution shape: ORCHESTRATED` exactly once in `## 2. Task-Specific Policy` and compile only the orchestration rules needed for bounded worker decomposition, sequencing, handoffs, verification, and parent integration.
 
 ## Standard Phase 2 format
 

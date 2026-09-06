@@ -161,4 +161,37 @@ grow_horizontal = 1
 
 [node name="TutorialLayer" parent="." unique_id=950000001 instance=ExtResource("25_tutorial")]
 
+[node name="BotInsightPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 35
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+offset_left = 12.0
+offset_top = 2.0
+offset_right = -12.0
+offset_bottom = 44.0
+mouse_filter = 1
+
+[node name="Rows" type="HBoxContainer" parent="BotInsightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BotInsightLabel" type="Label" parent="BotInsightPanel/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.08, 0.08, 0.09, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+text_overrun_behavior = 3
+
+[node name="BotInsightButton" type="Button" parent="BotInsightPanel/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Bot Insight: ON"
+
 [node name="DebugLayer" parent="." unique_id=1157871814 instance=ExtResource("26_debug")]

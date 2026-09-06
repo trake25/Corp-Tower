@@ -15,7 +15,7 @@ Adjacent concepts: `network.session.identity`, `build.endpoint-auth.injection`
 
 ## ui.constraint.pointer-input
 
-Owner: `KB/docs/context/ui.md:225-228` → **Pointer pass-through**
+Owner: `KB/docs/context/ui.md:227-230` → **Pointer pass-through**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: none
 
 ## ui.constraint.rendered-verification
 
-Owner: `KB/docs/context/ui.md:236-239` → **Rendered verification**
+Owner: `KB/docs/context/ui.md:238-241` → **Rendered verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: `testing.client.rendered`
 
 ## ui.constraint.scene-order
 
-Owner: `KB/docs/context/ui.md:215-218` → **Scene text-format constraint**
+Owner: `KB/docs/context/ui.md:217-220` → **Scene text-format constraint**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,13 +56,14 @@ Adjacent concepts: none
 
 ## ui.debug.entry
 
-Owner: `KB/docs/context/ui.md:206-209` → **Debug entry**
+Owner: `KB/docs/context/ui.md:208-211` → **Debug entry**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` | `toggle` | 19 | `sed -n 7,21p src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 688 | `sed -n 676,708p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
-Adjacent concepts: `backend.lobby.debug-config`
+Adjacent concepts: `backend.lobby.debug-config`, `network.room.bot-spectator`
 
 ## ui.home.navigation
 
@@ -80,8 +81,8 @@ Owner: `KB/docs/context/ui.md:183-186` → **Server-driven navigation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_room_joined` | 103 | `sed -n 91,123p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `room_joined` | 63 | `sed -n 51,83p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_room_joined` | 136 | `sed -n 124,156p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `room_joined` | 68 | `sed -n 56,88p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `network.room.close`, `network.session.resume-only`
 
@@ -101,7 +102,7 @@ Owner: `KB/docs/context/ui.md:170-173` → **Active-match recovery**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_recovery_started` | 119 | `sed -n 107,139p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_recovery_started` | 152 | `sed -n 140,172p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `network.session.recovery`
 
@@ -170,7 +171,7 @@ Owner: `KB/docs/context/ui.md:12-15` → **Client shell**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/Main.tscn` | `Main` | 8 | `sed -n 1,28p src/Client/App/corp-tower/Cor/Scenes/Main.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_ready` | 45 | `sed -n 33,65p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_ready` | 77 | `sed -n 65,97p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: none
 
@@ -190,7 +191,7 @@ Owner: `KB/docs/context/ui.md:78-81` → **Startup restoration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_begin_authenticated_startup` | 88 | `sed -n 76,108p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_begin_authenticated_startup` | 121 | `sed -n 109,141p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `network.session.resume-only`, `ui.startup.splash`
 

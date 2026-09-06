@@ -47,6 +47,22 @@ adjacent: hud.placement.armed
 Parallel placement is an accessibility alternative to dragging: select a card, aim on the tower, then confirm the same resolved position. A changed aim updates preview rather than placing accidentally, and every broadcast revalidates the armed position because another player may fill it first.
 
 <!-- kb
+id: hud.spectator.presentation
+alias: spectator HUD
+alias: Bot Insight
+source: src/Client/App/corp-tower/Cor/Scripts/Main.gd#_apply_spectator_mode
+source: src/Client/App/corp-tower/Cor/Scripts/Main.gd#update_bot_insight
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd#set_spectator_mode
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#update_level_summary_bot_behavior
+adjacent: network.room.bot-spectator
+adjacent: hud.navigation.drop-top
+adjacent: hud.overlays.summary
+-->
+## Spectator presentation
+
+The spectator reuses ordinary Play rendering, automatic framing, collapse recovery, manual inspection, Drop, Top, and menu/leave navigation. Participant mutation controls and popovers are disabled or hidden without blocking view navigation. A toggleable compact Bot Insight presents only the latest observer-only decision cue, while authoritative Level Summary adds compact per-bot behavior totals.
+
+<!-- kb
 id: hud.players.presence
 alias: disconnected player UI
 alias: LEFT player
@@ -83,10 +99,11 @@ id: hud.overlays.summary
 alias: Level Summary
 alias: failure summary
 source: src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn#LevelSummaryOverlay
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#update_level_summary_bot_behavior
 -->
 ## Summary overlay
 
-Level Summary is a centered state overlay for completed, failed, and terminal outcomes. It composes player results, quest outcome, authoritative transition countdown, retry state on recoverable failure, and terminal return-to-Home countdown. Exact copy and measurements remain scene/controller details.
+Level Summary is a centered state overlay for completed, failed, and terminal outcomes. It composes player results, quest outcome, authoritative transition countdown, retry state on recoverable failure, and terminal return-to-Home countdown. Spectator summaries may additionally render the server's per-bot personality, scoring, height, repair/recovery, Impact, risk/mistake, collapse, wait, and Power totals. Exact copy and measurements remain scene/controller details.
 
 <!-- kb
 id: hud.overlays.score-popups

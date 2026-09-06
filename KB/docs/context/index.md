@@ -31,7 +31,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `automation.observability.flags` | [automation.md#workflow-inefficiency-flags](./automation.md#workflow-inefficiency-flags) | workflow candidate, inefficiency flag |
 | `automation.observability.usage` | [automation.md#observability-usage](./automation.md#observability-usage) | provider tokens, rollout usage |
 | `automation.orchestration.execution` | [automation.md#orchestrated-execution](./automation.md#orchestrated-execution) | orchestrated execution, multi-agent implementation |
-| `automation.orchestration.ownership` | [automation.md#orchestration-ownership](./automation.md#orchestration-ownership) | worker scope, parallel ownership |
+| `automation.orchestration.ownership` | [automation.md#orchestration-coordination](./automation.md#orchestration-coordination) | worker scope, parallel ownership |
 | `automation.planning.phase2` | [automation.md#phase-2-execution-handoff](./automation.md#phase-2-execution-handoff) | phase 2 execution handoff, execution-oriented plan |
 | `automation.retrieval.aliases` | [automation.md#retrieval-aliases](./automation.md#retrieval-aliases) | retrieval-aliases.json |
 | `automation.retrieval.bundle` | [automation.md#context-bundles](./automation.md#context-bundles) | context bundle |
@@ -54,7 +54,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `backend.authority.engine` | [backend.md#game-engine-boundary](./backend.md#game-engine-boundary) | Game Engine ownership |
 | `backend.authority.persistence` | [backend.md#persistence-ownership](./backend.md#persistence-ownership) | Redis ownership, room persistence authority |
 | `backend.authority.server` | [backend.md#server-authority](./backend.md#server-authority) | server authoritative |
-| `backend.bots.preview` | [backend.md#bot-preview](./backend.md#bot-preview) | Bot Manager, bot candidate preview |
+| `backend.bots.preview` | [backend.md#bot-profiles-and-preview](./backend.md#bot-profiles-and-preview) | Bot Manager, bot candidate preview, bot profiles |
 | `backend.config.values` | [backend.md#configuration-ownership](./backend.md#configuration-ownership) | Game Config, tuning values |
 | `backend.engine.last-chance` | [backend.md#last-chance-authority](./backend.md#last-chance-authority) | last chance |
 | `backend.engine.lifecycle` | [backend.md#engine-lifecycle](./backend.md#engine-lifecycle) | game state lifecycle |
@@ -66,6 +66,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `backend.impacts.requirement` | [backend.md#impact-authority](./backend.md#impact-authority) | Impacts.js, Impact status |
 | `backend.impacts.rollback` | [backend.md#impact-rollback](./backend.md#impact-rollback) | Impact rollback |
 | `backend.lobby.active-leave` | [backend.md#intentional-active-leave](./backend.md#intentional-active-leave) | leave game, active leave |
+| `backend.lobby.bot-spectator` | [backend.md#bot-spectator-rooms](./backend.md#bot-spectator-rooms) | bot spectator room, spectator room lifecycle |
 | `backend.lobby.close` | [backend.md#terminal-room-close](./backend.md#terminal-room-close) | room closed, room teardown |
 | `backend.lobby.connection` | [backend.md#session-connection-ownership](./backend.md#session-connection-ownership) | connection id ownership, superseded socket |
 | `backend.lobby.cross-pod` | [backend.md#cross-pod-ownership](./backend.md#cross-pod-ownership) | multi pod room, lease owner |
@@ -131,6 +132,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 |---|---|---|
 | `gameplay.bots.calibration` | [gameplay.md#bot-calibration-limit](./gameplay.md#bot-calibration-limit) | bot collapse rate, balance calibration |
 | `gameplay.bots.cooperative` | [gameplay.md#cooperative-bot-behavior](./gameplay.md#cooperative-bot-behavior) | cooperative bots, MVP greedy |
+| `gameplay.bots.personalities` | [gameplay.md#profile-driven-bot-behavior](./gameplay.md#profile-driven-bot-behavior) | bot personalities, Climber Engineer Opportunist |
 | `gameplay.bots.scoring` | [gameplay.md#bot-scoring-policy](./gameplay.md#bot-scoring-policy) | bot scoring, bot placement policy |
 | `gameplay.core.loop` | [gameplay.md#core-loop](./gameplay.md#core-loop) | selfish cooperation, core gameplay loop |
 | `gameplay.debug.last-chance` | [gameplay.md#last-chance](./gameplay.md#last-chance) | last chance power |
@@ -179,6 +181,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `hud.players.impact-bars` | [ui-hud.md#impact-bars](./ui-hud.md#impact-bars) | Impact progress, contribution bar |
 | `hud.players.latency` | [ui-hud.md#latency-presentation](./ui-hud.md#latency-presentation) | latency indicator |
 | `hud.players.presence` | [ui-hud.md#player-presence](./ui-hud.md#player-presence) | disconnected player UI, LEFT player |
+| `hud.spectator.presentation` | [ui-hud.md#spectator-presentation](./ui-hud.md#spectator-presentation) | spectator HUD, Bot Insight |
 | `hud.tower.collapse.presentation` | [ui-hud.md#collapse-presentation](./ui-hud.md#collapse-presentation) | tower collapse UI, collapse framing |
 | `hud.tower.collapse.recovery` | [ui-hud.md#collapse-recovery](./ui-hud.md#collapse-recovery) | collapse camera recovery, pan after collapse |
 | `hud.tower.fallen` | [ui-hud.md#fallen-bricks](./ui-hud.md#fallen-bricks) | collapse debris, fallen blocks |
@@ -196,6 +199,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `network.messages.latency` | [networking.md#latency-diagnostics](./networking.md#latency-diagnostics) | latency_ping, latency_pong, RTT |
 | `network.placement.contract` | [networking.md#placement-contract](./networking.md#placement-contract) | place_block, release row wire |
 | `network.room.active-leave` | [networking.md#active-leave](./networking.md#active-leave) | game_left, leave_game |
+| `network.room.bot-spectator` | [networking.md#bot-spectator-launch](./networking.md#bot-spectator-launch) | bot spectator launch, spectator_start_rejected |
 | `network.room.close` | [networking.md#room-close](./networking.md#room-close) | room_closed |
 | `network.room.cross-pod` | [networking.md#cross-pod-room-routing](./networking.md#cross-pod-room-routing) | cross pod routing |
 | `network.room.private` | [networking.md#private-lobby](./networking.md#private-lobby) | private lobby recovery, reserved seat |

@@ -3,14 +3,203 @@ const GameConfig =
 const TowerStability =
     require("./Tower_Stability");
 
+const MIN_REACTION_MS = 250;
+const MAX_REACTION_MS = 10000;
+
+const PERSONALITY_DEFAULTS = Object.freeze({
+    climber: Object.freeze({
+        personality: "climber",
+        reactionMs: 1400,
+        skill: 0.78,
+        riskTolerance: 0.45,
+        greed: 0.76,
+        repairAwareness: 0.32,
+        powerUse: 0.30
+    }),
+    engineer: Object.freeze({
+        personality: "engineer",
+        reactionMs: 1750,
+        skill: 0.86,
+        riskTolerance: 0.16,
+        greed: 0.30,
+        repairAwareness: 0.90,
+        powerUse: 0.46
+    }),
+    opportunist: Object.freeze({
+        personality: "opportunist",
+        reactionMs: 1250,
+        skill: 0.72,
+        riskTolerance: 0.58,
+        greed: 0.92,
+        repairAwareness: 0.43,
+        powerUse: 0.74
+    })
+});
+
+const LEGACY_PERSONALITIES = Object.freeze({
+    cooperative: "engineer",
+    mvp_greedy: "opportunist"
+});
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, Number(value)));
+}
+
+function clamp01(value, fallback) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? clamp(parsed, 0, 1) : fallback;
+}
+
+function isPersonality(value) {
+    return Object.prototype.hasOwnProperty.call(PERSONALITY_DEFAULTS, value);
+}
+
 class BotManager {
+
+    /**
+     * Returns an exact, match-local profile object.  Keep this as the public
+     * entry point for room creation so transport code never needs to know the
+     * profile defaults or bounds.
+     */
+    normalizeBotProfile(profile, fallbackPersonality = "climber") {
+        const requested = typeof profile === "string"
+            ? profile.toLowerCase()
+            : String(profile?.personality || "").toLowerCase();
+        const fallback = isPersonality(fallbackPersonality)
+            ? fallbackPersonality
+            : "climber";
+        const personality = isPersonality(requested)
+            ? requested
+            : LEGACY_PERSONALITIES[requested] || fallback;
+        const defaults = PERSONALITY_DEFAULTS[personality];
+        const source = profile && typeof profile === "object" ? profile : {};
+        const reactionMs = Number(source.reactionMs);
+
+        return {
+            personality: personality,
+            reactionMs: Number.isFinite(reactionMs)
+                ? Math.round(clamp(reactionMs, MIN_REACTION_MS, MAX_REACTION_MS))
+                : defaults.reactionMs,
+            skill: clamp01(source.skill, defaults.skill),
+            riskTolerance: clamp01(source.riskTolerance, defaults.riskTolerance),
+            greed: clamp01(source.greed, defaults.greed),
+            repairAwareness: clamp01(source.repairAwareness, defaults.repairAwareness),
+            powerUse: clamp01(source.powerUse, defaults.powerUse)
+        };
+    }
+
+    /**
+     * Stable default for a three-bot match.  Each call returns new objects so
+     * room-local profiles can never mutate a shared configuration value.
+     */
+    getDefaultBotProfiles() {
+        return ["climber", "engineer", "opportunist"].map(personality => {
+            return this.normalizeBotProfile(personality);
+        });
+    }
+
+    isCompleteBotProfile(profile) {
+        if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+            return false;
+        }
+
+        const personality = typeof profile.personality === "string"
+            ? profile.personality.toLowerCase()
+            : "";
+        const reactionMs = profile.reactionMs;
+        const traits = [
+            profile.skill,
+            profile.riskTolerance,
+            profile.greed,
+            profile.repairAwareness,
+            profile.powerUse
+        ];
+
+        return isPersonality(personality) &&
+            typeof reactionMs === "number" &&
+            Number.isFinite(reactionMs) &&
+            Number.isInteger(reactionMs) &&
+            reactionMs >= MIN_REACTION_MS &&
+            reactionMs <= MAX_REACTION_MS &&
+            traits.every(value => {
+                return typeof value === "number" &&
+                    Number.isFinite(value) &&
+                    value >= 0 &&
+                    value <= 1;
+            });
+    }
+
+    /**
+     * Strict lineup boundary used by the spectator entry and the simulator.
+     * It validates cardinality/personality and normalizes every public trait.
+     */
+    normalizeBotLineup(profiles, options = {}) {
+        if (!Array.isArray(profiles) || profiles.length !== 3) {
+            return null;
+        }
+
+        const requireCompleteProfiles = Boolean(options.requireCompleteProfiles);
+        const normalized = [];
+
+        for (const profile of profiles) {
+            if (requireCompleteProfiles && !this.isCompleteBotProfile(profile)) {
+                return null;
+            }
+
+            const requested = typeof profile === "string"
+                ? profile.toLowerCase()
+                : String(profile?.personality || "").toLowerCase();
+
+            if (!isPersonality(requested) && !LEGACY_PERSONALITIES[requested]) {
+                return null;
+            }
+
+            normalized.push(this.normalizeBotProfile(profile));
+        }
+
+        return normalized;
+    }
+
+    getBotProfile(bot, strategy = GameConfig.debugBotStrategy) {
+        if (bot?.botProfile) {
+            return this.normalizeBotProfile(bot.botProfile);
+        }
+
+        return this.normalizeBotProfile(strategy, "engineer");
+    }
+
+    isLegacyStrategy(strategy) {
+        return typeof strategy === "string" &&
+            Object.prototype.hasOwnProperty.call(LEGACY_PERSONALITIES, strategy);
+    }
+
+    getReactionDelay(bot) {
+        if (!bot?.botProfile) {
+            const min = Math.max(
+                MIN_REACTION_MS,
+                Math.floor(Number(GameConfig.debugBotDelayMin) || MIN_REACTION_MS)
+            );
+            const max = Math.max(
+                min,
+                Math.floor(Number(GameConfig.debugBotDelayMax) || min)
+            );
+
+            return min + Math.floor(Math.random() * (max - min + 1));
+        }
+
+        const profile = this.getBotProfile(bot);
+        const jitter = 0.85 + Math.random() * 0.30;
+
+        return Math.round(profile.reactionMs * jitter);
+    }
 
     startBots(engine) {
 
         this.stopBots(engine);
 
         if (
-            !GameConfig.debugBotsEnabled
+            !GameConfig.debugBotsEnabled &&
+            !engine.room?.players?.some(player => player.isBot && player.botProfile)
         ) {
             return;
         }
@@ -22,6 +211,10 @@ class BotManager {
                     !player.isBot
                 ) {
                     return;
+                }
+
+                if (player.botProfile) {
+                    player.botProfile = this.normalizeBotProfile(player.botProfile);
                 }
 
                 player.botLoopLevel = engine.room.level;
@@ -77,30 +270,7 @@ class BotManager {
         level
     ) {
 
-        const delay =
-
-            Math.floor(
-
-                Math.random()
-
-                *
-
-                (
-                    GameConfig
-                        .debugBotDelayMax
-
-                    -
-
-                    GameConfig
-                        .debugBotDelayMin
-                )
-
-            )
-
-            +
-
-            GameConfig
-                .debugBotDelayMin;
+        const delay = this.getReactionDelay(bot);
 
         bot.botTimer = setTimeout(() => {
 
@@ -111,7 +281,8 @@ class BotManager {
             }
 
             if (
-                !GameConfig.debugBotsEnabled
+                !GameConfig.debugBotsEnabled &&
+                !bot.botProfile
             ) {
                 return;
             }
@@ -148,7 +319,17 @@ class BotManager {
 
             const action = this.chooseBotAction(bot, engine);
 
+            if (typeof engine.recordBotDecision === "function" && action.decision) {
+                engine.recordBotDecision(bot, action.decision);
+            }
+
             if (action.type === "wait") {
+                this.runBotLoop(bot, engine, level);
+                return;
+            }
+
+            if (action.type === "power") {
+                engine.activatePower(bot.id, action.slot);
                 this.runBotLoop(bot, engine, level);
                 return;
             }
@@ -308,6 +489,76 @@ class BotManager {
         }, null);
     }
 
+    getPersonalityWeights(profile) {
+        if (profile.personality === "climber") {
+            return { height: 2.0, reinforce: 0.55, points: 0.7 };
+        }
+
+        if (profile.personality === "opportunist") {
+            return { height: 1.25, reinforce: 0.7, points: 1.55 };
+        }
+
+        return { height: 0.85, reinforce: 1.85, points: 1.0 };
+    }
+
+    scoreProfileCandidate(candidate, profile) {
+        const weights = this.getPersonalityWeights(profile);
+        const stability = Math.max(0, Number(candidate.stability) || 0);
+        const instability = Math.max(0, 100 - stability);
+        const reinforcement = Number(candidate.structuralPoints || 0) +
+            Number(candidate.criticalSavePoints || 0);
+        const collapsePenalty = candidate.collapsed
+            ? 420 + (1 - profile.riskTolerance) * 1080
+            : 0;
+        const stabilityWeight = 1.2 + (1 - profile.riskTolerance) * 2.8 +
+            profile.repairAwareness * 0.7;
+        const noiseRange = 3 + (1 - profile.skill) * 22;
+        const noise = (Math.random() - 0.5) * noiseRange;
+
+        return (
+            Number(candidate.points || 0) * (weights.points + profile.greed * 0.55) +
+            Number(candidate.heightGain || 0) * weights.height * (5 + profile.greed * 4) +
+            reinforcement * weights.reinforce * (0.6 + profile.repairAwareness * 1.4) +
+            stability * stabilityWeight -
+            instability * (1 - profile.riskTolerance) * 1.8 -
+            collapsePenalty +
+            noise
+        );
+    }
+
+    rankByProfile(candidates, profile) {
+        if (!candidates || candidates.length === 0) {
+            return null;
+        }
+
+        const ranked = candidates.map(candidate => {
+            return { ...candidate, profileScore: this.scoreProfileCandidate(candidate, profile) };
+        }).sort((left, right) => right.profileScore - left.profileScore);
+        const safe = ranked.filter(candidate => !candidate.collapsed);
+        const collapsed = ranked.filter(candidate => candidate.collapsed);
+        let pool = safe.length > 0 ? safe : collapsed;
+
+        // A collapse is a strongly disfavored error, not a bot-only impossibility.
+        if (safe.length > 0 && collapsed.length > 0) {
+            const unsafeLead = collapsed[0].profileScore - safe[0].profileScore;
+            const mistakeChance = (1 - profile.skill) *
+                (0.015 + profile.riskTolerance * 0.10);
+
+            if (unsafeLead > 0 && Math.random() < mistakeChance) {
+                pool = collapsed;
+            }
+        }
+
+        const errorChance = (1 - profile.skill) * 0.42;
+        const poolSize = Math.min(pool.length, 1 + Math.floor((1 - profile.skill) * 3));
+
+        if (poolSize > 1 && Math.random() < errorChance) {
+            return pool[Math.floor(Math.random() * poolSize)];
+        }
+
+        return pool[0];
+    }
+
     getActiveVisibleTowerFloor(engine) {
         const visibleRows = Math.max(
             1,
@@ -437,10 +688,6 @@ class BotManager {
         for (const candidate of survivors) {
             const result = TowerStability.evaluate(candidate.projected, stabilityConfig);
 
-            if (result.stability <= 0) {
-                continue;
-            }
-
             const placedEntry = candidate.projected[candidate.projected.length - 1];
             const transaction = engine.previewPlacementScore({
                 block,
@@ -457,40 +704,140 @@ class BotManager {
                 originY: candidate.originY,
                 heightGain: candidate.heightGain,
                 stability: result.stability,
-                points: transaction.points
+                points: transaction.points,
+                structuralPoints: transaction.structuralPoints,
+                criticalSavePoints: transaction.criticalSavePoints,
+                heightPoints: transaction.heightPoints,
+                criticalSave: Boolean(transaction.criticalSave),
+                riskIncrease: Number(transaction.assessment?.riskIncrease || 0),
+                collapsed: Boolean(transaction.collapse || result.stability <= 0)
             });
         }
 
-        return this.rankByStrategy(scored, strategy);
+        if (this.isLegacyStrategy(strategy)) {
+            return this.rankByStrategy(
+                scored.filter(candidate => !candidate.collapsed),
+                strategy
+            );
+        }
+
+        return this.rankByProfile(
+            scored,
+            this.normalizeBotProfile(strategy, "engineer")
+        );
+    }
+
+    buildDecision(profile, intent, engine, candidate = null) {
+        const stability = candidate?.stability ?? engine.room?.towerStability ?? 100;
+
+        return {
+            personality: profile.personality,
+            intent: intent,
+            expectedPoints: Math.max(0, Math.round(Number(candidate?.points || 0))),
+            heightGain: Math.max(0, Math.round(Number(candidate?.heightGain || 0))),
+            stability: Math.max(0, Math.round(Number(stability) || 0)),
+            risky: Boolean(candidate?.collapsed || candidate?.risky ||
+                Number(candidate?.riskIncrease || 0) > 0),
+            bad: Boolean(candidate?.collapsed || candidate?.bad ||
+                (candidate && Number(candidate.points || 0) <= 0))
+        };
+    }
+
+    buildPlacementAction(profile, engine, candidate) {
+        const intent = candidate.criticalSave
+            ? "critical_save"
+            : candidate.heightGain > 0
+                ? "height"
+                : "reinforce";
+
+        return {
+            type: "place",
+            blockIndex: candidate.blockIndex,
+            column: candidate.column,
+            originY: candidate.originY,
+            decision: this.buildDecision(profile, intent, engine, candidate)
+        };
+    }
+
+    choosePowerSlot(bot, engine, profile) {
+        if (engine.room?.state !== "playing" || !Array.isArray(bot.powerInventory)) {
+            return -1;
+        }
+
+        const remainingMs = typeof engine.getRemainingMs === "function"
+            ? engine.getRemainingMs()
+            : Infinity;
+        const critical = Number(engine.room.towerStability || 100) <=
+            Number(GameConfig.towerStabilityCriticalThreshold || 0);
+        const chance = profile.powerUse * (critical ? 0.48 : 0.08);
+
+        if (remainingMs <= 3000 || Math.random() >= chance) {
+            return -1;
+        }
+
+        return bot.powerInventory.findIndex(item => item);
+    }
+
+    shouldRiskCollapse(candidate, profile) {
+        if (!candidate?.collapsed) {
+            return true;
+        }
+
+        const errorChance = (0.005 + profile.riskTolerance * 0.025) *
+            (1 - profile.skill * 0.5);
+
+        return Math.random() < errorChance;
     }
 
     chooseBotAction(bot, engine, strategy = GameConfig.debugBotStrategy) {
+        const profile = this.getBotProfile(bot, strategy);
+        const selectionStrategy = bot?.botProfile
+            ? profile
+            : strategy;
         const remainingHeight = Math.max(
             0, engine.room.targetHeight - engine.room.currentHeight
         );
         const blocks = bot.blocks || [];
+
+        const powerSlot = this.choosePowerSlot(bot, engine, profile);
+
+        if (powerSlot >= 0) {
+            return {
+                type: "power",
+                slot: powerSlot,
+                decision: this.buildDecision(profile, "power", engine)
+            };
+        }
 
         const exactIndex = blocks.findIndex(block => {
             return engine.getBlockHeight(block) === remainingHeight;
         });
 
         if (exactIndex >= 0) {
-            const placement = this.chooseBotPlacement(engine, blocks[exactIndex], strategy);
+            const placement = this.chooseBotPlacement(
+                engine, blocks[exactIndex], selectionStrategy
+            );
 
             if (placement) {
-                return {
-                    type: "place",
-                    blockIndex: exactIndex,
-                    column: placement.column,
-                    originY: placement.originY
-                };
+                if (!this.isLegacyStrategy(selectionStrategy) &&
+                    !this.shouldRiskCollapse(placement, profile)) {
+                    return {
+                        type: "wait",
+                        decision: this.buildDecision(profile, "wait", engine)
+                    };
+                }
+
+                return this.buildPlacementAction(profile, engine, {
+                    ...placement,
+                    blockIndex: exactIndex
+                });
             }
         }
 
         const pairs = [];
 
         blocks.forEach((block, index) => {
-            const placement = this.chooseBotPlacement(engine, block, strategy);
+            const placement = this.chooseBotPlacement(engine, block, selectionStrategy);
 
             if (placement) {
                 pairs.push({ ...placement, blockIndex: index });
@@ -498,39 +845,64 @@ class BotManager {
         });
 
         if (
-            strategy !== "mvp_greedy" &&
+            (!this.isLegacyStrategy(selectionStrategy) || selectionStrategy !== "mvp_greedy") &&
             remainingHeight > 0 &&
-            this.hasClearedShareWhileTeammateShort(bot, engine)
+            this.hasClearedShareWhileTeammateShort(bot, engine) &&
+            (this.isLegacyStrategy(selectionStrategy) ||
+                Math.random() < this.getCooperationChance(profile))
         ) {
             const repairs = pairs.filter(pair => {
                 return pair.heightGain === 0 && pair.points > 0;
             });
-            const bestRepair = this.rankByStrategy(repairs, strategy);
+            const bestRepair = this.isLegacyStrategy(selectionStrategy)
+                ? this.rankByStrategy(repairs, selectionStrategy)
+                : this.rankByProfile(repairs, profile);
 
             if (bestRepair) {
-                return {
-                    type: "place",
-                    blockIndex: bestRepair.blockIndex,
-                    column: bestRepair.column,
-                    originY: bestRepair.originY
-                };
+                return this.buildPlacementAction(profile, engine, bestRepair);
             }
 
-            return { type: "wait" };
+            return {
+                type: "wait",
+                decision: this.buildDecision(profile, "wait", engine)
+            };
         }
 
-        const best = this.rankByStrategy(pairs, strategy);
+        const best = this.isLegacyStrategy(selectionStrategy)
+            ? this.rankByStrategy(pairs, selectionStrategy)
+            : this.rankByProfile(pairs, profile);
 
         if (!best) {
-            return { type: "wait" };
+            return {
+                type: "wait",
+                decision: this.buildDecision(profile, "wait", engine)
+            };
         }
 
-        return {
-            type: "place",
-            blockIndex: best.blockIndex,
-            column: best.column,
-            originY: best.originY
-        };
+        if (!this.isLegacyStrategy(selectionStrategy) &&
+            !this.shouldRiskCollapse(best, profile)) {
+            return {
+                type: "wait",
+                decision: this.buildDecision(profile, "wait", engine)
+            };
+        }
+
+        return this.buildPlacementAction(profile, engine, best);
+    }
+
+    getCooperationChance(profile) {
+        if (profile.personality === "engineer") {
+            return Math.min(1, 0.25 + profile.repairAwareness * 0.75);
+        }
+
+        if (profile.personality === "climber") {
+            return Math.min(1, 0.08 + profile.repairAwareness * 0.20);
+        }
+
+        return Math.min(
+            1,
+            0.05 + (1 - profile.greed) * 0.25 + profile.repairAwareness * 0.10
+        );
     }
 
 }

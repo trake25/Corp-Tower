@@ -5,12 +5,12 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## gameplay.bots.calibration
 
-Owner: `KB/docs/context/gameplay.md:339-342` → **Bot calibration limit**
+Owner: `KB/docs/context/gameplay.md:352-355` → **Bot calibration limit**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 467 | `sed -n 455,487p src/Server/app/Bot_Manager.js` |
-| `src/Server/tools/Balance_Simulator.js` | `simulateSmartPlay` | 105 | `sed -n 93,125p src/Server/tools/Balance_Simulator.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 792 | `sed -n 780,812p src/Server/app/Bot_Manager.js` |
+| `src/Server/tools/Balance_Simulator.js` | `simulateSmartPlay` | 145 | `sed -n 133,165p src/Server/tools/Balance_Simulator.js` |
 
 Adjacent concepts: `testing.balance.tools`
 
@@ -20,9 +20,20 @@ Owner: `KB/docs/context/gameplay.md:327-330` → **Cooperative bot behavior**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `startBots` | 8 | `sed -n 1,28p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `startBots` | 196 | `sed -n 184,216p src/Server/app/Bot_Manager.js` |
 
 Adjacent concepts: none
+
+## gameplay.bots.personalities
+
+Owner: `KB/docs/context/gameplay.md:340-343` → **Profile-driven bot behavior**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `src/Server/app/Bot_Manager.js` | `normalizeBotProfile` | 64 | `sed -n 52,84p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 792 | `sed -n 780,812p src/Server/app/Bot_Manager.js` |
+
+Adjacent concepts: `backend.bots.preview`, `gameplay.bots.calibration`
 
 ## gameplay.bots.scoring
 
@@ -30,7 +41,7 @@ Owner: `KB/docs/context/gameplay.md:317-320` → **Bot scoring policy**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 467 | `sed -n 455,487p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 792 | `sed -n 780,812p src/Server/app/Bot_Manager.js` |
 
 Adjacent concepts: `backend.bots.preview`
 
@@ -40,7 +51,7 @@ Owner: `KB/docs/context/gameplay.md:13-18` → **Core loop**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `startLevel` | 513 | `sed -n 501,533p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `startLevel` | 650 | `sed -n 638,670p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.impact.requirement`, `gameplay.progression.failure`
 
@@ -103,7 +114,7 @@ Owner: `KB/docs/context/gameplay.md:73-76` → **Power inventory**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `clonePowerInventory` | 420 | `sed -n 408,440p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `clonePowerInventory` | 557 | `sed -n 545,577p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Impacts.js` | `saveImpactPowers` | 16 | `sed -n 4,36p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.progression.rollback`
@@ -114,7 +125,7 @@ Owner: `KB/docs/context/gameplay.md:85-88` → **Replenish**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `activatePower` | 451 | `sed -n 439,471p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `activatePower` | 588 | `sed -n 576,608p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Block_Supply.js` | `generateReplenishBlocks` | 424 | `sed -n 412,444p src/Server/app/engine/Block_Supply.js` |
 
 Adjacent concepts: `gameplay.supply.reserve`
@@ -125,7 +136,7 @@ Owner: `KB/docs/context/gameplay.md:166-169` → **Failure rules**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `failLevel` | 913 | `sed -n 901,933p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `failLevel` | 1053 | `sed -n 1041,1073p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Placement.js` | `checkFailCondition` | 405 | `sed -n 393,425p src/Server/app/engine/Placement.js` |
 | `src/Server/app/engine/Impacts.js` | `resolveCheckpointFailure` | 400 | `sed -n 388,420p src/Server/app/engine/Impacts.js` |
 
@@ -148,7 +159,7 @@ Owner: `KB/docs/context/gameplay.md:151-154` → **Round timing**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Game_Config.js` | `GameConfig` | 1 | `sed -n 1,21p src/Server/app/Game_Config.js` |
-| `src/Server/app/Game_Engine.js` | `getLevelTimeLimitMs` | 686 | `sed -n 674,706p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `getLevelTimeLimitMs` | 826 | `sed -n 814,846p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `backend.engine.timers`, `network.session.recovery`
 
@@ -219,7 +230,7 @@ Owner: `KB/docs/context/gameplay.md:26-29` → **Reconnect meaning**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `resumePlayer` | 290 | `sed -n 278,310p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `resumePlayer` | 329 | `sed -n 317,349p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.session.recovery`
 

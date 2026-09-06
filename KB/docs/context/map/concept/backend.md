@@ -19,7 +19,7 @@ Owner: `KB/docs/context/backend.md:32-35` → **Persistence ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 2320 | `sed -n 2308,2340p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 2499 | `sed -n 2487,2519p src/Server/app/Lobby_Manager.js` |
 | `src/Server/app/Redis_State.js` | `saveRoom` | 542 | `sed -n 530,562p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.redis.leases`
@@ -36,17 +36,18 @@ Adjacent concepts: `network.adapters.boundaries`
 
 ## backend.bots.preview
 
-Owner: `KB/docs/context/backend.md:287-290` → **Bot preview**
+Owner: `KB/docs/context/backend.md:303-306` → **Bot profiles and preview**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 467 | `sed -n 455,487p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `normalizeBotProfile` | 64 | `sed -n 52,84p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 792 | `sed -n 780,812p src/Server/app/Bot_Manager.js` |
 
-Adjacent concepts: `gameplay.bots.scoring`
+Adjacent concepts: `gameplay.bots.scoring`, `gameplay.bots.personalities`
 
 ## backend.config.values
 
-Owner: `KB/docs/context/backend.md:297-300` → **Configuration ownership**
+Owner: `KB/docs/context/backend.md:313-316` → **Configuration ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,7 +57,7 @@ Adjacent concepts: none
 
 ## backend.engine.last-chance
 
-Owner: `KB/docs/context/backend.md:184-187` → **Last Chance authority**
+Owner: `KB/docs/context/backend.md:197-200` → **Last Chance authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -66,17 +67,17 @@ Adjacent concepts: `gameplay.debug.last-chance`
 
 ## backend.engine.lifecycle
 
-Owner: `KB/docs/context/backend.md:149-152` → **Engine lifecycle**
+Owner: `KB/docs/context/backend.md:162-165` → **Engine lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `startLevel` | 513 | `sed -n 501,533p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `startLevel` | 650 | `sed -n 638,670p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.snapshot`
 
 ## backend.engine.placement
 
-Owner: `KB/docs/context/backend.md:172-177` → **Placement authority**
+Owner: `KB/docs/context/backend.md:185-190` → **Placement authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -86,27 +87,27 @@ Adjacent concepts: `gameplay.tower.placement`, `network.placement.contract`
 
 ## backend.engine.power-events
 
-Owner: `KB/docs/context/backend.md:195-198` → **Power events**
+Owner: `KB/docs/context/backend.md:208-211` → **Power events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `activatePower` | 451 | `sed -n 439,471p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `activatePower` | 588 | `sed -n 576,608p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.transient-events`
 
 ## backend.engine.timers
 
-Owner: `KB/docs/context/backend.md:160-163` → **Engine timers**
+Owner: `KB/docs/context/backend.md:173-176` → **Engine timers**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 300 | `sed -n 288,320p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 317 | `sed -n 305,337p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.progression.timing`
 
 ## backend.identity.auth
 
-Owner: `KB/docs/context/backend.md:114-117` → **Identity verification**
+Owner: `KB/docs/context/backend.md:127-130` → **Identity verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -116,7 +117,7 @@ Adjacent concepts: `network.session.identity`
 
 ## backend.identity.profile
 
-Owner: `KB/docs/context/backend.md:125-128` → **Durable profiles**
+Owner: `KB/docs/context/backend.md:138-141` → **Durable profiles**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -127,7 +128,7 @@ Adjacent concepts: none
 
 ## backend.impacts.requirement
 
-Owner: `KB/docs/context/backend.md:228-231` → **Impact authority**
+Owner: `KB/docs/context/backend.md:241-244` → **Impact authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -137,7 +138,7 @@ Adjacent concepts: `gameplay.impact.requirement`, `network.state.impact-status`
 
 ## backend.impacts.rollback
 
-Owner: `KB/docs/context/backend.md:238-241` → **Impact rollback**
+Owner: `KB/docs/context/backend.md:251-254` → **Impact rollback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -147,21 +148,32 @@ Adjacent concepts: `gameplay.progression.rollback`
 
 ## backend.lobby.active-leave
 
-Owner: `KB/docs/context/backend.md:102-105` → **Intentional active leave**
+Owner: `KB/docs/context/backend.md:115-118` → **Intentional active leave**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 1990 | `sed -n 1978,2010p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 2143 | `sed -n 2131,2163p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.room.active-leave`
 
-## backend.lobby.close
+## backend.lobby.bot-spectator
 
-Owner: `KB/docs/context/backend.md:91-94` → **Terminal room close**
+Owner: `KB/docs/context/backend.md:80-83` → **Bot spectator rooms**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `closeRoom` | 991 | `sed -n 979,1011p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 1822 | `sed -n 1810,1842p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `closeRoom` | 1038 | `sed -n 1026,1058p src/Server/app/Lobby_Manager.js` |
+
+Adjacent concepts: `network.room.bot-spectator`, `backend.bots.preview`
+
+## backend.lobby.close
+
+Owner: `KB/docs/context/backend.md:104-107` → **Terminal room close**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `src/Server/app/Lobby_Manager.js` | `closeRoom` | 1038 | `sed -n 1026,1058p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.room.close`
 
@@ -171,30 +183,30 @@ Owner: `KB/docs/context/backend.md:44-47` → **Session connection ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `isCurrentPlayerConnection` | 164 | `sed -n 152,184p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `isCurrentPlayerConnection` | 185 | `sed -n 173,205p src/Server/app/Lobby_Manager.js` |
 | `src/Server/app/Redis_State.js` | `isCurrentSessionConnection` | 425 | `sed -n 413,445p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `network.session.supersession`
 
 ## backend.lobby.cross-pod
 
-Owner: `KB/docs/context/backend.md:80-83` → **Cross-pod ownership**
+Owner: `KB/docs/context/backend.md:93-96` → **Cross-pod ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 2588 | `sed -n 2576,2608p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 2767 | `sed -n 2755,2787p src/Server/app/Lobby_Manager.js` |
 | `src/Server/app/Redis_State.js` | `claimRoomLease` | 581 | `sed -n 569,601p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.redis.leases`, `network.room.cross-pod`
 
 ## backend.lobby.debug-config
 
-Owner: `KB/docs/context/backend.md:137-142` → **Debug configuration**
+Owner: `KB/docs/context/backend.md:150-155` → **Debug configuration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Debug_Config.js` | `applyValue` | 130 | `sed -n 118,150p src/Server/app/Debug_Config.js` |
-| `src/Server/app/Lobby_Manager.js` | `updateDebugConfig` | 1190 | `sed -n 1178,1210p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `updateDebugConfig` | 1260 | `sed -n 1248,1280p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `gameplay.debug.tuning`
 
@@ -204,7 +216,7 @@ Owner: `KB/docs/context/backend.md:67-70` → **Private rooms**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `createPrivateRoom` | 1357 | `sed -n 1345,1377p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `createPrivateRoom` | 1447 | `sed -n 1435,1467p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.room.private`
 
@@ -214,25 +226,25 @@ Owner: `KB/docs/context/backend.md:56-59` → **Public matchmaking**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `joinOrCreateRoom` | 1345 | `sed -n 1333,1365p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `joinOrCreateRoom` | 1435 | `sed -n 1423,1455p src/Server/app/Lobby_Manager.js` |
 | `src/Server/app/Redis_State.js` | `withMatchmakingLock` | 516 | `sed -n 504,536p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `network.room.public`
 
 ## backend.redis.hydration
 
-Owner: `KB/docs/context/backend.md:320-323` → **Hydration continuity**
+Owner: `KB/docs/context/backend.md:336-339` → **Hydration continuity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Redis_State.js` | `saveRoom` | 542 | `sed -n 530,562p src/Server/app/Redis_State.js` |
-| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 2320 | `sed -n 2308,2340p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 2499 | `sed -n 2487,2519p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.state.snapshot`
 
 ## backend.redis.leases
 
-Owner: `KB/docs/context/backend.md:308-311` → **Redis leases**
+Owner: `KB/docs/context/backend.md:324-327` → **Redis leases**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -242,7 +254,7 @@ Adjacent concepts: `backend.lobby.cross-pod`
 
 ## backend.scoring.transaction
 
-Owner: `KB/docs/context/backend.md:216-219` → **Scoring transaction**
+Owner: `KB/docs/context/backend.md:229-232` → **Scoring transaction**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -252,7 +264,7 @@ Adjacent concepts: `gameplay.scoring.transaction`
 
 ## backend.stability.analysis
 
-Owner: `KB/docs/context/backend.md:249-256` → **Support graph**
+Owner: `KB/docs/context/backend.md:262-269` → **Support graph**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -262,7 +274,7 @@ Adjacent concepts: `gameplay.tower.stability`
 
 ## backend.stability.collapse
 
-Owner: `KB/docs/context/backend.md:266-269` → **Collapse authority**
+Owner: `KB/docs/context/backend.md:279-282` → **Collapse authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -273,7 +285,7 @@ Adjacent concepts: `hud.tower.collapse.presentation`, `gameplay.progression.fail
 
 ## backend.stability.pose
 
-Owner: `KB/docs/context/backend.md:276-279` → **Structural pose**
+Owner: `KB/docs/context/backend.md:289-292` → **Structural pose**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -283,7 +295,7 @@ Adjacent concepts: `hud.tower.pose`
 
 ## backend.supply.authority
 
-Owner: `KB/docs/context/backend.md:205-208` → **Supply authority**
+Owner: `KB/docs/context/backend.md:218-221` → **Supply authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

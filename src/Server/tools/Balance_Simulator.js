@@ -4,6 +4,14 @@ const GameConfig = require("../app/Game_Config");
 const BotManager = require("../app/Bot_Manager");
 
 const STRATEGIES = ["cooperative", "mvp_greedy"];
+const LINEUP_PRESETS = Object.freeze({
+    mixed: ["climber", "engineer", "opportunist"],
+    climbers: ["climber", "climber", "climber"],
+    engineers: ["engineer", "engineer", "engineer"],
+    opportunists: ["opportunist", "opportunist", "opportunist"],
+    cooperative: ["engineer", "engineer", "engineer"],
+    mvp_greedy: ["opportunist", "opportunist", "opportunist"]
+});
 
 const DEFAULT_LEVELS = 20;
 const DEFAULT_RUNS = 100;
@@ -11,19 +19,47 @@ const DEFAULT_RUNS = 100;
 const SWEEP_DIFFICULTIES = [0, 5, 25, 50, 75, 100];
 const SWEEP_LEVEL_STEP = 5;
 
-function createPlayers() {
-    return [
-        { id: "P1", score: 0 },
-        { id: "P2", score: 0 },
-        { id: "P3", score: 0 }
-    ];
+function resolveSimulatorLineup(lineup = "cooperative") {
+    if (Array.isArray(lineup)) {
+        return BotManager.normalizeBotLineup(lineup);
+    }
+
+    const key = String(lineup || "cooperative").toLowerCase();
+    const preset = LINEUP_PRESETS[key];
+
+    return preset ? BotManager.normalizeBotLineup(preset) : null;
 }
 
-function createEngineForLevel(level) {
+function getLineupLabel(lineup) {
+    if (Array.isArray(lineup)) {
+        return "custom";
+    }
+
+    return String(lineup || "cooperative").toLowerCase();
+}
+
+function createPlayers(lineup = BotManager.getDefaultBotProfiles()) {
+    return lineup.map((profile, index) => {
+        return {
+            id: `P${index + 1}`,
+            score: 0,
+            isBot: true,
+            botProfile: profile
+        };
+    });
+}
+
+function createEngineForLevel(level, lineup = "cooperative") {
+    const profiles = resolveSimulatorLineup(lineup);
+
+    if (!profiles) {
+        throw new Error("Balance Simulator requires a mixed, all-one, legacy, or custom three-profile lineup");
+    }
+
     const engine = new GameEngine();
 
     withMutedConsole(() => {
-        engine.createRoom(createPlayers());
+        engine.createRoom(createPlayers(profiles));
         engine.room.level = level;
         engine.room.impactLevel = level;
         engine.room.targetHeight = engine.getTargetHeightForLevel(level);
@@ -85,6 +121,10 @@ function chooseSmartPlacement(engine, strategy, actor) {
 
     if (action && action.type === "wait") {
         return { waiting: true, player: actor };
+    }
+
+    if (action && action.type === "power") {
+        return { power: true, player: actor, slot: action.slot };
     }
 
     const blockIndex = Number(action?.blockIndex ?? 0);
@@ -200,6 +240,17 @@ function simulateSmartPlay(engine, strategy) {
             : 0;
     };
 
+    const lineup = resolveSimulatorLineup(strategy || "cooperative");
+
+    if (!lineup) {
+        throw new Error("Balance Simulator requires a mixed, all-one, legacy, or custom three-profile lineup");
+    }
+
+    engine.room.players.forEach((player, index) => {
+        player.isBot = true;
+        player.botProfile = lineup[index];
+    });
+
     const cooldown = Math.max(0, Number(GameConfig.placementCooldown) || 0);
     const timeLimit = Math.max(1, engine.getLevelTimeLimitMs());
     let clock = 0;
@@ -227,9 +278,17 @@ function simulateSmartPlay(engine, strategy) {
             return outcome({ starved: true });
         }
 
-        actor.player.simReadyAt = clock + cooldown;
+        const profile = BotManager.getBotProfile(actor.player, strategy);
+        actor.player.simReadyAt = clock + Math.max(cooldown, profile.reactionMs);
 
         if (placement.waiting) {
+            continue;
+        }
+
+        if (placement.power) {
+            if (engine.room.state === "playing") {
+                engine.activatePower(placement.player.id, placement.slot);
+            }
             continue;
         }
 
@@ -352,6 +411,12 @@ function meetsImpactGate(engine) {
 }
 
 function runLevel(level, runs, strategy = "cooperative") {
+    const lineup = resolveSimulatorLineup(strategy);
+
+    if (!lineup) {
+        throw new Error("Balance Simulator requires a mixed, all-one, legacy, or custom three-profile lineup");
+    }
+
     const stats = {
         targetHeight: 0,
         averagePileBlocks: 0,
@@ -404,14 +469,14 @@ function runLevel(level, runs, strategy = "cooperative") {
     };
 
     for (let i = 0; i < runs; i++) {
-        const engine = createEngineForLevel(level);
+        const engine = createEngineForLevel(level, lineup);
         const allBlocks = [
             ...engine.room.drawPile,
             ...engine.room.players.flatMap(player => player.blocks || [])
         ];
         const drawPileAfterDeal = engine.room.drawPile.length;
         const totalHeight = engine.getTotalBlockHeight(allBlocks);
-        const result = withMutedConsole(() => simulateSmartPlay(engine, strategy));
+        const result = withMutedConsole(() => simulateSmartPlay(engine, lineup));
 
         stats.targetHeight = engine.room.targetHeight;
         stats.averagePileBlocks += allBlocks.length;
@@ -481,7 +546,8 @@ function runLevel(level, runs, strategy = "cooperative") {
 
     return {
         level: level,
-        strategy: strategy,
+        strategy: getLineupLabel(strategy),
+        lineup: lineup.map(profile => profile.personality),
         difficulty: Number(GameConfig.towerStabilityDifficulty) || 0,
         averageStability: perSample(stats.stabilitySum),
         minStability: stats.minStability,
@@ -742,6 +808,7 @@ function main() {
     const sweep = process.argv[2] === "sweep";
     const levels = Number(process.argv[sweep ? 3 : 2]) || DEFAULT_LEVELS;
     const runs = Number(process.argv[sweep ? 4 : 3]) || DEFAULT_RUNS;
+    const lineup = process.argv[sweep ? 5 : 4] || null;
 
     if (sweep) {
         printStabilityResults(
@@ -752,7 +819,7 @@ function main() {
 
     const results = [];
 
-    for (const strategy of STRATEGIES) {
+    for (const strategy of lineup ? [lineup] : STRATEGIES) {
         for (let level = 1; level <= levels; level++) {
             results.push(runLevel(level, runs, strategy));
         }
@@ -770,6 +837,7 @@ module.exports = {
     runSweep,
     createEngineForLevel,
     simulateSmartPlay,
+    resolveSimulatorLineup,
     percentile,
     withMutedConsole
 };

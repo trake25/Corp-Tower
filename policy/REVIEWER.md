@@ -35,7 +35,7 @@ Reconstruct only the minimum review contract needed from current repository evid
 
 Use `KB/docs/context/index.md` for repository contextualization. Read only the required concept evidence. Return to the KB router whenever another concept is needed.
 
-If the available plan declares orchestrated execution, treat its parent contract as authoritative. Read worker handoffs or orchestration evidence only when needed to assess implementation, integration, ownership, cleanup, or executable proof.
+If the available plan declares orchestrated execution, treat its parent contract as authoritative. Read worker handoffs or orchestration evidence only when needed to assess implementation, integration, or executable proof.
 
 Do not assume intended behavior from conversation memory that is not present in this session.
 
@@ -47,17 +47,17 @@ Inspect actual current repository evidence, not Codex summaries.
 
 Compare implementation against the approved or reconstructed contract.
 
-For an orchestrated task, review the final integrated repository result against the parent contract. Do not independently approve workers as if each worker were a separate feature authority. Worker receipts, handoffs, scope claims, and targeted test results are supporting proof only.
+For an orchestrated task, review the final integrated repository result against the parent contract. Do not independently approve workers as if each worker were a separate feature authority. Worker handoffs and targeted test results are supporting proof only.
 
 Inspect only what is relevant:
 - changed source;
 - relevant diff or commit;
 - affected docs/maps;
 - relevant QA receipt or executable-proof result;
-- orchestration ownership or cleanup evidence when material;
+- worker handoffs when material to integration;
 - permanent QA changes introduced by the task.
 
-For orchestrated work, confirm any material cross-unit interface or invariant exercised by the parent contract and verify that no unresolved worker scope or temporary isolation artifact invalidates completion when such evidence is available.
+For orchestrated work, confirm any material cross-unit interface or invariant exercised by the parent contract and verify that no incomplete worker handoff or unresolved integration gap invalidates completion.
 
 Classify material findings as:
 - implementation defect;

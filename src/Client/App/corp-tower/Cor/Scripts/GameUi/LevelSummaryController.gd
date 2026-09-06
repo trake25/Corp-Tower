@@ -11,6 +11,7 @@ var level_summary_title_label: Label
 var level_summary_team_label: Label
 var level_summary_mvp_label: Label
 var level_summary_quest_label: Label
+var level_summary_bot_behavior_label: Label
 var level_summary_countdown_label: Label
 var level_summary_players_box: VBoxContainer
 var terminal_failure_overlay: Control
@@ -29,6 +30,7 @@ var summary_deadline_ms: int = 0
 var summary_countdown_last: int = -1
 var terminal_failure_deadline_ms: int = 0
 var terminal_failure_countdown_last: int = -1
+var spectator_mode := false
 
 func _ready() -> void:
 	summary_show_timer = Timer.new()
@@ -51,6 +53,7 @@ func bind_nodes(binder) -> void:
 	level_summary_team_label = binder.require_node("LevelSummaryTeamLabel") as Label
 	level_summary_mvp_label = binder.require_node("LevelSummaryMvpLabel") as Label
 	level_summary_quest_label = binder.optional_node("LevelSummaryQuestLabel") as Label
+	level_summary_bot_behavior_label = binder.optional_node("LevelSummaryBotBehaviorLabel") as Label
 	level_summary_countdown_label = binder.require_node("LevelSummaryCountdownLabel") as Label
 	level_summary_players_box = binder.require_node("LevelSummaryPlayersBox") as VBoxContainer
 	terminal_failure_overlay = binder.require_node("TerminalFailureOverlay") as Control
@@ -65,6 +68,12 @@ func setup(players_ref, match_state_ref, tuning_ref) -> void:
 
 func is_overlay_visible() -> bool:
 	return level_summary_overlay != null and level_summary_overlay.visible
+
+func set_spectator_mode(enabled: bool) -> void:
+	spectator_mode = enabled
+	if not spectator_mode and level_summary_bot_behavior_label != null:
+		level_summary_bot_behavior_label.visible = false
+		level_summary_bot_behavior_label.text = ""
 
 func queue_level_summary_after_score_popups(
 	summary_value: Variant,
@@ -160,6 +169,7 @@ func show_level_summary(summary_value: Variant, state: String) -> void:
 	level_summary_mvp_label.text = "Failures remaining: " + str(int(failure_status.get("retriesRemaining", 0))) if result != "completed" else ""
 	level_summary_mvp_label.visible = result != "completed"
 	update_level_summary_quest_row(summary)
+	update_level_summary_bot_behavior(summary)
 	show_terminal_failure_popup(summary, result)
 
 	clear_children(level_summary_players_box)
@@ -254,6 +264,50 @@ func update_level_summary_quest_row(summary: Dictionary) -> void:
 
 	level_summary_quest_label.text = "Next Level Quest\n" + quest_text
 	level_summary_quest_label.visible = quest_text != ""
+
+func update_level_summary_bot_behavior(summary: Dictionary) -> void:
+	if level_summary_bot_behavior_label == null:
+		return
+
+	if not spectator_mode:
+		level_summary_bot_behavior_label.visible = false
+		level_summary_bot_behavior_label.text = ""
+		return
+
+	var lines: PackedStringArray = []
+	for behavior_value in summary.get("botBehavior", []):
+		if typeof(behavior_value) != TYPE_DICTIONARY:
+			continue
+
+		var behavior: Dictionary = behavior_value
+		var bot_id := str(behavior.get("id", "Bot"))
+		var bot_name: String = str(players_ctx.display_name(bot_id))
+		if bot_name == "":
+			bot_name = bot_id
+		var impact_text := "met" if bool(behavior.get("impactMet", false)) else "missed"
+		var collapse_count := int(behavior.get("causedCollapse", 0))
+		var collapse_text := " collapse %d" % collapse_count if collapse_count > 0 else ""
+		lines.append(
+			"%s (%s): %d pts H%d · rec %d reinf %d save %d · impact %d %s · risk %d bad %d%s · wait %d power %d" % [
+				bot_name,
+				str(behavior.get("personality", "bot")).capitalize(),
+				int(behavior.get("score", 0)),
+				int(behavior.get("height", 0)),
+				int(behavior.get("recovery", 0)),
+				int(behavior.get("reinforcement", 0)),
+				int(behavior.get("criticalSaves", 0)),
+				int(behavior.get("impactContribution", 0)),
+				impact_text,
+				int(behavior.get("riskyDecisions", 0)),
+				int(behavior.get("badDecisions", 0)),
+				collapse_text,
+				int(behavior.get("waits", 0)),
+				int(behavior.get("powerUses", 0))
+			]
+		)
+
+	level_summary_bot_behavior_label.text = "BOT BEHAVIOR\n" + "\n".join(lines)
+	level_summary_bot_behavior_label.visible = not lines.is_empty()
 
 func update_summary_countdown() -> void:
 	if (

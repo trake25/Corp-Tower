@@ -63,7 +63,7 @@ test('Planner compiles the seven-section handoff and optional policy instead of 
   assert.doesNotMatch(read('AGENTS.md'), /policy\/(?:CODEX|IMPLEMENT|FIX)\.md/);
 });
 
-test('Planner-selected process policy requires exact non-default override encoding', () => {
+test('Planner-selected agent processes use exact overrides while orchestration remains a reasoning shape', () => {
   const planner = read('policy/PLANNER.md');
   const codex = read('policy/CODEX.md');
   const router = markerSection(codex, '#PROCESS-ROUTER#');
@@ -72,23 +72,22 @@ test('Planner-selected process policy requires exact non-default override encodi
   assert.match(planner, /Normal single-run execution and default-OFF processes are implicit and omitted/);
   assert.match(planner, /every selected non-default process, encode its effective value exactly once under `## Execution Overrides`/i);
   assert.match(planner, /Do not encode default values/);
-  assert.match(planner, /ORCHESTRATED requires the non-default ownership process; encode `task_ownership=ON` exactly once/);
+  assert.match(planner, /Orchestration is a parent reasoning\/execution shape, not a deterministic scope lifecycle/);
+  assert.match(planner, /state `Execution shape: ORCHESTRATED` exactly once/);
   assert.match(planner, /If telemetry is selected ON, the plan must contain exactly one `telemetry=ON` assignment/);
   assert.match(planner, /If explicitly disabled, encode `plan_archival=OFF` exactly once/);
 
   assert.match(router, /Default values are omitted completely/);
-  assert.match(router, /Every process whose effective value differs from its repository default must appear exactly once under `## Execution Overrides`/);
+  assert.match(router, /Every agent-supported process whose effective value differs from its repository default must appear exactly once under `## Execution Overrides`/);
   assert.match(router, /`<process_name>=ON` or `<process_name>=OFF`/);
   assert.match(router, /telemetry selected ON → `telemetry=ON`/);
-  assert.match(router, /task-close selected ON → both `task_ownership=ON` and `task_close=ON`/);
   assert.match(router, /plan archival explicitly disabled → `plan_archival=OFF`/);
-  assert.match(router, /ORCHESTRATED → `task_ownership=ON`/);
+  assert.doesNotMatch(router, /task[_-](?:ownership|close)/i);
+  assert.doesNotMatch(codex, /^#TASK-(?:OWNERSHIP|CLOSE)#$/m);
   assert.match(telemetry, /exactly one `telemetry=ON` assignment under `## Execution Overrides`/);
 
   const everythingOn = router.slice(router.indexOf('For "Everything ON"'), router.indexOf('`plan_archival=ON` remains implicit'));
   assert.deepEqual([...everythingOn.matchAll(/^\s*- `([a-z_]+)=ON`$/gm)].map(match => match[1]), [
-    'task_ownership',
-    'task_close',
     'telemetry',
     'workflow_inefficiency_flagging',
     'qa',
