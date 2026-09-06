@@ -15,6 +15,19 @@ adjacent: backend.identity.auth
 The client connects to its build-injected endpoint and sends reconnect/identity credentials when the transport opens. Verified server identity overrides a claimed profile when authentication is configured; required authentication closes an unverified socket.
 
 <!-- kb
+id: network.profile.session
+alias: profile bootstrap
+alias: profile name change wire
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#connect_profile_server
+source: src/Server/app/Server.js#handleProfileMessage
+adjacent: backend.identity.profile
+adjacent: ui.profile.presentation
+-->
+## Profile session
+
+Profile and first-login naming use an authenticated profile-only WebSocket path on the existing client/server transport. This path resolves the durable verified account but never enters matchmaking or room membership. The server supplies authoritative profile state and owns the one-time name mutation; the client presents that state and derives Profile connectivity from the live profile connection.
+
+<!-- kb
 id: network.session.resume-only
 alias: resumeOnly
 alias: saved room resume

@@ -62,6 +62,18 @@ func open_sign_out() -> void:
 	auto_dismiss_remaining = -1.0
 	_open()
 
+func open_change_name() -> void:
+	recovery_locked = false
+	title_label.text = "Change name"
+	body_label.text = "You can change your name only once. Continue?"
+	button_row.visible = true
+	close_button.visible = true
+	continue_button.visible = true
+	close_button.text = "Cancel"
+	continue_button.text = "Confirm"
+	auto_dismiss_remaining = -1.0
+	_open()
+
 func open_kick_player() -> void:
 	recovery_locked = false
 	title_label.text = "Kick player"

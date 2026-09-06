@@ -4,6 +4,8 @@ const MainScene = preload("res://Cor/Scenes/Main.tscn")
 const MenuScreenScene = preload("res://Cor/Scenes/MenuScreen.tscn")
 const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")
 const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
+const ChangeNameScreenScene = preload("res://Cor/Scenes/ChangeNameScreen.tscn")
+const HomeScreenScene = preload("res://Cor/Scenes/HomeScreen.tscn")
 
 var screen_manager
 
@@ -290,6 +292,78 @@ func test_home_settings_and_account_navigation_returns_through_the_stack() -> vo
 
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
 
+func test_profile_and_change_name_navigation_respects_entry_context() -> void:
+	var profile := {
+		"accountUid": "11111111-2222-3333-4444-555555555555",
+		"displayName": "VeryLongPlayerName",
+		"avatarId": "avatar_0",
+		"nameChangeUsed": false,
+		"nameOnboardingSeen": true
+	}
+	NetworkManager.profile_snapshot = profile
+	screen_manager.show_profile_screen(profile)
+	var profile_screen = screen_manager.current_overlay
+
+	assert_true(profile_screen.scene_file_path.ends_with("/ProfileScreen.tscn"))
+	assert_eq(profile_screen.get_node("SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/NameRow/NameLabel").text, "VeryLongPl..")
+	assert_eq(profile_screen.account_uid, profile.accountUid)
+
+	profile_screen.change_name_requested.emit()
+	await get_tree().process_frame
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/ChangeNameScreen.tscn"))
+	screen_manager.current_overlay.back_requested.emit()
+	await get_tree().process_frame
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/ProfileScreen.tscn"))
+
+	screen_manager.show_change_name_screen("onboarding")
+	screen_manager.current_overlay.back_requested.emit()
+	await get_tree().process_frame
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
+
+func test_home_profile_button_emits_profile_navigation_request() -> void:
+	var home = HomeScreenScene.instantiate()
+	add_child_autofree(home)
+	await get_tree().process_frame
+	var requests: Array[bool] = []
+	home.profile_requested.connect(func(): requests.append(true))
+	home.get_node("SafeArea/Root/CircleRow/ProfileColumn/ProfileButton").pressed.emit()
+	assert_eq(requests.size(), 1)
+
+func test_change_name_validation_and_confirmation_are_non_consuming_until_confirmed() -> void:
+	var screen = ChangeNameScreenScene.instantiate()
+	add_child_autofree(screen)
+	await get_tree().process_frame
+	screen.configure({"displayName": "Nova"})
+	screen.set_online(true)
+
+	screen.name_input.text = "ab"
+	screen._refresh_save_state()
+	assert_true(screen.save_button.disabled)
+	screen.name_input.text = "猫猫猫"
+	screen._refresh_save_state()
+	assert_false(screen.save_button.disabled)
+	screen.name_input.text = "Ada!"
+	screen._refresh_save_state()
+	assert_true(screen.save_button.disabled)
+	screen.name_input.text = "abcdefghijk"
+	screen._refresh_save_state()
+	assert_true(screen.name_input.text.length() <= 10 or screen.save_button.disabled)
+	screen.name_input.text = "Builder_1"
+	screen._refresh_save_state()
+
+	var requests: Array[String] = []
+	screen.name_change_requested.connect(func(candidate): requests.append(candidate))
+	screen.save_button.pressed.emit()
+	assert_true(screen.confirm_modal.visible)
+	screen.confirm_modal.close_button.pressed.emit()
+	assert_eq(requests.size(), 0)
+	assert_false(screen.submission_pending)
+
+	screen.save_button.pressed.emit()
+	screen.confirm_modal.continue_button.pressed.emit()
+	assert_eq(requests, ["Builder_1"])
+	assert_true(screen.submission_pending)
+
 func test_home_rankings_navigation_and_pinned_rank_layout_return_home() -> void:
 	screen_manager.show_home_screen()
 	var home = screen_manager.current_overlay
@@ -301,7 +375,7 @@ func test_home_rankings_navigation_and_pinned_rank_layout_return_home() -> void:
 	assert_gt(rankings.leaderboard_rows.get_child_count(), 8)
 	assert_eq(rankings.leaderboard_rows.get_parent().get_parent(), rankings.leaderboard_scroll)
 	assert_false(rankings.leaderboard_scroll.is_ancestor_of(rankings.your_rank_card))
-	var scroll_bar := rankings.leaderboard_scroll.get_v_scroll_bar()
+	var scroll_bar: VScrollBar = rankings.leaderboard_scroll.get_v_scroll_bar()
 	assert_gt(scroll_bar.max_value, scroll_bar.page)
 	var pinned_rank_y: float = rankings.your_rank_card.global_position.y
 	rankings.leaderboard_scroll.scroll_vertical = 100

@@ -75,7 +75,12 @@ test("a stored display name wins over the generated one", async () => {
 
 test("a stored name also wins over a freshly verified one, so a rename sticks", async () => {
     const { fetchImpl } = createFakeSupabase([[
-        { player_account_id: PROFILE_ID, display_name: "ChosenName", status: "active" }
+        {
+            player_account_id: PROFILE_ID,
+            display_name: "ChosenName",
+            status: "active",
+            name_change_used: true
+        }
     ]]);
     const store = createStore({ fetchImpl });
     await store.connect();
@@ -85,6 +90,11 @@ test("a stored name also wins over a freshly verified one, so a rename sticks", 
     assert.equal(
         profile.displayName, "ChosenName",
         "The row is authoritative once it carries a name."
+    );
+    assert.equal(
+        (await store.getProfile(PROFILE_ID, 0, "Changed Provider Name")).displayName,
+        "ChosenName",
+        "Provider metadata must not overwrite a consumed permanent name."
     );
 });
 
@@ -221,4 +231,98 @@ test("a bot seat with no profile id never reaches Supabase", async () => {
     assert.equal(called, false);
     assert.equal(profile.displayName, "Player 3");
     assert.equal(profile.profileId, null);
+});
+
+test("permanent name validation counts Unicode characters and limits the approved alphabet", () => {
+    assert.equal(ProfileStore.validateName("ab").reason, "invalid_name");
+    assert.equal(ProfileStore.validateName("猫猫猫").ok, true);
+    assert.equal(ProfileStore.validateName("Åda_2- X").ok, true);
+    assert.equal(ProfileStore.validateName("abcdefghij").ok, true);
+    assert.equal(ProfileStore.validateName("abcdefghijk").reason, "invalid_name");
+    assert.equal(ProfileStore.validateName("Ada!").reason, "invalid_name");
+    assert.equal(ProfileStore.validateName("  ADA  ", "ada").reason, "unchanged_name");
+});
+
+test("a permanent name change is one conditional authoritative write", async () => {
+    const calls = [];
+    const fetchImpl = async (url, init) => {
+        calls.push({ url, init });
+        if (init.method === "GET") {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => [{
+                    player_account_id: PROFILE_ID,
+                    display_name: "Nova",
+                    status: "active",
+                    name_change_used: false
+                }]
+            };
+        }
+        return {
+            ok: true,
+            status: 200,
+            json: async () => [{
+                player_account_id: PROFILE_ID,
+                display_name: "猫 Builder",
+                status: "active",
+                name_change_used: true
+            }]
+        };
+    };
+    const store = createStore({ fetchImpl });
+    await store.connect();
+
+    const result = await store.changeName(PROFILE_ID, "  猫 Builder  ");
+
+    assert.equal(result.ok, true);
+    assert.equal(result.profile.displayName, "猫 Builder");
+    assert.equal(result.profile.nameChangeUsed, true);
+    const patch = calls.find(call => call.init.method === "PATCH");
+    assert.match(patch.url, /name_change_used=eq\.false/);
+    assert.deepEqual(JSON.parse(patch.init.body), {
+        display_name: "猫 Builder",
+        name_change_used: true
+    });
+});
+
+test("a case-insensitive uniqueness conflict does not consume the allowance", async () => {
+    let patchCount = 0;
+    const store = createStore({
+        fetchImpl: async (_url, init) => {
+            if (init.method === "GET") {
+                return {
+                    ok: true,
+                    status: 200,
+                    json: async () => [{
+                        player_account_id: PROFILE_ID,
+                        display_name: "Nova",
+                        status: "active",
+                        name_change_used: false
+                    }]
+                };
+            }
+            patchCount += 1;
+            return patchCount === 1
+                ? { ok: false, status: 409, json: async () => null }
+                : {
+                    ok: true,
+                    status: 200,
+                    json: async () => [{
+                        player_account_id: PROFILE_ID,
+                        display_name: "Available",
+                        status: "active",
+                        name_change_used: true
+                    }]
+                };
+        }
+    });
+    await store.connect();
+
+    assert.deepEqual(
+        await store.changeName(PROFILE_ID, "PlayerOne"),
+        { ok: false, reason: "name_taken" }
+    );
+    const retry = await store.changeName(PROFILE_ID, "Available");
+    assert.equal(retry.ok, true);
 });

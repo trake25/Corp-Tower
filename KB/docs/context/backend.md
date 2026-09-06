@@ -133,11 +133,15 @@ id: backend.identity.profile
 alias: profile store
 alias: account store
 source: src/Server/app/Account_Store.js#resolve
+source: src/Server/app/Account_Store.js#markNameOnboardingSeen
 source: src/Server/app/Profile_Store.js#getProfile
+source: src/Server/app/Profile_Store.js#changeName
+adjacent: network.profile.session
+adjacent: ui.profile.presentation
 -->
 ## Durable profiles
 
-Account Store converts verified provider identity into durable account identity and stores Facebook subjects only as versioned HMACs. Profile Store supplies durable profile data when configured; otherwise it degrades to deterministic generated presentation. Redis remains active-session storage rather than durable profile storage.
+Account Store converts verified provider identity into durable account identity and stores Facebook subjects only as versioned HMACs. Profile Store owns durable profile presentation and the one-time player-name lifecycle. First-login naming exposure is durable account state, permanent-name consumption is durable profile state, and permanent names are database-enforced case-insensitive unique values. Provider presentation metadata never overwrites a successfully chosen permanent player name. Redis remains active-session storage rather than durable profile storage.
 
 <!-- kb
 id: backend.lobby.debug-config

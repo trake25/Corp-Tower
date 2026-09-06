@@ -198,6 +198,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `network.messages.families` | [networking.md#message-families](./networking.md#message-families) | websocket messages, message types |
 | `network.messages.latency` | [networking.md#latency-diagnostics](./networking.md#latency-diagnostics) | latency_ping, latency_pong, RTT |
 | `network.placement.contract` | [networking.md#placement-contract](./networking.md#placement-contract) | place_block, release row wire |
+| `network.profile.session` | [networking.md#profile-session](./networking.md#profile-session) | profile bootstrap, profile name change wire |
 | `network.room.active-leave` | [networking.md#active-leave](./networking.md#active-leave) | game_left, leave_game |
 | `network.room.bot-spectator` | [networking.md#bot-spectator-launch](./networking.md#bot-spectator-launch) | bot spectator launch, spectator_start_rejected |
 | `network.room.close` | [networking.md#room-close](./networking.md#room-close) | room_closed |
@@ -269,6 +270,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `ui.private-lobby.presentation` | [ui.md#private-lobby-presentation](./ui.md#private-lobby-presentation) | private lobby UI |
 | `ui.private.create` | [ui.md#private-server-creation](./ui.md#private-server-creation) | create private server, private server screen |
 | `ui.private.join` | [ui.md#join-server](./ui.md#join-server) | join server, server id paste |
+| `ui.profile.presentation` | [ui.md#profile-presentation](./ui.md#profile-presentation) | profile screen, change name screen |
 | `ui.public-lobby.flow` | [ui.md#public-matchmaking-and-lobby](./ui.md#public-matchmaking-and-lobby) | find match, public lobby |
 | `ui.settings.presentation` | [ui.md#settings](./ui.md#settings) | settings screen |
 | `ui.shell.core` | [ui.md#client-shell](./ui.md#client-shell) | Screen Manager, Main shell |

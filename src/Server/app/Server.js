@@ -20,6 +20,67 @@ function safeJson(message) {
     }
 }
 
+function profileSnapshot(identity, profile) {
+    return {
+        type: "profile_snapshot",
+        accountUid: identity.userId,
+        displayName: profile.displayName,
+        avatarId: profile.avatarId,
+        nameChangeUsed: Boolean(profile.nameChangeUsed),
+        nameOnboardingSeen: Boolean(identity.nameOnboardingSeen)
+    };
+}
+
+function sendJson(ws, data) {
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(data));
+    }
+}
+
+async function handleProfileMessage(ws, identity, message) {
+    const data = safeJson(message);
+
+    if (!data) {
+        return;
+    }
+
+    if (data.type === "profile_onboarding_seen") {
+        try {
+            const persisted = await accountStore.markNameOnboardingSeen(identity.userId);
+            if (!persisted) {
+                throw new Error("Onboarding acknowledgement did not persist");
+            }
+            identity.nameOnboardingSeen = true;
+            sendJson(ws, { type: "profile_onboarding_seen", persisted: true });
+        } catch (error) {
+            console.log("Profile onboarding acknowledgement failed:", error.message);
+            sendJson(ws, { type: "profile_onboarding_seen", persisted: false });
+        }
+        return;
+    }
+
+    if (data.type === "profile_change_name") {
+        const result = await lobbyManager.profileStore.changeName(identity.userId, data.name);
+
+        if (!result.ok) {
+            const rejection = {
+                type: "profile_name_rejected",
+                reason: result.reason || "server_error"
+            };
+            if (result.profile) {
+                rejection.profile = profileSnapshot(identity, result.profile);
+            }
+            sendJson(ws, rejection);
+            return;
+        }
+
+        sendJson(ws, {
+            type: "profile_name_changed",
+            profile: profileSnapshot(identity, result.profile)
+        });
+    }
+}
+
 async function handleStatsRequest(req, res) {
     const stats = await lobbyManager.stateStore.getDemoStats();
 
@@ -57,6 +118,7 @@ async function main() {
 
         ws.once("message", async function firstMessage(message) {
             const data = safeJson(message) || {};
+            const profileRequest = data.type === "profile_connect";
             const reconnectRequest =
                 data.type === "reconnect" ? data : {};
 
@@ -76,6 +138,29 @@ async function main() {
             if (authVerifier.isRequired() && !identity) {
                 console.log("Rejected a connection with no verifiable access token");
                 ws.close(4401, "unauthorized");
+                return;
+            }
+
+            if (profileRequest) {
+                if (!identity) {
+                    console.log("Rejected an unverified profile connection");
+                    ws.close(4401, "unauthorized");
+                    return;
+                }
+
+                try {
+                    const profile = await lobbyManager.profileStore.getAuthoritativeProfile(
+                        identity.userId
+                    );
+                    sendJson(ws, profileSnapshot(identity, profile));
+                    ws.on("message", async function incomingProfile(nextMessage) {
+                        await handleProfileMessage(ws, identity, nextMessage);
+                    });
+                } catch (error) {
+                    console.log("Profile bootstrap failed:", error.message);
+                    sendJson(ws, { type: "profile_unavailable" });
+                    ws.close(1011, "profile unavailable");
+                }
                 return;
             }
 
@@ -232,4 +317,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { handleMessage };
+module.exports = { handleMessage, handleProfileMessage, profileSnapshot };

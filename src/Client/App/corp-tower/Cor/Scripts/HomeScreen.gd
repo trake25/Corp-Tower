@@ -5,6 +5,7 @@ signal private_server_requested
 signal tutorial_requested
 signal rankings_requested
 signal settings_requested
+signal profile_requested
 
 func _ready() -> void:
 	%PrivateServerButton.pressed.connect(func(): private_server_requested.emit())
@@ -12,6 +13,7 @@ func _ready() -> void:
 	%TutorialButton.pressed.connect(func(): tutorial_requested.emit())
 	%RankingsButton.pressed.connect(func(): rankings_requested.emit())
 	%SettingsButton.pressed.connect(func(): settings_requested.emit())
+	%ProfileButton.pressed.connect(func(): profile_requested.emit())
 
 	if EndpointConfig.DEMO_MODE_ENABLED:
 		%PrivateServerButton.visible = false

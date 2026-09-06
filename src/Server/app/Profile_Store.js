@@ -4,7 +4,7 @@ const WORD_LIST = [
 ];
 
 const REQUEST_TIMEOUT_MS = 4000;
-const PROFILE_COLUMNS = "player_account_id,display_name,status";
+const PROFILE_COLUMNS = "player_account_id,display_name,status,name_change_used";
 
 function hashString(value) {
     let hash = 5381;
@@ -20,6 +20,25 @@ function generatedName(profileId) {
 
 function normalizeUrl(value) {
     return String(value || "").trim().replace(/\/+$/, "");
+}
+
+function normalizedName(value) {
+    return String(value || "").trim();
+}
+
+function validateName(value, currentName = "") {
+    const candidate = normalizedName(value);
+    const length = Array.from(candidate).length;
+
+    if (length < 3 || length > 10 || !/^[\p{L}\p{N} _-]+$/u.test(candidate)) {
+        return { ok: false, reason: "invalid_name" };
+    }
+
+    if (candidate.toLocaleLowerCase() === normalizedName(currentName).toLocaleLowerCase()) {
+        return { ok: false, reason: "unchanged_name" };
+    }
+
+    return { ok: true, name: candidate };
 }
 
 class ProfileStore {
@@ -60,7 +79,11 @@ class ProfileStore {
         if (this.profiles.has(profileId)) {
             const cached = this.profiles.get(profileId);
 
-            if (verifiedName && cached.displayName !== verifiedName) {
+            if (
+                verifiedName &&
+                !cached.nameChangeUsed &&
+                cached.displayName !== verifiedName
+            ) {
                 cached.displayName = verifiedName;
             }
 
@@ -72,6 +95,7 @@ class ProfileStore {
             displayName: verifiedName || generatedName(profileId),
             avatarId,
             status: "active",
+            nameChangeUsed: false,
             equipped: {},
             owned: []
         };
@@ -102,6 +126,7 @@ class ProfileStore {
             }
 
             profile.status = row.status || "active";
+            profile.nameChangeUsed = Boolean(row.name_change_used);
 
             await this.patchRow(profile.profileId, {
                 last_login_at: new Date().toISOString(),
@@ -111,6 +136,95 @@ class ProfileStore {
             console.log(
                 `Profile lookup failed for ${profile.profileId}:`, error.message
             );
+        }
+    }
+
+    async getAuthoritativeProfile(profileId) {
+        if (!this.enabled || !profileId) {
+            throw new Error("Authoritative profile persistence is unavailable");
+        }
+
+        let row = await this.fetchRow(profileId);
+
+        if (!row) {
+            await this.insertRow(profileId, generatedName(profileId));
+            row = await this.fetchRow(profileId);
+        }
+
+        if (!row) {
+            throw new Error("Authoritative profile creation did not persist");
+        }
+
+        const profile = {
+            profileId,
+            displayName: row.display_name || generatedName(profileId),
+            avatarId: "avatar_0",
+            status: row.status || "active",
+            nameChangeUsed: Boolean(row.name_change_used),
+            equipped: {},
+            owned: []
+        };
+
+        this.profiles.set(profileId, profile);
+        return profile;
+    }
+
+    async changeName(profileId, proposedName) {
+        if (!this.enabled || !profileId) {
+            return { ok: false, reason: "server_error" };
+        }
+
+        let current;
+        try {
+            current = await this.getAuthoritativeProfile(profileId);
+        } catch (error) {
+            console.log(`Authoritative profile lookup failed for ${profileId}:`, error.message);
+            return { ok: false, reason: "server_error" };
+        }
+
+        if (current.nameChangeUsed) {
+            return { ok: false, reason: "already_used", profile: current };
+        }
+
+        const validation = validateName(proposedName, current.displayName);
+        if (!validation.ok) {
+            return validation;
+        }
+
+        try {
+            const response = await this.request(
+                `player_profiles?player_account_id=eq.${encodeURIComponent(profileId)}&name_change_used=eq.false&select=${PROFILE_COLUMNS}`,
+                {
+                    method: "PATCH",
+                    headers: { Prefer: "return=representation" },
+                    body: JSON.stringify({
+                        display_name: validation.name,
+                        name_change_used: true
+                    })
+                }
+            );
+            const rows = await response.json();
+
+            if (!Array.isArray(rows) || rows.length === 0) {
+                const latest = await this.getAuthoritativeProfile(profileId);
+                return { ok: false, reason: "already_used", profile: latest };
+            }
+
+            const row = rows[0];
+            const profile = {
+                ...current,
+                displayName: row.display_name,
+                status: row.status || current.status,
+                nameChangeUsed: true
+            };
+            this.profiles.set(profileId, profile);
+            return { ok: true, profile };
+        } catch (error) {
+            if (error && error.status === 409) {
+                return { ok: false, reason: "name_taken" };
+            }
+            console.log(`Profile name change failed for ${profileId}:`, error.message);
+            return { ok: false, reason: "server_error" };
         }
     }
 
@@ -128,7 +242,9 @@ class ProfileStore {
         });
 
         if (!response.ok) {
-            throw new Error(`${init && init.method ? init.method : "GET"} ${path} → ${response.status}`);
+            const error = new Error(`${init && init.method ? init.method : "GET"} ${path} → ${response.status}`);
+            error.status = response.status;
+            throw error;
         }
 
         return response;
@@ -151,6 +267,7 @@ class ProfileStore {
             body: JSON.stringify([{
                 player_account_id: profileId,
                 display_name: displayName,
+                name_change_used: false,
                 last_login_at: new Date().toISOString()
             }])
         });
@@ -164,5 +281,7 @@ class ProfileStore {
         });
     }
 }
+
+ProfileStore.validateName = validateName;
 
 module.exports = ProfileStore;

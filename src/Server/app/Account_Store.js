@@ -91,8 +91,23 @@ class AccountStore {
         return {
             userId: account.id,
             isAnonymous: Boolean(identity.isAnonymous),
-            displayName: identity.displayName || null
+            displayName: identity.displayName || null,
+            nameOnboardingSeen: Boolean(account.name_onboarding_seen)
         };
+    }
+
+    async markNameOnboardingSeen(accountId) {
+        await this.request(
+            `player_accounts?id=eq.${encodeURIComponent(accountId)}&name_onboarding_seen=eq.false`,
+            {
+                method: "PATCH",
+                headers: { Prefer: "return=representation" },
+                body: JSON.stringify({ name_onboarding_seen: true })
+            }
+        );
+
+        const account = await this.findAccountById(accountId);
+        return Boolean(account && account.name_onboarding_seen);
     }
 
     hashProviderSubject(provider, subject, secret = this.hmacSecret) {
@@ -247,14 +262,14 @@ class AccountStore {
 
     async findAccountById(accountId) {
         const rows = await this.fetchRows(
-            `player_accounts?id=eq.${encodeURIComponent(accountId)}&select=id,supabase_user_id`
+            `player_accounts?id=eq.${encodeURIComponent(accountId)}&select=id,supabase_user_id,name_onboarding_seen`
         );
         return rows[0] || null;
     }
 
     async findAccountBySupabaseUserId(supabaseUserId) {
         const rows = await this.fetchRows(
-            `player_accounts?supabase_user_id=eq.${encodeURIComponent(supabaseUserId)}&select=id,supabase_user_id`
+            `player_accounts?supabase_user_id=eq.${encodeURIComponent(supabaseUserId)}&select=id,supabase_user_id,name_onboarding_seen`
         );
         return rows[0] || null;
     }

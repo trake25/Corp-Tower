@@ -86,7 +86,21 @@ source: src/Client/App/corp-tower/Cor/Scenes/HomeScreen.tscn#HomeScreen
 -->
 ## Home
 
-Home is the shell hub for public matchmaking, private creation/join, Settings, and tutorial entry. Navigation transitions are owned by Screen Manager and network-driven room events rather than by gameplay logic.
+Home is the shell hub for public matchmaking, private creation/join, Profile, Settings, and tutorial entry. Navigation transitions are owned by Screen Manager and network-driven room events rather than by gameplay logic.
+
+<!-- kb
+id: ui.profile.presentation
+alias: profile screen
+alias: change name screen
+source: src/Client/App/corp-tower/Cor/Scenes/ProfileScreen.tscn#ProfileScreen
+source: src/Client/App/corp-tower/Cor/Scenes/ChangeNameScreen.tscn#ChangeNameScreen
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#show_profile_screen
+adjacent: backend.identity.profile
+adjacent: network.profile.session
+-->
+## Profile presentation
+
+Profile presents the authenticated player's durable account identity and current profile presentation. Home opens Profile; Profile opens the one-time Change Name flow while the allowance remains available. A newly created account may enter the same Change Name screen once from authenticated startup, with Back returning Home instead of Profile. Placeholder rank/stat controls remain presentation-only until their own systems exist.
 
 <!-- kb
 id: ui.private.create

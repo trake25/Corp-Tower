@@ -1,0 +1,155 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/ChangeNameScreen.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/profile-bg-@4x.png" id="2_bg"]
+[ext_resource type="PackedScene" path="res://Cor/Scenes/ConfirmModal.tscn" id="3_modal"]
+[ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="4_bold"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBack"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+shadow_color = Color(0, 0, 0, 0.18)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleInput"]
+bg_color = Color(1, 1, 1, 0.62)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 18.0
+content_margin_right = 18.0
+shadow_color = Color(0, 0, 0, 0.12)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleSave"]
+bg_color = Color(1, 1, 1, 0.96)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.18)
+shadow_size = 10
+shadow_offset = Vector2(0, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleSavePressed"]
+bg_color = Color(0.75, 0.94, 1, 0.96)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[node name="ChangeNameScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 26
+
+[node name="Layout" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Header" type="Control" parent="SafeArea/Layout"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="SafeArea/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 1
+offset_right = 60.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 38
+theme_override_styles/normal = SubResource("StyleBack")
+theme_override_styles/hover = SubResource("StyleBack")
+theme_override_styles/pressed = SubResource("StyleSavePressed")
+text = "‹"
+
+[node name="Title" type="Label" parent="SafeArea/Layout/Header"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 29
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Change name"
+
+[node name="NameInput" type="LineEdit" parent="SafeArea/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.12, 0.16, 0.2, 1)
+theme_override_colors/font_placeholder_color = Color(0.3, 0.42, 0.55, 1)
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("StyleInput")
+theme_override_styles/focus = SubResource("StyleInput")
+placeholder_text = "Enter your name"
+max_length = 10
+
+[node name="ErrorLabel" type="Label" parent="SafeArea/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.08, 0.12, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Spacer" type="Control" parent="SafeArea/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SaveButton" type="Button" parent="SafeArea/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 78)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_colors/font_disabled_color = Color(0.45, 0.48, 0.5, 1)
+theme_override_fonts/font = ExtResource("4_bold")
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleSave")
+theme_override_styles/hover = SubResource("StyleSave")
+theme_override_styles/pressed = SubResource("StyleSavePressed")
+theme_override_styles/disabled = SubResource("StyleSave")
+text = "Save"
+
+[node name="ConfirmModal" parent="." instance=ExtResource("3_modal")]
+unique_name_in_owner = true

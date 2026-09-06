@@ -53,7 +53,10 @@ function createFakeSupabase() {
                             row.supabase_user_id === account.supabase_user_id
                         )
                     )) {
-                        accounts.set(account.id, { ...account });
+                        accounts.set(account.id, {
+                            name_onboarding_seen: false,
+                            ...account
+                        });
                     }
                 }
                 return response(null, 201);
@@ -65,7 +68,7 @@ function createFakeSupabase() {
                 if (!account) {
                     return response(null, 404);
                 }
-                account.supabase_user_id = body.supabase_user_id;
+                Object.assign(account, body);
                 return response(null, 204);
             }
         }
@@ -186,12 +189,30 @@ test("a non-Facebook Supabase user receives a durable game account", async () =>
 
     assert.ok(identity.userId);
     assert.equal(identity.displayName, "Ada");
+    assert.equal(identity.nameOnboardingSeen, false);
     assert.equal(database.accounts.get(identity.userId).supabase_user_id, "bbbbbbbb-cccc-dddd-eeee-ffffffffffff");
     assert.equal(database.identities.size, 0);
     assert.equal(
         database.calls.some(call => new URL(call.url).pathname === "/auth/v1/user"),
         false
     );
+});
+
+test("onboarding acknowledgement is persisted as durable account state", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+    const identity = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+        provider: "google",
+        accessToken: "google-token",
+        isAnonymous: false,
+        displayName: "Ada"
+    });
+
+    assert.equal(await store.markNameOnboardingSeen(identity.userId), true);
+    assert.equal(database.accounts.get(identity.userId).name_onboarding_seen, true);
 });
 
 test("an HMAC key rotation recognizes the prior Facebook identity and records the new hash", async () => {

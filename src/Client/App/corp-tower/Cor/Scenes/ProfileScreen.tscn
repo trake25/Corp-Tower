@@ -1,0 +1,559 @@
+[gd_scene load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://Cor/Scripts/ProfileScreen.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/profile-bg-@4x.png" id="2_bg"]
+[ext_resource type="FontFile" path="res://Cor/Fonts/Poppins/Poppins-Bold.ttf" id="3_bold"]
+[ext_resource type="Texture2D" path="res://Cor/Art/9-Play/avatar-lion.png" id="4_avatar"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-camera.png" id="5_camera"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-copy.png" id="6_copy"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-edit.png" id="7_edit"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-colored-rank.png" id="8_rank"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-colored-total-points.png" id="9_points"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-colored-games-played.png" id="10_games"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-colored-win-rate.png" id="11_rate"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-colored-max-level.png" id="12_level"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-colored-win-streak.png" id="13_streak"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-colored-perfect-build.png" id="14_perfect"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-colored-overbuild.png" id="15_overbuild"]
+[ext_resource type="Texture2D" path="res://Cor/Art/12-Profile/ic-colored-fave-brick.png" id="16_favorite"]
+[ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="17_press_tint"]
+
+[sub_resource type="StyleBoxFlat" id="StyleGlass"]
+bg_color = Color(1, 1, 1, 0.68)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.96)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.15)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleRound"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+shadow_color = Color(0, 0, 0, 0.16)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleFlat"]
+bg_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StylePressed"]
+bg_color = Color(0.25, 0.78, 1, 0.22)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="ProfileScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 14
+
+[node name="Layout" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleRow" type="Control" parent="SafeArea/Layout"]
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="SafeArea/Layout/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 1
+offset_right = 58.0
+offset_bottom = 58.0
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 38
+theme_override_styles/normal = SubResource("StyleRound")
+theme_override_styles/hover = SubResource("StyleRound")
+theme_override_styles/pressed = SubResource("StylePressed")
+text = "‹"
+
+[node name="Title" type="Label" parent="SafeArea/Layout/TitleRow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 29
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Profile"
+
+[node name="IdentityCard" type="PanelContainer" parent="SafeArea/Layout"]
+custom_minimum_size = Vector2(0, 132)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleGlass")
+
+[node name="IdentityMargin" type="MarginContainer" parent="SafeArea/Layout/IdentityCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 10
+
+[node name="IdentityRow" type="HBoxContainer" parent="SafeArea/Layout/IdentityCard/IdentityMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AvatarStack" type="Control" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow"]
+custom_minimum_size = Vector2(94, 104)
+layout_mode = 2
+
+[node name="AvatarTexture" type="TextureRect" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/AvatarStack"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -44.0
+offset_top = -48.0
+offset_right = 44.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("4_avatar")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CameraButton" type="TextureButton" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/AvatarStack"]
+unique_name_in_owner = true
+layout_mode = 1
+script = ExtResource("17_press_tint")
+offset_left = 62.0
+offset_top = 74.0
+offset_right = 94.0
+offset_bottom = 106.0
+texture_normal = ExtResource("5_camera")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="NameColumn" type="VBoxContainer" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+theme_override_constants/separation = 2
+
+[node name="NameRow" type="HBoxContainer" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/NameRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.08, 0.12, 0.16, 1)
+theme_override_font_sizes/font_size = 19
+text = "Player"
+
+[node name="EditNameButton" type="TextureButton" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/NameRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+script = ExtResource("17_press_tint")
+texture_normal = ExtResource("7_edit")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="OnlineRow" type="HBoxContainer" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="OnlineDot" type="ColorRect" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/OnlineRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.125, 0.788, 0.353, 1)
+
+[node name="OnlineLabel" type="Label" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/OnlineRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.12, 0.16, 1)
+theme_override_font_sizes/font_size = 15
+text = "Online"
+
+[node name="UidRow" type="HBoxContainer" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn"]
+layout_mode = 2
+
+[node name="UidLabel" type="Label" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/UidRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.08, 0.12, 0.16, 1)
+theme_override_font_sizes/font_size = 14
+text = "@ID"
+
+[node name="CopyUidButton" type="TextureButton" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/NameColumn/UidRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+script = ExtResource("17_press_tint")
+texture_normal = ExtResource("6_copy")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="RankButton" type="Button" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 104)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleFlat")
+theme_override_styles/hover = SubResource("StyleFlat")
+theme_override_styles/pressed = SubResource("StylePressed")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/RankButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/RankButton/Content"]
+mouse_filter = 2
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("8_rank")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="SafeArea/Layout/IdentityCard/IdentityMargin/IdentityRow/RankButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+text = "50\nRank"
+
+[node name="StatsCard" type="PanelContainer" parent="SafeArea/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleGlass")
+
+[node name="StatsMargin" type="MarginContainer" parent="SafeArea/Layout/StatsCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 12
+
+[node name="StatsGrid" type="GridContainer" parent="SafeArea/Layout/StatsCard/StatsMargin"]
+layout_mode = 2
+columns = 3
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 8
+
+[node name="TotalPointsButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(102, 112)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleFlat")
+theme_override_styles/hover = SubResource("StyleFlat")
+theme_override_styles/pressed = SubResource("StylePressed")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/TotalPointsButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/TotalPointsButton/Content"]
+mouse_filter = 2
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("9_points")
+expand_mode = 1
+stretch_mode = 5
+[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/TotalPointsButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "10 000\nTotal Points"
+
+[node name="GamesPlayedButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(102, 112)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleFlat")
+theme_override_styles/hover = SubResource("StyleFlat")
+theme_override_styles/pressed = SubResource("StylePressed")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/GamesPlayedButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/GamesPlayedButton/Content"]
+mouse_filter = 2
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("10_games")
+expand_mode = 1
+stretch_mode = 5
+[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/GamesPlayedButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "100\nGames Played"
+
+[node name="WinRateButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(102, 112)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleFlat")
+theme_override_styles/hover = SubResource("StyleFlat")
+theme_override_styles/pressed = SubResource("StylePressed")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinRateButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinRateButton/Content"]
+mouse_filter = 2
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("11_rate")
+expand_mode = 1
+stretch_mode = 5
+[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinRateButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "100%\nWin Rate"
+
+[node name="MaxLevelButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(102, 112)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleFlat")
+theme_override_styles/hover = SubResource("StyleFlat")
+theme_override_styles/pressed = SubResource("StylePressed")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/MaxLevelButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/MaxLevelButton/Content"]
+mouse_filter = 2
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("12_level")
+expand_mode = 1
+stretch_mode = 5
+[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/MaxLevelButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "100\nMax Level"
+
+[node name="WinStreakButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(102, 112)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleFlat")
+theme_override_styles/hover = SubResource("StyleFlat")
+theme_override_styles/pressed = SubResource("StylePressed")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinStreakButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinStreakButton/Content"]
+mouse_filter = 2
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("13_streak")
+expand_mode = 1
+stretch_mode = 5
+[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/WinStreakButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "5\nWin Streak"
+
+[node name="PerfectBuildsButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(102, 112)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleFlat")
+theme_override_styles/hover = SubResource("StyleFlat")
+theme_override_styles/pressed = SubResource("StylePressed")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/PerfectBuildsButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/PerfectBuildsButton/Content"]
+mouse_filter = 2
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("14_perfect")
+expand_mode = 1
+stretch_mode = 5
+[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/PerfectBuildsButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "50\nPerfect Builds"
+
+[node name="OverbuildsButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(102, 112)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleFlat")
+theme_override_styles/hover = SubResource("StyleFlat")
+theme_override_styles/pressed = SubResource("StylePressed")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/OverbuildsButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/OverbuildsButton/Content"]
+mouse_filter = 2
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("15_overbuild")
+expand_mode = 1
+stretch_mode = 5
+[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/OverbuildsButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "10\nOverbuilds"
+
+[node name="FavoriteBrickButton" type="Button" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(102, 112)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleFlat")
+theme_override_styles/hover = SubResource("StyleFlat")
+theme_override_styles/pressed = SubResource("StylePressed")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/FavoriteBrickButton"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+[node name="Icon" type="TextureRect" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/FavoriteBrickButton/Content"]
+mouse_filter = 2
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("16_favorite")
+expand_mode = 1
+stretch_mode = 5
+[node name="Label" type="Label" parent="SafeArea/Layout/StatsCard/StatsMargin/StatsGrid/FavoriteBrickButton/Content"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "T\nFavorite Brick"

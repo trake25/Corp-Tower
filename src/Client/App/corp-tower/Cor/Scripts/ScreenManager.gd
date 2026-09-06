@@ -3,6 +3,8 @@ extends Control
 const PlayLoaderScreenScene := preload("res://Cor/Scenes/PlayLoaderScreen.tscn")
 const SignInScreenScene := preload("res://Cor/Scenes/SignInScreen.tscn")
 const HomeScreenScene := preload("res://Cor/Scenes/HomeScreen.tscn")
+const ProfileScreenScene := preload("res://Cor/Scenes/ProfileScreen.tscn")
+const ChangeNameScreenScene := preload("res://Cor/Scenes/ChangeNameScreen.tscn")
 const RankingsScreenScene := preload("res://Cor/Scenes/RankingsScreen.tscn")
 const SettingsScreenScene := preload("res://Cor/Scenes/SettingsScreen.tscn")
 const AccountScreenScene := preload("res://Cor/Scenes/AccountScreen.tscn")
@@ -73,6 +75,8 @@ var home_spectator_edit_selector: OptionButton = null
 var home_spectator_editing_bot_index := 0
 var home_spectator_trait_labels: Dictionary = {}
 var home_spectator_trait_sliders: Dictionary = {}
+var profile_route_pending := ""
+var change_name_entry_context := "profile"
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
@@ -87,6 +91,10 @@ func _ready() -> void:
 	NetworkManager.recovery_unavailable.connect(_on_recovery_unavailable)
 	NetworkManager.resume_only_failed.connect(_on_resume_only_failed)
 	NetworkManager.spectator_start_rejected.connect(_on_spectator_start_rejected)
+	NetworkManager.profile_snapshot_received.connect(_on_profile_snapshot_received)
+	NetworkManager.profile_name_changed.connect(_on_profile_name_changed)
+	NetworkManager.profile_name_rejected.connect(_on_profile_name_rejected)
+	NetworkManager.profile_connection_changed.connect(_on_profile_connection_changed)
 	auto_dismiss_modal.dismissed.connect(_on_auto_dismiss_modal_dismissed)
 	auto_dismiss_modal.confirmed.connect(_on_auto_dismiss_modal_dismissed)
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
@@ -124,7 +132,10 @@ func _begin_authenticated_startup() -> void:
 		NetworkManager.connect_server(false, false, true)
 		return
 
-	show_home_screen()
+	profile_route_pending = "startup"
+	if not NetworkManager.connect_profile_server():
+		profile_route_pending = ""
+		show_home_screen()
 
 func _on_status_changed(text: String) -> void:
 	update_debug_button_availability()
@@ -254,7 +265,7 @@ func _on_guest_login_requested() -> void:
 	var reason: String = await AuthManager.sign_in_guest()
 
 	if reason == AuthManager.REASON_NONE:
-		show_home_screen()
+		_begin_authenticated_startup()
 		return
 
 	_show_sign_in_error(screen, reason)
@@ -275,7 +286,7 @@ func _on_provider_login_requested(provider: String) -> void:
 	var reason: String = await AuthManager.oauth_completed
 
 	if reason == AuthManager.REASON_NONE:
-		show_home_screen()
+		_begin_authenticated_startup()
 		return
 
 	_show_sign_in_error(screen, reason)
@@ -298,6 +309,7 @@ func show_home_screen() -> void:
 	screen.tutorial_requested.connect(_on_home_tutorial_requested)
 	screen.rankings_requested.connect(_on_home_rankings_requested)
 	screen.settings_requested.connect(_on_home_settings_requested)
+	screen.profile_requested.connect(_on_home_profile_requested)
 	_set_overlay(screen)
 	_set_debug_context(DEBUG_CONTEXT_HOME)
 
@@ -318,6 +330,95 @@ func _on_home_rankings_requested() -> void:
 
 func _on_home_settings_requested() -> void:
 	show_settings_screen()
+
+func _on_home_profile_requested() -> void:
+	profile_route_pending = "profile"
+	if not NetworkManager.connect_profile_server():
+		profile_route_pending = ""
+
+func _on_profile_snapshot_received(data: Dictionary) -> void:
+	if profile_route_pending == "startup":
+		profile_route_pending = ""
+		if bool(data.get("nameOnboardingSeen", true)):
+			NetworkManager.disconnect_profile_server()
+			show_home_screen()
+		else:
+			show_change_name_screen("onboarding")
+			NetworkManager.mark_profile_onboarding_seen()
+		return
+
+	if profile_route_pending == "profile":
+		profile_route_pending = ""
+		show_profile_screen(data)
+		return
+
+	if current_overlay != null and current_overlay.has_method("set_profile"):
+		current_overlay.call("set_profile", data)
+
+func show_profile_screen(data: Dictionary = {}) -> void:
+	var profile := data if not data.is_empty() else NetworkManager.profile_snapshot
+	if profile.is_empty():
+		return
+	var screen := ProfileScreenScene.instantiate()
+	screen.back_requested.connect(_on_profile_back_requested)
+	screen.change_name_requested.connect(_on_profile_change_name_requested)
+	_set_overlay(screen)
+	screen.set_profile(profile)
+	screen.set_online(NetworkManager.is_profile_connected())
+	_set_debug_context(DEBUG_CONTEXT_NONE)
+
+func _on_profile_back_requested() -> void:
+	NetworkManager.disconnect_profile_server()
+	show_home_screen()
+
+func _on_profile_change_name_requested() -> void:
+	show_change_name_screen("profile")
+
+func show_change_name_screen(entry_context: String) -> void:
+	if NetworkManager.profile_snapshot.is_empty():
+		return
+	change_name_entry_context = entry_context
+	var screen := ChangeNameScreenScene.instantiate()
+	screen.back_requested.connect(_on_change_name_back_requested)
+	screen.name_change_requested.connect(_on_name_change_requested)
+	_set_overlay(screen)
+	screen.configure(NetworkManager.profile_snapshot)
+	screen.set_online(NetworkManager.is_profile_connected())
+	_set_debug_context(DEBUG_CONTEXT_NONE)
+
+func _on_change_name_back_requested() -> void:
+	if change_name_entry_context == "onboarding":
+		NetworkManager.disconnect_profile_server()
+		show_home_screen()
+	else:
+		show_profile_screen()
+
+func _on_name_change_requested(candidate: String) -> void:
+	if NetworkManager.send_profile_name_change(candidate):
+		return
+	if current_overlay != null and current_overlay.has_method("show_rejection"):
+		current_overlay.call("show_rejection", "server_error")
+
+func _on_profile_name_changed(data: Dictionary) -> void:
+	if change_name_entry_context == "onboarding":
+		NetworkManager.disconnect_profile_server()
+		show_home_screen()
+	else:
+		show_profile_screen(data)
+
+func _on_profile_name_rejected(data: Dictionary) -> void:
+	if current_overlay != null and current_overlay.has_method("show_rejection"):
+		current_overlay.call("show_rejection", str(data.get("reason", "server_error")))
+
+func _on_profile_connection_changed(online: bool) -> void:
+	if current_overlay != null and current_overlay.has_method("set_online"):
+		current_overlay.call("set_online", online)
+	if online or NetworkManager.is_connecting or profile_route_pending == "":
+		return
+	var failed_route := profile_route_pending
+	profile_route_pending = ""
+	if failed_route == "startup":
+		show_home_screen()
 
 func _on_spectator_start_rejected(data) -> void:
 	if home_spectator_setup == null or not is_instance_valid(home_spectator_setup):

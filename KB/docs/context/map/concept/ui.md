@@ -15,7 +15,7 @@ Adjacent concepts: `network.session.identity`, `build.endpoint-auth.injection`
 
 ## ui.constraint.pointer-input
 
-Owner: `KB/docs/context/ui.md:227-230` → **Pointer pass-through**
+Owner: `KB/docs/context/ui.md:241-244` → **Pointer pass-through**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: none
 
 ## ui.constraint.rendered-verification
 
-Owner: `KB/docs/context/ui.md:238-241` → **Rendered verification**
+Owner: `KB/docs/context/ui.md:252-255` → **Rendered verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: `testing.client.rendered`
 
 ## ui.constraint.scene-order
 
-Owner: `KB/docs/context/ui.md:217-220` → **Scene text-format constraint**
+Owner: `KB/docs/context/ui.md:231-234` → **Scene text-format constraint**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,12 +56,12 @@ Adjacent concepts: none
 
 ## ui.debug.entry
 
-Owner: `KB/docs/context/ui.md:208-211` → **Debug entry**
+Owner: `KB/docs/context/ui.md:222-225` → **Debug entry**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` | `toggle` | 19 | `sed -n 7,21p src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 688 | `sed -n 676,708p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 789 | `sed -n 777,809p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `backend.lobby.debug-config`, `network.room.bot-spectator`
 
@@ -77,18 +77,18 @@ Adjacent concepts: none
 
 ## ui.navigation.server-routes
 
-Owner: `KB/docs/context/ui.md:183-186` → **Server-driven navigation**
+Owner: `KB/docs/context/ui.md:197-200` → **Server-driven navigation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_room_joined` | 136 | `sed -n 124,156p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `room_joined` | 68 | `sed -n 56,88p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_room_joined` | 147 | `sed -n 135,167p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `room_joined` | 71 | `sed -n 59,91p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `network.room.close`, `network.session.resume-only`
 
 ## ui.play.menu
 
-Owner: `KB/docs/context/ui.md:159-162` → **Play Menu**
+Owner: `KB/docs/context/ui.md:173-176` → **Play Menu**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -98,17 +98,17 @@ Adjacent concepts: `hud.controller.state-application`
 
 ## ui.play.recovery
 
-Owner: `KB/docs/context/ui.md:170-173` → **Active-match recovery**
+Owner: `KB/docs/context/ui.md:184-187` → **Active-match recovery**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_recovery_started` | 152 | `sed -n 140,172p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_recovery_started` | 163 | `sed -n 151,183p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `network.session.recovery`
 
 ## ui.private-lobby.presentation
 
-Owner: `KB/docs/context/ui.md:128-131` → **Private Lobby presentation**
+Owner: `KB/docs/context/ui.md:142-145` → **Private Lobby presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -118,7 +118,7 @@ Adjacent concepts: `network.room.private`
 
 ## ui.private.create
 
-Owner: `KB/docs/context/ui.md:101-104` → **Private Server creation**
+Owner: `KB/docs/context/ui.md:115-118` → **Private Server creation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -131,7 +131,7 @@ Adjacent concepts: `network.room.private`
 
 ## ui.private.join
 
-Owner: `KB/docs/context/ui.md:117-121` → **Join Server**
+Owner: `KB/docs/context/ui.md:131-135` → **Join Server**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -144,9 +144,21 @@ Owner: `KB/docs/context/ui.md:117-121` → **Join Server**
 
 Adjacent concepts: `network.room.private`
 
+## ui.profile.presentation
+
+Owner: `KB/docs/context/ui.md:101-104` → **Profile presentation**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `src/Client/App/corp-tower/Cor/Scenes/ProfileScreen.tscn` | `ProfileScreen` | 60 | `sed -n 48,80p src/Client/App/corp-tower/Cor/Scenes/ProfileScreen.tscn` |
+| `src/Client/App/corp-tower/Cor/Scenes/ChangeNameScreen.tscn` | `ChangeNameScreen` | 47 | `sed -n 35,67p src/Client/App/corp-tower/Cor/Scenes/ChangeNameScreen.tscn` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `show_profile_screen` | 358 | `sed -n 346,378p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+
+Adjacent concepts: `backend.identity.profile`, `network.profile.session`
+
 ## ui.public-lobby.flow
 
-Owner: `KB/docs/context/ui.md:148-151` → **Public matchmaking and lobby**
+Owner: `KB/docs/context/ui.md:162-165` → **Public matchmaking and lobby**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -156,7 +168,7 @@ Adjacent concepts: `network.room.public`
 
 ## ui.settings.presentation
 
-Owner: `KB/docs/context/ui.md:137-140` → **Settings**
+Owner: `KB/docs/context/ui.md:151-154` → **Settings**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -171,7 +183,7 @@ Owner: `KB/docs/context/ui.md:12-15` → **Client shell**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/Main.tscn` | `Main` | 8 | `sed -n 1,28p src/Client/App/corp-tower/Cor/Scenes/Main.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_ready` | 77 | `sed -n 65,97p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_ready` | 81 | `sed -n 69,101p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: none
 
@@ -191,13 +203,13 @@ Owner: `KB/docs/context/ui.md:78-81` → **Startup restoration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_begin_authenticated_startup` | 121 | `sed -n 109,141p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_begin_authenticated_startup` | 129 | `sed -n 117,149p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `network.session.resume-only`, `ui.startup.splash`
 
 ## ui.startup.splash
 
-Owner: `KB/docs/context/ui.md:195-198` → **Startup Splash**
+Owner: `KB/docs/context/ui.md:209-212` → **Startup Splash**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

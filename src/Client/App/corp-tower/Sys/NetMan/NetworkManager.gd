@@ -33,6 +33,8 @@ var spectator_active := false
 var spectator_start_in_flight := false
 var pending_bot_profiles: Array = []
 var resume_only_request := false
+var connection_purpose := "gameplay"
+var profile_snapshot: Dictionary = {}
 
 var player_id := ""
 var reconnect_token := ""
@@ -62,6 +64,7 @@ const LATENCY_PROBE_TIMEOUT_MS := 5000
 const SERVER_URL := EndpointConfig.PRIMARY
 const STREAMING_MATCH_STATES := ["starting", "playing"]
 const SPECTATOR_ENTRY_MODE := "bot_spectator"
+const PROFILE_CONNECTION_PURPOSE := "profile"
 const SPECTATOR_PERSONALITIES := ["climber", "engineer", "opportunist"]
 
 signal status_changed(text)
@@ -81,8 +84,14 @@ signal private_join_failed(data)
 signal private_entry_failed(data)
 signal resume_only_failed(data)
 signal spectator_start_rejected(data)
+signal profile_snapshot_received(data)
+signal profile_name_changed(data)
+signal profile_name_rejected(data)
+signal profile_connection_changed(online: bool)
+signal profile_onboarding_seen_result(persisted: bool)
 
 func connect_server(is_auto_reconnect := false, preserve_entry := false, resume_only := false):
+	connection_purpose = "gameplay"
 	if not is_auto_reconnect and not preserve_entry:
 		_clear_pending_private_entry()
 		_clear_pending_spectator_entry()
@@ -137,6 +146,10 @@ func connect_server(is_auto_reconnect := false, preserve_entry := false, resume_
 			client_status.emit("[Connect]")
 
 func disconnect_server(clear_private_entry := true, clear_spectator_entry := true):
+	if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+		disconnect_profile_server()
+		return
+
 	status_changed.emit("Disconnecting...")
 	manual_disconnect_requested = true
 	connect_after_close = false
@@ -154,6 +167,68 @@ func disconnect_server(clear_private_entry := true, clear_spectator_entry := tru
 		_clear_spectator_state()
 	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		ws.close()
+
+func connect_profile_server() -> bool:
+	if connection_purpose == PROFILE_CONNECTION_PURPOSE and (is_conn_estab or is_connecting):
+		return true
+	if is_conn_estab or is_connecting or ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
+		return false
+
+	ws = WebSocketPeer.new()
+	connection_purpose = PROFILE_CONNECTION_PURPOSE
+	profile_snapshot = {}
+	manual_disconnect_requested = false
+	connect_after_close = false
+	auto_reconnect_enabled = false
+	auto_reconnect_delay_remaining = -1.0
+	is_connecting = true
+	connect_attempt_elapsed = 0.0
+	profile_connection_changed.emit(false)
+
+	var error := ws.connect_to_url(SERVER_URL)
+	if error != OK:
+		is_connecting = false
+		profile_connection_changed.emit(false)
+		return false
+	return true
+
+func disconnect_profile_server() -> void:
+	if connection_purpose != PROFILE_CONNECTION_PURPOSE:
+		return
+
+	manual_disconnect_requested = true
+	connect_after_close = false
+	is_conn_estab = false
+	is_connecting = false
+	profile_snapshot = {}
+	profile_connection_changed.emit(false)
+	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
+		ws.close()
+
+func is_profile_connected() -> bool:
+	return connection_purpose == PROFILE_CONNECTION_PURPOSE and is_conn_estab
+
+func send_profile_name_change(candidate: String) -> bool:
+	if not is_profile_connected():
+		return false
+	ws.send_text(JSON.stringify({
+		"type": "profile_change_name",
+		"name": candidate
+	}))
+	return true
+
+func mark_profile_onboarding_seen() -> bool:
+	if not is_profile_connected():
+		return false
+	ws.send_text(JSON.stringify({"type": "profile_onboarding_seen"}))
+	return true
+
+func send_profile_connect_request() -> void:
+	ws.send_text(JSON.stringify({
+		"type": "profile_connect",
+		"accessToken": AuthManager.connection_access_token(),
+		"authProvider": AuthManager.connection_auth_provider()
+	}))
 
 func toggle_connection():
 	if is_conn_estab or is_connecting:
@@ -742,6 +817,30 @@ func _process(delta: float) -> void:
 		var data = json.data
 
 		match data.type:
+			"profile_snapshot":
+				if connection_purpose != PROFILE_CONNECTION_PURPOSE:
+					continue
+				profile_snapshot = data
+				profile_snapshot_received.emit(profile_snapshot)
+			"profile_name_changed":
+				if connection_purpose != PROFILE_CONNECTION_PURPOSE:
+					continue
+				profile_snapshot = data.get("profile", {})
+				profile_name_changed.emit(profile_snapshot)
+			"profile_name_rejected":
+				if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+					if data.get("profile") is Dictionary:
+						profile_snapshot = data.get("profile")
+					profile_name_rejected.emit(data)
+			"profile_onboarding_seen":
+				if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+					var persisted := bool(data.get("persisted", false))
+					if persisted:
+						profile_snapshot["nameOnboardingSeen"] = true
+					profile_onboarding_seen_result.emit(persisted)
+			"profile_unavailable":
+				if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+					profile_connection_changed.emit(false)
 			"room_created":
 				resume_only_request = false
 				var room_is_spectator := bool(data.get("spectator", false))
@@ -837,20 +936,27 @@ func _process(delta: float) -> void:
 				is_conn_estab = true
 				is_connecting = false
 				manual_disconnect_requested = false
-				status_changed.emit("Connected")
-				client_status.emit("[Disconnect]")
-				send_reconnect_request()
+				if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+					profile_connection_changed.emit(true)
+					send_profile_connect_request()
+				else:
+					status_changed.emit("Connected")
+					client_status.emit("[Disconnect]")
+					send_reconnect_request()
 
 		WebSocketPeer.STATE_CLOSING:
 			pass
 
 		WebSocketPeer.STATE_CLOSED:
 			var was_connecting := is_conn_estab or is_connecting
+			var was_profile := connection_purpose == PROFILE_CONNECTION_PURPOSE
 			is_conn_estab = false
 			is_connecting = false
 			reset_latency_probe()
 
-			if recovery_reconnect_pending:
+			if was_profile:
+				profile_connection_changed.emit(false)
+			elif recovery_reconnect_pending:
 				start_pending_recovery_reconnect()
 			elif connect_after_close:
 				connect_after_close = false
