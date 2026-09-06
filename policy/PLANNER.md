@@ -6,8 +6,17 @@ For repo-dependent planning:
 - Search the KB router for the single concept or exact alias that best matches the current information need. Do not read the router in full.
 - Read only that concept's owning prose leaf, generated concept-map section, and source evidence explicitly granted by that concept.
 - Do not automatically load adjacent concepts or widen into uncontrolled repository search.
-- At any point before the planning task is complete, if more repository context is required, return to `KB/docs/context/index.md` and resolve the next required concept. Repeat this loop only as needed until contextualization is sufficient.
-- If exact retrieval cannot resolve required context, follow the model-level KB retrieval transport/fallback contract and report any resulting retrieval defect.
+- Whenever another information need remains, return to the KB router and resolve the next exact concept. Repeat only as needed.
+- If exact retrieval cannot resolve required context, follow the ChatGPT KB retrieval transport/fallback contract in `policy/CHATGPT.md` and report any resulting retrieval defect.
+
+Planner contextualization must go far enough to understand both behavior and likely implementation. Before Phase 2, establish from current repository evidence:
+- the relevant durable system contracts;
+- the exact source files and bounded sections or symbols Codex should read;
+- the likely exact direct-edit files required to implement the approved behavior;
+- any generated outputs or authored KB/docs expected to change;
+- the minimum verification that can prove the task complete.
+
+Do not stop contextualization at architecture-level understanding when the implementation boundary is still unknown. Do not guess file paths merely to make the plan look complete.
 
 Identify the planning type:
 - GAME
@@ -69,93 +78,111 @@ Once the complete numbered contract is approved, proceed to `#PLAN-PHASE-2#`.
 
 #PLAN-PHASE-2#
 
-## Process controls
+Phase 2 compiles a self-contained, execution-oriented Codex plan. Planner performs the workflow-policy selection and repository-context discovery once so Codex does not repeat that reasoning during normal execution.
 
-Resolve the supporting process contract before writing the implementation plan.
+## Policy selection
 
-The default process profile is BARE:
-- telemetry: OFF
-- workflow_inefficiency_flagging: OFF
-- qa: OFF
-- qa_coverage: OFF
-- qa_receipt: OFF
-- plan_archival: ON
+Search `policy/CODEX.md` for `#ENTRY#` and read only that entry section. Follow its Planner-side routing to the relevant implementation policy:
+- IMPLEMENT → `policy/IMPLEMENT.md#ENTRY#`
+- FIX → `policy/FIX.md#ENTRY#`
 
-These controls are independent from SINGLE or ORCHESTRATED execution mode.
+Load only additional task-specific policy sections that the current task actually needs, such as orchestration, process overrides, strict execution, visual/client rules, KB rules, or another specialized policy source. Do not load optional policy merely because it exists.
 
-The user may enable or disable any optional process for the current task through natural-language instruction. Resolve the complete effective values into the Phase 2 plan even when the user supplies no overrides. Do not silently enable an optional process because it seems useful.
+Compile only the selected rules that materially constrain this task into the plan's `## 2. Task-Specific Policy`. Do not copy universal Codex rules already present in `AGENTS.md`, and do not require Codex to reread `policy/CODEX.md`, `policy/IMPLEMENT.md`, or `policy/FIX.md` during normal execution.
 
-"Everything ON" enables every applicable optional task process. It does not authorize commit, push, pull, deploy, destructive Git operations, or another externally consequential action.
+For approved WORKFLOW changes where authored policy or authored KB wording itself carries the intended behavior, include the exact replacement or insertion prose in the implementation plan. Codex integrates that approved prose without paraphrasing it. Generated KB routers and maps remain tooling-owned.
 
-`workflow_inefficiency_flagging=ON` requires `telemetry=ON`. Reject an invalid combination rather than silently changing it.
+## Defaults and overrides
 
-The following are not optional process controls and remain required when applicable:
-- the authorized task contract and explicit task-owned write scope;
-- preservation of unrelated or concurrent changes;
-- required authorization and safety boundaries;
-- minimal final scope and patch-integrity checking;
-- repair of known task-caused failures before successful completion;
-- repository or KB retrieval required to establish implementation facts;
-- authored KB updates required by a changed durable current system contract;
-- generated KB or map synchronization required by the changed contract;
-- generation or build mechanics required to produce the requested repository result.
+Repository defaults are implicit and must not be repeated in the plan.
 
-`qa=OFF` disables executable regression QA; it does not disable the required implementation kernel above.
+Do not include BARE process-control values when the task uses the default process profile. Include only non-default process controls or an explicitly selected non-default profile under `## Execution Overrides`.
 
-`qa_coverage=OFF` means the task does not add or update permanent regression coverage merely because source changed. Enable it only when the user authorizes permanent coverage work for the task.
+Do not state SINGLE execution when the task uses the default single-run execution shape. Include ORCHESTRATED only when orchestration is intentionally selected.
 
-`qa_receipt` controls the public QA receipt independently from executable QA. A receipt may report that executable QA was intentionally not run.
+Do not place Codex runtime identity, current model, or current effort in the plan. Planner may still recommend a model and effort to the user in the accompanying ChatGPT reply. For ORCHESTRATED work, worker configuration may appear in the execution override only when it is required to dispatch the planned worker units; it is configuration guidance, not a Codex runtime identity check.
 
-Plan archival is ON by default. When explicitly OFF, successful implementation leaves the bound active plan in place.
+`## Execution Overrides` exists only when at least one non-default execution rule applies, such as:
+- ORCHESTRATED;
+- `strict_execution=ON`;
+- a non-default process control or process profile;
+- explicitly authorized generic QA tooling;
+- explicitly authorized Git, deployment, or another normally prohibited external action;
+- another task-specific execution constraint that changes the default Codex path.
 
-Post-implementation ChatGPT Reviewer QA is outside the task-close control registry. Mark it separately in the plan when the user requests it; otherwise it is OFF.
+## Execution-shape planning
 
-## Execution mode planning
+Use the default single-run shape when one cohesive Codex implementation is the safer or more efficient execution unit. Do not write that default into the plan.
 
-Assess the approved task's execution shape before writing the implementation plan:
+Select ORCHESTRATED only when multiple coherent implementation responsibilities have boundaries that materially reduce context reconstruction, enable useful safe concurrency, or improve integration control enough to justify orchestration overhead. Do not orchestrate merely because a task may approach a context window; compaction is allowed.
 
-- SINGLE — one cohesive Codex implementation run is the safer or more efficient execution unit.
-- ORCHESTRATED — the task has multiple coherent implementation responsibilities whose bounded delegation materially reduces context reconstruction, enables useful safe concurrency, or improves integration control enough to justify orchestration overhead.
+When ORCHESTRATED is selected, read `policy/CODEX.md#ORCHESTRATION#` and compile the required orchestration contract into `## Execution Overrides`.
 
-Do not choose ORCHESTRATED only because the task may approach a model context window. Compaction is allowed. Decompose by semantic responsibility, dependency boundaries, architectural coupling, integration risk, and expected context-reconstruction cost.
+## Standard Phase 2 format
 
-Prefer SINGLE when splitting would make multiple agents rediscover the same implementation state or when the work is too tightly coupled to create independently verifiable units.
+Every Phase 2 plan uses the following core sections in this order.
 
-For either mode, base the plan on:
-- the approved numbered contract;
-- current repository state;
-- only the KB concepts and bounded source evidence required to scope implementation.
+### `## 1. Intended Behavior`
 
-Every plan must state:
-- execution mode;
-- resolved process controls;
-- scope;
-- approved intended behavior;
-- implementation boundaries;
-- verification expectations;
-- directly affected documentation;
-- any explicitly authorized generic QA tooling;
-- recommended Codex model and effort.
+Copy the intended behavior approved by the user during Plan Phase 1. Preserve the approved numbered contract and its meaning. Do not reinterpret, expand, or redesign it during Phase 2.
 
-Select only model names supported by current authoritative Codex/product configuration. Do not invent model names. Allowed effort recommendations are Medium, High, xHigh, Max, and Ultra where supported.
+### `## 2. Task-Specific Policy`
 
-For SINGLE, recommend the model and effort for that implementation run.
+Provide only the policy rules selected for this task from the Planner-side policy sources. Keep them compact and executable. Do not repeat universal `AGENTS.md` rules.
 
-For ORCHESTRATED:
-- Create one authoritative parent implementation plan.
-- Define coherent semantic worker units, their dependencies, what each unit produces or consumes, shared invariants or interfaces, and parent-level acceptance criteria.
-- Identify material likely write-overlap or sequencing risks when current evidence makes them knowable, but do not inspect unnecessary source merely to predict every changed file.
-- Recommend an orchestrator/integrator model and effort and a model and effort for each worker unit. Different worker units may use different recommendations.
-- The orchestrator recommendation must be at least as capable as the strongest worker recommendation, and its effort must be at least the highest worker effort. If authoritative model capability ordering is unavailable, use the same model as the strongest worker requirement rather than guessing that another model is stronger.
-- The parent plan authorizes the orchestrator to refine executable decomposition against current repository evidence by merging, splitting, ordering, or serializing worker units without changing approved intended behavior or adding unrelated scope.
-- The parent plan must require dependency-aware execution waves rather than maximum parallelism, one active writer for each shared mutable path, bounded worker context, compact worker handoffs, same-worker repair reuse when a failure remains inside that worker's ownership, and parent-level integration verification.
-- Isolated branches or worktrees are exceptional. Include them only when their parallelism benefit justifies merge and cleanup overhead and the required Git operation is explicitly authorized.
+### `## 3. Context`
 
-For approved WORKFLOW changes where policy or authored KB wording itself carries the intended behavior, write the exact replacement or insertion prose in the plan. Codex integrates that approved prose without paraphrasing it. Generated KB routers and maps remain tooling-owned.
+Include these subsections:
 
-Keep unrelated maintenance out of scope.
+#### `### Compacted KB Context`
 
-Do not repeat the same requirements across multiple sections or use redundant wording.
+Summarize the implementation-relevant KB prose already read by Planner. Preserve the current system contracts, ownership, boundaries, invariants, and relationships Codex needs, while removing history, repetition, and unrelated detail. This compacted summary is Codex's primary KB context.
+
+#### `### KB Retrieval Inputs`
+
+List the exact canonical KB concept IDs or exact aliases Planner used or identified as relevant, with a short statement of when deeper retrieval may be needed. These inputs are a fallback for further detail, not mandatory startup reads.
+
+#### `### Source Context`
+
+List the exact current source files Codex should inspect, with the relevant bounded section, symbol, or range and why it matters to this implementation. Planner must contextualize far enough that this list is evidence-based rather than guessed.
+
+### `## 4. Expected Write Scope`
+
+List the likely exact files Planner expects the task to modify.
+
+Use:
+- `### Direct Edits` for authored files Codex is expected to change.
+- `### Generated Outputs` only when deterministic generation is expected to produce changed files.
+
+This is an evidence-based expected scope, not a hard whitelist by default. Codex may use its stronger current-source understanding to add a proven direct task dependency or bounded task-local refactor when needed for a complete or materially cleaner implementation, while remaining inside the approved behavior and universal scope boundaries.
+
+If `strict_execution=ON` is selected, the plan must make the prescribed direct-write scope and implementation constraints explicit because Codex may not autonomously expand them.
+
+### `## 5. Implementation`
+
+Provide ordered, concrete implementation requirements tied to the approved behavior, compacted context, source context, and expected write scope.
+
+Specify what must change and any material interfaces, invariants, sequencing, compatibility requirements, or exact authored prose. Do not unnecessarily prescribe low-level coding choices that current source evidence is better positioned for Codex to decide unless strict execution is intentionally enabled.
+
+### `## 6. Verification`
+
+Specify only the minimum task-required verification. Prefer exact existing commands or deterministic checks when current repository evidence makes them known.
+
+Include required task ownership, patch-integrity, repository-consistency, generated-output, and requested build mechanics when applicable. Add executable regression QA or permanent QA coverage only when an applicable execution override or explicit approved requirement enables it.
+
+### `## 7. Done Criteria`
+
+State compact observable conditions that mean the approved intended behavior has been implemented successfully and the required verification/closure is complete.
+
+### `## Execution Overrides`
+
+Append this section only when at least one non-default execution rule applies. Omit the entire section for the normal default path.
+
+## Plan quality
+
+Phase 2 is not ready until Planner has enough current evidence to provide the compacted KB context, exact source context, and likely exact write files required for a highly execution-oriented handoff.
+
+Keep unrelated maintenance out of scope. Do not repeat the same requirement across multiple sections or restate defaults that Codex already receives from repository policy/tooling.
 
 Deliver the implementation plan as a downloadable Markdown artifact named:
 
@@ -163,9 +190,10 @@ Deliver the implementation plan as a downloadable Markdown artifact named:
 
 In the accompanying ChatGPT reply, state:
 - task complexity;
-- execution mode;
-- recommended model and effort for SINGLE, or orchestrator plus worker recommendations for ORCHESTRATED;
+- recommended model and effort for the implementation run, or orchestrator plus worker recommendations when ORCHESTRATED;
 - a short reason for the recommendation.
+
+Do not put the default execution mode, BARE controls, or the current Codex runtime identity/model/effort into the plan merely to mirror the accompanying recommendation.
 
 After delivering the Phase 2 plan, stop. Implementation belongs to Codex.
 

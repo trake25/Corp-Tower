@@ -1,32 +1,23 @@
 #ENTRY#
 
-Restore the confirmed intended behavior for the authorized defect.
+Planner uses this policy for Phase 2 when the task restores confirmed intended existing behavior for an authorized defect or regression.
 
-Use the KB context loop from `policy/CODEX.md` only as needed to understand the affected boundary.
-
-Before editing, establish from current repository evidence:
+Before producing the fix plan, establish from current repository evidence:
 - the observed defect;
 - the intended existing behavior;
-- the task-owned source responsible for the defect.
+- the affected boundary and responsible source;
+- the likely exact files required for the repair;
+- the minimum verification that exercises the repaired behavior.
 
-Make the smallest complete repair that restores the intended behavior.
+Select only the rules below that materially constrain the current fix and compile them into `## 2. Task-Specific Policy`. Do not copy the section mechanically, and do not repeat universal `AGENTS.md` rules.
 
-Do not redesign intended behavior under FIX.
+Fix policy candidates:
+- Restore the confirmed intended behavior; do not silently redesign it.
+- Make the smallest complete repair that resolves the defect, while allowing a bounded task-local refactor or modularization when current source evidence shows it is necessary for a correct or materially cleaner restoration and `strict_execution=ON` is not selected.
+- Preserve behavior outside the confirmed repair boundary unless current evidence proves a direct dependency is required to restore the approved behavior.
+- If repository evidence shows the requested repair requires a new product or workflow decision rather than restoration, stop the fix path and return that decision to ChatGPT planning.
+- Update authored KB prose only when the durable current contract actually changes within the authorized repair or the existing KB contract is demonstrably incorrect. Keep KB prose about the current system, never bug chronology or repair history.
+- Verification must exercise the repaired behavior at the minimum level required by the plan. A manually discovered bug is a regression candidate, not automatic authorization for permanent QA coverage.
+- Add or update permanent regression coverage only when the approved fix or an execution override explicitly authorizes it.
 
-If repository evidence shows that the repair requires a product or workflow design decision rather than restoration, stop and tell the user what conflict was found. The redesign must be planned with ChatGPT before implementation returns to Codex.
-
-Update KB prose only when the durable current contract changes within the authorized fix or the existing KB contract is demonstrably incorrect.
-
-When KB changes are required, read and follow `KB/docs/context/CONCEPT-SCHEMA.md`. Keep the prose about the current system, never the bug chronology or repair history.
-
-Do not hand-edit generated KB routers or concept maps. Use the repository's deterministic tooling.
-
-Verification must exercise the repaired behavior through the existing task-close and QA path.
-
-A manually discovered bug is a regression candidate, not automatic justification for permanent QA. Reuse existing coverage by default; add or update permanent coverage only when it protects a durable regression contract within the authorized fix.
-
-Repair task-caused failures before closing.
-
-Keep unrelated maintenance outside the fix and hand it off through the repository's maintenance path when required.
-
-After successful close-out, stop and report the repair result.
+During Phase 2, Planner should include only the applicable items above, plus any more specific task policy selected from relevant repository policy/skill sources.
