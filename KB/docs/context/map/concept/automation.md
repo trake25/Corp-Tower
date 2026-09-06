@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## automation.docs.maps
 
-Owner: `KB/docs/context/automation.md:342-347` → **Map regeneration**
+Owner: `KB/docs/context/automation.md:343-348` → **Map regeneration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,7 +15,7 @@ Adjacent concepts: `automation.docs.validation`
 
 ## automation.docs.retrieval-repair
 
-Owner: `KB/docs/context/automation.md:385-390` → **Retrieval repair**
+Owner: `KB/docs/context/automation.md:386-391` → **Retrieval repair**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: `automation.retrieval.fallback`
 
 ## automation.docs.scope
 
-Owner: `KB/docs/context/automation.md:373-378` → **Docs scoping**
+Owner: `KB/docs/context/automation.md:374-379` → **Docs scoping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: none
 
 ## automation.docs.validation
 
-Owner: `KB/docs/context/automation.md:355-366` → **KB validation**
+Owner: `KB/docs/context/automation.md:356-367` → **KB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -46,42 +46,43 @@ Adjacent concepts: none
 
 ## automation.execution.io-discipline
 
-Owner: `KB/docs/context/automation.md:133-166` → **Provider-visible I/O discipline**
+Owner: `KB/docs/context/automation.md:134-149` → **Provider-visible I/O discipline**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
-| `scripts/task-close.mjs` | `compactOutput` | 924 | `sed -n 912,944p scripts/task-close.mjs` |
-| `scripts/qa-gate.mjs` | `fail` | 208 | `sed -n 196,228p scripts/qa-gate.mjs` |
+| `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,20p AGENTS.md` |
+| `scripts/task-close.mjs` | `compactOutput` | 936 | `sed -n 924,956p scripts/task-close.mjs` |
+| `scripts/qa-gate.mjs` | `fail` | 216 | `sed -n 204,236p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `automation.observability.usage`
 
 ## automation.git.publish
 
-Owner: `KB/docs/context/automation.md:461-466` → **Authorized Git publication**
+Owner: `KB/docs/context/automation.md:460-470` → **Authorized Git publication**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/git-sync-commit-push.mjs` | `requireManifest` | 120 | `sed -n 108,140p scripts/git-sync-commit-push.mjs` |
+| `scripts/git-sync-commit-push.mjs` | `requireManifest` | 161 | `sed -n 149,181p scripts/git-sync-commit-push.mjs` |
+| `scripts/git-sync-commit-push.mjs` | `explicitPathScope` | 127 | `sed -n 115,147p scripts/git-sync-commit-push.mjs` |
 
 Adjacent concepts: none
 
 ## automation.observability.binding
 
-Owner: `KB/docs/context/automation.md:400-414` → **Observability binding**
+Owner: `KB/docs/context/automation.md:401-412` → **Observability binding**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/agent-observability/state.mjs` | `bindActiveTask` | 148 | `sed -n 136,168p scripts/lib/agent-observability/state.mjs` |
-| `scripts/codex-observability-hook.mjs` | `handleHook` | 224 | `sed -n 212,244p scripts/codex-observability-hook.mjs` |
-| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 431 | `sed -n 419,451p scripts/task-close.mjs` |
-| `scripts/codex-task-run.mjs` | `launchCodexTask` | 88 | `sed -n 76,108p scripts/codex-task-run.mjs` |
+| `scripts/codex-observability-hook.mjs` | `handleHook` | 245 | `sed -n 233,265p scripts/codex-observability-hook.mjs` |
+| `scripts/codex-task-run.mjs` | `startTelemetrySession` | 47 | `sed -n 35,67p scripts/codex-task-run.mjs` |
+| `scripts/codex-task-run.mjs` | `launchCodexTask` | 115 | `sed -n 103,135p scripts/codex-task-run.mjs` |
 
 Adjacent concepts: none
 
 ## automation.observability.flags
 
-Owner: `KB/docs/context/automation.md:445-454` → **Workflow inefficiency flags**
+Owner: `KB/docs/context/automation.md:443-452` → **Workflow inefficiency flags**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -94,7 +95,7 @@ Adjacent concepts: none
 
 ## automation.observability.usage
 
-Owner: `KB/docs/context/automation.md:427-435` → **Observability usage**
+Owner: `KB/docs/context/automation.md:425-433` → **Observability usage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -110,44 +111,45 @@ Adjacent concepts: none
 
 ## automation.orchestration.execution
 
-Owner: `KB/docs/context/automation.md:178-191` → **Orchestrated execution**
+Owner: `KB/docs/context/automation.md:181-192` → **Orchestrated execution**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/PLANNER.md` | `Execution-shape planning` | 115 | `sed -n 103,135p policy/PLANNER.md` |
-| `policy/CODEX.md` | `Orchestration planning` | 58 | `sed -n 46,78p policy/CODEX.md` |
+| `policy/PLANNER.md` | `Execution-shape planning` | 102 | `sed -n 90,122p policy/PLANNER.md` |
+| `policy/CODEX.md` | `Do not enable task-close merely because execution is orchestrated.` | 109 | `sed -n 97,116p policy/CODEX.md` |
 | `policy/REVIEWER.md` | `Integrated QA` | 44 | `sed -n 32,64p policy/REVIEWER.md` |
 
 Adjacent concepts: `automation.planning.phase2`, `automation.orchestration.ownership`, `automation.task-close.lifecycle`
 
 ## automation.orchestration.ownership
 
-Owner: `KB/docs/context/automation.md:202-211` → **Orchestration ownership**
+Owner: `KB/docs/context/automation.md:204-213` → **Orchestration ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/CODEX.md` | `Orchestration planning` | 58 | `sed -n 46,78p policy/CODEX.md` |
-| `scripts/lib/orchestration-scope.mjs` | `claimWorkerScope` | 167 | `sed -n 155,187p scripts/lib/orchestration-scope.mjs` |
-| `scripts/lib/orchestration-scope.mjs` | `finalizeOrchestrationScope` | 207 | `sed -n 195,218p scripts/lib/orchestration-scope.mjs` |
+| `policy/CODEX.md` | `Do not enable task-close merely because execution is orchestrated.` | 109 | `sed -n 97,116p policy/CODEX.md` |
+| `scripts/lib/orchestration-scope.mjs` | `claimWorkerScope` | 186 | `sed -n 174,206p scripts/lib/orchestration-scope.mjs` |
+| `scripts/lib/orchestration-scope.mjs` | `finalizeOrchestrationScope` | 226 | `sed -n 214,237p scripts/lib/orchestration-scope.mjs` |
+| `scripts/lib/task-ownership.mjs` | `resolveTaskOwnership` | 212 | `sed -n 200,232p scripts/lib/task-ownership.mjs` |
 
 Adjacent concepts: `automation.orchestration.execution`, `automation.task-close.scope`
 
 ## automation.planning.phase2
 
-Owner: `KB/docs/context/automation.md:38-52` → **Phase 2 execution handoff**
+Owner: `KB/docs/context/automation.md:38-53` → **Phase 2 execution handoff**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/PLANNER.md` | `Policy selection` | 83 | `sed -n 71,103p policy/PLANNER.md` |
-| `policy/PLANNER.md` | `Defaults and overrides` | 97 | `sed -n 85,117p policy/PLANNER.md` |
-| `policy/PLANNER.md` | `Standard Phase 2 format` | 123 | `sed -n 111,143p policy/PLANNER.md` |
-| `policy/CODEX.md` | `Strict execution` | 86 | `sed -n 74,95p policy/CODEX.md` |
+| `policy/PLANNER.md` | `Policy selection` | 65 | `sed -n 53,85p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Defaults and selected policy` | 94 | `sed -n 82,114p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Standard Phase 2 format` | 108 | `sed -n 96,128p policy/PLANNER.md` |
+| `policy/CODEX.md` | `Repository process defaults` | 34 | `sed -n 22,54p policy/CODEX.md` |
 
 Adjacent concepts: `automation.retrieval.direct`, `automation.orchestration.execution`, `automation.task-close.process-controls`
 
 ## automation.retrieval.aliases
 
-Owner: `KB/docs/context/automation.md:90-94` → **Retrieval aliases**
+Owner: `KB/docs/context/automation.md:91-95` → **Retrieval aliases**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -157,7 +159,7 @@ Adjacent concepts: none
 
 ## automation.retrieval.bundle
 
-Owner: `KB/docs/context/automation.md:118-123` → **Context bundles**
+Owner: `KB/docs/context/automation.md:119-124` → **Context bundles**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -171,27 +173,27 @@ Owner: `KB/docs/context/automation.md:17-25` → **Direct retrieval discipline**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
-| `policy/PLANNER.md` | `Standard Phase 2 format` | 123 | `sed -n 111,143p policy/PLANNER.md` |
+| `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,20p AGENTS.md` |
+| `policy/PLANNER.md` | `Standard Phase 2 format` | 108 | `sed -n 96,128p policy/PLANNER.md` |
 | `policy/CHATGPT.md` | `KB retrieval transport` | 16 | `sed -n 4,36p policy/CHATGPT.md` |
 
 Adjacent concepts: `automation.planning.phase2`, `automation.retrieval.protocol`
 
 ## automation.retrieval.fallback
 
-Owner: `KB/docs/context/automation.md:104-112` → **Retrieval fallback**
+Owner: `KB/docs/context/automation.md:105-113` → **Retrieval fallback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/context-query.mjs` | `conceptRoute` | 102 | `sed -n 90,122p scripts/lib/context-query.mjs` |
-| `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
+| `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,20p AGENTS.md` |
 | `policy/CHATGPT.md` | `KB retrieval transport` | 16 | `sed -n 4,36p policy/CHATGPT.md` |
 
 Adjacent concepts: `automation.docs.retrieval-repair`
 
 ## automation.retrieval.protocol
 
-Owner: `KB/docs/context/automation.md:64-71` → **Concept retrieval protocol**
+Owner: `KB/docs/context/automation.md:65-72` → **Concept retrieval protocol**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -205,7 +207,7 @@ Adjacent concepts: `testing.automation.protocol`
 
 ## automation.retrieval.states
 
-Owner: `KB/docs/context/automation.md:79-84` → **Retrieval result states**
+Owner: `KB/docs/context/automation.md:80-85` → **Retrieval result states**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -215,65 +217,77 @@ Adjacent concepts: none
 
 ## automation.task-close.lifecycle
 
-Owner: `KB/docs/context/automation.md:221-228` → **Task-close lifecycle**
+Owner: `KB/docs/context/automation.md:223-235` → **Task-close lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `main` | 1240 | `sed -n 1228,1260p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `main` | 1220 | `sed -n 1208,1240p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt`, `automation.task-close.process-controls`
 
 ## automation.task-close.plan-archive
 
-Owner: `KB/docs/context/automation.md:329-335` → **Plan archival**
+Owner: `KB/docs/context/automation.md:327-336` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `archivePlan` | 1031 | `sed -n 1019,1051p scripts/task-close.mjs` |
-| `scripts/task-close.mjs` | `retainPlan` | 1048 | `sed -n 1036,1068p scripts/task-close.mjs` |
+| `scripts/lib/plan-archive.mjs` | `archivePlan` | 55 | `sed -n 43,75p scripts/lib/plan-archive.mjs` |
+| `scripts/plan-archive.mjs` | `main` | 7 | `sed -n 1,27p scripts/plan-archive.mjs` |
 
 Adjacent concepts: none
 
 ## automation.task-close.process-controls
 
-Owner: `KB/docs/context/automation.md:241-257` → **Task process controls**
+Owner: `KB/docs/context/automation.md:248-263` → **Task process controls**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/lib/task-process-controls.mjs` | `resolveTaskProcessControls` | 59 | `sed -n 47,79p scripts/lib/task-process-controls.mjs` |
-| `scripts/task-close.mjs` | `createManifest` | 344 | `sed -n 332,364p scripts/task-close.mjs` |
-| `scripts/codex-task-run.mjs` | `resolveTelemetryMode` | 25 | `sed -n 13,45p scripts/codex-task-run.mjs` |
+| `scripts/lib/task-process-controls.mjs` | `resolveTaskProcessControls` | 78 | `sed -n 66,98p scripts/lib/task-process-controls.mjs` |
+| `scripts/task-close.mjs` | `createManifest` | 342 | `sed -n 330,362p scripts/task-close.mjs` |
+| `scripts/codex-task-run.mjs` | `resolveTelemetryMode` | 29 | `sed -n 17,49p scripts/codex-task-run.mjs` |
 
 Adjacent concepts: `automation.planning.phase2`, `automation.task-close.lifecycle`, `automation.task-close.scope`
 
 ## automation.task-close.receipt
 
-Owner: `KB/docs/context/automation.md:313-321` → **Public receipt**
+Owner: `KB/docs/context/automation.md:310-319` → **Public receipt**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `finishVerification` | 1138 | `sed -n 1126,1158p scripts/task-close.mjs` |
+| `scripts/task-receipt.mjs` | `main` | 85 | `sed -n 73,105p scripts/task-receipt.mjs` |
 | `scripts/lib/qa-receipt.mjs` | `renderPublicQaReceipt` | 65 | `sed -n 53,85p scripts/lib/qa-receipt.mjs` |
 
 Adjacent concepts: none
 
 ## automation.task-close.scope
 
-Owner: `KB/docs/context/automation.md:266-283` → **Task-close scope**
+Owner: `KB/docs/context/automation.md:273-285` → **Task-close scope**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `createManifest` | 344 | `sed -n 332,364p scripts/task-close.mjs` |
-| `scripts/task-close.mjs` | `taskCloseIntake` | 233 | `sed -n 221,253p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `createManifest` | 342 | `sed -n 330,362p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `taskCloseIntake` | 204 | `sed -n 192,224p scripts/task-close.mjs` |
+| `scripts/lib/task-ownership.mjs` | `resolveTaskOwnership` | 212 | `sed -n 200,232p scripts/lib/task-ownership.mjs` |
 
 Adjacent concepts: `automation.orchestration.ownership`
 
 ## automation.task-close.verification
 
-Owner: `KB/docs/context/automation.md:291-305` → **Task-close verification**
+Owner: `KB/docs/context/automation.md:293-302` → **Task-close verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `verifyManifest` | 1205 | `sed -n 1193,1225p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `verifyManifest` | 1185 | `sed -n 1173,1205p scripts/task-close.mjs` |
 
 Adjacent concepts: `testing.selection.local`
+
+## automation.task-ownership.lifecycle
+
+Owner: `KB/docs/context/automation.md:160-169` → **Task ownership**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `scripts/lib/task-ownership.mjs` | `resolveTaskOwnership` | 212 | `sed -n 200,232p scripts/lib/task-ownership.mjs` |
+| `scripts/task-ownership.mjs` | `main` | 12 | `sed -n 1,32p scripts/task-ownership.mjs` |
+
+Adjacent concepts: `automation.orchestration.ownership`, `automation.task-close.scope`

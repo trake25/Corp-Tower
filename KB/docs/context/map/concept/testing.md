@@ -5,20 +5,23 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:128-146` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:131-146` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 109 | `sed -n 97,126p scripts/tests/context-query.test.mjs` |
-| `scripts/tests/task-close.test.mjs` | `prepare creates an explicit schema-v3 BARE ownership manifest and intake` | 257 | `sed -n 245,277p scripts/tests/task-close.test.mjs` |
-| `scripts/tests/orchestration-scope.test.mjs` | `parallel worker ownership rejects overlapping write claims` | 71 | `sed -n 59,91p scripts/tests/orchestration-scope.test.mjs` |
-| `scripts/tests/policy-routing.test.mjs` | `orchestration is a Planner-selected override with bounded parent and worker ownership` | 140 | `sed -n 128,160p scripts/tests/policy-routing.test.mjs` |
+| `scripts/tests/task-ownership.test.mjs` | `lightweight task ownership acquires explicit scope, rejects active overlap, and releases independently` | 22 | `sed -n 10,42p scripts/tests/task-ownership.test.mjs` |
+| `scripts/tests/plan-archive.test.mjs` | `standalone plan archival is collision-safe and idempotent without task-close` | 9 | `sed -n 1,29p scripts/tests/plan-archive.test.mjs` |
+| `scripts/tests/orchestration-scope.test.mjs` | `parallel worker ownership rejects overlapping write claims` | 94 | `sed -n 82,114p scripts/tests/orchestration-scope.test.mjs` |
+| `scripts/tests/policy-routing.test.mjs` | `universal policy excludes optional process routing` | 17 | `sed -n 5,37p scripts/tests/policy-routing.test.mjs` |
 | `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
 | `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 63 | `sed -n 51,83p scripts/benchmark-rag.mjs` |
 | `scripts/lib/kb-calibration.mjs` | `measureKbCalibration` | 180 | `sed -n 168,200p scripts/lib/kb-calibration.mjs` |
 | `scripts/export-kb-calibration-report.mjs` | `exportKbCalibrationReport` | 158 | `sed -n 146,178p scripts/export-kb-calibration-report.mjs` |
 | `scripts/tests/codex-observability-hook.test.mjs` | `production hook smoke keeps observability fail-open and private` | 66 | `sed -n 54,86p scripts/tests/codex-observability-hook.test.mjs` |
-| `scripts/qa-gate.mjs` | `selectToolingQa` | 107 | `sed -n 95,127p scripts/qa-gate.mjs` |
+| `scripts/tests/codex-task-run.test.mjs` | `telemetry-enabled launcher establishes an opt-in binding that settles without task-close` | 35 | `sed -n 23,55p scripts/tests/codex-task-run.test.mjs` |
+| `scripts/tests/task-receipt.test.mjs` | `standalone receipt writes only explicit sanitized scope and states skipped QA` | 16 | `sed -n 4,36p scripts/tests/task-receipt.test.mjs` |
+| `scripts/qa-gate.mjs` | `selectToolingQa` | 115 | `sed -n 103,135p scripts/qa-gate.mjs` |
 | `scripts/fixtures/agent-observability/provider-events.json` | `events` | 25 | `sed -n 13,45p scripts/fixtures/agent-observability/provider-events.json` |
 
 Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifecycle`, `automation.orchestration.ownership`
@@ -44,7 +47,7 @@ Owner: `KB/docs/context/testing.md:46-54` → **Godot coverage**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_application_scripts` | 41 | `sed -n 29,61p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 48 | `sed -n 36,68p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
-| `scripts/qa-gate.mjs` | `main` | 282 | `sed -n 270,302p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `main` | 290 | `sed -n 278,310p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
@@ -57,7 +60,7 @@ Owner: `KB/docs/context/testing.md:66-80` → **Rendered client verification**
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_main_scene_ready` | 126 | `sed -n 114,146p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_begin_collapse` | 894 | `sed -n 882,914p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
 | `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 101 | `sed -n 89,121p scripts/rendered-client-verify.mjs` |
-| `scripts/qa-gate.mjs` | `selectGodotBinary` | 232 | `sed -n 220,252p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectGodotBinary` | 240 | `sed -n 228,260p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.rendered-verification`
 
@@ -99,7 +102,7 @@ Owner: `KB/docs/context/testing.md:11-17` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/qa-gate.mjs` | `selectQa` | 135 | `sed -n 123,155p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectQa` | 143 | `sed -n 131,163p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 

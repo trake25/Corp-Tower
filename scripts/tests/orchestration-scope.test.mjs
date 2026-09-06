@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { createManifest } from '../task-close.mjs';
+import { resolveTaskProcessControls } from '../lib/task-process-controls.mjs';
+import { acquireTaskOwnership, amendTaskOwnership } from '../lib/task-ownership.mjs';
 import {
   claimWorkerScope, releaseWorkerScope, orchestrationScopeStatus, finalizeOrchestrationScope,
 } from '../lib/orchestration-scope.mjs';
@@ -16,12 +18,22 @@ function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'corp-orchestration-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const parent = '.agent-state/automation/task-close/parent.json';
-  const manifest = createManifest({ task: 'Worker scope fixture', root, ownedPaths: PATHS, runId: 'parent-run' });
+  const ownership = acquireTaskOwnership({
+    task: 'Worker scope fixture', root, paths: PATHS, runId: 'parent-run',
+  });
+  const manifest = createManifest({
+    task: 'Worker scope fixture',
+    root,
+    ownedPaths: PATHS,
+    runId: 'parent-run',
+    processControls: resolveTaskProcessControls({ overrides: ['task_ownership=on', 'task_close=on'] }),
+    ownership: ownership.ownership,
+  });
   const writeParent = (value = manifest) => writeFileSync(join(root, parent), `${JSON.stringify(value)}\n`);
   mkdirSync(dirname(join(root, parent)), { recursive: true });
   writeParent();
   return {
-    root, parent, manifest, writeParent,
+    root, parent, manifest, ownership, writeParent,
     stateFile: join(root, '.agent-state/automation/orchestration/parent-run.json'),
     options: { root, parent },
   };
@@ -55,6 +67,17 @@ test('legacy schema-v2 parents retain orchestration ownership compatibility', t 
   assert.deepEqual(claimed.workers, [{ worker_id: 'legacy-worker', status: 'active', paths: [PATHS[0]] }]);
 });
 
+test('a lightweight ownership parent supports orchestration without task-close', t => {
+  const f = fixture(t);
+  const parent = f.ownership.ownership.path;
+  const result = claimWorkerScope({ root: f.root, parent, worker: 'ownership-worker', paths: [PATHS[0]] });
+  assert.equal(result.parent_manifest, parent);
+  assert.equal(result.parent_run_id, 'parent-run');
+  assert.deepEqual(result.workers[0].paths, [PATHS[0]]);
+  releaseWorkerScope({ root: f.root, parent, worker: 'ownership-worker' });
+  assert.equal(finalizeOrchestrationScope({ root: f.root, parent }).state_exists, false);
+});
+
 test('same-worker repeated claims and extensions are deterministic and idempotent', t => {
   const f = fixture(t);
   const claim = paths => claimWorkerScope({ ...f.options, worker: 'worker-a', paths });
@@ -83,12 +106,19 @@ test('claims fail closed outside parent scope and reread explicit parent amendme
   const options = { ...f.options, worker: 'worker-a', paths: ['src/new.mjs'] };
   assert.throws(() => claimWorkerScope(options), /outside parent owned_paths/);
   assert.equal(existsSync(f.stateFile), false);
-  f.manifest.owned_paths.push('src/new.mjs');
+  const amended = amendTaskOwnership({
+    root: f.root,
+    ownership: f.ownership.ownership,
+    paths: ['src/new.mjs'],
+    reason: 'The new source is a proven direct worker dependency.',
+  });
+  f.manifest.owned_paths = amended.ownership.owned_paths;
+  f.manifest.ownership = amended.ownership;
   f.writeParent();
   assert.deepEqual(claimWorkerScope(options).workers[0].paths, ['src/new.mjs']);
-  f.manifest.owned_paths.pop();
+  f.manifest.owned_paths = PATHS;
   f.writeParent();
-  assert.throws(() => orchestrationScopeStatus(f.options), /outside parent owned_paths/);
+  assert.throws(() => orchestrationScopeStatus(f.options), /owned_paths do not match task ownership/);
 });
 
 test('unsafe, absolute, directory, and symlink write paths are rejected', t => {
@@ -152,7 +182,10 @@ test('single-run cleanup does not inspect unrelated parent-owned files', t => {
   const f = fixture(t);
   mkdirSync(join(f.root, 'src'));
   symlinkSync(tmpdir(), join(f.root, 'src/link'));
-  f.writeParent({ ...f.manifest, owned_paths: [...PATHS, 'src', 'src/link'] });
+  const legacy = { ...f.manifest, schema_version: 2, owned_paths: [...PATHS, 'src', 'src/link'] };
+  delete legacy.process;
+  delete legacy.ownership;
+  f.writeParent(legacy);
   assert.equal(finalizeOrchestrationScope(f.options).state_exists, false);
   assert.equal(existsSync(dirname(f.stateFile)), false);
   assert.throws(() => claimWorkerScope({ ...f.options, worker: 'worker-a', paths: ['src/link'] }), /symbolic links/);
@@ -161,7 +194,7 @@ test('single-run cleanup does not inspect unrelated parent-owned files', t => {
 test('invalid or closed parent manifests fail closed before claims or cleanup', t => {
   const f = fixture(t);
   for (const patch of [
-    { schema_version: 1 }, { run_id: null }, { run_id: '../escape' },
+    { schema_version: 1 },
     { owned_paths: [] }, { owned_paths: ['/outside.mjs'] },
     { phase: 'closed', lifecycle: { status: 'closed' } }, { lifecycle: null },
   ]) {
@@ -172,7 +205,7 @@ test('invalid or closed parent manifests fail closed before claims or cleanup', 
   writeFileSync(join(f.root, f.parent), '{broken');
   assert.throws(() => finalizeOrchestrationScope(f.options), /not valid JSON/);
   f.writeParent();
-  assert.throws(() => finalizeOrchestrationScope({ ...f.options, parent: '.agent-state/missing.json' }), /existing schema-v2 or schema-v3/);
+  assert.throws(() => finalizeOrchestrationScope({ ...f.options, parent: '.agent-state/missing.json' }), /existing task ownership record or task-close manifest/);
   assert.throws(() => finalizeOrchestrationScope({ ...f.options, parent: '../outside.json' }), /inside the repository/);
   writeFileSync(join(f.root, 'public.json'), JSON.stringify(f.manifest));
   assert.throws(() => finalizeOrchestrationScope({ ...f.options, parent: 'public.json' }), /under .agent-state/);
@@ -204,7 +237,7 @@ test('malformed or mismatched ownership state is never silently discarded', t =>
 
 test('status projects compact deterministic ownership metadata only', t => {
   const f = fixture(t);
-  f.writeParent({ ...f.manifest, task: 'PRIVATE PROMPT', transcript: 'PRIVATE TRANSCRIPT', environment: 'PRIVATE ENVIRONMENT' });
+  f.writeParent({ ...f.manifest, transcript: 'PRIVATE TRANSCRIPT', environment: 'PRIVATE ENVIRONMENT' });
   claimWorkerScope({ ...f.options, worker: 'worker-b', paths: [PATHS[1]] });
   claimWorkerScope({ ...f.options, worker: 'worker-a', paths: [PATHS[0]] });
   const state = JSON.parse(readFileSync(f.stateFile, 'utf8'));

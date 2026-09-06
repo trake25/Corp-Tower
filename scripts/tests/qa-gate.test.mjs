@@ -73,12 +73,17 @@ test('automation sources select focused tests from the canonical protocol', () =
 test('orchestration sources and their test select the worker ownership contract', () => {
   const contract = 'scripts/tests/orchestration-scope.test.mjs';
   assert.ok(AUTOMATION_PROTOCOL_TESTS.includes(contract));
-  for (const path of ['scripts/orchestration-scope.mjs', 'scripts/lib/orchestration-scope.mjs', contract]) {
-    assert.deepEqual(selectToolingQa([path]), { applies: true, tests: [contract] });
+  for (const path of ['scripts/orchestration-scope.mjs', 'scripts/lib/orchestration-scope.mjs']) {
+    assert.deepEqual(selectToolingQa([path]), {
+      applies: true,
+      tests: [contract, 'scripts/tests/task-ownership.test.mjs'],
+    });
     const plan = selectQa([path]);
-    assert.deepEqual(plan.tooling_tests, [contract]);
+    assert.deepEqual(plan.tooling_tests, [contract, 'scripts/tests/task-ownership.test.mjs']);
     assert.equal(plan.runtime_applies, false);
   }
+  assert.deepEqual(selectToolingQa([contract]), { applies: true, tests: [contract] });
+  assert.deepEqual(selectQa([contract]).tooling_tests, [contract]);
 });
 
 test('public receipt helpers select their focused automation contracts', () => {
@@ -88,6 +93,7 @@ test('public receipt helpers select their focused automation contracts', () => {
   ]);
   assert.deepEqual(selectToolingQa(['scripts/lib/qa-receipt.mjs']).tests, [
     'scripts/tests/task-close.test.mjs',
+    'scripts/tests/task-receipt.test.mjs',
   ]);
 });
 

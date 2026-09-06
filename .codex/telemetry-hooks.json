@@ -1,5 +1,5 @@
 {
-  "description": "Record bounded private workflow telemetry for task-close runs.",
+  "description": "Record bounded private workflow telemetry for telemetry-enabled Codex tasks.",
   "hooks": {
     "SessionStart": [
       {

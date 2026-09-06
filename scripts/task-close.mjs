@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { basename, dirname, relative, resolve, sep } from 'node:path';
+import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConceptRegistry } from './lib/concept-kb.mjs';
 import { buildConceptMaps } from './build-concept-map.mjs';
@@ -14,11 +14,18 @@ import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
 import { publicQaReceiptPath, writePublicQaReceipt } from './lib/qa-receipt.mjs';
 import { taskIdentityForManifest } from './lib/task-identity.mjs';
 import { finalizeOrchestrationScope } from './lib/orchestration-scope.mjs';
+import { archivePlan, planBindingFor, retainPlan, unboundPlan } from './lib/plan-archive.mjs';
 import {
   resolveTaskProcessControls,
   taskProcessControlsForManifest,
   validateTaskProcessControls,
 } from './lib/task-process-controls.mjs';
+import {
+  acquireTaskOwnership,
+  amendTaskOwnership,
+  releaseTaskOwnership,
+  resolveTaskOwnership,
+} from './lib/task-ownership.mjs';
 import {
   createMaintenanceItem,
   failureClassificationFromOutput,
@@ -35,9 +42,12 @@ import {
 
 const ROOT = resolve(process.env.TASK_CLOSE_ROOT || '.');
 const CANONICAL_MANIFEST_DIRECTORY = '.agent-state/automation/task-close';
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 const LEGACY_SCHEMA_VERSION = 2;
+const MANDATORY_OWNERSHIP_SCHEMA_VERSION = 3;
 const INTAKE_MAX_BYTES = 8 * 1024;
+
+export { archivePlan, planBindingFor, retainPlan } from './lib/plan-archive.mjs';
 
 function fail(message, code = 2) {
   console.error(message);
@@ -57,45 +67,6 @@ function safePath(input, label) {
 
 function displayPath(path) {
   return relative(ROOT, path).replaceAll('\\', '/');
-}
-
-function displayPathFrom(root, path) {
-  return relative(root, path).replaceAll('\\', '/');
-}
-
-function unboundPlan() {
-  return {
-    status: 'not-applicable',
-    source_path: null,
-    archive_path: null,
-    diagnostic: null,
-  };
-}
-
-export function planBindingFor(input, root = ROOT) {
-  if (!input) return unboundPlan();
-  const repositoryRoot = resolve(root);
-  const planRoot = resolve(repositoryRoot, 'plan');
-  const source = resolve(repositoryRoot, input);
-  if (source === repositoryRoot || !source.startsWith(repositoryRoot + sep))
-    throw new Error('--plan must stay inside the repository');
-  if (!source.startsWith(planRoot + sep)) throw new Error('--plan must be an active Markdown file under plan/');
-  const activeRelative = relative(planRoot, source);
-  if (activeRelative.split(sep)[0] === 'done') throw new Error('--plan cannot already be under plan/done/');
-  if (!source.endsWith('.md')) throw new Error('--plan must name a Markdown file');
-  if (!existsSync(source) || !lstatSync(source).isFile()) throw new Error('--plan must name an existing active plan');
-  const realPlanRoot = realpathSync(planRoot);
-  const realSource = realpathSync(source);
-  if (realSource === realPlanRoot || !realSource.startsWith(realPlanRoot + sep))
-    throw new Error('--plan resolves outside plan/');
-  const archive = resolve(planRoot, 'done', basename(source));
-  if (existsSync(archive)) throw new Error(`plan archive destination already exists: ${displayPathFrom(repositoryRoot, archive)}`);
-  return {
-    status: 'pending',
-    source_path: displayPathFrom(repositoryRoot, source),
-    archive_path: displayPathFrom(repositoryRoot, archive),
-    diagnostic: null,
-  };
 }
 
 function bindPlan(manifest, binding) {
@@ -341,6 +312,33 @@ function qaToolingFor(plannedPaths = [], changedPaths = []) {
   };
 }
 
+function ownershipReference(record) {
+  return {
+    path: record.path,
+    run_id: record.run_id,
+    status: record.status,
+  };
+}
+
+export function ownershipForManifest(manifest, { root = ROOT, requireActive = false } = {}) {
+  if (manifest?.schema_version !== SCHEMA_VERSION) return null;
+  if (!manifest.ownership) throw new Error('schema-v4 task-close manifest requires explicit task ownership');
+  const ownership = resolveTaskOwnership(manifest.ownership, { root, requireActive });
+  const owned = [...new Set(manifest.owned_paths || [])].sort();
+  if (JSON.stringify(owned) !== JSON.stringify(ownership.owned_paths))
+    throw new Error('task-close owned_paths do not match explicit task ownership');
+  if (manifest.task !== ownership.task)
+    throw new Error('task-close task does not match explicit task ownership');
+  return ownership;
+}
+
+function requireEnabledTaskClose(manifest) {
+  const process = taskProcessControlsForManifest(manifest);
+  if (!process.task_close || !process.task_ownership)
+    throw new Error('task-close requires task_close=on and task_ownership=on');
+  return process;
+}
+
 export function createManifest({
   task,
   ownedPaths = null,
@@ -349,6 +347,7 @@ export function createManifest({
   runId = null,
   planPath = null,
   processControls = resolveTaskProcessControls(),
+  ownership = null,
   root = ROOT,
 }) {
   if (!task || task.length > 120) throw new Error('task must be present and at most 120 characters');
@@ -360,6 +359,14 @@ export function createManifest({
   const plannedQaTooling = [...new Set(plannedQaToolingPaths)].sort();
   const unownedQaTooling = plannedQaTooling.filter(path => !owned.includes(path));
   if (unownedQaTooling.length) throw new Error(`planned QA-tooling paths must be owned: ${unownedQaTooling.join(', ')}`);
+  let ownershipRecord = null;
+  if (ownership) {
+    ownershipRecord = resolveTaskOwnership(ownership, { root, requireActive: true });
+    if (ownershipRecord.task !== task.trim().replace(/\s+/g, ' '))
+      throw new Error('task-close task does not match explicit task ownership');
+    if (JSON.stringify(owned) !== JSON.stringify(ownershipRecord.owned_paths))
+      throw new Error('task-close owned_paths do not match explicit task ownership');
+  }
   return {
     schema_version: SCHEMA_VERSION,
     phase: 'prepared',
@@ -368,6 +375,7 @@ export function createManifest({
     plan: planBindingFor(planPath, root),
     task,
     run_id: runId || randomUUID(),
+    ownership: ownershipRecord ? ownershipReference(ownershipRecord) : null,
     owned_paths: owned,
     changed_paths: [],
     derived_paths: [],
@@ -546,7 +554,7 @@ function closeObservability(manifest, receipt, env = process.env) {
 }
 
 function upgradeManifest(manifest) {
-  if (![LEGACY_SCHEMA_VERSION, SCHEMA_VERSION].includes(manifest.schema_version))
+  if (![LEGACY_SCHEMA_VERSION, MANDATORY_OWNERSHIP_SCHEMA_VERSION, SCHEMA_VERSION].includes(manifest.schema_version))
     throw new Error(`unsupported manifest schema: ${manifest.schema_version}`);
   const process = taskProcessControlsForManifest(manifest);
   return {
@@ -558,15 +566,17 @@ function upgradeManifest(manifest) {
 }
 
 function supportsTaskClose(manifest) {
-  return [LEGACY_SCHEMA_VERSION, SCHEMA_VERSION].includes(manifest.schema_version);
+  return [LEGACY_SCHEMA_VERSION, MANDATORY_OWNERSHIP_SCHEMA_VERSION, SCHEMA_VERSION].includes(manifest.schema_version);
 }
 
 function manifestCompatibility(manifest) {
-  return manifest.schema_version === LEGACY_SCHEMA_VERSION ? 'accepted-legacy-v2' : 'explicit-process-controls';
+  if (manifest.schema_version === LEGACY_SCHEMA_VERSION) return 'accepted-legacy-v2';
+  if (manifest.schema_version === MANDATORY_OWNERSHIP_SCHEMA_VERSION) return 'accepted-schema-v3-mandatory-ownership';
+  return 'explicit-process-controls';
 }
 
 export function amendManifest(manifest, paths, plannedQaToolingPaths = [], planBinding = null) {
-  if (!supportsTaskClose(manifest)) throw new Error('amend requires a schema-v2 or schema-v3 manifest');
+  if (!supportsTaskClose(manifest)) throw new Error('amend requires a schema-v2, schema-v3, or schema-v4 manifest');
   const process = taskProcessControlsForManifest(manifest);
   if (['closed', 'verified', 'closure-blocked'].includes(manifest.phase))
     throw new Error('a verified or closed manifest cannot be amended; start a new task');
@@ -609,7 +619,7 @@ export function amendManifest(manifest, paths, plannedQaToolingPaths = [], planB
 }
 
 export function reviewManifest(manifest, { changedPaths, mapBaseline = null }) {
-  if (!supportsTaskClose(manifest)) throw new Error('review requires a schema-v2 or schema-v3 manifest');
+  if (!supportsTaskClose(manifest)) throw new Error('review requires a schema-v2, schema-v3, or schema-v4 manifest');
   const process = taskProcessControlsForManifest(manifest);
   const requested = [...new Set(changedPaths)].sort();
   if (!requested.length) throw new Error('review needs one or more explicit changed paths');
@@ -737,7 +747,7 @@ export function applyCoverageDecision(manifest, { status, protectedContract = nu
 }
 
 export function recordFallback(manifest, { query, classification, searchedRoot, fixture }) {
-  if (!supportsTaskClose(manifest)) throw new Error('fallback recording requires a schema-v2 or schema-v3 manifest');
+  if (!supportsTaskClose(manifest)) throw new Error('fallback recording requires a schema-v2, schema-v3, or schema-v4 manifest');
   if (!['retrieval-defect', 'tool-error'].includes(classification)) throw new Error('classification must be retrieval-defect or tool-error');
   if (!query?.trim() || !searchedRoot) throw new Error('fallback needs a query and searched root');
   const repairFixture = fixture?.trim() || null;
@@ -769,6 +779,7 @@ export function intakeForManifest(manifest, manifestFile) {
     lifecycle: manifest.lifecycle,
     process,
     plan: manifest.plan,
+    ownership: manifest.ownership || null,
     owned_paths: manifest.owned_paths,
     docs: manifest.intake.docs,
     maps: manifest.intake.maps,
@@ -805,6 +816,7 @@ export function reviewForManifest(manifest, manifestFile) {
     lifecycle: manifest.lifecycle,
     process,
     plan: manifest.plan,
+    ownership: manifest.ownership || null,
     changed_paths: manifest.changed_paths,
     derived_paths: manifest.derived_paths || [],
     docs: manifest.documentation.candidate_docs,
@@ -892,7 +904,7 @@ function readManifest(path) {
   } catch {
     fail(`manifest is not valid JSON: ${displayPath(path)}`, 1);
   }
-  if (![LEGACY_SCHEMA_VERSION, SCHEMA_VERSION].includes(manifest.schema_version))
+  if (![LEGACY_SCHEMA_VERSION, MANDATORY_OWNERSHIP_SCHEMA_VERSION, SCHEMA_VERSION].includes(manifest.schema_version))
     fail(`unsupported manifest schema: ${manifest.schema_version}`, 1);
   const privateStateRoot = resolve(ROOT, '.agent-state');
   if (!path.startsWith(privateStateRoot + sep))
@@ -1016,47 +1028,6 @@ function executionStatus(steps, name) {
     : 'failed';
 }
 
-function recordedPlanPaths(plan, root = ROOT) {
-  const repositoryRoot = resolve(root);
-  const source = resolve(repositoryRoot, plan.source_path || '');
-  const archive = resolve(repositoryRoot, plan.archive_path || '');
-  const planRoot = resolve(repositoryRoot, 'plan');
-  const expectedArchive = resolve(planRoot, 'done', basename(source));
-  if (!plan.source_path || !source.startsWith(planRoot + sep) || source.startsWith(resolve(planRoot, 'done') + sep))
-    throw new Error('recorded plan source is unsafe');
-  if (archive !== expectedArchive) throw new Error('recorded plan archive destination is unsafe');
-  return { source, archive };
-}
-
-export function archivePlan(plan, root = ROOT) {
-  if (!plan || plan.status === 'not-applicable') return unboundPlan();
-  try {
-    const { source, archive } = recordedPlanPaths(plan, root);
-    const sourceExists = existsSync(source);
-    const archiveExists = existsSync(archive);
-    if (sourceExists && archiveExists) throw new Error('active plan and archive destination both exist; refusing to overwrite');
-    if (!sourceExists && archiveExists) return { ...plan, status: 'archived', diagnostic: null };
-    if (!sourceExists) throw new Error('active plan is absent and no completed archive exists');
-    mkdirSync(dirname(archive), { recursive: true });
-    renameSync(source, archive);
-    return { ...plan, status: 'archived', diagnostic: null };
-  } catch (error) {
-    return { ...plan, status: 'failed', diagnostic: error.message };
-  }
-}
-
-export function retainPlan(plan, root = ROOT) {
-  if (!plan || plan.status === 'not-applicable') return unboundPlan();
-  try {
-    const { source, archive } = recordedPlanPaths(plan, root);
-    if (!existsSync(source)) throw new Error('active plan is absent while archival is disabled');
-    if (existsSync(archive)) throw new Error('archive destination exists while archival is disabled');
-    return { ...plan, status: 'retained', diagnostic: 'skipped-by-process-control' };
-  } catch (error) {
-    return { ...plan, status: 'failed', diagnostic: error.message };
-  }
-}
-
 function persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublishPaths) {
   try {
     finalizeOrchestrationScope({ parent: manifestFile, root: ROOT });
@@ -1073,8 +1044,17 @@ function persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublish
     throw error;
   }
   const process = taskProcessControlsForManifest(manifest);
-  const plan = process.plan_archival ? archivePlan(manifest.plan) : retainPlan(manifest.plan);
-  const closed = ['archived', 'retained', 'not-applicable'].includes(plan.status);
+  let plan = process.plan_archival ? archivePlan(manifest.plan, ROOT) : retainPlan(manifest.plan, ROOT);
+  let closed = ['archived', 'retained', 'not-applicable'].includes(plan.status);
+  if (closed && manifest.schema_version === SCHEMA_VERSION) {
+    try {
+      const released = releaseTaskOwnership({ ownership: manifest.ownership, root: ROOT });
+      manifest.ownership = released.ownership;
+    } catch (error) {
+      closed = false;
+      plan = { ...plan, diagnostic: `task ownership release failed: ${error.message}` };
+    }
+  }
   const lifecycle = { status: closed ? 'closed' : 'blocked' };
   const publishPaths = closed
     ? publishPathsFor([...verifiedPublishPaths, receipt.public_receipt], [], [])
@@ -1116,7 +1096,7 @@ function retryVerifiedClosure(manifest, manifestFile, closeInputFingerprint) {
     fail('close inputs changed after verification; rerun task-close review', 1);
   const verifiedPublishPaths = receipt.verified_publish_paths || publishPathsFor(manifest.changed_paths, manifest.documented_paths, manifest.derived_paths || []);
   const closed = persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublishPaths);
-  if (!closed) fail(`CLOSURE-BLOCKED — plan archive failed: ${manifest.plan?.diagnostic || receipt.plan?.diagnostic}; receipt: ${displayPath(privateReceiptPath)}`, 1);
+  if (!closed) fail(`CLOSURE-BLOCKED — ${manifest.plan?.diagnostic || receipt.plan?.diagnostic || 'deterministic completion failed'}; receipt: ${displayPath(privateReceiptPath)}`, 1);
   console.log(terminalOutput('verification reused', receipt, manifest, privateReceiptPath));
 }
 
@@ -1198,7 +1178,7 @@ function finishVerification(manifest, manifestFile, steps, publishPaths, closeIn
   writeManifest(manifestFile, manifest);
   if (maintenance.status === 'failed') fail(`FAIL — ${failed.name}: ${failed.summary}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
   if (!persistVerifiedClosure(manifest, manifestFile, receipt, verifiedPublishPaths))
-    fail(`CLOSURE-BLOCKED — plan archive failed: ${receipt.plan.diagnostic}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
+    fail(`CLOSURE-BLOCKED — ${receipt.plan.diagnostic || 'deterministic completion failed'}; receipt: ${displayPath(receiptPath(manifestFile))}`, 1);
   console.log(terminalOutput(`verification ${receipt.status}`, receipt, manifest, receiptPath(manifestFile)));
 }
 
@@ -1242,42 +1222,80 @@ async function main() {
   const action = args.shift();
   const values = parseArgs(args);
   if (action === 'prepare') {
-    checkOptions(values, ['task', 'output', 'manifest', 'path', 'changed', 'qa-tooling-path', 'plan', 'process-profile', 'process', 'json']);
+    checkOptions(values, ['task', 'output', 'manifest', 'path', 'changed', 'qa-tooling-path', 'plan', 'process-profile', 'process', 'ownership', 'json']);
     const runId = randomUUID();
     const manifestFile = preparedManifestPath(values, runId);
     if (existsSync(manifestFile)) fail(`manifest already exists: ${displayPath(manifestFile)}; start a new run with --output`, 1);
     const paths = normalizePaths([...many(values, 'path'), ...many(values, 'changed')]);
+    const task = one(values, 'task', true);
+    const processControls = resolveTaskProcessControls({
+      profile: one(values, 'process-profile') || 'bare',
+      overrides: many(values, 'process'),
+    });
+    if (!processControls.task_close || !processControls.task_ownership)
+      fail('task-close prepare requires task_close=on and task_ownership=on', 1);
+    let ownership;
+    let acquiredOwnership = false;
+    const ownershipPath = one(values, 'ownership');
+    if (ownershipPath) {
+      ownership = resolveTaskOwnership({ path: ownershipPath }, { root: ROOT, requireActive: true });
+      if (ownership.task !== task.trim().replace(/\s+/g, ' '))
+        fail('supplied task ownership does not match --task', 1);
+      if (JSON.stringify(ownership.owned_paths) !== JSON.stringify(paths))
+        fail('supplied task ownership does not match explicit --path scope', 1);
+    } else {
+      ownership = acquireTaskOwnership({ task, paths, runId, root: ROOT }).ownership;
+      acquiredOwnership = true;
+    }
     const manifest = createManifest({
-      task: one(values, 'task', true),
+      task,
       ownedPaths: paths,
       plannedQaToolingPaths: normalizeOptionalPaths(many(values, 'qa-tooling-path'), '--qa-tooling-path'),
       runId,
       planPath: one(values, 'plan'),
-      processControls: resolveTaskProcessControls({
-        profile: one(values, 'process-profile') || 'bare',
-        overrides: many(values, 'process'),
-      }),
+      processControls,
+      ownership,
       root: ROOT,
     });
     manifest.observability = startObservability(manifest);
-    writeManifest(manifestFile, manifest, { exclusive: true });
+    try {
+      writeManifest(manifestFile, manifest, { exclusive: true });
+    } catch (error) {
+      if (acquiredOwnership) releaseTaskOwnership({ ownership, root: ROOT });
+      throw error;
+    }
     const output = intakeForManifest(manifest, displayPath(manifestFile));
     console.log(values.has('json') ? JSON.stringify(output, null, 2) : compactLifecycleOutput('prepared', manifest, output.manifest));
     return;
   }
   if (action === 'amend') {
-    checkOptions(values, ['manifest', 'path', 'qa-tooling-path', 'plan', 'json']);
+    checkOptions(values, ['manifest', 'path', 'qa-tooling-path', 'plan', 'ownership-reason', 'json']);
     const manifestFile = manifestPath(values);
     const paths = many(values, 'path');
     const toolingPaths = many(values, 'qa-tooling-path');
     const planPath = one(values, 'plan');
     if (!paths.length && !toolingPaths.length && !planPath) fail('supply one or more --path, --qa-tooling-path, or --plan values');
-    const manifest = amendManifest(
-      upgradeManifest(readManifest(manifestFile)),
-      paths.length ? normalizeOptionalPaths(paths, '--path') : [],
+    let manifest = upgradeManifest(readManifest(manifestFile));
+    requireEnabledTaskClose(manifest);
+    const normalizedPaths = paths.length ? normalizeOptionalPaths(paths, '--path') : [];
+    let ownership = ownershipForManifest(manifest, { root: ROOT, requireActive: true });
+    if (normalizedPaths.length && manifest.schema_version === SCHEMA_VERSION && !one(values, 'ownership-reason'))
+      fail('schema-v4 task-close amend requires --ownership-reason for a direct dependency', 1);
+    manifest = amendManifest(
+      manifest,
+      normalizedPaths,
       normalizeOptionalPaths(toolingPaths, '--qa-tooling-path'),
-      planPath ? planBindingFor(planPath) : null,
+      planPath ? planBindingFor(planPath, ROOT) : null,
     );
+    if (normalizedPaths.length && manifest.schema_version === SCHEMA_VERSION) {
+      ownership = amendTaskOwnership({
+        ownership: manifest.ownership,
+        paths: normalizedPaths,
+        reason: one(values, 'ownership-reason'),
+        root: ROOT,
+      }).ownership;
+      manifest = { ...manifest, ownership, owned_paths: ownership.owned_paths };
+    }
     writeManifest(manifestFile, manifest);
     const output = intakeForManifest(manifest, displayPath(manifestFile));
     console.log(values.has('json') ? JSON.stringify(output, null, 2) : compactLifecycleOutput('amended', manifest, output.manifest));
@@ -1287,6 +1305,8 @@ async function main() {
     checkOptions(values, ['manifest', 'changed', 'json']);
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
+    requireEnabledTaskClose(manifest);
+    ownershipForManifest(manifest, { root: ROOT, requireActive: true });
     const changed = normalizePaths(many(values, 'changed'));
     manifest = reviewManifest(manifest, { changedPaths: changed });
     writeManifest(manifestFile, manifest);
@@ -1301,6 +1321,7 @@ async function main() {
       schema_version: manifest.schema_version,
       compatibility: manifestCompatibility(manifest),
       process: taskProcessControlsForManifest(manifest),
+      ownership: manifest.ownership || null,
       phase: manifest.phase,
       lifecycle: manifest.lifecycle?.status || 'none',
       verification: manifest.verification?.status || 'none',
@@ -1316,6 +1337,8 @@ async function main() {
     checkOptions(values, ['manifest', 'query', 'classification', 'root', 'fixture']);
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
+    requireEnabledTaskClose(manifest);
+    ownershipForManifest(manifest, { root: ROOT, requireActive: true });
     const searchedRoot = displayPath(safePath(one(values, 'root', true), '--root'));
     manifest = recordFallback(manifest, {
       query: one(values, 'query', true),
@@ -1331,7 +1354,8 @@ async function main() {
     checkOptions(values, ['manifest', 'decision', 'reason', 'doc-path', 'coverage', 'coverage-contract', 'temporary-verification', 'qa-classification', 'qa-evidence']);
     const manifestFile = manifestPath(values);
     let manifest = upgradeManifest(readManifest(manifestFile));
-    const process = taskProcessControlsForManifest(manifest);
+    const process = requireEnabledTaskClose(manifest);
+    ownershipForManifest(manifest, { root: ROOT, requireActive: true });
     const documentedPaths = normalizeOptionalPaths(many(values, 'doc-path'), '--doc-path');
     const documentationDecision = one(values, 'decision', manifest.documentation.source_changed);
     const documentationReason = one(values, 'reason', manifest.documentation.source_changed).trim();

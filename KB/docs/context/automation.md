@@ -28,27 +28,28 @@ id: automation.planning.phase2
 alias: phase 2 execution handoff
 alias: execution-oriented plan
 source: policy/PLANNER.md#Policy selection
-source: policy/PLANNER.md#Defaults and overrides
+source: policy/PLANNER.md#Defaults and selected policy
 source: policy/PLANNER.md#Standard Phase 2 format
-source: policy/CODEX.md#Strict execution
+source: policy/CODEX.md#Repository process defaults
 adjacent: automation.retrieval.direct
 adjacent: automation.orchestration.execution
 adjacent: automation.task-close.process-controls
 -->
 ## Phase 2 execution handoff
 
-Phase 2 is Codex's self-contained task execution contract. Planner compiles the user-approved Phase
-1 intended behavior, only the task-specific policy that materially applies, compacted KB context
-already read during planning, exact KB retrieval inputs for optional deeper retrieval, bounded
-source context, expected write scope, ordered implementation requirements, minimum verification, and
-done criteria.
+Phase 2 is Codex's self-contained task execution contract. Planner compiles the approved intended
+behavior, only task policy selected for this implementation, compacted KB context already resolved
+during planning, exact retrieval inputs for optional deeper detail, bounded source context, expected
+write scope, ordered implementation requirements, minimum verification, and done criteria.
 
-Repository defaults stay implicit: the BARE process profile and normal single-run execution are
-omitted from the plan unless an override changes them. Expected write scope is evidence-based rather
-than a hard whitelist by default, so Codex may use current-source judgment for a proven direct
-dependency or bounded task-local refactor that remains inside approved behavior.
-`strict_execution=ON` converts the planned implementation approach and direct-write scope into a
-prescriptive boundary and is included only as an execution override.
+The execution architecture has three layers: `AGENTS.md` contains only universal Codex policy; the
+Phase 2 plan contains only task-selected policy; the KB/source handoff contains domain and task-scope
+knowledge. Runtime skills are not an authority layer.
+
+Default-OFF optional processes are absent from the plan and Codex runtime context. Planner includes
+an optional process or execution policy only when it is enabled or otherwise materially selected for
+the task. Normal single-run execution is implicit. Plan archival remains enabled by default as a
+deterministic completion mechanic rather than universal process-policy prose.
 
 <!-- kb
 id: automation.retrieval.protocol
@@ -133,43 +134,45 @@ adjacent: automation.observability.usage
 ## Provider-visible I/O discipline
 
 Codex minimizes provider-visible I/O rather than execution evidence. The universal execution kernel
-prefers the smallest bounded reads and compact tool outputs that preserve correctness, reuses exact
-current evidence, and expands diagnostics only when a compact failure result is insufficient.
-Deterministic tooling keeps detailed manifests, logs, generated state, and diagnostics private while
-returning the smallest result needed for the next model decision.
+uses the smallest bounded reads and compact tool outputs that preserve correctness, reuses exact
+current evidence, and expands diagnostics only when a compact failure result is insufficient for the
+next repair decision.
 
-Plan-selected KB retrieval is demand-driven rather than startup work. A deeper `concept-read` is a
-standalone contextualization decision point used only when the compacted KB context and bounded
-source handoff do not contain enough detail for the next implementation decision.
+Plan-selected KB retrieval is demand-driven. Codex starts from the compacted KB/source handoff and
+uses an exact plan-supplied retrieval input only when deeper detail is materially required. It does
+not rediscover policy, domain context, optional processes, or repository structure already supplied
+by Planner.
 
-When executable QA is enabled by the task process contract, repository tooling tests use compact QA
-wrappers when available. Executable QA verification uses `qa-gate --changed`, while targeted
-iterative tooling tests use the compact explicit-test mode so successful TAP output stays private
-and failure evidence expands progressively.
+Detailed deterministic logs/state remain private. Selected task tooling keeps compact success output
+and progressively bounded failure evidence. Efficiency never hides a conflict, failed required
+check, authorization need, safety condition, or correctness evidence.
 
-When executable QA is disabled, task-close does not run `qa-gate` or raw regression suites solely
-for final verification. Mandatory task ownership, patch integrity, required repository consistency,
-generated-output consistency, and explicitly authorized deliverable mechanics remain active.
+<!-- kb
+id: automation.task-ownership.lifecycle
+alias: task ownership
+alias: lightweight ownership
+alias: ownership scope
+source: scripts/lib/task-ownership.mjs#resolveTaskOwnership
+source: scripts/task-ownership.mjs#main
+adjacent: automation.orchestration.ownership
+adjacent: automation.task-close.scope
+-->
+## Task ownership
 
-Git review establishes final task-owned authored change scope with bounded name-status evidence and
-keeps `git diff --check` as a cheap integrity check. Task-close owns generated concept-map
-preparation inside review: it regenerates only maps affected by exact changed source grants or
-authored concept owners, derives only candidate maps that actually changed, and protects only that
-bounded map set after review. Unrelated generated-map churn is not adopted into task scope.
+Task ownership is an optional lightweight write-scope process independent from task-close. When
+selected, it acquires one explicit parent scope from planned task paths before edits, may amend that
+scope only for a proven direct dependency, and releases it after integrated completion.
 
-Task-close owns lifecycle, verification, receipt, and formal-flag status and exposes those fields
-through compact terminal and status surfaces; broad `.agent-state` searches are not normal workflow.
-QA and close-out keep detailed proof in private state and receipts while exposing compact success or
-progressively bounded failure diagnostics. Efficiency never hides a conflict, failed check,
-authorization need, safety condition, or correctness evidence, and telemetry never captures prompt,
-response, command, patch, diff, or transcript content merely to measure savings.
+Ownership authority never comes from the dirty working tree. Active claims reject provable
+incompatible overlap and keep private state under `.agent-state`. When ownership is not selected, no
+ownership policy or lifecycle is present in Codex runtime context.
 
 <!-- kb
 id: automation.orchestration.execution
 alias: orchestrated execution
 alias: multi-agent implementation
 source: policy/PLANNER.md#Execution-shape planning
-source: policy/CODEX.md#Orchestration planning
+source: policy/CODEX.md#Do not enable task-close merely because execution is orchestrated.
 source: policy/REVIEWER.md#Integrated QA
 adjacent: automation.planning.phase2
 adjacent: automation.orchestration.ownership
@@ -177,37 +180,36 @@ adjacent: automation.task-close.lifecycle
 -->
 ## Orchestrated execution
 
-Normal execution is a single Codex run and is not written into the plan. Planner selects
-ORCHESTRATED only when semantic decomposition reduces context reconstruction or integration risk
-enough to justify coordination overhead, then compiles the required worker contract into `##
-Execution Overrides`.
+Normal execution is a single Codex run and carries no orchestration policy. Planner selects
+ORCHESTRATED only when semantic decomposition materially reduces context reconstruction or
+integration risk, then compiles only the required orchestration and ownership policy into the Phase
+2 plan.
 
-The parent plan remains the behavior authority. It defines worker responsibilities, dependencies,
-shared invariants, expected write ownership, dependency-aware waves, scoped verification, and parent
-integration criteria. The orchestrator may refine worker boundaries, ordering, or count against
-current repository evidence without redesigning approved behavior. Worker context stays bounded to
-the unit. Scoped repair returns to the same worker when practical, while cross-worker failures
-remain orchestrator-owned until responsibility is established.
+The parent plan remains behavior authority. It defines worker responsibilities, dependencies,
+shared invariants, explicit write claims, dependency-aware waves, scoped verification, and parent
+integration criteria. Worker context remains bounded to its unit. Runtime skills do not provide
+worker roles or domain policy.
 
 <!-- kb
 id: automation.orchestration.ownership
 alias: worker scope
 alias: parallel ownership
-source: policy/CODEX.md#Orchestration planning
+source: policy/CODEX.md#Do not enable task-close merely because execution is orchestrated.
 source: scripts/lib/orchestration-scope.mjs#claimWorkerScope
 source: scripts/lib/orchestration-scope.mjs#finalizeOrchestrationScope
+source: scripts/lib/task-ownership.mjs#resolveTaskOwnership
 adjacent: automation.orchestration.execution
 adjacent: automation.task-close.scope
 -->
 ## Orchestration ownership
 
-Parallel workers may share read evidence but may not hold overlapping write ownership. The
-orchestrator claims explicit worker paths from the parent task scope before concurrent writers run;
-deterministic tooling rejects sibling overlap and never derives ownership from the dirty tree.
-Shared writable paths use one owner or serialized execution. A worker cannot expand across another
-active claim; new write dependencies return to the orchestrator. Worker claims are subordinate
-execution locks rather than independent task closure, and released private orchestration state is
-cleaned before the parent task closes.
+ORCHESTRATED execution requires explicit parent task ownership. Parallel workers may share read
+evidence but may not hold overlapping write claims. Deterministic tooling rejects sibling overlap
+and never derives authority from the dirty tree. Shared writable paths use one owner or serialized
+execution.
+
+Worker claims are subordinate locks, not independent task lifecycles. Task-close remains separately
+optional. The parent owns integrated scope, worker-claim resolution, and final integration.
 
 <!-- kb
 id: automation.task-close.lifecycle
@@ -220,11 +222,16 @@ adjacent: automation.task-close.process-controls
 -->
 ## Task-close lifecycle
 
-`task-close` is deterministic repository closure around explicit task-owned paths. New manifests
-carry the effective task process contract through `prepare → review → close`, with `amend` adding a
-proven direct dependency discovered after prepare. Scope is never discovered from the dirty working
-tree. Review and close preserve a bounded compatibility path for valid active pre-process-control
-manifests so an in-flight task can finish without silently changing its workflow.
+Task-close is optional deterministic close-out selected only when `task_close=ON`; that selection
+requires task ownership. When selected, the lifecycle runs `prepare → review → close`, with `amend`
+reserved for a proven direct dependency discovered after prepare.
+
+A normal lifecycle runs prepare once before edits, review once when authored changes are final, and
+close once after required verification. Review/close retry only after repairing a returned blocker.
+Task-close is not a checkpoint or status mechanism. When not selected, task-close policy and
+commands are absent from normal Codex runtime context.
+
+Valid pre-migration manifests retain the lifecycle semantics under which they were created.
 
 <!-- kb
 id: automation.task-close.process-controls
@@ -240,20 +247,19 @@ adjacent: automation.task-close.scope
 -->
 ## Task process controls
 
-Task-close stores and validates the complete effective per-task process contract independently from
-execution mode. New tasks default to BARE: telemetry, workflow inefficiency flagging, executable QA,
-permanent QA coverage, and the public QA receipt are off; plan archival is on.
+Process controls are Planner-selected task policy, not universal Codex knowledge. BARE defaults to
+task ownership, task-close, telemetry, workflow inefficiency flagging, executable QA, permanent QA
+coverage, and public QA receipt OFF; plan archival remains ON. ALL enables every process.
 
-Planner does not repeat those defaults in Phase 2. The plan includes only non-default process values
-under `## Execution Overrides`; task-close still resolves and persists the complete effective values
-internally. Workflow inefficiency flagging requires telemetry. The Corp Tower repository
-observability hooks are absent from Codex's auto-discovered project hook path by default, so BARE
-does not dispatch them at all. A telemetry-enabled implementation run uses the deterministic
-pre-session launcher to inject those hooks only into that Codex session; the launcher fails before
-session start if it cannot resolve or construct the telemetry override. Optional controls never
-disable task ownership, concurrent-change preservation, authorization and safety boundaries,
-minimal patch integrity, repair of known task-caused failures, or KB/generated consistency required
-by the implementation.
+A default-OFF process is omitted from the Phase 2 plan and Codex runtime context. Planner loads only
+the policy section for an enabled/non-default process. `task_close=ON` requires
+`task_ownership=ON`; workflow inefficiency flagging requires telemetry. Invalid combinations fail
+closed rather than silently enabling another process.
+
+Corp Tower telemetry hooks remain non-auto-discovered and are injected only for telemetry-enabled
+sessions through the deterministic launcher. Optional process selection never grants Git/deployment
+authorization or weakens safety, approved-scope, task-caused repair, or required consistency
+boundaries.
 
 <!-- kb
 id: automation.task-close.scope
@@ -261,25 +267,21 @@ alias: task manifest
 alias: owned paths
 source: scripts/task-close.mjs#createManifest
 source: scripts/task-close.mjs#taskCloseIntake
+source: scripts/lib/task-ownership.mjs#resolveTaskOwnership
 adjacent: automation.orchestration.ownership
 -->
 ## Task-close scope
 
-Prepare owns explicit task paths, the persisted task process contract, planned QA-tooling scope, and
-an optional active plan before edits. The Phase 2 expected write scope provides the initial
-evidence-based authored scope; Codex may amend ownership only for a proven direct task dependency
-discovered during implementation, unless a strict execution override forbids that expansion.
+Task-close scope exists only when task-close is selected. It binds the task's explicit ownership
+authority, process contract, optional plan, and selected verification/receipt inputs. Scope is never
+derived from the dirty working tree.
 
-Review is one deterministic transaction: it validates the explicit changed authored/source scope,
-resolves only concept maps affected through exact source grants or changed authored concept owners,
-regenerates that bounded map set, derives the candidate maps that actually differ from Git baseline,
-captures their post-regeneration freshness state, and only then persists reviewed scope. Generated
-maps are tooling-owned derived output and never become authored ownership or documentation edits.
+Review validates final authored/source scope and owns bounded regeneration/protection of only concept
+maps affected by exact source grants or changed authored concept owners. Generated maps remain
+tooling-owned derived output.
 
-Close verifies the reviewed authored paths plus that bounded protected map set; it never
-reconstructs task authority from the dirty working tree. For orchestrated execution, one parent
-manifest owns the integrated authored path union and worker claims remain subordinate write locks
-rather than independent closure authority.
+When task-close is absent, selected lightweight ownership and task-triggered generated consistency
+operate independently; neither creates an implicit close lifecycle.
 
 <!-- kb
 id: automation.task-close.verification
@@ -290,48 +292,47 @@ adjacent: testing.selection.local
 -->
 ## Task-close verification
 
-Close-out always preserves required ownership, patch integrity, source/registry validity, and
-task-triggered KB/generated consistency. Review stores freshness hashes only for its bounded
-affected concept-map set after review-owned regeneration. A protected map changed or removed after
-review blocks closure; generated-map churn outside that protected set does not become this task's
-scope or invalidate it solely by being dirty.
+When task-close is selected, close verifies reviewed authored scope and its bounded protected
+generated outputs, plus any verification policy selected for the task.
 
-Required concept-map and concept-KB consistency runs independently from the optional executable-QA
-process control and uses the bounded affected map set when exact map ownership is known. Executable
-regression QA runs only when the task process contract enables QA. Task-caused stale protected maps,
-broken source grants, registry defects, required-consistency failures, or other known task-caused
-failures remain open; only approved unrelated maintenance blockers may produce a maintenance-blocked
-closure.
+When task-close is not selected, required correctness checks run directly from the plan and actual
+changed scope. BARE does not create a close lifecycle merely to host verification. Known
+task-caused failures remain open until repaired; unrelated approved maintenance remains outside the
+task.
 
 <!-- kb
 id: automation.task-close.receipt
 alias: qa receipt
 alias: public receipt
-source: scripts/task-close.mjs#finishVerification
+source: scripts/task-receipt.mjs#main
 source: scripts/lib/qa-receipt.mjs#renderPublicQaReceipt
 -->
 ## Public receipt
 
-Public QA receipt generation is controlled independently from executable QA. When enabled, the
-receipt exposes sanitized task identity, owned scope, compact implementation and verification
-outcomes, and maintenance classification without publishing raw private child output. If executable
-QA was disabled, the receipt states that it was not run by process control. When receipt generation
-is disabled, task-close publishes no public QA receipt. Implementation completion and verification
-status remain separately representable.
+Public QA receipt generation is optional task policy independent from executable QA and task-close.
+When selected, it exposes sanitized task identity, explicit scope, compact implementation and
+verification outcomes, and maintenance classification without publishing raw private child output.
+
+A selected task-close lifecycle may call the shared receipt primitive. Without task-close, a
+standalone receipt entry point uses the same primitive. If executable QA was not selected, the
+receipt states that rather than fabricating QA proof.
 
 <!-- kb
 id: automation.task-close.plan-archive
 alias: plan done
 alias: archive plan
-source: scripts/task-close.mjs#archivePlan
-source: scripts/task-close.mjs#retainPlan
+source: scripts/lib/plan-archive.mjs#archivePlan
+source: scripts/plan-archive.mjs#main
 -->
 ## Plan archival
 
-Plan archival is enabled by default. When enabled, a bound active plan moves to completed history
-only after successful lifecycle closure, and archive failure preserves proof for an idempotent retry
-rather than pretending closure succeeded. When explicitly disabled for the task, successful closure
-leaves the plan active and records that archival was intentionally skipped.
+Plan archival is enabled by default as a deterministic completion mechanic independent from
+task-close. After successful implementation and required verification, the archive operation moves
+the active plan to completed history. It is collision-safe and idempotent.
+
+Selected task-close may delegate to the same archive primitive. Without task-close, completion uses
+the standalone archive path. When archival is explicitly disabled, the successful task leaves its
+plan active.
 
 <!-- kb
 id: automation.docs.maps
@@ -394,23 +395,20 @@ alias: agent observability
 alias: task binding
 source: scripts/lib/agent-observability/state.mjs#bindActiveTask
 source: scripts/codex-observability-hook.mjs#handleHook
-source: scripts/task-close.mjs#closeObservabilityUnsafe
+source: scripts/codex-task-run.mjs#startTelemetrySession
 source: scripts/codex-task-run.mjs#launchCodexTask
 -->
 ## Observability binding
 
-Corp Tower observability hooks are opt-in at Codex session start. The repository keeps the hook
-definition in a non-auto-discovered template, while the deterministic task launcher injects it only
-when the approved plan explicitly sets `telemetry=ON`. BARE/default sessions therefore do not
-register or dispatch the Corp Tower observability hook process at all.
+Corp Tower observability hooks are opt-in at Codex session start. The repository keeps their
+definition outside the auto-discovered project hook path, and the deterministic launcher injects
+them only when telemetry is selected ON. Default sessions therefore dispatch no Corp Tower
+observability hook process.
 
-When telemetry is enabled, existing task-close behavior binds task/session identity and records only
-bounded categories, outcomes, and opaque identifiers, never prompts, responses, patches, commands,
-or transcript contents. Hooks remain best-effort and cannot alter task execution, QA, or receipt
-correctness. Stop performs normal settlement; SessionEnd remains a cheap health fallback. Without a
-live session binding, a telemetry-enabled task remains pending rather than being finalized with
-fabricated terminal evidence. If pre-session hook activation cannot be established, the launcher
-fails safe before Codex starts instead of making telemetry implicitly always-on.
+Telemetry task/session binding and usage settlement are independent from task-close. Task-close may
+contribute verified close evidence when separately selected, but telemetry without close-out must
+not fabricate QA or verification proof. Hooks remain best-effort and cannot change implementation,
+verification, receipt, ownership, or close-out correctness.
 
 <!-- kb
 id: automation.observability.usage
@@ -457,9 +455,15 @@ id: automation.git.publish
 alias: targeted push
 alias: git sync commit push
 source: scripts/git-sync-commit-push.mjs#requireManifest
+source: scripts/git-sync-commit-push.mjs#explicitPathScope
 -->
 ## Authorized Git publication
 
-`git-sync-commit-push` is opt-in and requires explicit user authorization plus eligible closed task
-state. It performs only the authorized sync/stage/commit/push sequence and rejects invalid
-branch/scope/staging states rather than silently widening publication.
+`git-sync-commit-push` is opt-in and always requires explicit user authorization. A valid closed
+task-close scope remains eligible when available, but task-close is not a prerequisite. A task may
+instead provide explicit authorized repository-relative publication paths, optionally validated
+against selected ownership state.
+
+Publication scope is never inferred from the dirty working tree. The tool performs only the
+authorized sync/stage/commit/push sequence and rejects invalid branch, scope, staging, receipt, or
+authorization state rather than silently widening publication.

@@ -17,6 +17,7 @@ import {
 import { publicQaReceiptPath, renderPublicQaReceipt, writePublicQaReceipt } from '../lib/qa-receipt.mjs';
 import { createTaskIdentity, taskIdentityBase, taskIdentityForManifest } from '../lib/task-identity.mjs';
 import { claimWorkerScope, releaseWorkerScope } from '../lib/orchestration-scope.mjs';
+import { acquireTaskOwnership } from '../lib/task-ownership.mjs';
 import {
   ALL_TASK_PROCESS_CONTROLS,
   BARE_TASK_PROCESS_CONTROLS,
@@ -210,6 +211,8 @@ test('QA planner preserves targeted server and client selection', () => {
 
 test('task process registry resolves BARE, ALL, and custom overrides centrally', () => {
   assert.deepEqual(TASK_PROCESS_CONTROL_NAMES, [
+    'task_ownership',
+    'task_close',
     'telemetry',
     'workflow_inefficiency_flagging',
     'qa',
@@ -236,6 +239,10 @@ test('task process registry rejects invalid overrides and dependencies', () => {
     () => resolveTaskProcessControls({ overrides: ['workflow_inefficiency_flagging=on'] }),
     /requires telemetry=on/,
   );
+  assert.throws(
+    () => resolveTaskProcessControls({ overrides: ['task_close=on'] }),
+    /requires task_ownership=on/,
+  );
 });
 
 test('prepare persists complete ALL and custom process contracts', () => {
@@ -254,11 +261,12 @@ test('prepare persists complete ALL and custom process contracts', () => {
   assert.deepEqual(custom.process, { ...BARE_TASK_PROCESS_CONTROLS, profile: 'custom', qa_receipt: true });
 });
 
-test('prepare creates an explicit schema-v3 BARE ownership manifest and intake', () => {
+test('manifest construction preserves BARE as an inactive schema-v4 process contract', () => {
   const manifest = createManifest({ task: 'Verify scoring closeout', ownedPaths: [SOURCE] });
 
-  assert.equal(manifest.schema_version, 3);
+  assert.equal(manifest.schema_version, 4);
   assert.deepEqual(manifest.process, BARE_TASK_PROCESS_CONTROLS);
+  assert.equal(manifest.ownership, null);
   assert.equal(manifest.phase, 'prepared');
   assert.deepEqual(manifest.owned_paths, [SOURCE]);
   assert.deepEqual(manifest.changed_paths, []);
@@ -886,7 +894,7 @@ test('a documentation-only review needs no source documentation or permanent-cov
   assert.equal(reviewed.coverage.status, 'disabled');
 });
 
-test('CLI lifecycle defaults are compact while --json preserves private manifest detail', () => {
+test('selected task-close lifecycle is compact while --json preserves private manifest detail', () => {
   const root = mkdtempSync(join(tmpdir(), 'corp-task-close-'));
   const run = args => spawnSync(process.execPath, ['scripts/task-close.mjs', ...args], {
     cwd: process.cwd(),
@@ -895,34 +903,38 @@ test('CLI lifecycle defaults are compact while --json preserves private manifest
   });
 
   try {
-    const prepared = run(['prepare', '--task', 'Contract wording', '--path', 'AGENTS.md']);
+    const selected = ['--process', 'task_ownership=on', '--process', 'task_close=on'];
+    const prepared = run(['prepare', '--task', 'Contract wording', '--path', 'AGENTS.md', ...selected]);
     assert.equal(prepared.status, 0, prepared.stderr);
     assert.ok(Buffer.byteLength(prepared.stdout) <= 1024);
-    assert.match(prepared.stdout, /^PASS — task prepared; manifest: .+; owned: 1; docs: \d+; QA: disabled; process: bare; next: review\n$/);
+    assert.match(prepared.stdout, /^PASS — task prepared; manifest: .+; owned: 1; docs: \d+; QA: disabled; process: custom; next: review\n$/);
     assert.doesNotMatch(prepared.stdout, /"owned_paths"|"changed_paths"/);
     const manifest = prepared.stdout.match(/manifest: (.+?);/)?.[1];
     assert.match(manifest, /^\.agent-state\/automation\/task-close\/[0-9a-f-]+\.json$/);
     const preparedManifest = JSON.parse(readFileSync(join(root, manifest), 'utf8'));
-    assert.deepEqual(preparedManifest.process, BARE_TASK_PROCESS_CONTROLS);
+    assert.deepEqual(preparedManifest.process, resolveTaskProcessControls({ overrides: ['task_ownership=on', 'task_close=on'] }));
     assert.equal(preparedManifest.observability.task_id, null);
     assert.equal(preparedManifest.observability.status, 'disabled');
     assert.deepEqual(preparedManifest.observability.reasons, ['disabled_by_process_control']);
-    const amended = run(['amend', '--manifest', manifest, '--path', 'README.md']);
+    const amended = run(['amend', '--manifest', manifest, '--path', 'README.md', '--ownership-reason', 'README is a proven direct dependency.']);
     assert.equal(amended.status, 0, amended.stderr);
     assert.ok(Buffer.byteLength(amended.stdout) <= 1024);
-    assert.match(amended.stdout, /^PASS — task amended; manifest: .+; owned: 2; docs: \d+; QA: disabled; process: bare; next: review\n$/);
+    assert.match(amended.stdout, /^PASS — task amended; manifest: .+; owned: 2; docs: \d+; QA: disabled; process: custom; next: review\n$/);
     assert.doesNotMatch(amended.stdout, /"owned_paths"|"changed_paths"/);
     const reviewed = run(['review', '--manifest', manifest, '--changed', 'AGENTS.md', '--changed', 'README.md']);
     assert.equal(reviewed.status, 0, reviewed.stderr);
     assert.ok(Buffer.byteLength(reviewed.stdout) <= 1024);
-    assert.match(reviewed.stdout, /^PASS — task reviewed; manifest: .+; changed: 2; docs: not-applicable; QA: disabled; process: bare; next: close\n$/);
+    assert.match(reviewed.stdout, /^PASS — task reviewed; manifest: .+; changed: 2; docs: not-applicable; QA: disabled; process: custom; next: close\n$/);
     assert.doesNotMatch(reviewed.stdout, /"owned_paths"|"changed_paths"/);
     assert.equal(JSON.parse(readFileSync(join(root, manifest), 'utf8')).phase, 'reviewed');
 
-    const jsonPrepared = run(['prepare', '--task', 'Structured diagnostics', '--path', 'AGENTS.md', '--json']);
+    const jsonPrepared = run(['prepare', '--task', 'Structured diagnostics', '--path', 'docs/structured-diagnostics.md', ...selected, '--json']);
     assert.equal(jsonPrepared.status, 0, jsonPrepared.stderr);
-    assert.ok(JSON.parse(jsonPrepared.stdout).owned_paths.includes('AGENTS.md'));
+    assert.ok(JSON.parse(jsonPrepared.stdout).owned_paths.includes('docs/structured-diagnostics.md'));
     assert.equal(JSON.parse(jsonPrepared.stdout).compatibility, 'explicit-process-controls');
+    const bare = run(['prepare', '--task', 'Bare task', '--path', 'AGENTS.md']);
+    assert.equal(bare.status, 1);
+    assert.match(bare.stderr, /requires task_close=on and task_ownership=on/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -937,8 +949,9 @@ test('CLI prepare assigns distinct canonical manifests and rejects new legacy lo
   });
 
   try {
-    const first = run(['prepare', '--task', 'First canonical task', '--path', 'AGENTS.md', '--json']);
-    const second = run(['prepare', '--task', 'Second canonical task', '--path', 'AGENTS.md', '--json']);
+    const selected = ['--process', 'task_ownership=on', '--process', 'task_close=on'];
+    const first = run(['prepare', '--task', 'First canonical task', '--path', 'AGENTS.md', ...selected, '--json']);
+    const second = run(['prepare', '--task', 'Second canonical task', '--path', 'CLAUDE.md', ...selected, '--json']);
     assert.equal(first.status, 0, first.stderr);
     assert.equal(second.status, 0, second.stderr);
     const firstPath = JSON.parse(first.stdout).manifest;
@@ -949,13 +962,19 @@ test('CLI prepare assigns distinct canonical manifests and rejects new legacy lo
     assert.equal(existsSync(join(root, firstPath)), true);
     assert.equal(existsSync(join(root, secondPath)), true);
 
-    const all = run(['prepare', '--task', 'All processes', '--path', 'AGENTS.md', '--process-profile', 'all', '--json']);
+    const all = run(['prepare', '--task', 'All processes', '--path', 'policy/CODEX.md', '--process-profile', 'all', '--json']);
     assert.equal(all.status, 0, all.stderr);
     assert.deepEqual(JSON.parse(all.stdout).process, ALL_TASK_PROCESS_CONTROLS);
 
-    const custom = run(['prepare', '--task', 'Custom processes', '--path', 'AGENTS.md', '--process', 'qa_receipt=on', '--json']);
+    const custom = run(['prepare', '--task', 'Custom processes', '--path', 'policy/FIX.md', ...selected, '--process', 'qa_receipt=on', '--json']);
     assert.equal(custom.status, 0, custom.stderr);
-    assert.deepEqual(JSON.parse(custom.stdout).process, { ...BARE_TASK_PROCESS_CONTROLS, profile: 'custom', qa_receipt: true });
+    assert.deepEqual(JSON.parse(custom.stdout).process, {
+      ...BARE_TASK_PROCESS_CONTROLS,
+      profile: 'custom',
+      task_ownership: true,
+      task_close: true,
+      qa_receipt: true,
+    });
 
     for (const [args, diagnostic] of [
       [['--process', 'missing=on'], /unknown process control/],
@@ -973,8 +992,8 @@ test('CLI prepare assigns distinct canonical manifests and rejects new legacy lo
     assert.match(legacy.stderr, /new manifests must be under \.agent-state\/automation\/task-close\//);
 
     const explicitPath = '.agent-state/automation/task-close/explicit.json';
-    const explicit = run(['prepare', '--task', 'Explicit canonical task', '--output', explicitPath, '--path', 'AGENTS.md']);
-    const collision = run(['prepare', '--task', 'Colliding canonical task', '--output', explicitPath, '--path', 'AGENTS.md']);
+    const explicit = run(['prepare', '--task', 'Explicit canonical task', '--output', explicitPath, '--path', 'README.md', ...selected]);
+    const collision = run(['prepare', '--task', 'Colliding canonical task', '--output', explicitPath, '--path', 'README.md', ...selected]);
     assert.equal(explicit.status, 0, explicit.stderr);
     assert.equal(collision.status, 1);
     assert.match(collision.stderr, /manifest already exists/);
@@ -992,7 +1011,7 @@ test('CLI prepare assigns distinct canonical manifests and rejects new legacy lo
     }, null, 2)}\n`);
     const malformed = run(['review', '--manifest', malformedPath, '--changed', 'AGENTS.md']);
     assert.equal(malformed.status, 1);
-    assert.match(malformed.stderr, /malformed schema-v3 process contract: process control workflow_inefficiency_flagging is required/);
+    assert.match(malformed.stderr, /malformed schema-v4 process contract: process control task_ownership is required/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -1007,7 +1026,10 @@ test('CLI review directs source-changing closeout through the documentation gate
   });
 
   try {
-    const prepared = run(['prepare', '--task', 'Source contract', '--path', SOURCE, '--json']);
+    const prepared = run([
+      'prepare', '--task', 'Source contract', '--path', SOURCE,
+      '--process', 'task_ownership=on', '--process', 'task_close=on', '--json',
+    ]);
     assert.equal(prepared.status, 0, prepared.stderr);
     const manifest = JSON.parse(prepared.stdout).manifest;
     const reviewed = run(['review', '--manifest', manifest, '--changed', SOURCE]);
@@ -1037,6 +1059,7 @@ function terminalCloseFixture(qaSource, task = 'Public QA receipt fixture', {
   plan = false,
   blockArchive = false,
   legacy = true,
+  schemaVersion = null,
   processControls = ALL_TASK_PROCESS_CONTROLS,
   consistency = false,
 } = {}) {
@@ -1061,17 +1084,27 @@ function terminalCloseFixture(qaSource, task = 'Public QA receipt fixture', {
   assert.equal(git(['config', 'user.email', 'qa-fixture@example.invalid']).status, 0);
   assert.equal(git(['add', 'README.md', 'scripts/qa-gate.mjs']).status, 0);
   assert.equal(git(['commit', '-qm', 'Fixture baseline']).status, 0);
+  const ownership = !legacy && schemaVersion !== 3
+    ? acquireTaskOwnership({ root, task, paths: ['README.md'], runId: 'public-receipt-fixture' }).ownership
+    : null;
   const prepared = createManifest({
     task,
     ownedPaths: ['README.md'],
     runId: 'public-receipt-fixture',
     planPath: plan ? 'plan/task.md' : null,
     processControls,
+    ownership,
     root,
   });
   if (legacy) {
     prepared.schema_version = 2;
     delete prepared.process;
+    delete prepared.ownership;
+  } else if (schemaVersion === 3) {
+    prepared.schema_version = 3;
+    const { task_ownership, task_close, ...legacyProcess } = prepared.process;
+    prepared.process = legacyProcess;
+    delete prepared.ownership;
   }
   const reviewed = reviewManifest(prepared, { changedPaths: ['README.md'], mapBaseline: {} });
   if (consistency) reviewed.review.intake.tools.push(
@@ -1131,12 +1164,17 @@ test('a schema-v2 manifest closes while its raw receipt remains private', () => 
   }
 });
 
-test('schema-v3 BARE close skips executable QA and public receipt while retaining mandatory closure', () => {
+test('legacy schema-v3 BARE close remains compatible and skips executable QA and public receipt', () => {
   const fixture = terminalCloseFixture(`
     import { appendFileSync } from 'node:fs';
     appendFileSync('qa-runs.txt', 'run\\n');
     console.log('PASS — fixture QA');
-  `, 'Bare close fixture', { plan: true, legacy: false, processControls: BARE_TASK_PROCESS_CONTROLS });
+  `, 'Bare close fixture', {
+    plan: true,
+    legacy: false,
+    schemaVersion: 3,
+    processControls: BARE_TASK_PROCESS_CONTROLS,
+  });
   try {
     const result = fixture.run();
     assert.equal(result.status, 0, result.stderr);
@@ -1156,7 +1194,7 @@ test('schema-v3 BARE close skips executable QA and public receipt while retainin
 });
 
 test('public receipt can report process-disabled QA independently', () => {
-  const controls = resolveTaskProcessControls({ overrides: ['qa_receipt=on'] });
+  const controls = resolveTaskProcessControls({ overrides: ['task_ownership=on', 'task_close=on', 'qa_receipt=on'] });
   const fixture = terminalCloseFixture(`
     throw new Error('QA must not execute');
   `, 'Receipt without QA fixture', { legacy: false, processControls: controls });
@@ -1166,6 +1204,8 @@ test('public receipt can report process-disabled QA independently', () => {
     const manifest = JSON.parse(readFileSync(join(fixture.root, fixture.manifestPath), 'utf8'));
     const receipt = readFileSync(join(fixture.root, manifest.verification.public_receipt), 'utf8');
 
+    assert.equal(manifest.schema_version, 4);
+    assert.equal(manifest.ownership.status, 'released');
     assert.match(receipt, /Implementation: COMPLETED/);
     assert.match(receipt, /Verification: PASSED/);
     assert.match(receipt, /Executable QA: NOT RUN — disabled by task process control/);
@@ -1180,7 +1220,7 @@ test('required KB consistency runs with QA disabled', () => {
     throw new Error('QA must not execute');
   `, 'Required consistency fixture', {
     legacy: false,
-    processControls: BARE_TASK_PROCESS_CONTROLS,
+    processControls: resolveTaskProcessControls({ overrides: ['task_ownership=on', 'task_close=on'] }),
     consistency: true,
   });
   try {
@@ -1193,7 +1233,7 @@ test('required KB consistency runs with QA disabled', () => {
 });
 
 test('plan archival OFF closes with an explicit retained plan state', () => {
-  const controls = resolveTaskProcessControls({ overrides: ['plan_archival=off'] });
+  const controls = resolveTaskProcessControls({ overrides: ['task_ownership=on', 'task_close=on', 'plan_archival=off'] });
   const fixture = terminalCloseFixture("console.log('unused QA');\n", 'Retained plan fixture', {
     plan: true,
     legacy: false,

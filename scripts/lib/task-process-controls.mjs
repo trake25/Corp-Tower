@@ -1,4 +1,15 @@
 export const TASK_PROCESS_CONTROL_NAMES = Object.freeze([
+  'task_ownership',
+  'task_close',
+  'telemetry',
+  'workflow_inefficiency_flagging',
+  'qa',
+  'qa_coverage',
+  'qa_receipt',
+  'plan_archival',
+]);
+
+export const LEGACY_TASK_PROCESS_CONTROL_NAMES = Object.freeze([
   'telemetry',
   'workflow_inefficiency_flagging',
   'qa',
@@ -8,6 +19,8 @@ export const TASK_PROCESS_CONTROL_NAMES = Object.freeze([
 ]);
 
 const BARE_VALUES = Object.freeze({
+  task_ownership: false,
+  task_close: false,
   telemetry: false,
   workflow_inefficiency_flagging: false,
   qa: false,
@@ -26,6 +39,10 @@ function sameValues(left, right) {
   return TASK_PROCESS_CONTROL_NAMES.every(name => left[name] === right[name]);
 }
 
+function sameLegacyValues(left, right) {
+  return LEGACY_TASK_PROCESS_CONTROL_NAMES.every(name => left[name] === right[name]);
+}
+
 function derivedProfile(values) {
   if (sameValues(values, BARE_VALUES)) return 'bare';
   if (sameValues(values, ALL_VALUES)) return 'all';
@@ -33,6 +50,8 @@ function derivedProfile(values) {
 }
 
 function validateDependency(values) {
+  if (values.task_close && !values.task_ownership)
+    throw new Error('task_close=on requires task_ownership=on');
   if (values.workflow_inefficiency_flagging && !values.telemetry)
     throw new Error('workflow_inefficiency_flagging=on requires telemetry=on');
 }
@@ -74,13 +93,47 @@ export function resolveTaskProcessControls({ profile = 'bare', overrides = [] } 
   return validateTaskProcessControls({ profile: derivedProfile(values), ...values });
 }
 
+function validateLegacySchemaV3Process(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input))
+    throw new Error('process controls must be an object');
+  const allowed = new Set(['profile', ...LEGACY_TASK_PROCESS_CONTROL_NAMES]);
+  const unknown = Object.keys(input).filter(name => !allowed.has(name));
+  if (unknown.length) throw new Error(`unknown process control field: ${unknown.join(', ')}`);
+  if (!['bare', 'all', 'custom'].includes(input.profile))
+    throw new Error('process profile must be bare, all, or custom');
+  for (const name of LEGACY_TASK_PROCESS_CONTROL_NAMES) {
+    if (!Object.hasOwn(input, name)) throw new Error(`process control ${name} is required`);
+    if (typeof input[name] !== 'boolean') throw new Error(`process control ${name} must be boolean`);
+  }
+  const legacyBare = Object.fromEntries(LEGACY_TASK_PROCESS_CONTROL_NAMES.map(name => [name, BARE_VALUES[name]]));
+  const legacyAll = Object.fromEntries(LEGACY_TASK_PROCESS_CONTROL_NAMES.map(name => [name, ALL_VALUES[name]]));
+  const profile = sameLegacyValues(input, legacyBare) ? 'bare' : sameLegacyValues(input, legacyAll) ? 'all' : 'custom';
+  if (input.profile !== profile)
+    throw new Error(`process profile ${input.profile} does not match resolved ${profile} controls`);
+  if (input.workflow_inefficiency_flagging && !input.telemetry)
+    throw new Error('workflow_inefficiency_flagging=on requires telemetry=on');
+  const normalized = {
+    task_ownership: true,
+    task_close: true,
+    ...Object.fromEntries(LEGACY_TASK_PROCESS_CONTROL_NAMES.map(name => [name, input[name]])),
+  };
+  return validateTaskProcessControls({ profile: derivedProfile(normalized), ...normalized });
+}
+
 export function taskProcessControlsForManifest(manifest) {
   if (manifest?.schema_version === 2) return { ...LEGACY_TASK_PROCESS_CONTROLS };
-  if (manifest?.schema_version !== 3)
+  if (manifest?.schema_version === 3) {
+    try {
+      return validateLegacySchemaV3Process(manifest.process);
+    } catch (error) {
+      throw new Error(`malformed schema-v3 process contract: ${error.message}`);
+    }
+  }
+  if (manifest?.schema_version !== 4)
     throw new Error(`unsupported manifest schema: ${manifest?.schema_version}`);
   try {
     return validateTaskProcessControls(manifest.process);
   } catch (error) {
-    throw new Error(`malformed schema-v3 process contract: ${error.message}`);
+    throw new Error(`malformed schema-v4 process contract: ${error.message}`);
   }
 }

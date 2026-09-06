@@ -1,117 +1,115 @@
 # Top or Drop — Agent Workflow Overview
 
-## A. Policy ownership
+## A. Three authority layers
 
-ChatGPT and Codex no longer traverse the same startup policy tree.
+Top or Drop uses three execution-context layers.
 
-ChatGPT is routed directly to `policy/CHATGPT.md#ENTRY#`, which selects only the ChatGPT role needed for the current request. Planner, Reviewer, Question, Visual, Maintenance, and Research remain sparse on-demand branches.
+1. `AGENTS.md` is the universal Codex execution kernel. It contains only rules needed on every
+   implementation task.
+2. The approved Phase 2 plan contains only policy selected for that task.
+3. The KB/source handoff contains domain and task-scope knowledge selected by Planner.
 
-`AGENTS.md` is the universal Codex execution policy. It contains only rules that apply to every Codex implementation task. Codex does not identify runtime/product, model, or effort and does not route through `policy/CODEX.md`, `policy/IMPLEMENT.md`, or `policy/FIX.md` during normal planned execution.
+Runtime agent skills are not an authority layer and are not used.
 
-`policy/CODEX.md`, `policy/IMPLEMENT.md`, and `policy/FIX.md` are Planner-side policy sources. ChatGPT Planner reads only the relevant portions while compiling Phase 2 and embeds only the selected task-specific rules into the plan.
+## B. Planning
 
-## B. Planning workflow
+ChatGPT Planner resolves intended behavior before implementation. Phase 1 is the final approved
+behavior contract. Phase 2 preserves that contract and contextualizes the current repository far
+enough to identify bounded source, likely writes, affected durable KB contracts, generated outputs,
+and minimum verification.
 
-Planner resolves intended behavior with the user before implementation.
+Planner performs policy selection and semantic context selection once so Codex does not repeat that
+reasoning.
 
-Phase 1 is the final user-approved intended-behavior contract. Phase 2 must preserve that contract without reinterpretation or expansion.
+## C. Phase 2 handoff
 
-For repository-dependent work, Planner contextualizes far enough to understand likely implementation, not only architecture. It uses the KB Tree to resolve the relevant durable contracts and inspects enough current source to identify the exact source files and bounded sections Codex should read, the likely direct-edit files, generated outputs or authored KB/docs that may change, and the minimum verification that proves completion.
+Every Phase 2 plan contains:
 
-The workflow reasoning cost is paid once during planning so Codex does not repeat policy selection, KB concept selection, or implementation-boundary discovery during normal execution.
-
-## C. Standard Phase 2 handoff
-
-Every Phase 2 implementation plan uses the same core sections:
-
-1. `## 1. Intended Behavior` — the exact behavior approved by the user during Phase 1.
-2. `## 2. Task-Specific Policy` — only the relevant rules selected from detached Planner-side policy sources.
+1. `## 1. Intended Behavior`
+2. `## 2. Task-Specific Policy`
 3. `## 3. Context`
-   - `### Compacted KB Context` — implementation-relevant KB prose already read and summarized by Planner.
-   - `### KB Retrieval Inputs` — exact canonical concept IDs or aliases Codex may use if deeper detail becomes necessary.
-   - `### Source Context` — exact current source files plus bounded sections, symbols, or ranges Codex should inspect.
+   - `### Compacted KB Context`
+   - `### KB Retrieval Inputs`
+   - `### Source Context`
 4. `## 4. Expected Write Scope`
-   - `### Direct Edits`
-   - `### Generated Outputs`
-5. `## 5. Implementation` — ordered required outcomes and material constraints.
-6. `## 6. Verification` — only the minimum task-required verification plus mandatory repository consistency/closure.
-7. `## 7. Done Criteria` — observable completion conditions.
+5. `## 5. Implementation`
+6. `## 6. Verification`
+7. `## 7. Done Criteria`
 
-`## Execution Overrides` exists only when execution differs from repository defaults.
+`## Execution Overrides` appears only when execution differs from defaults.
 
-BARE process controls are not repeated in the plan. Normal single-run execution is not stated. Current Codex runtime identity, model, and effort are not plan content. Planner may recommend a model and effort to the user outside the plan.
+A default-OFF optional process is not named in the plan. Planner compiles its policy only when the
+process is selected ON or otherwise made non-default. Normal single-run execution is implicit.
 
-## D. Codex implementation workflow
+## D. Codex runtime
 
-The normal Codex path is:
+Normal runtime is:
 
-`AGENTS.md → approved Phase 2 plan → Compacted KB Context + Source Context → implementation → minimum verification / deterministic closure → result`
+`AGENTS.md → approved Phase 2 plan → supplied KB/source context → implementation → required verification/completion mechanics → compact result`
 
-Codex uses the compacted KB summary as its primary durable-system context and reads the listed source context before editing. The listed KB retrieval inputs are fallback routes for deeper detail, not mandatory startup reads.
+Codex does not route through Planner-side policy files or runtime skills. It consumes the policy and
+context already selected into the plan.
 
-The Expected Write Scope is Planner's evidence-based likely scope, not a hard whitelist by default. Current source evidence may justify a proven direct task dependency or bounded task-local refactor when needed for a complete or materially cleaner implementation. That freedom never authorizes unrelated cleanup, maintenance, speculative architecture, or behavior outside the approved Phase 1 contract.
+Deeper KB retrieval is demand-driven from exact plan-supplied concept IDs/aliases. Broad repository
+rediscovery is not normal execution.
 
-If implementation changes a durable current system contract, Codex updates the owning authored KB concept. Generated KB routers and concept maps remain tooling-owned.
+## E. Policy selection
 
-## E. Strict execution
+`policy/CODEX.md`, `policy/IMPLEMENT.md`, and `policy/FIX.md` are Planner-side policy sources.
 
-`strict_execution=ON` is a non-default execution override.
+Planner selects IMPLEMENT or FIX, then loads only optional policy that actually applies. Task-close,
+ownership, telemetry, QA, coverage, receipts, orchestration, strict execution, and similar optional
+systems are not universal Codex knowledge.
 
-When absent, Codex retains task-local implementation judgment inside the approved behavior and universal `AGENTS.md` boundaries.
+## F. Process controls
 
-When enabled, the plan must prescribe the implementation constraints and direct-write scope closely enough for deterministic execution. Codex follows that path rather than substituting its own refactor, modularization, or additional write dependency. If current source makes the prescribed path impossible, unsafe, or materially incorrect, Codex reports the conflict rather than deviating autonomously.
+BARE defaults task ownership, task-close, telemetry, workflow inefficiency flagging, executable QA,
+permanent QA coverage, and public QA receipt OFF. Plan archival remains ON.
 
-Strict execution is intended for tasks where a deliberately prescriptive path is more valuable than adaptive implementation judgment.
+Default-OFF means invisible to Codex. An enabled process contributes only its selected compact task
+policy and deterministic mechanics.
 
-## F. Fix workflow
+Task-close requires ownership. Workflow inefficiency flagging requires telemetry. ORCHESTRATED
+execution requires ownership. These dependencies are Planner/tooling concerns and are not taught by
+`AGENTS.md`.
 
-Confirmed bug repair still uses the normal planning and execution handoff.
+Plan archival is a default deterministic completion mechanic, independent from task-close.
 
-ChatGPT Planner classifies the approved task through the detached Planner-side Codex policy and selects the relevant FIX rules. The Phase 2 plan carries the confirmed intended behavior, affected source context, expected repair scope, minimum verification, and only the FIX constraints that materially apply.
+## G. Domain context
 
-Codex then follows the same runtime path:
+Domain knowledge belongs in the KB Tree. Planner resolves only the concepts needed for the task,
+compacts their durable contracts into the plan, and supplies exact bounded source context.
 
-`AGENTS.md → approved Phase 2 fix plan → supplied context → smallest complete restoration → minimum verification / deterministic closure → result`
+Client, server, QA, infra, web, editorial, and coordination knowledge are not loaded through role
+skills.
 
-FIX restores confirmed intended behavior. If repository evidence proves that restoration requires a new product or workflow decision, the task returns to ChatGPT planning rather than letting Codex invent a redesign.
+## H. Orchestration
 
-## G. Process controls and deterministic tooling
+Normal execution is one Codex run. Planner selects ORCHESTRATED only when bounded decomposition
+materially improves context efficiency or integration control.
 
-Repository process defaults remain deterministic tooling behavior rather than repeated plan prose.
+When selected, the plan carries worker responsibilities, dependencies, explicit write claims,
+shared invariants, execution waves, scoped verification, and parent integration criteria. Parent
+ownership is required; task-close remains separately optional.
 
-New tasks default to BARE internally: telemetry, workflow inefficiency flagging, executable QA, permanent QA coverage, and public QA receipt are off; plan archival is on. Planner writes only non-default values under `## Execution Overrides`. Task-close still resolves and persists the complete effective process contract internally. Corp Tower observability hooks are not registered from an auto-discovered project `hooks.json` in the default path, so telemetry OFF means those hook commands are not dispatched. A plan with `telemetry=ON` is started through the deterministic pre-session Codex launcher, which injects the repository observability hooks only for that implementation session and fails before launch if activation cannot be resolved.
+## I. Review
 
-Deterministic tooling owns repeatable mechanics such as explicit task ownership, task-close lifecycle, generated KB routing/maps, process-control validation, compact QA execution, receipts, plan archival, orchestration write claims, observability, and authorized publication gates.
+Post-implementation review routes through ChatGPT Reviewer. Reviewer checks actual repository
+evidence against the approved plan; Codex summaries are not proof.
 
-Optional processes never disable task ownership, concurrent-change preservation, authorization or safety boundaries, patch integrity, repair of task-caused failures, or required KB/generated consistency.
-
-## H. Orchestrated execution
-
-Normal single-run execution is implicit.
-
-Planner selects ORCHESTRATED only when semantic decomposition materially reduces context reconstruction, enables useful safe concurrency, or improves integration control enough to justify coordination overhead. When selected, Planner reads the detached orchestration policy and compiles the required worker contract into `## Execution Overrides`.
-
-The parent plan remains the behavior authority. Worker units receive only their bounded behavior, selected policy, compacted KB context, exact retrieval inputs when needed, source context, write ownership, shared interfaces, and verification expectations.
-
-Parallel workers may share read evidence but may not hold overlapping active write claims. Shared mutable paths use one owner or serialized work. Parent closure, integration, worker-claim resolution, and final verification remain orchestrator-owned.
-
-## I. Review workflow
-
-A fresh ChatGPT review session routes through `policy/CHATGPT.md#ENTRY#` to Reviewer. A continued Planner session can transition directly into Reviewer without reconstructing already-present planning decisions.
-
-Reviewer inspects actual repository evidence against the approved plan. Codex summaries are not proof. For orchestrated work, the parent plan is the implementation contract and worker handoffs are supporting evidence only.
-
-Review distinguishes implementation defects, integration defects, verification/tooling issues, and unrelated maintenance. Fix-required findings return through focused planning before Codex implementation resumes.
+Implementation defects, integration defects, tooling/verification issues, and unrelated maintenance
+remain separately classified.
 
 ## J. Token-efficiency principle
 
-The workflow reduces provider cost by moving reusable reasoning upstream and keeping defaults implicit:
+Provider context is spent only where it changes the next decision:
 
-1. **Planner-side policy selection** — ChatGPT selects only task-relevant execution policy once.
-2. **Compacted KB handoff** — Planner summarizes already-read KB prose instead of making Codex reread it.
-3. **Exact source handoff** — Planner identifies bounded source context and likely write files before implementation.
-4. **Implicit defaults** — BARE controls and normal single-run execution do not consume plan context.
-5. **Adaptive Codex execution** — Codex spends reasoning on current source and implementation choices rather than workflow routing.
-6. **Deterministic mechanics** — tooling owns repeatable closure, generation, QA, receipts, and state management with compact outputs.
+- universal policy is small;
+- optional policy appears only when selected;
+- domain context is Planner-selected from the KB;
+- Codex reuses the supplied context instead of rediscovering it;
+- default-OFF systems generate no runtime policy/context;
+- deterministic tooling keeps detailed state/logs private and returns compact results.
 
-The goal is to minimize duplicate workflow reasoning while preserving strong implementation judgment where current source evidence matters most.
+The goal is a minimal default Codex path with stronger context added only when the task actually
+needs it.

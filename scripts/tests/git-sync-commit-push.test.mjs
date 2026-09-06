@@ -3,7 +3,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { manifestScope, requireManifest, validatePublicReceiptEvidence } from '../git-sync-commit-push.mjs';
+import { explicitPathScope, manifestScope, requireManifest, validatePublicReceiptEvidence } from '../git-sync-commit-push.mjs';
+import { acquireTaskOwnership, releaseTaskOwnership } from '../lib/task-ownership.mjs';
 
 const IDENTITY = Object.freeze({
   keywords: ['Retrieval', 'Polish'],
@@ -108,4 +109,41 @@ test('schema-v1 Git scope retains the explicit changed-path fallback', () => {
     task_identity: null,
     public_receipt: null,
   });
+});
+
+test('explicit authorized publication paths work without task-close and can be bounded by ownership', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-git-explicit-scope-'));
+  try {
+    mkdirSync(join(root, 'scripts'), { recursive: true });
+    writeFileSync(join(root, 'scripts/example.mjs'), 'export const example = true;\n');
+    const ownership = acquireTaskOwnership({
+      root,
+      task: 'Explicit publication',
+      paths: ['scripts/example.mjs'],
+      runId: 'explicit-publication',
+    });
+    const scope = explicitPathScope({
+      root,
+      task: 'Explicit publication',
+      paths: ['scripts/example.mjs'],
+      ownership: ownership.ownership.path,
+    });
+    assert.deepEqual(scope.paths, ['scripts/example.mjs']);
+    assert.equal(scope.ownership.run_id, 'explicit-publication');
+    assert.throws(() => explicitPathScope({
+      root,
+      task: 'Explicit publication',
+      paths: ['scripts/missing.mjs'],
+      ownership: ownership.ownership.path,
+    }), /publication path|ownership/);
+    releaseTaskOwnership({ root, ownership: ownership.ownership });
+    assert.equal(explicitPathScope({
+      root,
+      task: 'Explicit publication',
+      paths: ['scripts/example.mjs'],
+      ownership: ownership.ownership.path,
+    }).ownership.status, 'released');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

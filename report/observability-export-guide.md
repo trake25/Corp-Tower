@@ -12,10 +12,11 @@ report automatically.
   observability records. Start those implementation sessions through
   `node scripts/codex-task-run.mjs <phase-2-plan-path>` so the Corp Tower hooks
   are injected before Codex starts.
-- Telemetry-enabled tasks complete the observability lifecycle through
-  `task-close prepare` and `task-close close` plus the injected Codex `Stop`
-  hook. Review and trust that injected hook definition when Codex requests it;
-  default/OFF tasks do not inject the Corp Tower observability hooks.
+- Telemetry-enabled tasks establish and settle their own task/session binding through
+  the deterministic launcher and injected Codex `Stop` hook; task-close may add
+  verification evidence only when it is separately selected. Review and trust that
+  injected hook definition when Codex requests it; default/OFF tasks do not inject
+  the Corp Tower observability hooks.
 - Exact task events include stable event IDs, provider, model family, model
   variant, reasoning effort, settled usage, parent/child attribution, and a
   terminal callback.

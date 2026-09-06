@@ -5,6 +5,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import { dirname, posix, relative, resolve, sep } from 'node:path';
 import { taskProcessControlsForManifest } from './task-process-controls.mjs';
+import { resolveTaskOwnership } from './task-ownership.mjs';
 
 const STATE_DIRECTORY = '.agent-state/automation/orchestration';
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
@@ -61,18 +62,36 @@ function loadParent({ parent, root = process.env.TASK_CLOSE_ROOT || '.' }, claim
   const manifestPath = repositoryPath(repositoryRoot, relative(repositoryRoot, parentPath).replaceAll('\\', '/'), 'parent manifest');
   if (!manifestPath.startsWith('.agent-state/')) throw new Error('parent manifest must stay under .agent-state/');
   const manifest = readJson(parentPath, 'parent manifest');
-  if (!manifest || ![2, 3].includes(manifest.schema_version))
-    throw new Error('parent must be an existing schema-v2 or schema-v3 task-close manifest');
-  taskProcessControlsForManifest(manifest);
-  const runId = identifier(manifest.run_id, 'parent run_id');
-  // Claims need an open writer lifecycle; release/cleanup also serve closure retries.
-  const phases = { open: ['prepared', 'reviewed', 'failed'], verified: ['verified'], blocked: ['closure-blocked'] };
-  if (!Object.hasOwn(phases, manifest.lifecycle?.status) || !Object.values(phases).flat().includes(manifest.phase)
-    || (claiming && (manifest.lifecycle.status !== 'open' || !phases.open.includes(manifest.phase))))
-    throw new Error('parent lifecycle must be open for claims or awaiting closure for cleanup');
-  if (!Array.isArray(manifest.owned_paths) || !manifest.owned_paths.length)
-    throw new Error('parent manifest must contain explicit owned_paths');
-  const ownedPaths = [...new Set(manifest.owned_paths.map(path => repositoryPath(repositoryRoot, path, 'parent owned path', { inspect: false })))].sort();
+  if (!manifest) throw new Error('parent must be an existing task ownership record or task-close manifest');
+  let runId;
+  let ownedPaths;
+  if (manifest.kind === 'task-ownership') {
+    const ownership = resolveTaskOwnership({ path: manifestPath }, { root: repositoryRoot, requireActive: claiming });
+    runId = identifier(ownership.run_id, 'parent run_id');
+    ownedPaths = ownership.owned_paths;
+  } else {
+    if (![2, 3, 4].includes(manifest.schema_version))
+      throw new Error('parent must be an existing task ownership record or schema-v2, schema-v3, or schema-v4 task-close manifest');
+    taskProcessControlsForManifest(manifest);
+    // Claims need an open writer lifecycle; release/cleanup also serve closure retries.
+    const phases = { open: ['prepared', 'reviewed', 'failed'], verified: ['verified'], blocked: ['closure-blocked'] };
+    if (!Object.hasOwn(phases, manifest.lifecycle?.status) || !Object.values(phases).flat().includes(manifest.phase)
+      || (claiming && (manifest.lifecycle.status !== 'open' || !phases.open.includes(manifest.phase))))
+      throw new Error('parent lifecycle must be open for claims or awaiting closure for cleanup');
+    if (manifest.schema_version === 4) {
+      const ownership = resolveTaskOwnership(manifest.ownership, { root: repositoryRoot, requireActive: claiming });
+      if (ownership.task !== manifest.task) throw new Error('parent task-close task does not match task ownership');
+      if (JSON.stringify(ownership.owned_paths) !== JSON.stringify([...(manifest.owned_paths || [])].sort()))
+        throw new Error('parent task-close owned_paths do not match task ownership');
+      runId = identifier(ownership.run_id, 'parent run_id');
+      ownedPaths = ownership.owned_paths;
+    } else {
+      runId = identifier(manifest.run_id, 'parent run_id');
+      if (!Array.isArray(manifest.owned_paths) || !manifest.owned_paths.length)
+        throw new Error('parent manifest must contain explicit owned_paths');
+      ownedPaths = [...new Set(manifest.owned_paths.map(path => repositoryPath(repositoryRoot, path, 'parent owned path', { inspect: false })))].sort();
+    }
+  }
   const statePath = `${STATE_DIRECTORY}/${runId}.json`;
   repositoryPath(repositoryRoot, statePath, 'orchestration state');
   return { root: repositoryRoot, manifestPath, runId, ownedPaths, statePath: resolve(repositoryRoot, statePath) };

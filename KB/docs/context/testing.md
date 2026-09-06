@@ -111,14 +111,17 @@ id: testing.automation.protocol
 alias: automation tests
 alias: retrieval benchmark
 source: scripts/tests/context-query.test.mjs#automation scope selects the protocol suite and retrieval benchmark
-source: scripts/tests/task-close.test.mjs#prepare creates an explicit schema-v3 BARE ownership manifest and intake
+source: scripts/tests/task-ownership.test.mjs#lightweight task ownership acquires explicit scope, rejects active overlap, and releases independently
+source: scripts/tests/plan-archive.test.mjs#standalone plan archival is collision-safe and idempotent without task-close
 source: scripts/tests/orchestration-scope.test.mjs#parallel worker ownership rejects overlapping write claims
-source: scripts/tests/policy-routing.test.mjs#orchestration is a Planner-selected override with bounded parent and worker ownership
+source: scripts/tests/policy-routing.test.mjs#universal policy excludes optional process routing
 source: scripts/tests/concept-kb.test.mjs#the repository concept registry is complete, deterministic, and source-grounded
 source: scripts/benchmark-rag.mjs#runConceptBenchmark
 source: scripts/lib/kb-calibration.mjs#measureKbCalibration
 source: scripts/export-kb-calibration-report.mjs#exportKbCalibrationReport
 source: scripts/tests/codex-observability-hook.test.mjs#production hook smoke keeps observability fail-open and private
+source: scripts/tests/codex-task-run.test.mjs#telemetry-enabled launcher establishes an opt-in binding that settles without task-close
+source: scripts/tests/task-receipt.test.mjs#standalone receipt writes only explicit sanitized scope and states skipped QA
 source: scripts/qa-gate.mjs#selectToolingQa
 source: scripts/fixtures/agent-observability/provider-events.json#events
 adjacent: automation.retrieval.protocol
@@ -127,22 +130,19 @@ adjacent: automation.orchestration.ownership
 -->
 ## Automation protocol coverage
 
-Automation tests protect retrieval states and budgets, task-close ownership and
-closure, orchestration worker-scope exclusion, publication scope, map generation,
-bounded observability, and safety gates. The hook smoke executes configured
-lifecycle payloads against local private state, including degraded and partial
-settlement, without a live provider or retained private payload. Focused concept
-tests cover parser/generator/validator integrity and KB Tree map isolation. The
-explicitly requested concept benchmark gates exact routes and closed failures,
-then locally measures representative concept and journey footprints, merges
-overlapping source windows, and writes only sanitized metrics to ignored
-benchmark state.
+Automation tests protect Planner-to-plan policy isolation, absence of runtime skill routing,
+process-control resolution, optional task ownership/task-close, orchestration write exclusion,
+explicit publication scope, standalone plan archival, generated KB consistency, bounded
+observability, receipt sanitization, and safety gates.
 
-Public calibration is a separate human action: the manual exporter reads the
-latest valid private snapshot, computes heuristic review prompts, and creates the
-next collision-safe version under non-context `report/`. Neither QA, task-close,
-nor the benchmark invokes that exporter, and footprint observations are not
-correctness gates.
+Policy-routing coverage proves `AGENTS.md` contains only universal execution rules, default-OFF
+optional processes are not universal runtime policy, Planner-side policy sources contain no skill
+routing, and the active `.claude/skills/` tree is retired.
+
+Focused lifecycle tests prove lightweight ownership works without close-out, task-close runs only
+when selected, telemetry-enabled sessions work without requiring task-close, and default telemetry
+dispatches no project hooks. Publication/receipt/archive fixtures prove those mechanics remain
+usable without adopting unrelated dirty-tree state.
 
 <!-- kb
 id: testing.contract.tutorial-parity

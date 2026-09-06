@@ -173,7 +173,7 @@ export function renderPublicQaReceipt({
     '',
     '---',
     '',
-    'Generated mechanically by `scripts/task-close.mjs` from sanitized structured close-out evidence. Raw logs remain private.',
+    'Generated mechanically from sanitized structured verification evidence. Raw logs remain private.',
   );
 
   return `${lines.join('\n')}\n`;

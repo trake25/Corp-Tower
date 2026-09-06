@@ -6,6 +6,7 @@ import { executeBestEffort } from './agent-observability.mjs';
 import { codexRolloutUsage } from './lib/agent-observability/codex-rollout.mjs';
 import { boundedEventId, resolveRuntimeIdentity } from './lib/agent-observability/runtime.mjs';
 import {
+  bindActiveTask,
   clearActiveTask,
   recordHookHealth,
   readActiveTask,
@@ -131,6 +132,15 @@ function telemetryFailed(result) {
 
 function settleTask(event, binding, identity, root, stateDir, now, env) {
   const bundle = readTaskBundle(stateDir, binding.task_id);
+  if (!bundle.final) {
+    const close = executeBestEffort('close', {
+      task_id: binding.task_id,
+      outcome: 'completed',
+      verification: 'not_run',
+      telemetry: {},
+    }, { root, stateDir, now });
+    if (telemetryFailed(close)) return { status: 'degraded', reason: 'standalone_close_write_failed' };
+  }
   const providerUsage = providerUsageFor(event);
   let rollout = null;
   if (!bundle.events.some(item => item.terminal)) {
@@ -207,14 +217,25 @@ function handleHookUnsafe(event, {
     return result;
   };
   if (!event || typeof event !== 'object') return finish({ status: 'ignored', reason: 'invalid_event' });
-  const binding = readActiveTask(state, event.session_id);
+  let binding = readActiveTask(state, event.session_id);
+  if (!binding && event.hook_event_name === 'SessionStart' && env.CORP_TOWER_TELEMETRY_TASK_ID) {
+    try {
+      readTaskBundle(state, env.CORP_TOWER_TELEMETRY_TASK_ID);
+      binding = bindActiveTask(state, event.session_id, env.CORP_TOWER_TELEMETRY_TASK_ID, {
+        now,
+        settleOnStop: true,
+      });
+    } catch {
+      return finish({ status: 'ignored', reason: 'telemetry_task_binding_unavailable' });
+    }
+  }
   if (!binding) return finish({ status: 'ignored', reason: 'no_active_task' });
   const identity = resolveRuntimeIdentity(event, { env, configText });
   const bundle = readTaskBundle(state, binding.task_id);
   const evidence = evidenceFor(event, binding, identity, now, bundle.evidence);
   const recorded = executeBestEffort('evidence', evidence, { root, stateDir: state, now });
   if (telemetryFailed(recorded)) return finish({ status: 'degraded', reason: 'evidence_write_failed', task_id: binding.task_id });
-  if (event.hook_event_name === 'Stop' && binding.close_requested) {
+  if (event.hook_event_name === 'Stop' && (binding.close_requested || binding.settle_on_stop)) {
     const settled = settleTask(event, binding, identity, root, state, now, env);
     return finish({ ...settled, task_id: binding.task_id });
   }

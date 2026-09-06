@@ -1,94 +1,115 @@
 #ENTRY#
 
-This is a Planner-side policy source for compiling Phase 2 implementation plans. Normal Codex runtime execution does not read this file; universal Codex behavior lives in `AGENTS.md`, and task-specific selected rules are embedded in the approved plan.
+This is a Planner-side policy source. Normal Codex execution does not read this file. `AGENTS.md` supplies universal execution policy; the approved Phase 2 plan contains only the task policy selected here.
 
-Classify the approved implementation task:
-- IMPLEMENT — create or modify approved repository behavior or deliverables.
-- FIX — restore confirmed intended existing behavior for an authorized defect or regression.
+Classify the implementation:
+- IMPLEMENT — create or modify approved repository behavior/deliverables.
+- FIX — restore confirmed intended existing behavior.
 
-Then read only the matching policy entry:
+Read only the matching policy entry:
 - IMPLEMENT → `policy/IMPLEMENT.md#ENTRY#`
 - FIX → `policy/FIX.md#ENTRY#`
 
-If the task does not fit either type, do not invent an execution route. Return to planning and resolve the missing task contract.
+Domain/task-scope knowledge comes from Planner-selected KB context, not skills.
 
-Load the conditional sections below only when they apply:
-- `#PROCESS-OVERRIDES#` — the user selected a non-default task process or profile.
-- `#ORCHESTRATION#` — ORCHESTRATED execution is selected.
-- `#STRICT-EXECUTION#` — `strict_execution=ON` is selected.
+Load a conditional section below only when that non-default policy actually applies. Default-OFF processes must not be compiled into the plan or exposed to Codex runtime context.
 
-Do not copy universal `AGENTS.md` policy into the Phase 2 plan.
+Conditional sections:
+- `#PROCESS-ROUTER#` — only when the user requests process customization or everything ON.
+- `#TASK-OWNERSHIP#` — only when task ownership is ON.
+- `#TASK-CLOSE#` — only when task-close is ON.
+- `#TELEMETRY#` — only when telemetry is ON.
+- `#WORKFLOW-INEFFICIENCY#` — only when workflow inefficiency flagging is ON.
+- `#QA#` — only when executable QA is ON.
+- `#QA-COVERAGE#` — only when permanent QA coverage is ON.
+- `#QA-RECEIPT#` — only when public QA receipt is ON.
+- `#PLAN-ARCHIVAL#` — only when the user explicitly changes archival from its default.
+- `#ORCHESTRATION#` — only when ORCHESTRATED execution is selected.
+- `#STRICT-EXECUTION#` — only when strict execution is selected.
 
-Repository policy files are user-owned manual configuration. Planner must never assign a repository policy file to Codex's implementation write scope or treat it as an autonomous Codex write dependency. When an approved change requires a policy-file modification, ChatGPT provides the complete replacement policy file to the user, the user applies it manually before implementation, and the Codex plan treats that policy state as a read-only precondition.
+Do not copy universal `AGENTS.md` rules into the task plan.
 
-#PROCESS-OVERRIDES#
+#PROCESS-ROUTER#
 
-## Process overrides
+Repository process defaults:
+- `task_ownership=OFF`
+- `task_close=OFF`
+- `telemetry=OFF`
+- `workflow_inefficiency_flagging=OFF`
+- `qa=OFF`
+- `qa_coverage=OFF`
+- `qa_receipt=OFF`
+- `plan_archival=ON`
 
-Repository process defaults are implicit. Do not enumerate them in the plan when unchanged.
+ALL sets every process ON.
 
-Optional task processes are:
-- telemetry;
-- workflow_inefficiency_flagging;
-- qa;
-- qa_coverage;
-- qa_receipt;
-- plan_archival.
+Dependencies:
+- `task_close=ON` requires `task_ownership=ON`.
+- `workflow_inefficiency_flagging=ON` requires `telemetry=ON`.
+- ORCHESTRATED execution requires `task_ownership=ON`.
 
-The user may enable or disable an optional process through natural-language instruction. Put only non-default values under `## Execution Overrides`.
+Invalid combinations fail closed rather than silently enabling another process.
 
-Telemetry also controls the repository observability hooks. The tracked repository does not expose
-those observability hooks through auto-discovered `.codex/hooks.json`. When `telemetry=ON`, Planner
-must tell the user outside the plan to start the implementation Codex session through
-`node scripts/codex-task-run.mjs <phase-2-plan-path>` so the launcher injects the observability hooks
-only into that session. Codex never edits repository hook configuration to toggle telemetry for its
-own current task. If the launcher cannot resolve the plan telemetry state or construct the session
-hook override, it fails before Codex starts rather than falling back to always-on observability.
+"Everything ON" enables all process controls but does not authorize commit, push, pull, deployment, destructive Git operations, or another externally consequential action.
 
-"Everything ON" enables every applicable optional task process. It does not authorize commit, push, pull, deployment, destructive Git operations, or another externally consequential action.
+After resolving requested controls, read only the exact ON/non-default process sections needed for the task.
 
-`workflow_inefficiency_flagging=ON` requires `telemetry=ON`. Reject an invalid combination rather than silently changing it.
+#TASK-OWNERSHIP#
 
-Executable QA and permanent QA coverage remain independent. Enabling QA does not automatically authorize new permanent coverage, and enabling a QA receipt does not automatically enable executable QA.
+Compile only when `task_ownership=ON`.
 
-Plan archival follows the repository default unless explicitly overridden. When the user disables it, include `plan_archival=OFF` in the execution override.
+Task ownership is lightweight explicit write-scope protection. Acquire ownership from the plan's evidence-based task paths before edits, amend only for a proven direct dependency, never derive authority from the dirty working tree, and release after integrated completion. For concurrent/orchestrated work, worker claims remain subordinate to the parent task scope.
+
+#TASK-CLOSE#
+
+Compile only when `task_close=ON`; ownership must also be ON.
+
+Task-close is a lifecycle boundary, not a checkpoint/status tool. Run prepare once before the first edit, amend only for a proven new direct dependency, review once when authored changes are final, and close once after required verification. Retry review/close only after repairing a blocker returned by that stage. Do not rerun successful stages for procedural reassurance.
+
+#TELEMETRY#
+
+Compile only when `telemetry=ON`.
+
+Corp Tower observability hooks are not auto-discovered by default. Planner tells the user outside the plan to start the implementation session through `node scripts/codex-task-run.mjs <phase-2-plan-path>`, which injects the repository telemetry hook template only for that session and fails before launch if activation cannot be resolved. Telemetry does not enable ownership, task-close, QA, coverage, receipt, or Git authorization.
+
+#WORKFLOW-INEFFICIENCY#
+
+Compile only when workflow inefficiency flagging is ON. Telemetry must also be ON.
+
+Use only bounded current-task telemetry/evidence for candidate/flag processing. Do not broaden runtime context solely to search for inefficiencies.
+
+#QA#
+
+Compile only when executable QA is ON.
+
+Run only the task-selected executable verification using compact repository tooling where available. Successful detailed child output remains private; expand only actionable failure diagnostics. Executable QA does not automatically authorize permanent coverage.
+
+#QA-COVERAGE#
+
+Compile only when permanent QA coverage is ON.
+
+Add/update durable automated coverage only for the approved behavior and direct regression/invariant boundary. Do not turn tunables, exact copy/pixels, or private implementation details into permanent assertions unless they are contractual.
+
+#QA-RECEIPT#
+
+Compile only when public QA receipt is ON.
+
+Generate only sanitized structured task/verification evidence. Receipt generation is independent from executable QA and task-close; when QA was not run, the receipt must state that rather than fabricate proof.
+
+#PLAN-ARCHIVAL#
+
+Read only when the user explicitly overrides archival.
+
+`plan_archival=OFF` leaves the active plan in place after successful completion. No other process behavior changes.
 
 #ORCHESTRATION#
 
-## Orchestration planning
+Compile only when ORCHESTRATED execution is selected. Task ownership must be ON.
 
-Select ORCHESTRATED only when the approved task has multiple coherent implementation responsibilities whose bounded delegation materially reduces context reconstruction, enables useful safe concurrency, or improves integration control enough to justify orchestration overhead.
-
-The Phase 2 plan remains the behavior authority. Under `## Execution Overrides`, define:
-- the orchestrator/integrator responsibility;
-- coherent worker units and their dependencies;
-- what each unit consumes and produces;
-- shared interfaces or invariants;
-- expected worker write ownership and relevant read-only dependencies;
-- dependency-aware execution waves;
-- worker-scoped verification and parent integration verification;
-- parent-level done criteria that require the integrated result, not worker completion messages.
-
-Worker context must be bounded to the unit: intended behavior relevant to the unit, selected task policy, compacted KB context, exact retrieval inputs if deeper context is needed, source context, write ownership, shared interfaces, and verification expectations. Do not send the full parent transcript or unrelated worker history.
-
-Parallel workers may share read dependencies but must not hold overlapping active write claims. Prefer one owner for a shared mutable path; serialize work when two units genuinely require the same file. The orchestrator may refine worker boundaries, ordering, or count against current repository evidence without changing approved intended behavior or adding unrelated scope.
-
-Use dependency-aware waves rather than maximum parallelism. If a failure remains wholly inside one worker's ownership, reuse that worker for repair when practical. Cross-worker integration failures remain orchestrator-owned until responsibility is established.
-
-The parent orchestrator owns task-close, integration, worker-claim resolution, and final verification. Subordinate workers do not open independent parent closure lifecycles.
-
-Isolated branches or worktrees are exceptional and require explicit authorization for the Git operation. Include them only when their parallelism benefit justifies merge and cleanup overhead.
-
-Planner may recommend orchestrator and worker model/effort configurations to the user. If worker configuration must be passed for dispatch, include it in the orchestration override. Do not require the orchestrator to identify or validate its own runtime model/effort as a task step.
+Define bounded worker units, dependencies, shared invariants, expected write claims, dependency-aware waves, worker verification, and parent integration criteria. Parallel workers may share reads but not overlapping active writes. Shared writable paths use one owner or serialized work. The parent owns integrated scope, worker-claim resolution, and final integration. Do not enable task-close merely because execution is orchestrated.
 
 #STRICT-EXECUTION#
 
-## Strict execution
+Compile only when strict execution is selected.
 
-`strict_execution=ON` is non-default and must appear under `## Execution Overrides`.
-
-Use it only when the task intentionally requires a prescriptive implementation path or strict direct-write boundary. When enabled, Phase 2 must specify the implementation constraints and allowed direct-write scope precisely enough for deterministic execution.
-
-Under strict execution, Codex follows the prescribed approach and scope rather than substituting its own refactor, modularization, or additional write dependency. If current source evidence makes the prescribed path impossible, unsafe, or materially incorrect, Codex reports the conflict instead of deviating autonomously.
-
-When `strict_execution=ON` is absent, Codex retains task-local implementation judgment within the approved intended behavior and universal `AGENTS.md` boundaries.
+The plan must specify the prescribed implementation approach and direct-write boundary precisely. Codex follows that path instead of substituting refactors or extra write dependencies. If current source proves the prescribed path impossible, unsafe, or materially incorrect, report the conflict rather than deviating.

@@ -145,10 +145,20 @@ export function readHookHealth(stateDir, sessionId) {
   return existsSync(path) ? readJson(path) : null;
 }
 
-export function bindActiveTask(stateDir, sessionId, taskId, { now = new Date().toISOString() } = {}) {
+export function bindActiveTask(stateDir, sessionId, taskId, {
+  now = new Date().toISOString(),
+  settleOnStop = false,
+} = {}) {
   cleanId(taskId, 'task_id');
   if (typeof sessionId !== 'string' || !sessionId.trim()) throw new Error('session_id is required');
-  const binding = { schema_version: 2, task_id: taskId, close_requested: false, bound_at: now };
+  if (typeof settleOnStop !== 'boolean') throw new Error('settleOnStop must be boolean');
+  const binding = {
+    schema_version: 2,
+    task_id: taskId,
+    close_requested: false,
+    ...(settleOnStop ? { settle_on_stop: true } : {}),
+    bound_at: now,
+  };
   writeAtomicJson(activePath(stateDir, sessionId), binding);
   return binding;
 }

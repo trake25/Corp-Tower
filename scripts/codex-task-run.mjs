@@ -1,18 +1,22 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { executeBestEffort } from './agent-observability.mjs';
+import { codexSessionIds } from './lib/agent-observability/runtime.mjs';
+import { bindActiveTask, resolveStateDir } from './lib/agent-observability/state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TELEMETRY_EVENTS = Object.freeze(['SessionStart', 'PostToolUse', 'Stop', 'SessionEnd']);
 
-function executionOverrides(planText) {
+function planSection(planText, heading) {
   const lines = planText.replace(/\r\n/g, '\n').split('\n');
   const headings = lines
     .map((line, index) => ({ line, index }))
-    .filter(({ line }) => /^##[ \t]+Execution Overrides[ \t]*$/.test(line));
-  if (headings.length > 1) throw new Error('plan contains multiple ## Execution Overrides sections');
+    .filter(({ line }) => line === heading);
+  if (headings.length > 1) throw new Error(`plan contains multiple ${heading} sections`);
   if (!headings.length) return [];
   const section = [];
   for (let index = headings[0].index + 1; index < lines.length; index++) {
@@ -25,8 +29,11 @@ function executionOverrides(planText) {
 export function resolveTelemetryMode(planText) {
   if (typeof planText !== 'string') throw new Error('plan text must be a string');
   const entries = [];
-  for (const line of executionOverrides(planText)) {
-    if (!/telemetry/i.test(line)) continue;
+  for (const line of [
+    ...planSection(planText, '## 2. Task-Specific Policy'),
+    ...planSection(planText, '## Execution Overrides'),
+  ]) {
+    if (!/^[ \t]*(?:[-*][ \t]+)?telemetry=/i.test(line)) continue;
     const entry = line.trim().replace(/^(?:-|\*)[ \t]+/, '');
     const match = /^telemetry=(ON|OFF)$/.exec(entry);
     if (!match) throw new Error(`malformed telemetry assignment: ${line.trim()}`);
@@ -35,6 +42,26 @@ export function resolveTelemetryMode(planText) {
   if (!entries.length) return 'off';
   if (entries.length !== 1) throw new Error('telemetry override must appear exactly once');
   return entries[0] === 'ON' ? 'on' : 'off';
+}
+
+export function startTelemetrySession({ root = ROOT, env = process.env } = {}) {
+  const taskId = `telemetry-${randomUUID().replaceAll('-', '')}`;
+  const stateDir = resolveStateDir({ root, env });
+  const started = executeBestEffort('start', {
+    task_id: taskId,
+    label: 'Telemetry-enabled Codex task',
+    task_type: 'repository_task',
+    complexity: 'unknown',
+    domains: [],
+  }, { root, stateDir });
+  if (!['written', 'duplicate'].includes(started.status))
+    throw new Error('cannot establish telemetry task state');
+  let sessionBindings = 0;
+  for (const sessionId of codexSessionIds(env)) {
+    bindActiveTask(stateDir, sessionId, taskId, { settleOnStop: true });
+    sessionBindings++;
+  }
+  return { task_id: taskId, session_bindings: sessionBindings };
 }
 
 function tomlInlineValue(value) {
@@ -94,12 +121,17 @@ export async function launchCodexTask(planPath, additionalArgs = [], {
   const plan = planFile(planPath, root);
   const telemetry = resolveTelemetryMode(plan.text);
   const hooksOverride = telemetry === 'on' ? telemetryHooksOverride(root) : null;
+  const telemetrySession = telemetry === 'on' ? startTelemetrySession({ root, env }) : null;
   const codexArgs = telemetry === 'on'
     ? ['--enable', 'hooks', '-c', hooksOverride, ...additionalArgs]
     : [...additionalArgs];
-  const child = spawnFn('codex', codexArgs, { cwd: root, env, stdio: 'inherit' });
+  const child = spawnFn('codex', codexArgs, {
+    cwd: root,
+    env: telemetrySession ? { ...env, CORP_TOWER_TELEMETRY_TASK_ID: telemetrySession.task_id } : env,
+    stdio: 'inherit',
+  });
   const result = await waitForCodex(child);
-  return { telemetry, ...result };
+  return { telemetry, ...(telemetrySession || {}), ...result };
 }
 
 function cliArguments(argv) {

@@ -45,6 +45,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `automation.task-close.receipt` | [automation.md#public-receipt](./automation.md#public-receipt) | qa receipt, public receipt |
 | `automation.task-close.scope` | [automation.md#task-close-scope](./automation.md#task-close-scope) | task manifest, owned paths |
 | `automation.task-close.verification` | [automation.md#task-close-verification](./automation.md#task-close-verification) | task close QA, maintenance-blocked |
+| `automation.task-ownership.lifecycle` | [automation.md#task-ownership](./automation.md#task-ownership) | task ownership, lightweight ownership, ownership scope |
 
 ### backend
 

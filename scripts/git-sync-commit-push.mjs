@@ -4,7 +4,8 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { publicQaReceiptPath } from './lib/qa-receipt.mjs';
-import { taskIdentityForManifest } from './lib/task-identity.mjs';
+import { createTaskIdentity, taskIdentityForManifest } from './lib/task-identity.mjs';
+import { repositoryRelativePath, resolveTaskOwnership } from './lib/task-ownership.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -14,7 +15,7 @@ function fail(message) {
 }
 
 function usage() {
-	console.error('usage: node scripts/git-sync-commit-push.mjs --approve --manifest <terminal-closeout.json> [--branch <branch> --switch] [--push-only --remote-branch <branch>]');
+	console.error('usage: node scripts/git-sync-commit-push.mjs --approve (--manifest <terminal-closeout.json> | --task <task> --path <repository-path> [--path <repository-path> ...] [--ownership <ownership.json>]) [--branch <branch> --switch] [--push-only --remote-branch <branch>]');
   process.exit(2);
 }
 
@@ -38,6 +39,25 @@ function parseArgs(args) {
       if (values.manifest) fail('--manifest may be supplied once');
       values.manifest = args[++index];
       if (!values.manifest || values.manifest.startsWith('--')) usage();
+      continue;
+    }
+    if (arg === '--task') {
+      if (values.task) fail('--task may be supplied once');
+      values.task = args[++index];
+      if (!values.task || values.task.startsWith('--')) usage();
+      continue;
+    }
+    if (arg === '--path') {
+      const path = args[++index];
+      if (!path || path.startsWith('--')) usage();
+      values.paths ||= [];
+      values.paths.push(path);
+      continue;
+    }
+    if (arg === '--ownership') {
+      if (values.ownership) fail('--ownership may be supplied once');
+      values.ownership = args[++index];
+      if (!values.ownership || values.ownership.startsWith('--')) usage();
       continue;
     }
     if (arg === '--branch') {
@@ -68,9 +88,7 @@ function git(args, options = {}) {
 }
 
 function repoPath(input) {
-  const path = resolve(ROOT, input);
-  if (path !== ROOT && !path.startsWith(`${ROOT}/`)) fail(`path escapes repository: ${input}`);
-  return input.replace(/^\.\//, '');
+  return repositoryRelativePath(ROOT, input, 'publication path');
 }
 
 function branchName(input, label) {
@@ -81,7 +99,7 @@ function branchName(input, label) {
 
 export function manifestScope(manifest) {
   if (!manifest.task) throw new Error('manifest must contain a task');
-  if (manifest.schema_version === 2) {
+  if ([2, 3, 4].includes(manifest.schema_version)) {
     const verification = manifest.verification?.status;
     if (manifest.phase !== 'closed' || !['passed', 'maintenance-blocked'].includes(verification))
       throw new Error('schema-v2 manifest must have terminal closeout verification');
@@ -104,6 +122,29 @@ export function manifestScope(manifest) {
   if (!Array.isArray(manifest.changed_paths) || !manifest.changed_paths.length)
     throw new Error('schema-v1 manifest must contain changed_paths');
   return { task: manifest.task, paths: [...new Set(manifest.changed_paths)], task_identity: null, public_receipt: null };
+}
+
+export function explicitPathScope({ task, paths, ownership = null, root = ROOT }) {
+  if (typeof task !== 'string' || !task.trim() || task.trim().length > 120)
+    throw new Error('explicit publication task is required');
+  if (!Array.isArray(paths) || !paths.length)
+    throw new Error('explicit publication requires one or more repository-relative paths');
+  const scope = [...new Set(paths.map(path => repositoryRelativePath(root, path, 'publication path')))].sort();
+  let ownershipRecord = null;
+  if (ownership) {
+    ownershipRecord = resolveTaskOwnership({ path: ownership }, { root });
+    if (ownershipRecord.task !== task.trim().replace(/\s+/g, ' '))
+      throw new Error('publication task does not match supplied task ownership');
+    const outside = scope.filter(path => !ownershipRecord.owned_paths.includes(path));
+    if (outside.length) throw new Error(`publication paths outside supplied task ownership: ${outside.join(', ')}`);
+  }
+  return {
+    task: task.trim().replace(/\s+/g, ' '),
+    paths: scope,
+    task_identity: null,
+    public_receipt: null,
+    ownership: ownershipRecord ? { path: ownershipRecord.path, run_id: ownershipRecord.run_id, status: ownershipRecord.status } : null,
+  };
 }
 
 export function validatePublicReceiptEvidence(manifest, root = ROOT) {
@@ -148,12 +189,26 @@ function taskScope(manifestInput) {
   return { task: scope.task, paths: scope.paths.map(repoPath), manifest, identity };
 }
 
+function explicitScope(values) {
+  const scope = explicitPathScope({
+    task: values.task,
+    paths: values.paths || [],
+    ownership: values.ownership || null,
+    root: ROOT,
+  });
+  return { ...scope, identity: createTaskIdentity(scope.task, { root: ROOT }), manifest: null };
+}
+
 function main() {
 	const values = parseArgs(process.argv.slice(2));
 	if (!values.approve) fail('explicit approval required: pass --approve');
+	if (values.manifest && (values.task || values.paths?.length || values.ownership))
+		fail('use either --manifest or explicit --task/--path publication scope, not both');
+	if (!values.manifest && (!values.task || !values.paths?.length))
+		fail('provide --manifest or explicit --task plus one or more --path values');
 	let scope;
 	try {
-		scope = taskScope(values.manifest);
+		scope = values.manifest ? taskScope(values.manifest) : explicitScope(values);
 	} catch (error) {
 		fail(error.message);
 	}
@@ -191,11 +246,7 @@ function main() {
   const staged = git(['diff', '--cached', '--name-only'], { quiet: true });
   if (!staged) fail('no changes were staged');
   let identity = scope.identity;
-  try {
-    identity ||= taskIdentityForManifest(scope.manifest, { root: ROOT });
-  } catch (error) {
-    fail(error.message);
-  }
+  try { identity ||= taskIdentityForManifest(scope.manifest, { root: ROOT }); } catch (error) { fail(error.message); }
   const message = identity.label;
   git(['commit', '-m', message]);
   git(['push', '-u', 'origin', branch]);
