@@ -114,11 +114,9 @@ chained with another semantic read, tests, Git inspection, or private-state
 inspection. Another operation is chosen only after the current result is
 consumed.
 
-Repository tooling tests use compact QA wrappers when available. Final
-verification remains `qa-gate --changed`; targeted iterative tooling tests use
-the compact explicit-test mode so successful TAP output stays private while
-failure evidence expands progressively. Raw test reporters are exceptional when
-no compact repository route can exercise the required behavior.
+When executable QA is enabled by the task process contract, repository tooling tests use compact QA wrappers when available. Executable QA verification uses `qa-gate --changed`, while targeted iterative tooling tests use the compact explicit-test mode so successful TAP output stays private and failure evidence expands progressively.
+
+When executable QA is disabled, task-close does not run `qa-gate` or raw regression suites solely for final verification. The mandatory task-ownership, patch-integrity, required repository-consistency, and explicitly authorized deliverable mechanics remain active.
 
 Git review establishes final task-owned authored change scope once with bounded
 name-status evidence and keeps `git diff --check` as a cheap integrity check.

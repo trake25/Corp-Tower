@@ -36,6 +36,7 @@ function maintenanceLines(items) {
   const blocking = items.filter(item => item.state === 'blocking');
   const advisory = items.filter(item => item.state === 'advisory');
   const lines = [];
+
   if (blocking.length) {
     lines.push('### Blocking', '');
     blocking.forEach((item, index) => {
@@ -43,6 +44,7 @@ function maintenanceLines(items) {
       lines.push(...maintenanceItemLines(item));
     });
   }
+
   if (advisory.length) {
     if (lines.length) lines.push('');
     lines.push('### Advisory', '');
@@ -51,6 +53,7 @@ function maintenanceLines(items) {
       lines.push(...maintenanceItemLines(item));
     });
   }
+
   return lines.length ? lines : ['- None.'];
 }
 
@@ -73,15 +76,35 @@ export function renderPublicQaReceipt({
   maintenanceItems = [],
 }) {
   const validIdentity = validateTaskIdentity(identity, task);
+
   if (!['passed', 'maintenance-blocked'].includes(verificationStatus))
     throw new Error('public QA receipts require passed or maintenance-blocked verification');
+
   if (terminalStatusForSteps(steps) !== verificationStatus)
     throw new Error('public QA receipt status does not match its executable proof');
-  const verificationLabel = verificationStatus === 'passed' ? 'PASSED' : 'MAINTENANCE-BLOCKED';
+
+  const verificationLabel =
+    verificationStatus === 'passed' ? 'PASSED' : 'MAINTENANCE-BLOCKED';
+
   if (!['closed', 'blocked'].includes(lifecycle.status))
     throw new Error('public QA receipts require a closed or blocked task lifecycle');
+
   const closureLabel = lifecycle.status === 'closed' ? 'CLOSED' : 'BLOCKED';
-  const planLabel = String(plan.status || 'not-applicable').replaceAll('-', ' ').toUpperCase();
+  const planLabel = String(plan.status || 'not-applicable')
+    .replaceAll('-', ' ')
+    .toUpperCase();
+
+  const planPathLines = plan.source_path
+    ? [
+        `- Active plan: ${sanitized(plan.source_path)}`,
+        plan.status === 'archived'
+          ? `- Archived plan: ${sanitized(plan.archive_path)}`
+          : plan.status === 'retained'
+            ? '- Archived plan: Not created — disabled by task process control'
+            : `- Archive target: ${sanitized(plan.archive_path)}`,
+      ]
+    : [];
+
   const lines = [
     `# QA receipt — ${sanitized(validIdentity.label)}`,
     '',
@@ -94,14 +117,7 @@ export function renderPublicQaReceipt({
     `- Verification: ${verificationLabel}`,
     `- Task closure: ${closureLabel}`,
     `- Plan archive: ${planLabel}`,
-    ...(plan.source_path ? [
-      `- Active plan: ${sanitized(plan.source_path)}`,
-      `- Archived plan: ${plan.status === 'archived'
-        ? sanitized(plan.archive_path)
-        : plan.status === 'retained'
-          ? 'Not created — disabled by task process control'
-          : sanitized(plan.archive_path)}`,
-    ] : []),
+    ...planPathLines,
     '',
     '## Scope',
     '',
@@ -116,17 +132,24 @@ export function renderPublicQaReceipt({
     '## Executable proof',
     '',
   ];
+
   if (!steps.length) lines.push('- None.');
+
   steps.forEach((step, index) => {
     if (index) lines.push('');
+
     const label = step.status === 0 ? 'PASS' : 'BLOCKED';
+
     lines.push(
       `### ${sanitized(step.name)} — ${label}`,
       '',
       `- Summary: ${sanitized(step.summary)}`,
     );
-    if (step.status !== 0) lines.push(`- Failure classification: ${sanitized(step.classification)}`);
+
+    if (step.status !== 0)
+      lines.push(`- Failure classification: ${sanitized(step.classification)}`);
   });
+
   lines.push(
     '',
     '## QA decisions',
@@ -136,7 +159,10 @@ export function renderPublicQaReceipt({
       : []),
     `- Permanent coverage: ${sanitized(coverage.status || 'none')}`,
   );
-  if (coverage.protected_contract) lines.push(`- Protected contract: ${sanitized(coverage.protected_contract)}`);
+
+  if (coverage.protected_contract)
+    lines.push(`- Protected contract: ${sanitized(coverage.protected_contract)}`);
+
   lines.push(
     `- Temporary verification: ${sanitized(qa.temporary_verification || 'not-used')}`,
     `- QA tooling: ${sanitized(qa.status || 'unchanged')}`,
@@ -149,13 +175,16 @@ export function renderPublicQaReceipt({
     '',
     'Generated mechanically by `scripts/task-close.mjs` from sanitized structured close-out evidence. Raw logs remain private.',
   );
+
   return `${lines.join('\n')}\n`;
 }
 
 export function writePublicQaReceipt(root, data) {
   const path = publicQaReceiptPath(data.identity);
   const absolute = resolve(root, path);
+
   mkdirSync(dirname(absolute), { recursive: true });
   writeFileSync(absolute, renderPublicQaReceipt(data));
+
   return path;
 }
