@@ -59,40 +59,16 @@ export const AUTOMATION_PROTOCOL_TESTS = Object.freeze(Object.values(automationT
   .filter(test => ![automationTests.conceptKb, automationTests.kbCalibration].includes(test)));
 export const CONCEPT_KB_TESTS = Object.freeze([
   automationTests.conceptKb,
-  automationTests.context,
   automationTests.kbCalibration,
-  automationTests.policyRouting,
 ]);
 
-const automationTestSet = new Set(AUTOMATION_PROTOCOL_TESTS);
+const conceptKbTestSet = new Set(CONCEPT_KB_TESTS);
 const explicitToolingTestSet = new Set([...AUTOMATION_PROTOCOL_TESTS, ...CONCEPT_KB_TESTS]);
-const automationRules = [
+const conceptKbRules = [
   [/^KB(?:\/|$)/, CONCEPT_KB_TESTS],
   [/^scripts\/(?:build-concept-map|validate-concept-kb|export-kb-calibration-report)\.mjs$/, CONCEPT_KB_TESTS],
   [/^scripts\/(?:lib\/(?:concept-kb|kb-calibration|source-anchor-extraction)\.mjs|fixtures\/concept-retrieval\.json|tests\/(?:concept-kb|kb-calibration)\.test\.mjs)$/, CONCEPT_KB_TESTS],
   [/^scripts\/benchmark-rag\.mjs$/, CONCEPT_KB_TESTS],
-  [/^scripts\/context\.mjs$/, [automationTests.context]],
-  [/^scripts\/task-close\.mjs$/, [automationTests.taskClose, automationTests.taskOwnership, automationTests.planArchive]],
-  [/^scripts\/(?:lib\/)?task-ownership\.mjs$/, [automationTests.taskOwnership, automationTests.orchestrationScope, automationTests.gitSync]],
-  [/^scripts\/(?:lib\/)?plan-archive\.mjs$/, [automationTests.planArchive, automationTests.taskClose]],
-  [/^scripts\/task-receipt\.mjs$/, [automationTests.taskReceipt, automationTests.gitSync]],
-  [/^scripts\/codex-task-run\.mjs$/, [automationTests.codexTaskRun, automationTests.observabilityHook]],
-  [/^scripts\/(?:lib\/)?orchestration-scope\.mjs$/, [automationTests.orchestrationScope, automationTests.taskOwnership]],
-  [/^scripts\/git-sync-commit-push\.mjs$/, [automationTests.gitSync]],
-  [/^scripts\/agent-observability\.mjs$/, [automationTests.observability, automationTests.observabilityHook]],
-  [/^\.codex\/(?:hooks|telemetry-hooks)\.json$/, [automationTests.observability, automationTests.observabilityHook, automationTests.codexTaskRun]],
-  [/^scripts\/codex-observability-hook\.mjs$/, [automationTests.observability, automationTests.observabilityHook]],
-  [/^scripts\/qa-gate\.mjs$/, [automationTests.qaGate, automationTests.context, automationTests.taskClose]],
-  [/^scripts\/rendered-client-verify\.mjs$/, [automationTests.renderedClient, automationTests.qaGate]],
-  [/^scripts\/lib\/context-query\.mjs$/, [automationTests.context, automationTests.taskClose]],
-  [/^scripts\/strip-comments\.mjs$/, [automationTests.stripComments]],
-  [/^scripts\/lib\/product-source-inventory\.mjs$/, [automationTests.stripComments]],
-  [/^scripts\/lib\/task-identity\.mjs$/, [automationTests.taskClose, automationTests.gitSync]],
-  [/^scripts\/lib\/qa-receipt\.mjs$/, [automationTests.taskClose, automationTests.taskReceipt]],
-  [/^scripts\/lib\/agent-observability\/[^/]+$/, [automationTests.observability, automationTests.observabilityHook]],
-  [/^scripts\/tests\/codex-observability-hook\.test\.mjs$/, [automationTests.observabilityHook]],
-  [/^scripts\/lib\/maintenance-handoff\.mjs$/, [automationTests.taskClose, automationTests.qaGate, automationTests.observability]],
-  [/^(?:AGENTS\.md|policy\/[^/]+\.md)$/, [automationTests.policyRouting]],
 ];
 
 export const TUTORIAL_PARITY_TEST = 'scripts/tests/tutorial-defaults-parity.test.mjs';
@@ -118,12 +94,12 @@ export function selectToolingQa(changedPaths) {
   let applies = false;
 
   for (const path of changed) {
-    if (automationTestSet.has(path)) {
+    if (conceptKbTestSet.has(path)) {
       tests.add(path);
       applies = true;
       continue;
     }
-    for (const [pattern, matchedTests] of automationRules) {
+    for (const [pattern, matchedTests] of conceptKbRules) {
       if (!pattern.test(path)) continue;
       matchedTests.forEach(test => tests.add(test));
       applies = true;

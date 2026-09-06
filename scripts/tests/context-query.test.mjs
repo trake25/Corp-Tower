@@ -106,12 +106,11 @@ test('retired context commands fail clearly without fallback', () => {
   }
 });
 
-test('automation scope selects the protocol suite and retrieval benchmark', () => {
+test('automation protocol paths remain manual while KB validation stays available', () => {
   const paths = ['scripts/lib/orchestration-scope.mjs', 'KB/docs/context/automation.md'];
   const qa = selectQa(paths);
-  const workerContract = 'scripts/tests/orchestration-scope.test.mjs';
-  assert.ok(AUTOMATION_PROTOCOL_TESTS.includes(workerContract));
-  assert.deepEqual(qa.tooling_tests, [...new Set([...CONCEPT_KB_TESTS, workerContract])].sort());
+  assert.deepEqual(qa.tooling_tests, [...CONCEPT_KB_TESTS].sort());
+  assert.equal(qa.tooling_tests.some(test => AUTOMATION_PROTOCOL_TESTS.includes(test)), false);
   assert.equal(qa.runtime_applies, false);
   const intake = taskCloseIntake(paths);
   assert.ok(intake.tools.some(tool => tool.name === 'concept benchmark'

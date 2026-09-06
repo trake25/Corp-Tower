@@ -59,8 +59,8 @@ rediscovery is not normal execution.
 
 Planner selects IMPLEMENT or FIX, then loads only optional policy that actually applies. Telemetry,
 QA, coverage, receipts, orchestration, strict execution, and similar optional systems are not
-universal Codex knowledge. Standalone ownership/task-close utilities remain deterministic legacy
-tooling rather than agent-supported Planner/Codex process routes.
+universal Codex knowledge. Standalone ownership/task-close utilities are retained for manual
+maintenance only and are never Planner/Codex process routes.
 
 ## F. Process controls
 
@@ -74,7 +74,8 @@ Workflow inefficiency flagging requires telemetry. ORCHESTRATED execution is a p
 reasoning/execution shape and does not imply a process override or deterministic scope lifecycle.
 These routing details are Planner concerns and are not taught by `AGENTS.md`.
 
-Plan archival is a default deterministic completion mechanic, independent from task-close.
+Plan archival is a default deterministic completion mechanic, independent from retained manual
+task-close tooling.
 
 ## G. Domain context
 

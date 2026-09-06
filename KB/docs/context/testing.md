@@ -69,14 +69,15 @@ Headless tests establish structure and deterministic behavior but cannot prove
 final visual fidelity, touch pairing, or Tower Stack frame behavior. Rendered
 verification supplements that correctness gate for drag state, collapse framing,
 responsive layout, native provider flows, and other device-specific
-presentation. When selected and authorized, its helper launches only the
-task-owned repository application with the QA-selected Godot executable, accepts
-one exact-PID window with valid bounds, captures only that rectangle under a
-task-specific `/tmp` directory, and terminates only the retained PID. Missing
-display access, ambiguous ownership, or invalid bounds fails closed. It uses
-only inherited display authorization, never changes X-server access, and
-filters window lookup to the task PID before parsing or retaining results;
-visual judgment remains with the LLM.
+presentation. Run it from the repository root with `node scripts/rendered-client-verify.mjs --authorized`; optional `--project` remains
+bounded to `src/Client/App/corp-tower`. An approved Phase 2 plan that explicitly
+selects rendered verification authorizes that `--authorized` flag only; it never
+authorizes changing X-server or display access. The helper uses only inherited
+`DISPLAY`/`XAUTHORITY` and fails closed without usable display access. It launches
+only the task-owned repository application with the QA-selected Godot executable,
+accepts one exact-PID window with valid bounds, captures only that rectangle under
+a task-specific `/tmp` directory, and terminates only the retained PID. Ambiguous
+ownership or invalid bounds also fails closed; visual judgment remains with the LLM.
 
 <!-- kb
 id: testing.client.snapgrid-isolation
@@ -110,7 +111,7 @@ Balance Simulator, Stability Probe, and Impact Probe are tuning instruments rath
 id: testing.automation.protocol
 alias: automation tests
 alias: retrieval benchmark
-source: scripts/tests/context-query.test.mjs#automation scope selects the protocol suite and retrieval benchmark
+source: scripts/tests/context-query.test.mjs#automation protocol paths remain manual while KB validation stays available
 source: scripts/tests/task-ownership.test.mjs#lightweight task ownership acquires explicit scope, rejects active overlap, and releases independently
 source: scripts/tests/plan-archive.test.mjs#standalone plan archival is collision-safe and idempotent without task-close
 source: scripts/tests/orchestration-scope.test.mjs#parallel worker ownership rejects overlapping write claims
@@ -130,21 +131,21 @@ adjacent: automation.orchestration.ownership
 -->
 ## Automation protocol coverage
 
-Automation tests protect Planner-to-plan policy isolation, absence of runtime skill routing,
-agent-supported process-control resolution, compatibility behavior of standalone task
-ownership/task-close utilities, parent-coordinated orchestration write exclusion, explicit
-publication scope, standalone plan archival, generated KB consistency, bounded observability,
-receipt sanitization, and safety gates.
+Automation protocol tests are retained manual-maintenance proof, not automatically selected
+ChatGPT/Codex task QA. A maintainer may invoke a retained test explicitly when changing its
+implementation, but ordinary changed-path selection excludes every member of this protocol suite.
+Concept-KB validation and calibration remain separately available, and their automatic coverage
+contains no automation-protocol test.
 
-Policy-routing coverage proves `AGENTS.md` contains only universal execution rules, default-OFF
-optional processes are not universal runtime policy, Planner-side policy sources contain no skill
-routing, and the active `.claude/skills/` tree is retired.
+The suite protects Planner-to-plan policy isolation, absence of runtime skill routing,
+agent-supported process-control resolution, compatibility behavior of standalone lifecycle tools,
+parent-coordinated orchestration boundaries, explicit publication scope, standalone plan archival,
+generated KB consistency, bounded observability, receipt sanitization, and safety gates.
 
-Focused lifecycle tests preserve the standalone utilities' compatibility contracts: lightweight
-ownership works without close-out and valid task-close manifests run only when explicitly selected.
-They also prove telemetry-enabled sessions do not require task-close and default telemetry
-dispatches no project hooks. Publication/receipt/archive fixtures prove those mechanics remain
-usable without adopting unrelated dirty-tree state.
+Focused lifecycle tests preserve manual compatibility contracts: lightweight ownership works without
+close-out, task-close remains explicit, and telemetry-enabled sessions do not require task-close.
+Publication, receipt, and archive fixtures prove those maintenance mechanics remain usable without
+adopting unrelated dirty-tree state.
 
 <!-- kb
 id: testing.contract.tutorial-parity

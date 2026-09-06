@@ -159,11 +159,10 @@ adjacent: automation.task-close.scope
 -->
 ## Task ownership
 
-Task ownership is a standalone lightweight write-scope compatibility utility independent from
-task-close. It remains available for valid plans/manifests that already selected it: those tasks
-acquire one explicit parent scope from planned task paths before edits, may amend that scope only for
-a proven direct dependency, and release it after integrated completion. Current Planner policy does
-not route task ownership as an agent-supported process.
+Task ownership is retained standalone manual-maintenance compatibility tooling, independent from
+task-close. A maintainer using an existing compatibility manifest may acquire one explicit parent
+scope from its planned paths before edits, amend it only for a proven direct dependency, and release
+it after integrated completion. Planner and Codex do not select, invoke, or depend on this utility.
 
 Ownership authority never comes from the dirty working tree. Active compatibility claims reject
 provable incompatible overlap and keep private state under `.agent-state`. Parent ownership release
@@ -211,10 +210,10 @@ lifecycle. Parallel workers may share read evidence, but the parent assigns non-
 concurrent writes and serializes shared writable paths. It remains responsible for worker
 sequencing, handoffs, overlap avoidance, verification, and the integrated result.
 
-The standalone ownership and orchestration-scope helpers remain compatible with valid existing
-plans that explicitly selected them. In that compatibility path, worker claims are subordinate
-locks rather than independent task lifecycles and tooling rejects sibling overlap. Those helpers
-are not required or implicitly enabled merely because execution is ORCHESTRATED.
+The standalone ownership and orchestration-scope helpers remain manual-maintenance compatibility
+utilities. In that path, worker claims are subordinate locks rather than independent task lifecycles
+and tooling rejects sibling overlap. They are never required, selected, or treated as evidence merely
+because execution is ORCHESTRATED.
 
 <!-- kb
 id: automation.task-close.lifecycle
@@ -227,17 +226,15 @@ adjacent: automation.task-close.process-controls
 -->
 ## Task-close lifecycle
 
-Task-close is standalone deterministic compatibility tooling for valid plans/manifests that already
-selected `task_close=ON`; that legacy selection requires task ownership. Its lifecycle runs
-`prepare → review → close`, with `amend` reserved for a proven direct dependency discovered
-after prepare. Current Planner policy does not route task-close as an agent-supported process.
+Task-close is retained standalone manual-maintenance compatibility tooling. An existing
+compatibility manifest that selected `task_close=ON` requires task ownership and runs
+`prepare → review → close`, with `amend` reserved for a proven direct dependency discovered after
+prepare. Planner and Codex do not select, invoke, or depend on task-close.
 
-A valid compatibility lifecycle runs prepare once before edits, review once when authored changes
+A manual compatibility lifecycle runs prepare once before edits, review once when authored changes
 are final, and close once after required verification. Review/close retry only after repairing a
-returned blocker. Task-close is not a checkpoint or status mechanism and is not inferred for new
-plans or normal Codex runtime context.
-
-Valid pre-migration manifests retain the lifecycle semantics under which they were created.
+returned blocker. Task-close is not a checkpoint or status mechanism and is never inferred from a
+new plan, orchestration, or normal Codex runtime context.
 
 <!-- kb
 id: automation.task-close.process-controls
@@ -262,9 +259,9 @@ A default-OFF process is omitted from the Phase 2 plan and Codex runtime context
 the policy section for an enabled/non-default process. Workflow inefficiency flagging requires
 telemetry, and invalid combinations fail closed rather than silently enabling another process.
 
-The standalone task tooling retains `task_ownership` and `task_close` fields so valid
-pre-migration manifests remain deterministic. Within that compatibility schema,
-`task_close=ON` requires `task_ownership=ON`; new Planner plans do not emit either control.
+Retained manual-maintenance task tooling still recognizes `task_ownership` and `task_close` for
+existing compatibility manifests. Within that schema, `task_close=ON` requires
+`task_ownership=ON`; neither control is an agent process or a Planner/Codex execution route.
 
 Corp Tower telemetry hooks remain non-auto-discovered and are injected only for telemetry-enabled
 sessions through the deterministic launcher. Optional process selection never grants Git/deployment

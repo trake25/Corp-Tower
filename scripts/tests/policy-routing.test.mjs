@@ -97,6 +97,21 @@ test('Planner-selected agent processes use exact overrides while orchestration r
   assert.doesNotMatch(everythingOn, /plan_archival=ON/);
 });
 
+test('agent policies retire lifecycle routing while retaining parent-reasoned orchestration', () => {
+  const planner = read('policy/PLANNER.md');
+  const codex = read('policy/CODEX.md');
+  const reviewer = read('policy/REVIEWER.md');
+
+  for (const source of [planner, codex, reviewer]) {
+    assert.doesNotMatch(source, /task[-_ ]ownership/i);
+    assert.doesNotMatch(source, /task[-_ ]close/i);
+    assert.doesNotMatch(source, /orchestration[-_ ]scope/i);
+  }
+  assert.match(planner, /Orchestration is a parent reasoning\/execution shape/);
+  assert.match(codex, /The parent coordinates worker sequencing, handoffs, overlap avoidance, and final integration through its reasoning/);
+  assert.match(reviewer, /approved parent plan is the implementation contract/);
+});
+
 test('Planner-side policy sources contain no runtime skill route', () => {
   for (const path of ['policy/CODEX.md', 'policy/IMPLEMENT.md', 'policy/FIX.md']) {
     const source = read(path);

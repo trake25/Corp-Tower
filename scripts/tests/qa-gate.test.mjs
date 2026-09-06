@@ -55,46 +55,22 @@ test('ordinary assertion failures remain task-owned by default', () => {
   }), 'test-expectation');
 });
 
-test('automation sources select focused tests from the canonical protocol', () => {
-  const tooling = selectToolingQa(['scripts/qa-gate.mjs', 'scripts/agent-observability.mjs']);
-
-  assert.equal(tooling.applies, true);
-  assert.deepEqual(tooling.tests, [
-    'scripts/tests/agent-observability.test.mjs',
-    'scripts/tests/codex-observability-hook.test.mjs',
+test('agent task QA never auto-selects automation protocol tests', () => {
+  const paths = [
+    'scripts/qa-gate.mjs',
+    'scripts/agent-observability.mjs',
+    'scripts/orchestration-scope.mjs',
+    'scripts/lib/task-ownership.mjs',
     'scripts/tests/context-query.test.mjs',
-    'scripts/tests/qa-gate.test.mjs',
-    'scripts/tests/task-close.test.mjs',
-  ]);
-  assert.ok(tooling.tests.length < AUTOMATION_PROTOCOL_TESTS.length);
-  assert.ok(tooling.tests.every(path => AUTOMATION_PROTOCOL_TESTS.includes(path)));
-});
+    'policy/CODEX.md',
+    'KB/workflow/top-or-drop-workflow.md',
+  ];
 
-test('orchestration sources and their test select the worker ownership contract', () => {
-  const contract = 'scripts/tests/orchestration-scope.test.mjs';
-  assert.ok(AUTOMATION_PROTOCOL_TESTS.includes(contract));
-  for (const path of ['scripts/orchestration-scope.mjs', 'scripts/lib/orchestration-scope.mjs']) {
-    assert.deepEqual(selectToolingQa([path]), {
-      applies: true,
-      tests: [contract, 'scripts/tests/task-ownership.test.mjs'],
-    });
+  for (const path of paths) {
     const plan = selectQa([path]);
-    assert.deepEqual(plan.tooling_tests, [contract, 'scripts/tests/task-ownership.test.mjs']);
-    assert.equal(plan.runtime_applies, false);
+    assert.equal(plan.tooling_tests.some(test => AUTOMATION_PROTOCOL_TESTS.includes(test)), false, path);
   }
-  assert.deepEqual(selectToolingQa([contract]), { applies: true, tests: [contract] });
-  assert.deepEqual(selectQa([contract]).tooling_tests, [contract]);
-});
-
-test('public receipt helpers select their focused automation contracts', () => {
-  assert.deepEqual(selectToolingQa(['scripts/lib/task-identity.mjs']).tests, [
-    'scripts/tests/git-sync-commit-push.test.mjs',
-    'scripts/tests/task-close.test.mjs',
-  ]);
-  assert.deepEqual(selectToolingQa(['scripts/lib/qa-receipt.mjs']).tests, [
-    'scripts/tests/task-close.test.mjs',
-    'scripts/tests/task-receipt.test.mjs',
-  ]);
+  assert.deepEqual(selectToolingQa(paths.filter(path => !path.startsWith('KB/'))), { applies: false, tests: [] });
 });
 
 test('KB Tree concept paths select focused concept QA without runtime suites', () => {
@@ -111,6 +87,7 @@ test('KB Tree concept paths select focused concept QA without runtime suites', (
     assert.equal(plan.concept_kb, true);
     assert.equal(plan.runtime_applies, false);
     assert.deepEqual(plan.tooling_tests, [...CONCEPT_KB_TESTS].sort());
+    assert.equal(plan.tooling_tests.some(test => AUTOMATION_PROTOCOL_TESTS.includes(test)), false);
   }
   assert.equal(selectQa(['src/Server/app/engine/Scoring.js']).concept_kb, false);
   assert.equal(AUTOMATION_PROTOCOL_TESTS.includes('scripts/tests/concept-kb.test.mjs'), false);
@@ -141,7 +118,7 @@ test('unrelated product paths do not select tutorial defaults parity', () => {
   assert.deepEqual(contracts.tests, []);
 });
 
-test('focused tooling success suppresses child TAP', () => {
+test('protocol test paths do not become automatic task QA', () => {
   const { result, root } = toolingFixture(`
     import test from 'node:test';
     test('verbose child success sentinel', () => {});
@@ -149,7 +126,7 @@ test('focused tooling success suppresses child TAP', () => {
 
   try {
     assert.equal(result.status, 0, JSON.stringify({ signal: result.signal, error: result.error?.message, stdout: result.stdout, stderr: result.stderr }));
-    assert.equal(result.stdout.trim(), 'PASS — tooling targeted tests (1)');
+    assert.equal(result.stdout.trim(), 'PASS — no runtime, tooling, or contract QA applies to the supplied paths');
     assert.doesNotMatch(result.stdout, /TAP version|Subtest|verbose child success sentinel/);
     assert.equal(result.stderr, '');
   } finally {
@@ -172,7 +149,7 @@ test('explicit tooling tests keep successful TAP private and reject unapproved p
   assert.match(invalid.stderr, /approved tooling test/);
 });
 
-test('focused tooling failure is bounded and retains complete child output', () => {
+test('manual tooling failure is bounded and retains complete child output', () => {
   const { result, root } = toolingFixture(`
     import assert from 'node:assert/strict';
     import test from 'node:test';
@@ -181,7 +158,7 @@ test('focused tooling failure is bounded and retains complete child output', () 
     test('bounded child failure headline', () => {
       assert.equal(1, 2, 'complete child assertion sentinel');
     });
-  `);
+  `, '--tooling-test');
   const logMatch = result.stderr.match(/^Full output: (.+)$/m);
 
   try {
