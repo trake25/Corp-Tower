@@ -104,11 +104,14 @@ id: ui.private.join
 alias: join server
 alias: server id paste
 source: src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn#JoinScreen
+source: src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd#_input
+source: src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd#_on_server_id_long_press_timeout
 adjacent: network.room.private
 -->
 ## Join Server
 
-Join Server supports both public Find Match and private join inputs. Server ID is the only paste-enabled field and normalizes the pasted value without navigation. Invalid nonempty private password remains for authoritative rejection rather than being silently rewritten. Accepted private join disables the source form while retaining values for rejection/transport recovery.
+Join Server supports both public Find Match and private join inputs. Server ID is the only paste-enabled field: native shortcut/hold paste and touch-Web clipboard paste normalize values without navigation.
+Invalid nonempty private password remains for authoritative rejection rather than being silently rewritten. Accepted private join disables the source form while retaining values for rejection/transport recovery.
 
 <!-- kb
 id: ui.private-lobby.presentation

@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## build.android.aab-validation
 
-Owner: `KB/docs/context/build.md:55-58` → **AAB validation**
+Owner: `KB/docs/context/build.md:68-71` → **AAB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,7 +15,7 @@ Adjacent concepts: `build.android.pipeline`
 
 ## build.android.pipeline
 
-Owner: `KB/docs/context/build.md:34-37` → **Android pipeline**
+Owner: `KB/docs/context/build.md:47-50` → **Android pipeline**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: `testing.release.gates`, `build.android.aab-validation`
 
 ## build.android.startup-splash
 
-Owner: `KB/docs/context/build.md:67-70` → **Startup splash**
+Owner: `KB/docs/context/build.md:80-83` → **Startup splash**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: `ui.startup.splash`, `testing.client.rendered`
 
 ## build.android.version-code
 
-Owner: `KB/docs/context/build.md:44-47` → **Play version code**
+Owner: `KB/docs/context/build.md:57-60` → **Play version code**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,7 +56,7 @@ Adjacent concepts: none
 
 ## build.auth.native-providers
 
-Owner: `KB/docs/context/build.md:89-92` → **Native provider build inputs**
+Owner: `KB/docs/context/build.md:102-105` → **Native provider build inputs**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -66,7 +66,7 @@ Adjacent concepts: none
 
 ## build.endpoint-auth.injection
 
-Owner: `KB/docs/context/build.md:79-82` → **Endpoint and auth injection**
+Owner: `KB/docs/context/build.md:92-95` → **Endpoint and auth injection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -86,10 +86,23 @@ Adjacent concepts: none
 
 ## build.server.image
 
-Owner: `KB/docs/context/build.md:101-104` → **Server image**
+Owner: `KB/docs/context/build.md:114-117` → **Server image**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/Dockerfile` | `COPY app/ ./` | 8 | `sed -n 1,17p src/Server/Dockerfile` |
 
 Adjacent concepts: `deploy.eks.topology`, `deploy.backup.topology`
+
+## build.web.pipeline
+
+Owner: `KB/docs/context/build.md:35-38` → **Web pipeline**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `.github/godot/export_presets.web.ci.cfg` | `preset.0.options` | 24 | `sed -n 12,38p .github/godot/export_presets.web.ci.cfg` |
+| `.github/actions/build-godot-web/action.yml` | `Create CI Web export preset` | 64 | `sed -n 52,84p .github/actions/build-godot-web/action.yml` |
+| `.github/workflows/EKS-Deploy-Web-Server.yml` | `Build web export` | 108 | `sed -n 96,128p .github/workflows/EKS-Deploy-Web-Server.yml` |
+| `.github/workflows/Backup-Deploy-Web-Server.yml` | `Build web export` | 98 | `sed -n 86,118p .github/workflows/Backup-Deploy-Web-Server.yml` |
+
+Adjacent concepts: none

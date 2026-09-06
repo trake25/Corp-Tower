@@ -92,6 +92,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `build.endpoint-auth.injection` | [build.md#endpoint-and-auth-injection](./build.md#endpoint-and-auth-injection) | write endpoint config, auth injection |
 | `build.godot.asset-import` | [build.md#godot-asset-import](./build.md#godot-asset-import) | Godot import, font import |
 | `build.server.image` | [build.md#server-image](./build.md#server-image) | server Dockerfile, server image |
+| `build.web.pipeline` | [build.md#web-pipeline](./build.md#web-pipeline) | Web export pipeline, Web virtual keyboard |
 
 ### deploy
 

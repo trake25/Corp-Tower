@@ -28,6 +28,10 @@ var server_id_touch_index := NO_TOUCH_INDEX
 var server_id_long_press_timer: Timer
 var server_id_native_paste_pending := false
 var server_id_before_native_paste := ""
+var server_id_web_clipboard_request_in_flight := false
+var server_id_web_clipboard_promise
+var server_id_web_clipboard_success_callback
+var server_id_web_clipboard_failure_callback
 
 func _ready() -> void:
 	%FindMatchButton.pressed.connect(_on_find_match_pressed)
@@ -141,7 +145,41 @@ func _on_server_id_long_press_timeout() -> void:
 	_paste_server_id_from_clipboard()
 
 func _paste_server_id_from_clipboard() -> void:
+	if OS.has_feature("web"):
+		_paste_server_id_from_web_clipboard()
+		return
 	_apply_server_id_paste(DisplayServer.clipboard_get())
+
+func _paste_server_id_from_web_clipboard() -> void:
+	if server_id_web_clipboard_request_in_flight:
+		return
+	if not JavaScriptBridge.eval("typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.readText === 'function'", true):
+		return
+	var navigator = JavaScriptBridge.get_interface("navigator")
+	if navigator == null or navigator.clipboard == null:
+		return
+	server_id_web_clipboard_request_in_flight = true
+	server_id_web_clipboard_success_callback = JavaScriptBridge.create_callback(_on_server_id_web_clipboard_text)
+	server_id_web_clipboard_failure_callback = JavaScriptBridge.create_callback(_on_server_id_web_clipboard_failure)
+	server_id_web_clipboard_promise = navigator.clipboard.readText()
+	server_id_web_clipboard_promise.then(server_id_web_clipboard_success_callback, server_id_web_clipboard_failure_callback)
+
+func _on_server_id_web_clipboard_text(args: Array) -> void:
+	if not server_id_web_clipboard_request_in_flight:
+		return
+	_clear_server_id_web_clipboard_request()
+	if private_join_pending or not server_id_edit.editable or not is_inside_tree() or args.is_empty():
+		return
+	_apply_server_id_paste(str(args[0]))
+
+func _on_server_id_web_clipboard_failure(_args: Array) -> void:
+	_clear_server_id_web_clipboard_request()
+
+func _clear_server_id_web_clipboard_request() -> void:
+	server_id_web_clipboard_request_in_flight = false
+	server_id_web_clipboard_promise = null
+	server_id_web_clipboard_success_callback = null
+	server_id_web_clipboard_failure_callback = null
 
 func _complete_native_server_id_paste() -> void:
 	if not server_id_native_paste_pending:
@@ -176,6 +214,9 @@ func _apply_server_id_paste(clipboard_text: String) -> bool:
 func _cancel_server_id_long_press() -> void:
 	server_id_touch_index = NO_TOUCH_INDEX
 	server_id_long_press_timer.stop()
+
+func _exit_tree() -> void:
+	_clear_server_id_web_clipboard_request()
 
 func _on_server_id_text_changed(value: String) -> void:
 	var normalized := _normalized_server_id(value)

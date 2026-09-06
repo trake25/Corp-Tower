@@ -24,6 +24,19 @@ source: src/Client/App/corp-tower/project.godot#importer_defaults
 Godot runtime quality for SVG/PNG comes from import scale, compression, and mipmap settings rather than source extension. Existing assets retain import settings until reimported. New fonts require an import pass before a theme can load them.
 
 <!-- kb
+id: build.web.pipeline
+alias: Web export pipeline
+alias: Web virtual keyboard
+source: .github/godot/export_presets.web.ci.cfg#preset.0.options
+source: .github/actions/build-godot-web/action.yml#Create CI Web export preset
+source: .github/workflows/EKS-Deploy-Web-Server.yml#Build web export
+source: .github/workflows/Backup-Deploy-Web-Server.yml#Build web export
+-->
+## Web pipeline
+
+Both shipping Web workflows provide one shared preset to the Web build action before import and export. That preset owns browser canvas/input export settings, including the virtual-keyboard capability required for touch-browser text entry; the action remains the sole preset-copy/export boundary.
+
+<!-- kb
 id: build.android.pipeline
 alias: Android CI
 alias: AAB build
