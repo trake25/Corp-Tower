@@ -13,19 +13,22 @@ Search this file for the matching role section, for example "#PLANNER#", and rea
 
 If the task does not fit any listed role, stop and immediately tell the user why no role matches.
 
-## KB retrieval transport
+## Repository contextualization
 
-Reuse exact current concept evidence already available for the next step. When
-new repository context is needed, select one canonical KB Tree concept or exact
-alias, then prefer the available repository/GitHub connector to read its owning
-prose leaf, generated map section, and granted source range.
+Reuse current repository evidence already available for the next decision.
 
-If a known exact path or range cannot be fetched, use another available exact
-repository transport for the same evidence. If exact KB and transport attempts
-still cannot resolve it, a third fallback may broaden repository search solely
-to diagnose and report the retrieval defect. Evidence found by that diagnostic
-search is not ordinary task authority until the KB route is repaired or
-explicitly re-established. Declared adjacency remains unloaded until selected.
+When new repository context is needed:
+- Prefer direct local/workspace repository search and bounded reads when that transport is available.
+- Read a known exact path, symbol, or bounded section directly instead of routing through the KB first.
+- Use bounded repository search to discover task-relevant implementation files or symbols when their exact location is not yet known.
+- Treat current source discovered through direct repository search as ordinary authority for current implementation facts.
+- Use the KB Tree when durable intended behavior, architecture, ownership, terminology, or another semantic contract materially helps the task. KB routing is a knowledge-selection aid, not a prerequisite or access-control gate for source discovery.
+- When using the KB Tree, keep concept retrieval bounded: select only concepts that materially help the task and do not load adjacency automatically.
+- Stop contextualizing once evidence is sufficient for the current decision instead of routing every information need through a separate concept transaction.
+
+Do not duplicate the same evidence through multiple transports for reassurance. If direct local/workspace repository access is available, do not also use the GitHub connector for the same file or fact. Use the repository/GitHub connector when local repository access is unavailable, when the required evidence is remote-only, or when GitHub-specific state such as commits, branches, pull requests, or remote metadata is required.
+
+If current source establishes an implementation fact but the task requires intended behavior or another durable semantic authority that source alone cannot establish, consult the relevant KB/policy evidence. Fail closed only when the missing authority is materially required to answer, plan, review, or implement safely.
 
 #PLANNER#
 

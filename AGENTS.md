@@ -1,6 +1,6 @@
 # Codex universal policy
 
-Use the approved Phase 2 plan as the task contract. If no approved plan is provided, stop and inform the user.
+Use the approved Phase 2 plan as the task contract. Plan .md files are always in /plan folder. If no approved plan is provided, stop and inform the user.
 
 Execute the approved intended behavior and only its direct implementation dependencies. Preserve unrelated concurrent changes and never derive task authority from unrelated dirty working-tree state.
 

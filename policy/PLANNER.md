@@ -1,16 +1,15 @@
 #ENTRY#
 
-Use `KB/docs/context/index.md` as the repository-context router.
+For repository-dependent planning, follow `policy/CHATGPT.md`'s repository-contextualization contract.
 
-For repo-dependent planning:
-- Resolve only the canonical concept or exact alias needed for the current information need.
-- Read that concept's owning prose leaf, generated concept-map section, and explicitly granted source evidence.
-- Do not automatically load adjacency or widen into uncontrolled repository search.
-- When another information need remains, return to the router and resolve the next exact concept.
-- If exact retrieval cannot resolve required context, follow `policy/CHATGPT.md`'s KB retrieval transport/fallback contract and report any retrieval defect.
+Prefer direct local/workspace repository search and bounded reads when available. Read known exact paths or symbols directly. Use bounded task-relevant search to discover implementation files when their location is not yet known. Current source discovered this way is ordinary authority for current implementation facts.
+
+Use the KB Tree when durable intended behavior, architecture, ownership, terminology, or another semantic contract materially helps the task. KB routing is not a prerequisite or access-control gate for source discovery. When KB evidence is used, resolve only the concepts materially needed and do not load adjacency automatically.
+
+Do not duplicate the same evidence through GitHub when direct local/workspace access already provided it. Stop contextualizing when current evidence is sufficient for the next planning decision.
 
 Before Phase 2, contextualize far enough to establish:
-- the relevant durable system contracts;
+- the relevant durable system contracts, when material;
 - the exact bounded source files/sections Codex should read;
 - the likely direct-edit files;
 - authored KB/docs and generated outputs expected to change;
@@ -68,7 +67,7 @@ Read `policy/CODEX.md#ENTRY#`, classify the implementation as IMPLEMENT or FIX, 
 - IMPLEMENT → `policy/IMPLEMENT.md#ENTRY#`
 - FIX → `policy/FIX.md#ENTRY#`
 
-Domain/task-scope knowledge comes from the KB Tree, never from runtime skills.
+Domain/task-scope knowledge comes from Planner-selected current source plus KB context only when semantic or durable-contract evidence is materially needed. It never comes from runtime skills.
 
 Optional execution/process policy is selected only when it actually applies:
 - If the user requests process customization or "everything ON", read `policy/CODEX.md#PROCESS-ROUTER#`.
@@ -89,7 +88,7 @@ Repository agent-policy/adapter Markdown is user-owned manual configuration. If 
 The plan has exactly three authority layers:
 1. `AGENTS.md` — universal Codex execution policy.
 2. Phase 2 task policy — only policy selected for this task.
-3. KB/source context — domain/task-scope knowledge selected by Planner.
+3. Planner-selected repository context — current source plus KB evidence only where semantic or durable-contract context is materially needed.
 
 Do not use or route through agent skills. Do not copy domain instructions into universal policy.
 
@@ -105,7 +104,7 @@ Plan archival is enabled by repository default. Treat it as a deterministic comp
 
 Use the default single-run shape unless semantic decomposition materially reduces reconstruction/integration risk enough to justify coordination.
 
-Select ORCHESTRATED only when that benefit is real. Orchestration is a parent reasoning/execution shape, not a deterministic scope lifecycle. When selected, state `Execution shape: ORCHESTRATED` exactly once in `## 2. Task-Specific Policy` and compile only the orchestration rules needed for bounded worker decomposition, sequencing, handoffs, verification, and parent integration.
+Select ORCHESTRATED only when that benefit is real. Orchestration is a parent reasoning/execution shape, not a deterministic scope lifecycle. When selected, state `Execution shape: ORCHESTRATED` exactly once in `## 2. Task-Specific Policy` and compile only the orchestration rules needed for bounded worker decomposition, sequencing, compact worker-to-parent handoffs, verification, and parent integration.
 
 ## Standard Phase 2 format
 
@@ -120,13 +119,13 @@ Include only selected task policy. Default-OFF optional policy is completely abs
 ### `## 3. Context`
 
 #### `### Compacted KB Context`
-Summarize implementation-relevant KB prose already read by Planner.
+Include only implementation-relevant KB prose actually used by Planner. If no KB semantic context was materially required, state `None required`; do not perform KB retrieval merely to populate this section.
 
 #### `### KB Retrieval Inputs`
-List the exact canonical concept IDs and Planner-resolved retrieval aliases/search inputs Codex may use for deeper detail only if needed. Each listed input must resolve to the intended concept through the KB retrieval protocol. Do not supply open-ended repository-search keywords.
+List exact canonical concept IDs and Planner-resolved aliases only when Codex may materially need deeper KB detail during implementation. If none are needed, state `None required`. Do not supply open-ended repository-search keywords and do not force a KB input merely to satisfy the format.
 
 #### `### Source Context`
-List exact current source files plus bounded symbols/sections Codex should inspect and why.
+List exact current source files plus bounded symbols/sections Codex should inspect and why. Source paths may come from direct repository search/read and do not require a prior KB grant.
 
 ### `## 4. Expected Write Scope`
 
@@ -152,7 +151,7 @@ Append only when a non-default execution/process rule is selected. Encode each s
 
 ## Plan quality and delivery
 
-Phase 2 is not ready until current evidence supports its compacted KB context, source context, likely write scope, and verification.
+Phase 2 is not ready until current evidence supports its source context, likely write scope, verification, and any KB semantic context that is actually material to the task.
 
 Keep unrelated maintenance out of scope and do not repeat requirements across sections.
 

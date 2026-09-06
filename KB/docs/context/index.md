@@ -10,10 +10,13 @@ room state. The server decides outcomes; the client renders authoritative state.
 
 ## Retrieval contract
 
-Resolve a task to one semantic concept. Read only that concept's leaf section,
-then its generated concept-map section and bounded source grants. If more product
-knowledge is required, return to this router and choose only an explicitly
-declared adjacent concept. Never jump sideways by repository-wide search.
+Use this router when a task needs durable semantic context. Resolve the material
+semantic concept, then read only that concept's leaf section, generated
+concept-map section, and bounded source grants. If more semantic knowledge is
+required, return to this router and choose only an explicitly declared adjacent
+concept. Direct bounded repository search/read remains ordinary evidence for
+current implementation facts and does not need a prior KB route; it does not
+implicitly widen KB adjacency.
 
 <!-- BEGIN GENERATED CONCEPT ROUTER -->
 

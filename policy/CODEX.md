@@ -10,7 +10,7 @@ Read only the matching policy entry:
 - IMPLEMENT → `policy/IMPLEMENT.md#ENTRY#`
 - FIX → `policy/FIX.md#ENTRY#`
 
-Domain/task-scope knowledge comes from Planner-selected KB context, not skills.
+Domain/task-scope knowledge comes from Planner-selected current source plus KB context only where semantic or durable-contract evidence is materially needed, not skills.
 
 Load a conditional section below only when that non-default policy actually applies. Default-OFF processes must not be compiled into the plan or exposed to Codex runtime context.
 
@@ -109,7 +109,11 @@ The plan must contain exactly one `plan_archival=OFF` assignment under `## Execu
 
 Compile only when ORCHESTRATED execution is selected.
 
-Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria. Parallel workers may share reads but the parent must assign non-overlapping concurrent writes. Shared writable paths use one worker or serialized execution. The parent coordinates worker sequencing, handoffs, overlap avoidance, and final integration through its reasoning and remains responsible for the integrated result.
+Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria. Parallel workers may share reads but the parent must assign non-overlapping concurrent writes. Shared writable paths use one worker or serialized execution.
+
+Each worker receives only the context needed for its unit and returns only a compact integration summary to the parent: completion status, files changed, verification performed and result, material interface/invariant notes, and blockers. Workers do not return full transcripts, duplicated task/source context, or long logs unless the parent explicitly requests the minimum additional detail needed to resolve an integration problem.
+
+The parent coordinates worker sequencing, handoffs, overlap avoidance, and final integration through its reasoning and remains responsible for the integrated result.
 
 #STRICT-EXECUTION#
 

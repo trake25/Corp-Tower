@@ -10,18 +10,26 @@ alias: agent retrieval
 alias: bounded context
 source: AGENTS.md#Codex universal policy
 source: policy/PLANNER.md#Standard Phase 2 format
-source: policy/CHATGPT.md#KB retrieval transport
+source: policy/CHATGPT.md#Repository contextualization
 adjacent: automation.planning.phase2
 adjacent: automation.retrieval.protocol
 -->
 ## Direct retrieval discipline
 
-ChatGPT Planner performs semantic repository-context selection while planning. The Phase 2 plan
-gives Codex compacted KB context, bounded source context, and exact KB retrieval inputs for deeper
-detail if implementation needs it. Codex normally consumes that handoff instead of rediscovering
-context. When deeper context is required, it starts from the plan's exact concept ID or alias and
-uses bounded retrieval. ChatGPT uses exact connector reads while planning. Repository-wide
-exploration is not ordinary task context.
+ChatGPT and Planner prefer direct local/workspace repository search and bounded reads when that
+transport is available. They may read known exact paths or symbols directly and use bounded
+task-relevant search to locate unknown implementation evidence. Current source discovered this way
+is ordinary authority for current implementation facts; it does not need a prior KB grant.
+
+KB Tree remains the bounded semantic retrieval protocol when durable intended behavior,
+architecture, ownership, terminology, or another semantic contract is materially needed. It is not
+an access-control gate for source discovery, and adjacency remains unloaded until deliberately
+selected. Contextualization stops once the evidence is sufficient for the current decision.
+
+The Phase 2 plan gives Codex compacted KB context when used, bounded source context, and exact KB
+retrieval inputs only where deeper semantic detail may be material. Codex normally consumes that
+handoff instead of rediscovering context; its bounded runtime retrieval remains governed by
+`AGENTS.md`.
 
 <!-- kb
 id: automation.planning.phase2
@@ -38,9 +46,11 @@ adjacent: automation.task-close.process-controls
 ## Phase 2 execution handoff
 
 Phase 2 is Codex's self-contained task execution contract. Planner compiles the approved intended
-behavior, only task policy selected for this implementation, compacted KB context already resolved
-during planning, exact retrieval inputs for optional deeper detail, bounded source context, expected
-write scope, ordered implementation requirements, minimum verification, and done criteria.
+behavior, only task policy selected for this implementation, current source evidence, KB context
+only where semantic authority is material, exact retrieval inputs for optional deeper semantic
+detail, bounded source context, expected write scope, ordered implementation requirements, minimum
+verification, and done criteria. A source-grounded task may therefore state `None required` for
+compacted KB context and KB retrieval inputs.
 
 The execution architecture has three layers: `AGENTS.md` contains only universal Codex policy; the
 Phase 2 plan contains only task-selected policy; the KB/source handoff contains domain and task-scope
@@ -99,17 +109,21 @@ alias: source fallback
 alias: broad fallback
 source: scripts/lib/context-query.mjs#conceptRoute
 source: AGENTS.md#Codex universal policy
-source: policy/CHATGPT.md#KB retrieval transport
+source: policy/CHATGPT.md#Repository contextualization
 adjacent: automation.docs.retrieval-repair
 -->
 ## Retrieval fallback
 
-Ordinary retrieval fails closed. Codex starts from the exact retrieval input supplied by the plan;
-an unavailable or defective exact route is not permission to rediscover context through broad
-repository search. If no valid bounded fallback can establish authority, Codex reports the retrieval
-defect. ChatGPT alone may broaden search after exact KB and transport attempts fail, solely to
-diagnose and report the defect; evidence found there is not ordinary task authority until the KB
-route is repaired or explicitly re-established.
+For ChatGPT and Planner, the repository/GitHub connector is fallback transport when direct
+local/workspace access is unavailable, evidence is remote-only, or GitHub-specific state is needed.
+They do not duplicate the same evidence through direct and connector transport for reassurance.
+Missing KB routing does not block a source-grounded answer or plan unless the missing durable
+semantic authority is materially required.
+
+Codex starts from the exact retrieval input supplied by the plan; an unavailable or defective exact
+route is not permission to rediscover context through broad repository search. If no valid bounded
+fallback can establish required semantic authority, Codex reports the retrieval defect. This runtime
+boundary does not restrict ChatGPT/Planner's ordinary direct source contextualization.
 
 <!-- kb
 id: automation.retrieval.bundle
@@ -190,7 +204,11 @@ The parent plan remains behavior authority. It defines worker responsibilities, 
 shared invariants, planned non-overlapping write responsibilities, dependency-aware waves, scoped
 verification, and parent integration criteria. The parent coordinates sequencing, handoffs, overlap
 avoidance, and final integration through its reasoning. Worker context remains bounded to its unit.
-Runtime skills do not provide worker roles or domain policy.
+Each worker returns only a compact integration summary: completion status, files changed,
+verification performed and result, material interface/invariant notes, and blockers. Workers do not
+return full transcripts, duplicated task/source context, or long logs unless the parent explicitly
+requests the minimum additional detail needed to resolve an integration problem. Runtime skills do
+not provide worker roles or domain policy.
 
 <!-- kb
 id: automation.orchestration.ownership

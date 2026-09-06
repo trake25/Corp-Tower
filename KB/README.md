@@ -1,15 +1,17 @@
 # Corp Tower KB Tree
 
-`KB/` is the production knowledge root for the ChatGPT/Codex workflow. KB Tree
-contextualization starts at `KB/docs/context/index.md` and resolves one concept
-at a time:
+`KB/` is the durable semantic knowledge root for the ChatGPT/Codex workflow.
+When a task needs semantic context, KB Tree contextualization starts at
+`KB/docs/context/index.md` and resolves one concept at a time:
 
 `concept router → owning prose leaf → generated concept map → bounded source`
 
 The filesystem root remains `KB/`; **KB Tree** is the workflow and product name.
-Concept adjacency names a possible next route, never an automatic read. Source
-owns exact implementation detail and current values. Working material is not KB
-evidence.
+Concept adjacency names a possible next route, never an automatic read. Current
+source owns exact implementation detail and current values, and direct bounded
+repository reads may establish those facts without a prior KB route. KB/policy
+owns durable intended behavior, architecture, ownership, terminology, and other
+semantic contracts. Working material is not KB evidence.
 
 ## Tooling
 

@@ -1,11 +1,7 @@
 #ENTRY#
 
-Answer from the minimum repository evidence needed. For repository-dependent
-facts, resolve one exact KB Tree concept or alias from
-`KB/docs/context/index.md`, then read only its prose, generated map section,
-and granted source.
+Answer from the minimum current repository evidence needed.
 
-Do not infer current implementation detail from policy or neighboring concepts.
-If exact retrieval cannot resolve the required concept or source grant, follow
-the model-level KB retrieval transport/fallback contract rather than treating
-diagnostic search as ordinary authority.
+Follow `policy/CHATGPT.md`'s repository-contextualization contract. Prefer direct bounded repository search/read for current implementation facts, and read known exact paths directly. Use the KB Tree only when durable intended behavior, architecture, ownership, terminology, or another semantic contract materially helps answer the question.
+
+Do not infer intended behavior from implementation detail when the distinction matters. Fail closed only when required semantic authority cannot be established.

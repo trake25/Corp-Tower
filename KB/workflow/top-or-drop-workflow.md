@@ -14,9 +14,9 @@ Runtime agent skills are not an authority layer and are not used.
 ## B. Planning
 
 ChatGPT Planner resolves intended behavior before implementation. Phase 1 is the final approved
-behavior contract. Phase 2 preserves that contract and contextualizes the current repository far
-enough to identify bounded source, likely writes, affected durable KB contracts, generated outputs,
-and minimum verification.
+behavior contract. Phase 2 preserves that contract and uses direct bounded current-source evidence
+to identify likely writes, generated outputs, and minimum verification; it adds KB context where a
+durable semantic contract is materially needed.
 
 Planner performs policy selection and semantic context selection once so Codex does not repeat that
 reasoning.
@@ -37,6 +37,9 @@ Every Phase 2 plan contains:
 7. `## 7. Done Criteria`
 
 `## Execution Overrides` appears only when execution differs from defaults.
+
+`### Compacted KB Context` and `### KB Retrieval Inputs` may each state `None required` when the
+task has sufficient current-source evidence and no deeper semantic KB authority is material.
 
 A default-OFF optional process is not named in the plan. Planner compiles its policy only when the
 process is selected ON or otherwise made non-default. Normal single-run execution is implicit.
@@ -79,8 +82,10 @@ task-close tooling.
 
 ## G. Domain context
 
-Domain knowledge belongs in the KB Tree. Planner resolves only the concepts needed for the task,
-compacts their durable contracts into the plan, and supplies exact bounded source context.
+Current source establishes implementation facts. Durable intended behavior, architecture,
+ownership, terminology, and related semantic contracts belong in the KB Tree. Planner resolves
+only the material concepts, compacts their durable contracts into the plan, and supplies exact
+bounded source context.
 
 Client, server, QA, infra, web, editorial, and coordination knowledge are not loaded through role
 skills.
@@ -92,8 +97,12 @@ materially improves context efficiency or integration control.
 
 When selected, the plan carries worker responsibilities, dependencies, planned non-overlapping
 writes, shared invariants, execution waves, scoped verification, handoffs, and parent integration
-criteria. The parent coordinates sequencing and overlap avoidance through reasoning and remains
-responsible for the integrated result.
+criteria. Each worker returns only a compact integration summary: completion status, files changed,
+verification performed and result, material interface/invariant notes, and blockers. Workers do not
+return full transcripts, duplicated task/source context, or long logs unless the parent explicitly
+requests the minimum additional detail needed to resolve an integration problem. The parent
+coordinates sequencing and overlap avoidance through reasoning and remains responsible for the
+integrated result.
 
 ## I. Review
 
@@ -109,7 +118,7 @@ Provider context is spent only where it changes the next decision:
 
 - universal policy is small;
 - optional policy appears only when selected;
-- domain context is Planner-selected from the KB;
+- current source is Planner-selected directly, with KB context added only when semantic authority is material;
 - Codex reuses the supplied context instead of rediscovering it;
 - default-OFF systems generate no runtime policy/context;
 - deterministic tooling keeps detailed state/logs private and returns compact results.

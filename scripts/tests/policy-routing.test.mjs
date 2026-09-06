@@ -119,6 +119,29 @@ test('Planner-side policy sources contain no runtime skill route', () => {
   }
 });
 
+test('contextualization prefers direct source evidence and keeps worker returns compact', () => {
+  const chatgpt = read('policy/CHATGPT.md');
+  const planner = read('policy/PLANNER.md');
+  const codex = read('policy/CODEX.md');
+  const automation = read('KB/docs/context/automation.md');
+  const workflow = read('KB/workflow/top-or-drop-workflow.md');
+  const orchestration = markerSection(codex, '#ORCHESTRATION#');
+
+  assert.match(chatgpt, /Prefer direct local\/workspace repository search and bounded reads/);
+  assert.match(chatgpt, /Read a known exact path, symbol, or bounded section directly/);
+  assert.match(planner, /Source paths may come from direct repository search\/read and do not require a prior KB grant/);
+  assert.match(chatgpt, /Use the repository\/GitHub connector when local repository access is unavailable/);
+  assert.doesNotMatch(chatgpt, /prefer the available repository\/GitHub connector/i);
+  assert.match(planner, /If no KB semantic context was materially required, state `None required`/);
+  assert.match(planner, /If none are needed, state `None required`/);
+
+  for (const source of [orchestration, automation, workflow]) {
+    assert.match(source, /compact integration summary/);
+    assert.match(source, /completion status, files changed,[\s\S]*verification performed and result,[\s\S]*material interface\/invariant notes, and blockers/);
+    assert.match(source, /do not\s+return full transcripts,[\s\S]*duplicated task\/source context, or long logs/i);
+  }
+});
+
 test('retired active skill trees and active policy, adapter, and workflow surfaces have no skill path route', () => {
   assert.equal(existsSync(join(ROOT, '.claude/skills')), false);
   assert.equal(existsSync(join(ROOT, '.agents/skills')), false);
