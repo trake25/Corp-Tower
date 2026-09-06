@@ -258,8 +258,9 @@ export function taskCloseIntake(paths, options = {}) {
     ? [{ name: 'QA', command: command(['node', 'scripts/qa-gate.mjs', '--changed', ...changed]) }]
     : [];
   if (changed.some(authoredKbDocument) || ownership.maps.length) {
-    tools.push({ name: 'concept map', command: command(['node', 'scripts/build-concept-map.mjs', '--check', '--quiet']) });
-    tools.push({ name: 'concept KB', command: command(['node', 'scripts/validate-concept-kb.mjs', '--quiet']) });
+    const mapSelectors = ownership.maps.flatMap(path => ['--map', path]);
+    tools.push({ name: 'concept map', command: command(['node', 'scripts/build-concept-map.mjs', '--check', '--quiet', ...mapSelectors]) });
+    tools.push({ name: 'concept KB', command: command(['node', 'scripts/validate-concept-kb.mjs', '--quiet', ...mapSelectors]) });
   }
   if (qaEnabled && qa.concept_kb) {
     tools.push({ name: 'concept benchmark', command: command(['node', 'scripts/benchmark-rag.mjs', '--concept-check']) });

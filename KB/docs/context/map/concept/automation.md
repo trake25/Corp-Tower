@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## automation.docs.maps
 
-Owner: `KB/docs/context/automation.md:274-279` → **Map regeneration**
+Owner: `KB/docs/context/automation.md:295-300` → **Map regeneration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,7 +15,7 @@ Adjacent concepts: `automation.docs.validation`
 
 ## automation.docs.retrieval-repair
 
-Owner: `KB/docs/context/automation.md:313-316` → **Retrieval repair**
+Owner: `KB/docs/context/automation.md:341-344` → **Retrieval repair**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: `automation.retrieval.fallback`
 
 ## automation.docs.scope
 
-Owner: `KB/docs/context/automation.md:301-306` → **Docs scoping**
+Owner: `KB/docs/context/automation.md:329-334` → **Docs scoping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,30 +35,30 @@ Adjacent concepts: none
 
 ## automation.docs.validation
 
-Owner: `KB/docs/context/automation.md:287-294` → **KB validation**
+Owner: `KB/docs/context/automation.md:308-322` → **KB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/validate-concept-kb.mjs` | `validateConceptKb` | 26 | `sed -n 14,46p scripts/validate-concept-kb.mjs` |
+| `scripts/validate-concept-kb.mjs` | `validateConceptKb` | 50 | `sed -n 38,70p scripts/validate-concept-kb.mjs` |
 | `scripts/lib/concept-kb.mjs` | `conceptProseCapacity` | 43 | `sed -n 31,63p scripts/lib/concept-kb.mjs` |
 
 Adjacent concepts: none
 
 ## automation.execution.io-discipline
 
-Owner: `KB/docs/context/automation.md:102-138` → **Provider-visible I/O discipline**
+Owner: `KB/docs/context/automation.md:102-140` → **Provider-visible I/O discipline**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `policy/CODEX.md` | `Provider-visible I/O discipline` | 90 | `sed -n 78,110p policy/CODEX.md` |
-| `scripts/task-close.mjs` | `compactOutput` | 923 | `sed -n 911,943p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `compactOutput` | 924 | `sed -n 912,944p scripts/task-close.mjs` |
 | `scripts/qa-gate.mjs` | `fail` | 208 | `sed -n 196,228p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `automation.observability.usage`
 
 ## automation.git.publish
 
-Owner: `KB/docs/context/automation.md:383-386` → **Authorized Git publication**
+Owner: `KB/docs/context/automation.md:411-414` → **Authorized Git publication**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -68,19 +68,19 @@ Adjacent concepts: none
 
 ## automation.observability.binding
 
-Owner: `KB/docs/context/automation.md:325-334` → **Observability binding**
+Owner: `KB/docs/context/automation.md:353-362` → **Observability binding**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/agent-observability/state.mjs` | `bindActiveTask` | 148 | `sed -n 136,168p scripts/lib/agent-observability/state.mjs` |
 | `scripts/codex-observability-hook.mjs` | `handleHook` | 224 | `sed -n 212,244p scripts/codex-observability-hook.mjs` |
-| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 430 | `sed -n 418,450p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `closeObservabilityUnsafe` | 431 | `sed -n 419,451p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
 ## automation.observability.flags
 
-Owner: `KB/docs/context/automation.md:366-376` → **Workflow inefficiency flags**
+Owner: `KB/docs/context/automation.md:394-404` → **Workflow inefficiency flags**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -93,7 +93,7 @@ Adjacent concepts: none
 
 ## automation.observability.usage
 
-Owner: `KB/docs/context/automation.md:347-356` → **Observability usage**
+Owner: `KB/docs/context/automation.md:375-384` → **Observability usage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -109,7 +109,7 @@ Adjacent concepts: none
 
 ## automation.orchestration.execution
 
-Owner: `KB/docs/context/automation.md:149-160` → **Orchestrated execution**
+Owner: `KB/docs/context/automation.md:151-162` → **Orchestrated execution**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -121,7 +121,7 @@ Adjacent concepts: `automation.orchestration.ownership`, `automation.task-close.
 
 ## automation.orchestration.ownership
 
-Owner: `KB/docs/context/automation.md:171-181` → **Orchestration ownership**
+Owner: `KB/docs/context/automation.md:173-183` → **Orchestration ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -201,64 +201,64 @@ Adjacent concepts: none
 
 ## automation.task-close.lifecycle
 
-Owner: `KB/docs/context/automation.md:191-195` → **Task-close lifecycle**
+Owner: `KB/docs/context/automation.md:193-197` → **Task-close lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `main` | 1239 | `sed -n 1227,1259p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `main` | 1240 | `sed -n 1228,1260p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt`, `automation.task-close.process-controls`
 
 ## automation.task-close.plan-archive
 
-Owner: `KB/docs/context/automation.md:264-267` → **Plan archival**
+Owner: `KB/docs/context/automation.md:285-288` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `archivePlan` | 1030 | `sed -n 1018,1050p scripts/task-close.mjs` |
-| `scripts/task-close.mjs` | `retainPlan` | 1047 | `sed -n 1035,1067p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `archivePlan` | 1031 | `sed -n 1019,1051p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `retainPlan` | 1048 | `sed -n 1036,1068p scripts/task-close.mjs` |
 
 Adjacent concepts: none
 
 ## automation.task-close.process-controls
 
-Owner: `KB/docs/context/automation.md:206-213` → **Task process controls**
+Owner: `KB/docs/context/automation.md:208-215` → **Task process controls**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/task-process-controls.mjs` | `resolveTaskProcessControls` | 59 | `sed -n 47,79p scripts/lib/task-process-controls.mjs` |
-| `scripts/task-close.mjs` | `createManifest` | 343 | `sed -n 331,363p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `createManifest` | 344 | `sed -n 332,364p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.task-close.lifecycle`, `automation.task-close.scope`
 
 ## automation.task-close.receipt
 
-Owner: `KB/docs/context/automation.md:252-256` → **Public receipt**
+Owner: `KB/docs/context/automation.md:273-277` → **Public receipt**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `finishVerification` | 1137 | `sed -n 1125,1157p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `finishVerification` | 1138 | `sed -n 1126,1158p scripts/task-close.mjs` |
 | `scripts/lib/qa-receipt.mjs` | `renderPublicQaReceipt` | 65 | `sed -n 53,85p scripts/lib/qa-receipt.mjs` |
 
 Adjacent concepts: none
 
 ## automation.task-close.scope
 
-Owner: `KB/docs/context/automation.md:222-231` → **Task-close scope**
+Owner: `KB/docs/context/automation.md:224-241` → **Task-close scope**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `createManifest` | 343 | `sed -n 331,363p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `createManifest` | 344 | `sed -n 332,364p scripts/task-close.mjs` |
 | `scripts/task-close.mjs` | `taskCloseIntake` | 233 | `sed -n 221,253p scripts/task-close.mjs` |
 
 Adjacent concepts: `automation.orchestration.ownership`
 
 ## automation.task-close.verification
 
-Owner: `KB/docs/context/automation.md:239-244` → **Task-close verification**
+Owner: `KB/docs/context/automation.md:249-265` → **Task-close verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/task-close.mjs` | `verifyManifest` | 1204 | `sed -n 1192,1224p scripts/task-close.mjs` |
+| `scripts/task-close.mjs` | `verifyManifest` | 1205 | `sed -n 1193,1225p scripts/task-close.mjs` |
 
 Adjacent concepts: `testing.selection.local`

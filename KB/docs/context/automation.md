@@ -120,12 +120,14 @@ When executable QA is disabled, task-close does not run `qa-gate` or raw regress
 
 Git review establishes final task-owned authored change scope once with bounded
 name-status evidence and keeps `git diff --check` as a cheap integrity check.
-Changed generated concept maps are derived automatically only from the bounded
-map set affected by reviewed task-owned source grants. Exact current patch
-evidence is reused instead of reread for procedural self-review; changed hunks
-are inspected when evidence became stale, another writer or generator produced
-the change, concurrency or unexpected scope is possible, or
-integration/correctness requires current content.
+Task-close owns generated concept-map preparation inside review: it regenerates
+only maps affected by exact changed source grants or authored concept owners,
+derives only candidate maps that actually changed, and protects only that
+bounded map set after review. Unrelated generated-map churn is not adopted into
+task scope. Exact current patch evidence is reused instead of reread for
+procedural self-review; changed hunks are inspected when evidence became stale,
+another writer or generator produced the change, concurrency or unexpected
+scope is possible, or integration/correctness requires current content.
 
 Task-close owns lifecycle, verification, receipt, and formal-flag status and
 exposes those fields through compact terminal and status surfaces; broad
@@ -221,12 +223,20 @@ adjacent: automation.orchestration.ownership
 -->
 ## Task-close scope
 
-Prepare owns explicit paths, planned QA tooling, and an optional active plan
-before edits. Review accepts only owned final changes and recomputes
-deterministic QA and documentation candidates. Close records
-documentation/coverage decisions and verifies the reviewed set. For
-orchestrated execution, one parent manifest owns the integrated path union;
-worker write claims are subordinate execution locks and never become independent
+Prepare owns explicit task paths, the persisted task process contract, planned
+QA-tooling scope, and an optional active plan before edits. Review is one
+deterministic transaction: it validates the explicit changed authored/source
+scope, resolves only concept maps affected through exact source grants or
+changed authored concept owners, regenerates that bounded map set, derives the
+candidate maps that actually differ from Git baseline, captures their
+post-regeneration freshness state, and only then persists reviewed scope.
+Generated maps are tooling-owned derived output and never become authored
+ownership or documentation edits.
+
+Close verifies the reviewed authored paths plus that bounded protected map set;
+it never reconstructs task authority from the dirty working tree. For
+orchestrated execution, one parent manifest owns the integrated authored path
+union and worker claims remain subordinate write locks rather than independent
 closure authority.
 
 <!-- kb
@@ -238,9 +248,20 @@ adjacent: testing.selection.local
 -->
 ## Task-close verification
 
-Close-out always preserves required ownership, integrity, and task-triggered KB/generated consistency. Executable regression QA runs only when the task process contract enables QA; when disabled, closure records that executable QA was intentionally not run.
+Close-out always preserves required ownership, patch integrity, source/registry
+validity, and task-triggered KB/generated consistency. Review stores freshness
+hashes only for its bounded affected concept-map set after review-owned
+regeneration. A protected map changed or removed after review blocks closure;
+generated-map churn outside that protected set does not become this task's scope
+or invalidate it solely by being dirty.
 
-Authored KB or source changes that require concept-map or concept-KB freshness still receive the smallest required generated consistency checks independently from optional regression QA. Task-caused stale maps, broken source grants, required-consistency failures, or other known task-caused failures remain open. Only approved unrelated maintenance blockers may produce a maintenance-blocked closure.
+Required concept-map and concept-KB consistency runs independently from the
+optional executable-QA process control and uses the bounded affected map set
+when exact map ownership is known. Executable regression QA runs only when the
+task process contract enables QA. Task-caused stale protected maps, broken
+source grants, registry defects, required-consistency failures, or other known
+task-caused failures remain open; only approved unrelated maintenance blockers
+may produce a maintenance-blocked closure.
 
 <!-- kb
 id: automation.task-close.receipt
@@ -286,9 +307,16 @@ source: scripts/lib/concept-kb.mjs#conceptProseCapacity
 -->
 ## KB validation
 
-The KB Tree validator protects concept identity, aliases, leaf ownership,
-adjacency, exact source anchors, isolation, generated equality, and its capacity
-model. Advisory bands are calibration signals; only prose beyond the
+The KB Tree validator always protects global authored concept identity, aliases,
+leaf ownership, adjacency, exact source grants and anchors, isolation, and prose
+capacity. Full-tree mode also requires every generated concept output to match
+the current registry.
+
+When task-close supplies an explicit affected concept-map set, generated-output
+equality, marker, and completeness checks are limited to that set while the
+global authored registry/source contract remains fail-closed. This lets a task
+prove its own generated consistency without adopting unrelated dirty generated
+maps. Advisory bands remain calibration signals; only prose beyond the
 2,500-estimated-token ceiling or the 400-character line ceiling is a capacity
 error.
 
