@@ -43,6 +43,7 @@ func _ready() -> void:
 	_refresh_password_presentation()
 
 func _on_text_submitted(_value: String, field: LineEdit) -> void:
+	field.caret_force_displayed = false
 	field.release_focus()
 	DisplayServer.virtual_keyboard_hide()
 
@@ -73,6 +74,14 @@ func _configure_text_input(field: LineEdit) -> void:
 	field.context_menu_enabled = false
 	field.shortcut_keys_enabled = true
 	field.middle_mouse_paste_enabled = false
+	field.editing_toggled.connect(_on_text_editing_toggled.bind(field))
+	field.focus_exited.connect(_on_text_focus_exited.bind(field))
+
+func _on_text_editing_toggled(editing: bool, field: LineEdit) -> void:
+	field.caret_force_displayed = editing
+
+func _on_text_focus_exited(field: LineEdit) -> void:
+	field.caret_force_displayed = false
 
 func _is_paste_shortcut(event: InputEvent) -> bool:
 	if not (event is InputEventKey):
@@ -119,7 +128,7 @@ func _refresh_password_presentation() -> void:
 		password_edit.remove_theme_color_override("font_uneditable_color")
 		password_edit.remove_theme_color_override("font_outline_color")
 	else:
-		password_edit.add_theme_color_override("font_selected_color", Color.TRANSPARENT)
+		password_edit.add_theme_color_override("font_selected_color", TEXT_COLOR)
 		password_edit.add_theme_color_override("font_uneditable_color", Color.TRANSPARENT)
 		password_edit.add_theme_color_override("font_outline_color", Color.TRANSPARENT)
 	password_mask_label.visible = not password_revealed

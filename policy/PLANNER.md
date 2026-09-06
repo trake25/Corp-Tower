@@ -72,11 +72,13 @@ Domain/task-scope knowledge comes from the KB Tree, never from runtime skills.
 
 Optional execution/process policy is selected only when it actually applies:
 - If the user requests process customization or "everything ON", read `policy/CODEX.md#PROCESS-ROUTER#`.
-- If a specific non-default process is enabled, read only that process's exact section in `policy/CODEX.md`.
+- If a specific non-default process is enabled, read `policy/CODEX.md#PROCESS-ROUTER#` for its exact plan encoding, then read only that process's exact section.
 - If ORCHESTRATED execution is selected, read `policy/CODEX.md#ORCHESTRATION#` and the ownership section it requires.
 - If strict execution is selected, read `policy/CODEX.md#STRICT-EXECUTION#`.
 
 A default-OFF process is absent from the Phase 2 plan and absent from Codex runtime context. Do not name, explain, disable, or route through an optional process merely because its tooling exists.
+
+For every selected non-default process, encode its effective value exactly once under `## Execution Overrides` using the assignment form defined by `policy/CODEX.md#PROCESS-ROUTER#`. Do not encode default values. This assignment is deterministic tooling input as well as task policy.
 
 Compile only the selected rules that materially constrain this task into `## 2. Task-Specific Policy` and, when needed, `## Execution Overrides`. Do not copy universal `AGENTS.md` rules into the plan.
 
@@ -95,15 +97,15 @@ Do not use or route through agent skills. Do not copy domain instructions into u
 
 Normal single-run execution and default-OFF processes are implicit and omitted.
 
-`## Execution Overrides` appears only when execution differs from defaults. The heading and encoding are Planner/tooling mechanics; `AGENTS.md` must not teach Codex how they work.
+`## Execution Overrides` appears only when execution differs from defaults. When present, it contains the exact non-default process assignments required by deterministic tooling plus any other selected execution override. The heading and encoding are Planner/tooling mechanics; `AGENTS.md` must not teach Codex how they work.
 
-Plan archival is enabled by repository default. Treat it as a deterministic completion mechanic, not universal Codex policy prose. Unless explicitly disabled, include only the concrete archival completion action/criterion needed for the current plan.
+Plan archival is enabled by repository default. Treat it as a deterministic completion mechanic, not universal Codex policy prose. Unless explicitly disabled, include only the concrete archival completion action/criterion needed for the current plan. If explicitly disabled, encode `plan_archival=OFF` exactly once under `## Execution Overrides`.
 
 ## Execution-shape planning
 
 Use the default single-run shape unless semantic decomposition materially reduces reconstruction/integration risk enough to justify coordination.
 
-Select ORCHESTRATED only when that benefit is real. ORCHESTRATED requires the non-default ownership process; compile the ownership and orchestration rules into the task plan. Do not enable any other optional process merely because orchestration is selected.
+Select ORCHESTRATED only when that benefit is real. ORCHESTRATED requires the non-default ownership process; encode `task_ownership=ON` exactly once and compile the ownership and orchestration rules into the task plan. Do not enable any other optional process merely because orchestration is selected.
 
 ## Standard Phase 2 format
 
@@ -146,7 +148,7 @@ Specify only minimum task-required verification plus consistency/generated mecha
 State observable completion conditions. Include deterministic plan archival when enabled, without explaining the process-control system.
 
 ### `## Execution Overrides`
-Append only when a non-default execution/process rule is selected.
+Append only when a non-default execution/process rule is selected. Encode each selected process value exactly once using `name=ON` or `name=OFF` as defined by the process router.
 
 ## Plan quality and delivery
 
@@ -156,7 +158,7 @@ Keep unrelated maintenance out of scope and do not repeat requirements across se
 
 Deliver the plan as `[short-task-name].md`.
 
-In the accompanying reply state task complexity, recommended model/effort, and a short reason. If manual policy/adapter replacements are required, provide them and tell the user to apply them before Codex. If telemetry is selected ON, tell the user outside the plan to start that implementation session through `node scripts/codex-task-run.mjs <phase-2-plan-path>`.
+In the accompanying reply state task complexity, recommended model/effort, and a short reason. If manual policy/adapter replacements are required, provide them and tell the user to apply them before Codex. If telemetry is selected ON, the plan must contain exactly one `telemetry=ON` assignment and tell the user outside the plan to start that implementation session through `node scripts/codex-task-run.mjs <phase-2-plan-path>`.
 
 After delivering Phase 2, stop. Implementation belongs to Codex.
 

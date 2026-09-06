@@ -15,7 +15,7 @@ Adjacent concepts: `network.session.identity`, `build.endpoint-auth.injection`
 
 ## ui.constraint.pointer-input
 
-Owner: `KB/docs/context/ui.md:223-226` → **Pointer pass-through**
+Owner: `KB/docs/context/ui.md:225-228` → **Pointer pass-through**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: none
 
 ## ui.constraint.rendered-verification
 
-Owner: `KB/docs/context/ui.md:234-237` → **Rendered verification**
+Owner: `KB/docs/context/ui.md:236-239` → **Rendered verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: `testing.client.rendered`
 
 ## ui.constraint.scene-order
 
-Owner: `KB/docs/context/ui.md:213-216` → **Scene text-format constraint**
+Owner: `KB/docs/context/ui.md:215-218` → **Scene text-format constraint**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,7 +56,7 @@ Adjacent concepts: none
 
 ## ui.debug.entry
 
-Owner: `KB/docs/context/ui.md:204-207` → **Debug entry**
+Owner: `KB/docs/context/ui.md:206-209` → **Debug entry**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -76,7 +76,7 @@ Adjacent concepts: none
 
 ## ui.navigation.server-routes
 
-Owner: `KB/docs/context/ui.md:181-184` → **Server-driven navigation**
+Owner: `KB/docs/context/ui.md:183-186` → **Server-driven navigation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -87,7 +87,7 @@ Adjacent concepts: `network.room.close`, `network.session.resume-only`
 
 ## ui.play.menu
 
-Owner: `KB/docs/context/ui.md:157-160` → **Play Menu**
+Owner: `KB/docs/context/ui.md:159-162` → **Play Menu**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -97,7 +97,7 @@ Adjacent concepts: `hud.controller.state-application`
 
 ## ui.play.recovery
 
-Owner: `KB/docs/context/ui.md:168-171` → **Active-match recovery**
+Owner: `KB/docs/context/ui.md:170-173` → **Active-match recovery**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -107,7 +107,7 @@ Adjacent concepts: `network.session.recovery`
 
 ## ui.private-lobby.presentation
 
-Owner: `KB/docs/context/ui.md:126-129` → **Private Lobby presentation**
+Owner: `KB/docs/context/ui.md:128-131` → **Private Lobby presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -117,33 +117,35 @@ Adjacent concepts: `network.room.private`
 
 ## ui.private.create
 
-Owner: `KB/docs/context/ui.md:100-103` → **Private Server creation**
+Owner: `KB/docs/context/ui.md:101-104` → **Private Server creation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn` | `PrivateServerScreen` | 23 | `sed -n 11,43p src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_on_password_text_changed` | 83 | `sed -n 71,103p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_refresh_password_presentation` | 112 | `sed -n 100,132p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_configure_text_input` | 73 | `sed -n 61,93p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_on_password_text_changed` | 92 | `sed -n 80,112p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_refresh_password_presentation` | 121 | `sed -n 109,141p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
 
 Adjacent concepts: `network.room.private`
 
 ## ui.private.join
 
-Owner: `KB/docs/context/ui.md:115-119` → **Join Server**
+Owner: `KB/docs/context/ui.md:117-121` → **Join Server**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn` | `JoinScreen` | 36 | `sed -n 24,56p src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_input` | 119 | `sed -n 107,139p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_on_server_id_long_press_timeout` | 144 | `sed -n 132,164p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_on_password_text_changed` | 251 | `sed -n 239,271p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_refresh_password_presentation` | 280 | `sed -n 268,300p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_configure_text_input` | 241 | `sed -n 229,261p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_input` | 120 | `sed -n 108,140p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_on_server_id_long_press_timeout` | 145 | `sed -n 133,165p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_on_password_text_changed` | 260 | `sed -n 248,280p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_refresh_password_presentation` | 289 | `sed -n 277,309p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
 
 Adjacent concepts: `network.room.private`
 
 ## ui.public-lobby.flow
 
-Owner: `KB/docs/context/ui.md:146-149` → **Public matchmaking and lobby**
+Owner: `KB/docs/context/ui.md:148-151` → **Public matchmaking and lobby**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -153,7 +155,7 @@ Adjacent concepts: `network.room.public`
 
 ## ui.settings.presentation
 
-Owner: `KB/docs/context/ui.md:135-138` → **Settings**
+Owner: `KB/docs/context/ui.md:137-140` → **Settings**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -194,7 +196,7 @@ Adjacent concepts: `network.session.resume-only`, `ui.startup.splash`
 
 ## ui.startup.splash
 
-Owner: `KB/docs/context/ui.md:193-196` → **Startup Splash**
+Owner: `KB/docs/context/ui.md:195-198` → **Startup Splash**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

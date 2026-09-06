@@ -93,6 +93,7 @@ id: ui.private.create
 alias: create private server
 alias: private server screen
 source: src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn#PrivateServerScreen
+source: src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd#_configure_text_input
 source: src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd#_on_password_text_changed
 source: src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd#_refresh_password_presentation
 adjacent: network.room.private
@@ -106,6 +107,7 @@ id: ui.private.join
 alias: join server
 alias: server id paste
 source: src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn#JoinScreen
+source: src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd#_configure_text_input
 source: src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd#_input
 source: src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd#_on_server_id_long_press_timeout
 source: src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd#_on_password_text_changed

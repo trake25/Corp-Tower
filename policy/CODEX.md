@@ -15,7 +15,7 @@ Domain/task-scope knowledge comes from Planner-selected KB context, not skills.
 Load a conditional section below only when that non-default policy actually applies. Default-OFF processes must not be compiled into the plan or exposed to Codex runtime context.
 
 Conditional sections:
-- `#PROCESS-ROUTER#` — only when the user requests process customization or everything ON.
+- `#PROCESS-ROUTER#` — when any process differs from its default, the user requests process customization, or everything ON is selected.
 - `#TASK-OWNERSHIP#` — only when task ownership is ON.
 - `#TASK-CLOSE#` — only when task-close is ON.
 - `#TELEMETRY#` — only when telemetry is ON.
@@ -23,7 +23,7 @@ Conditional sections:
 - `#QA#` — only when executable QA is ON.
 - `#QA-COVERAGE#` — only when permanent QA coverage is ON.
 - `#QA-RECEIPT#` — only when public QA receipt is ON.
-- `#PLAN-ARCHIVAL#` — only when the user explicitly changes archival from its default.
+- `#PLAN-ARCHIVAL#` — only when plan archival is explicitly OFF.
 - `#ORCHESTRATION#` — only when ORCHESTRATED execution is selected.
 - `#STRICT-EXECUTION#` — only when strict execution is selected.
 
@@ -52,13 +52,38 @@ Invalid combinations fail closed rather than silently enabling another process.
 
 "Everything ON" enables all process controls but does not authorize commit, push, pull, deployment, destructive Git operations, or another externally consequential action.
 
-After resolving requested controls, read only the exact ON/non-default process sections needed for the task.
+## Task-plan process encoding
+
+Default values are omitted completely.
+
+Every process whose effective value differs from its repository default must appear exactly once under `## Execution Overrides` using the exact case-sensitive assignment:
+
+`<process_name>=ON` or `<process_name>=OFF`
+
+Examples:
+- telemetry selected ON → `telemetry=ON`
+- task-close selected ON → both `task_ownership=ON` and `task_close=ON`
+- plan archival explicitly disabled → `plan_archival=OFF`
+- ORCHESTRATED → `task_ownership=ON`
+
+For "Everything ON", emit the seven controls that differ from BARE as exact `=ON` assignments:
+- `task_ownership=ON`
+- `task_close=ON`
+- `telemetry=ON`
+- `workflow_inefficiency_flagging=ON`
+- `qa=ON`
+- `qa_coverage=ON`
+- `qa_receipt=ON`
+
+`plan_archival=ON` remains implicit because it is already the repository default.
+
+Resolve dependencies before encoding. Never emit duplicate assignments for the same process. After resolving requested controls, read only the exact ON/non-default process sections needed for the task.
 
 #TASK-OWNERSHIP#
 
 Compile only when `task_ownership=ON`.
 
-Task ownership is lightweight explicit write-scope protection. Acquire ownership from the plan's evidence-based task paths before edits, amend only for a proven direct dependency, never derive authority from the dirty working tree, and release after integrated completion. For concurrent/orchestrated work, worker claims remain subordinate to the parent task scope.
+Task ownership is lightweight explicit write-scope protection. Acquire ownership from the plan's evidence-based task paths before edits, amend only for a proven direct dependency, never derive authority from the dirty working tree, and release after integrated completion. For concurrent/orchestrated work, worker claims remain subordinate to the parent task scope. Parent ownership must not be released while subordinate worker claims remain active.
 
 #TASK-CLOSE#
 
@@ -69,6 +94,8 @@ Task-close is a lifecycle boundary, not a checkpoint/status tool. Run prepare on
 #TELEMETRY#
 
 Compile only when `telemetry=ON`.
+
+The plan must contain exactly one `telemetry=ON` assignment under `## Execution Overrides`.
 
 Corp Tower observability hooks are not auto-discovered by default. Planner tells the user outside the plan to start the implementation session through `node scripts/codex-task-run.mjs <phase-2-plan-path>`, which injects the repository telemetry hook template only for that session and fails before launch if activation cannot be resolved. Telemetry does not enable ownership, task-close, QA, coverage, receipt, or Git authorization.
 
@@ -98,13 +125,13 @@ Generate only sanitized structured task/verification evidence. Receipt generatio
 
 #PLAN-ARCHIVAL#
 
-Read only when the user explicitly overrides archival.
+Read only when plan archival is explicitly OFF.
 
-`plan_archival=OFF` leaves the active plan in place after successful completion. No other process behavior changes.
+The plan must contain exactly one `plan_archival=OFF` assignment under `## Execution Overrides`. The successful task leaves its active plan in place. No other process behavior changes.
 
 #ORCHESTRATION#
 
-Compile only when ORCHESTRATED execution is selected. Task ownership must be ON.
+Compile only when ORCHESTRATED execution is selected. Task ownership must be ON and the plan must contain exactly one `task_ownership=ON` assignment.
 
 Define bounded worker units, dependencies, shared invariants, expected write claims, dependency-aware waves, worker verification, and parent integration criteria. Parallel workers may share reads but not overlapping active writes. Shared writable paths use one owner or serialized work. The parent owns integrated scope, worker-claim resolution, and final integration. Do not enable task-close merely because execution is orchestrated.
 
