@@ -32,6 +32,7 @@ declared adjacent concept. Never jump sideways by repository-wide search.
 | `automation.observability.usage` | [automation.md#observability-usage](./automation.md#observability-usage) | provider tokens, rollout usage |
 | `automation.orchestration.execution` | [automation.md#orchestrated-execution](./automation.md#orchestrated-execution) | orchestrated execution, multi-agent implementation |
 | `automation.orchestration.ownership` | [automation.md#orchestration-ownership](./automation.md#orchestration-ownership) | worker scope, parallel ownership |
+| `automation.planning.phase2` | [automation.md#phase-2-execution-handoff](./automation.md#phase-2-execution-handoff) | phase 2 execution handoff, execution-oriented plan |
 | `automation.retrieval.aliases` | [automation.md#retrieval-aliases](./automation.md#retrieval-aliases) | retrieval-aliases.json |
 | `automation.retrieval.bundle` | [automation.md#context-bundles](./automation.md#context-bundles) | context bundle |
 | `automation.retrieval.direct` | [automation.md#direct-retrieval-discipline](./automation.md#direct-retrieval-discipline) | agent retrieval, bounded context |

@@ -12,7 +12,7 @@ Owner: `KB/docs/context/testing.md:128-146` → **Automation protocol coverage**
 | `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 109 | `sed -n 97,126p scripts/tests/context-query.test.mjs` |
 | `scripts/tests/task-close.test.mjs` | `prepare creates an explicit schema-v3 BARE ownership manifest and intake` | 257 | `sed -n 245,277p scripts/tests/task-close.test.mjs` |
 | `scripts/tests/orchestration-scope.test.mjs` | `parallel worker ownership rejects overlapping write claims` | 71 | `sed -n 59,91p scripts/tests/orchestration-scope.test.mjs` |
-| `scripts/tests/policy-routing.test.mjs` | `orchestration policy remains routed and bounded` | 48 | `sed -n 36,68p scripts/tests/policy-routing.test.mjs` |
+| `scripts/tests/policy-routing.test.mjs` | `orchestration is a Planner-selected override with bounded parent and worker ownership` | 140 | `sed -n 128,160p scripts/tests/policy-routing.test.mjs` |
 | `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
 | `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 63 | `sed -n 51,83p scripts/benchmark-rag.mjs` |
 | `scripts/lib/kb-calibration.mjs` | `measureKbCalibration` | 180 | `sed -n 168,200p scripts/lib/kb-calibration.mjs` |

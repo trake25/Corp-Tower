@@ -197,4 +197,116 @@ test('active KB Tree policy grants match the Planner-to-plan-to-Codex architectu
   assert.doesNotMatch(site, /source: site\/docs\//);
 });
 
-test('
+test('ChatGPT owns planning retrieval transport while Codex consumes plan-selected retrieval inputs', () => {
+  const agents = readFileSync(join(ROOT, 'AGENTS.md'), 'utf8');
+  const chatgpt = policy('CHATGPT.md');
+  const planner = policy('PLANNER.md');
+  const codex = policy('CODEX.md');
+
+  assert.match(chatgpt, /## KB retrieval transport/);
+  assert.match(chatgpt, /Reuse exact current concept evidence/);
+  assert.match(chatgpt, /repository\/GitHub connector/);
+  assert.match(
+    chatgpt,
+    /third fallback may broaden repository search solely\s+to diagnose and report the retrieval defect/
+  );
+  assert.match(chatgpt, /not ordinary task authority/);
+
+  assert.match(planner, /follow the ChatGPT KB retrieval transport\/fallback contract/);
+  assert.match(agents, /use the plan's exact retrieval input first/i);
+  assert.match(agents, /exact concept-read route/i);
+  assert.match(
+    agents,
+    /Do not broaden repository search merely to rediscover context already supplied by the plan/
+  );
+
+  assert.doesNotMatch(codex, /## KB retrieval transport/);
+  assert.doesNotMatch(policy('IMPLEMENT.md'), /context\.mjs|repository\/GitHub connector/);
+  assert.doesNotMatch(policy('FIX.md'), /context\.mjs|repository\/GitHub connector/);
+});
+
+test('provider-visible I/O discipline is universal Codex policy rather than detached task policy', () => {
+  const agents = readFileSync(join(ROOT, 'AGENTS.md'), 'utf8');
+  const codex = policy('CODEX.md');
+
+  assert.match(agents, /smallest bounded reads and compact tool outputs/);
+  assert.match(agents, /Reuse exact current evidence instead of rereading it/);
+  assert.match(agents, /Do not request repository-wide diffs/);
+  assert.match(agents, /Expand diagnostics progressively/);
+  assert.match(agents, /Keep the normal completion response compact/);
+
+  assert.doesNotMatch(codex, /Provider-visible I\/O discipline/);
+  assert.doesNotMatch(policy('IMPLEMENT.md'), /Provider-visible I\/O discipline/);
+  assert.doesNotMatch(policy('FIX.md'), /Provider-visible I\/O discipline/);
+});
+
+test('workflow overview documents the execution-oriented Phase 2 handoff', () => {
+  const workflow = readFileSync(
+    join(ROOT, 'KB/workflow/top-or-drop-workflow.md'),
+    'utf8'
+  );
+
+  assert.match(workflow, /ChatGPT Planner/);
+  assert.match(workflow, /Compacted KB Context/);
+  assert.match(workflow, /Expected Write Scope/);
+  assert.match(workflow, /Execution Overrides/);
+  assert.match(workflow, /AGENTS\.md → approved Phase 2 plan/);
+  assert.doesNotMatch(workflow, /AGENTS\.md → CODEX\.md → IMPLEMENT\.md/);
+  assert.doesNotMatch(workflow, /AGENTS\.md → CODEX\.md → FIX\.md/);
+});
+
+test('one-tree invariant retires the legacy corpus, tooling, and skill routes', () => {
+  const retiredCorpus = join(ROOT, 'docs', 'context');
+  const retiredTools = [
+    'scripts/lib/context-routing.mjs',
+    'scripts/validate-docs.mjs',
+    'scripts/docs-scope.mjs',
+    'scripts/build-file-map.mjs',
+  ];
+  const activeInstructions = [
+    ...filesBelow(join(ROOT, 'policy')),
+    ...filesBelow(join(ROOT, '.agents', 'skills')),
+    ...filesBelow(join(ROOT, '.claude', 'skills')),
+  ];
+
+  assert.equal(existsSync(retiredCorpus), false);
+
+  for (const path of retiredTools) {
+    assert.equal(existsSync(join(ROOT, path)), false, path);
+  }
+
+  for (const path of activeInstructions) {
+    const source = readFileSync(path, 'utf8');
+
+    assert.doesNotMatch(
+      source,
+      /(?<!KB\/)docs\/context(?:\/|\b)/,
+      path
+    );
+
+    assert.doesNotMatch(
+      source,
+      /context-routing\.mjs|validate-docs\.mjs|docs-scope\.mjs|build-file-map\.mjs/,
+      path
+    );
+  }
+
+  const contextCli = readFileSync(join(ROOT, 'scripts/context.mjs'), 'utf8');
+  const taskClose = readFileSync(join(ROOT, 'scripts/task-close.mjs'), 'utf8');
+  const benchmark = readFileSync(join(ROOT, 'scripts/benchmark-rag.mjs'), 'utf8');
+
+  assert.doesNotMatch(
+    contextCli,
+    /context-routing|routeContext|searchContext|scopeContext/
+  );
+
+  assert.doesNotMatch(
+    taskClose,
+    /context-routing|validate-docs|build-file-map/
+  );
+
+  assert.doesNotMatch(
+    benchmark,
+    /--check\b|context-retrieval\.json|context-routing/
+  );
+});

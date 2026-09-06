@@ -113,7 +113,7 @@ alias: retrieval benchmark
 source: scripts/tests/context-query.test.mjs#automation scope selects the protocol suite and retrieval benchmark
 source: scripts/tests/task-close.test.mjs#prepare creates an explicit schema-v3 BARE ownership manifest and intake
 source: scripts/tests/orchestration-scope.test.mjs#parallel worker ownership rejects overlapping write claims
-source: scripts/tests/policy-routing.test.mjs#orchestration policy remains routed and bounded
+source: scripts/tests/policy-routing.test.mjs#orchestration is a Planner-selected override with bounded parent and worker ownership
 source: scripts/tests/concept-kb.test.mjs#the repository concept registry is complete, deterministic, and source-grounded
 source: scripts/benchmark-rag.mjs#runConceptBenchmark
 source: scripts/lib/kb-calibration.mjs#measureKbCalibration
