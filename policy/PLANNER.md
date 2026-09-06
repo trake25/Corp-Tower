@@ -90,7 +90,9 @@ Load only additional task-specific policy sections that the current task actuall
 
 Compile only the selected rules that materially constrain this task into the plan's `## 2. Task-Specific Policy`. Do not copy universal Codex rules already present in `AGENTS.md`, and do not require Codex to reread `policy/CODEX.md`, `policy/IMPLEMENT.md`, or `policy/FIX.md` during normal execution.
 
-For approved WORKFLOW changes where authored policy or authored KB wording itself carries the intended behavior, include the exact replacement or insertion prose in the implementation plan. Codex integrates that approved prose without paraphrasing it. Generated KB routers and maps remain tooling-owned.
+Repository policy files are user-owned manual configuration. If approved behavior requires changing a repository policy file, ChatGPT must provide the complete replacement file separately for the user to apply manually before Codex implementation. Never place a repository policy file in Codex's Expected Write Scope, never instruct Codex to patch one, and treat the manually applied policy state as a read-only implementation precondition.
+
+For approved WORKFLOW changes where authored KB wording itself carries the intended behavior, include the exact replacement or insertion prose in the implementation plan. Codex integrates that approved KB prose without paraphrasing it. Generated KB routers and maps remain tooling-owned.
 
 ## Defaults and overrides
 
@@ -154,6 +156,8 @@ Use:
 - `### Direct Edits` for authored files Codex is expected to change.
 - `### Generated Outputs` only when deterministic generation is expected to produce changed files.
 
+Repository policy files are never Codex direct edits. If a required policy replacement has not been manually applied by the user before implementation, Codex must stop and report the missing precondition rather than editing the policy file.
+
 This is an evidence-based expected scope, not a hard whitelist by default. Codex may use its stronger current-source understanding to add a proven direct task dependency or bounded task-local refactor when needed for a complete or materially cleaner implementation, while remaining inside the approved behavior and universal scope boundaries.
 
 If `strict_execution=ON` is selected, the plan must make the prescribed direct-write scope and implementation constraints explicit because Codex may not autonomously expand them.
@@ -191,6 +195,10 @@ Deliver the implementation plan as a downloadable Markdown artifact named:
 In the accompanying ChatGPT reply, state:
 - task complexity;
 - recommended model and effort for the implementation run, or orchestrator plus worker recommendations when ORCHESTRATED;
+- when repository policy replacements are required, provide the complete replacement files and tell the user to apply them manually before starting Codex;
+- when `telemetry=ON` is selected, tell the user to start that implementation run with
+  `node scripts/codex-task-run.mjs <phase-2-plan-path>` before loading the plan; do not emit this
+  instruction for default/OFF telemetry;
 - a short reason for the recommendation.
 
 Do not put the default execution mode, BARE controls, or the current Codex runtime identity/model/effort into the plan merely to mirror the accompanying recommendation.

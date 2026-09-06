@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
@@ -69,7 +69,8 @@ test('production hook smoke keeps observability fail-open and private', async ()
   const emptyHome = temporaryDirectory('corp-empty-home-');
   const sessionId = 'hook-smoke-session';
   try {
-    const config = JSON.parse(readFileSync(join(ROOT, '.codex/hooks.json'), 'utf8'));
+    assert.equal(existsSync(join(ROOT, '.codex/hooks.json')), false);
+    const config = JSON.parse(readFileSync(join(ROOT, '.codex/telemetry-hooks.json'), 'utf8'));
     assert.deepEqual(Object.keys(config.hooks).sort(), ['PostToolUse', 'SessionEnd', 'SessionStart', 'Stop']);
     for (const entries of Object.values(config.hooks)) {
       const command = entries[0]?.hooks?.[0]?.command || '';

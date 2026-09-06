@@ -79,7 +79,7 @@ FIX restores confirmed intended behavior. If repository evidence proves that res
 
 Repository process defaults remain deterministic tooling behavior rather than repeated plan prose.
 
-New tasks default to BARE internally: telemetry, workflow inefficiency flagging, executable QA, permanent QA coverage, and public QA receipt are off; plan archival is on. Planner writes only non-default values under `## Execution Overrides`. Task-close still resolves and persists the complete effective process contract internally.
+New tasks default to BARE internally: telemetry, workflow inefficiency flagging, executable QA, permanent QA coverage, and public QA receipt are off; plan archival is on. Planner writes only non-default values under `## Execution Overrides`. Task-close still resolves and persists the complete effective process contract internally. Corp Tower observability hooks are not registered from an auto-discovered project `hooks.json` in the default path, so telemetry OFF means those hook commands are not dispatched. A plan with `telemetry=ON` is started through the deterministic pre-session Codex launcher, which injects the repository observability hooks only for that implementation session and fails before launch if activation cannot be resolved.
 
 Deterministic tooling owns repeatable mechanics such as explicit task ownership, task-close lifecycle, generated KB routing/maps, process-control validation, compact QA execution, receipts, plan archival, orchestration write claims, observability, and authorized publication gates.
 

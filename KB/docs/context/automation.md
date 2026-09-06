@@ -233,6 +233,7 @@ alias: bare process
 alias: task process
 source: scripts/lib/task-process-controls.mjs#resolveTaskProcessControls
 source: scripts/task-close.mjs#createManifest
+source: scripts/codex-task-run.mjs#resolveTelemetryMode
 adjacent: automation.planning.phase2
 adjacent: automation.task-close.lifecycle
 adjacent: automation.task-close.scope
@@ -245,10 +246,14 @@ permanent QA coverage, and the public QA receipt are off; plan archival is on.
 
 Planner does not repeat those defaults in Phase 2. The plan includes only non-default process values
 under `## Execution Overrides`; task-close still resolves and persists the complete effective values
-internally. Workflow inefficiency flagging requires telemetry. Optional controls never disable task
-ownership, concurrent-change preservation, authorization and safety boundaries, minimal patch
-integrity, repair of known task-caused failures, or KB/generated consistency required by the
-implementation.
+internally. Workflow inefficiency flagging requires telemetry. The Corp Tower repository
+observability hooks are absent from Codex's auto-discovered project hook path by default, so BARE
+does not dispatch them at all. A telemetry-enabled implementation run uses the deterministic
+pre-session launcher to inject those hooks only into that Codex session; the launcher fails before
+session start if it cannot resolve or construct the telemetry override. Optional controls never
+disable task ownership, concurrent-change preservation, authorization and safety boundaries,
+minimal patch integrity, repair of known task-caused failures, or KB/generated consistency required
+by the implementation.
 
 <!-- kb
 id: automation.task-close.scope
@@ -390,15 +395,22 @@ alias: task binding
 source: scripts/lib/agent-observability/state.mjs#bindActiveTask
 source: scripts/codex-observability-hook.mjs#handleHook
 source: scripts/task-close.mjs#closeObservabilityUnsafe
+source: scripts/codex-task-run.mjs#launchCodexTask
 -->
 ## Observability binding
 
-When telemetry is enabled by the task process contract, agent observability binds task/session
-identity and records only bounded categories, outcomes, and opaque identifiers, never prompts,
-responses, patches, commands, or transcript contents. Hooks are best-effort: they record health when
-possible and cannot alter task execution, QA, or receipt correctness. Stop performs normal
-settlement; SessionEnd remains a cheap health fallback. Without a live session binding, a task
-remains pending rather than being finalized with fabricated terminal evidence.
+Corp Tower observability hooks are opt-in at Codex session start. The repository keeps the hook
+definition in a non-auto-discovered template, while the deterministic task launcher injects it only
+when the approved plan explicitly sets `telemetry=ON`. BARE/default sessions therefore do not
+register or dispatch the Corp Tower observability hook process at all.
+
+When telemetry is enabled, existing task-close behavior binds task/session identity and records only
+bounded categories, outcomes, and opaque identifiers, never prompts, responses, patches, commands,
+or transcript contents. Hooks remain best-effort and cannot alter task execution, QA, or receipt
+correctness. Stop performs normal settlement; SessionEnd remains a cheap health fallback. Without a
+live session binding, a telemetry-enabled task remains pending rather than being finalized with
+fabricated terminal evidence. If pre-session hook activation cannot be established, the launcher
+fails safe before Codex starts instead of making telemetry implicitly always-on.
 
 <!-- kb
 id: automation.observability.usage

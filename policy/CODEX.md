@@ -19,6 +19,8 @@ Load the conditional sections below only when they apply:
 
 Do not copy universal `AGENTS.md` policy into the Phase 2 plan.
 
+Repository policy files are user-owned manual configuration. Planner must never assign a repository policy file to Codex's implementation write scope or treat it as an autonomous Codex write dependency. When an approved change requires a policy-file modification, ChatGPT provides the complete replacement policy file to the user, the user applies it manually before implementation, and the Codex plan treats that policy state as a read-only precondition.
+
 #PROCESS-OVERRIDES#
 
 ## Process overrides
@@ -34,6 +36,14 @@ Optional task processes are:
 - plan_archival.
 
 The user may enable or disable an optional process through natural-language instruction. Put only non-default values under `## Execution Overrides`.
+
+Telemetry also controls the repository observability hooks. The tracked repository does not expose
+those observability hooks through auto-discovered `.codex/hooks.json`. When `telemetry=ON`, Planner
+must tell the user outside the plan to start the implementation Codex session through
+`node scripts/codex-task-run.mjs <phase-2-plan-path>` so the launcher injects the observability hooks
+only into that session. Codex never edits repository hook configuration to toggle telemetry for its
+own current task. If the launcher cannot resolve the plan telemetry state or construct the session
+hook override, it fails before Codex starts rather than falling back to always-on observability.
 
 "Everything ON" enables every applicable optional task process. It does not authorize commit, push, pull, deployment, destructive Git operations, or another externally consequential action.
 

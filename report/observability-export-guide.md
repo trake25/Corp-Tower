@@ -8,10 +8,14 @@ report automatically.
 
 - Run commands from the repository root.
 - The selected week uses `YYYY-Www`, for example `2026-W35`.
-- Tasks have completed the observability lifecycle, normally through
-  `task-close prepare` and `task-close close` plus the Codex `Stop` hook.
-- Review and trust the repository hooks once through Codex `/hooks`; changed
-  hook definitions require review again.
+- Only tasks whose approved Phase 2 plan set `telemetry=ON` are expected to have
+  observability records. Start those implementation sessions through
+  `node scripts/codex-task-run.mjs <phase-2-plan-path>` so the Corp Tower hooks
+  are injected before Codex starts.
+- Telemetry-enabled tasks complete the observability lifecycle through
+  `task-close prepare` and `task-close close` plus the injected Codex `Stop`
+  hook. Review and trust that injected hook definition when Codex requests it;
+  default/OFF tasks do not inject the Corp Tower observability hooks.
 - Exact task events include stable event IDs, provider, model family, model
   variant, reasoning effort, settled usage, parent/child attribution, and a
   terminal callback.
