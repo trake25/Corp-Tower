@@ -13,7 +13,7 @@ export const CONCEPT_PROSE_CAPACITY = Object.freeze({
   hard_tokens: 2500,
 });
 export const CONCEPT_SECTION_HARD_BYTES = CONCEPT_PROSE_CAPACITY.hard_tokens * 4;
-export const CONCEPT_MAX_LINE_CHARS = 400;
+export const CONCEPT_MAX_LINE_CHARS = 600;
 
 const ID = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
 const FIELDS = new Set(['id', 'alias', 'source', 'adjacent']);

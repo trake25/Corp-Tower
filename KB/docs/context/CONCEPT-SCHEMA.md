@@ -76,7 +76,7 @@ Concept capacity uses the deterministic ceiling of UTF-8 bytes divided by four.
 More than 1,200 estimated tokens is advisory, more than 1,800 is strong
 advisory, and more than 2,500 is a hard error. Warnings are calibration signals,
 not maintenance defects. Concept retrieval defaults to 16 KiB and has a 32 KiB
-absolute response limit. KB Tree Markdown retains its 400-character line
+absolute response limit. KB Tree Markdown retains its 600-character line
 ceiling.
 
 The explicit concept benchmark retains correctness/fail-closed gates and also

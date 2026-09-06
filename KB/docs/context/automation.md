@@ -357,7 +357,7 @@ When task-close supplies an explicit affected concept-map set, generated-output 
 and completeness checks are limited to that set while the global authored registry/source contract
 remains fail-closed. This lets a task prove its own generated consistency without adopting unrelated
 dirty generated maps. Advisory bands remain calibration signals; only prose beyond the
-2,500-estimated-token ceiling or the 400-character line ceiling is a capacity error.
+2,500-estimated-token ceiling or the 600-character line ceiling is a capacity error.
 
 <!-- kb
 id: automation.docs.scope
