@@ -8,7 +8,7 @@ For a Phase 2 plan:
 - Treat omitted execution mode and process controls as repository defaults. Do not restate, infer, or enable optional processes merely because they are available.
 - Use `### Compacted KB Context` as the primary repository summary. Read the listed `### Source Context` before editing the affected implementation. Use the listed `### KB Retrieval Inputs` only when deeper KB detail is materially needed.
 - `## 4. Expected Write Scope` is the Planner's evidence-based expected scope, not a hard whitelist unless `strict_execution=ON` is present. Current source evidence may justify an additional direct task dependency or bounded task-local refactor when needed for a complete or materially cleaner implementation. Do not expand into unrelated refactoring, cleanup, or maintenance.
-- When `strict_execution=ON`, follow the specified implementation approach and direct-write scope closely. If current source makes that approach impossible or materially incorrect, stop and report the conflict inba compacted summary instead of deviating autonomously.
+- When `strict_execution=ON`, follow the specified implementation approach and direct-write scope closely. If current source makes that approach impossible or materially incorrect, stop and report the conflict in a compacted summary instead of deviating autonomously.
 
 Before the first edit, establish repository task ownership/closure through the deterministic task-close path when available, using the planned write scope as the initial task-owned scope. Amend ownership only for a proven direct task dependency discovered during implementation. Scope comes from the task contract and current evidence, never from the dirty working tree.
 
