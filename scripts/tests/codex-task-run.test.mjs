@@ -27,8 +27,10 @@ function fakeSpawn(calls) {
 
 test('telemetry selection is absent by default and is read only from selected policy sections', () => {
   assert.equal(resolveTelemetryMode('# Plan\n\n## 2. Task-Specific Policy\n\n- task-specific constraint\n'), 'off');
+  assert.equal(resolveTelemetryMode('## 2. Task-Specific Policy\n\nTelemetry is selected for this task.\n'), 'off');
   assert.equal(resolveTelemetryMode('## 2. Task-Specific Policy\n\n- telemetry=ON\n'), 'on');
   assert.equal(resolveTelemetryMode('## Execution Overrides\n\n- telemetry=OFF\n'), 'off');
+  assert.throws(() => resolveTelemetryMode('## Execution Overrides\n\n- telemetry=on\n'), /malformed telemetry assignment/);
   assert.throws(() => resolveTelemetryMode('## 2. Task-Specific Policy\n\n- telemetry=ON\n\n## Execution Overrides\n\n- telemetry=ON\n'), /exactly once/);
 });
 

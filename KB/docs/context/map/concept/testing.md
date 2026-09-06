@@ -10,16 +10,16 @@ Owner: `KB/docs/context/testing.md:131-146` → **Automation protocol coverage**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/tests/context-query.test.mjs` | `automation scope selects the protocol suite and retrieval benchmark` | 109 | `sed -n 97,126p scripts/tests/context-query.test.mjs` |
-| `scripts/tests/task-ownership.test.mjs` | `lightweight task ownership acquires explicit scope, rejects active overlap, and releases independently` | 22 | `sed -n 10,42p scripts/tests/task-ownership.test.mjs` |
+| `scripts/tests/task-ownership.test.mjs` | `lightweight task ownership acquires explicit scope, rejects active overlap, and releases independently` | 27 | `sed -n 15,47p scripts/tests/task-ownership.test.mjs` |
 | `scripts/tests/plan-archive.test.mjs` | `standalone plan archival is collision-safe and idempotent without task-close` | 9 | `sed -n 1,29p scripts/tests/plan-archive.test.mjs` |
 | `scripts/tests/orchestration-scope.test.mjs` | `parallel worker ownership rejects overlapping write claims` | 94 | `sed -n 82,114p scripts/tests/orchestration-scope.test.mjs` |
-| `scripts/tests/policy-routing.test.mjs` | `universal policy excludes optional process routing` | 17 | `sed -n 5,37p scripts/tests/policy-routing.test.mjs` |
+| `scripts/tests/policy-routing.test.mjs` | `universal policy excludes optional process routing` | 25 | `sed -n 13,45p scripts/tests/policy-routing.test.mjs` |
 | `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
 | `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 63 | `sed -n 51,83p scripts/benchmark-rag.mjs` |
 | `scripts/lib/kb-calibration.mjs` | `measureKbCalibration` | 180 | `sed -n 168,200p scripts/lib/kb-calibration.mjs` |
 | `scripts/export-kb-calibration-report.mjs` | `exportKbCalibrationReport` | 158 | `sed -n 146,178p scripts/export-kb-calibration-report.mjs` |
 | `scripts/tests/codex-observability-hook.test.mjs` | `production hook smoke keeps observability fail-open and private` | 66 | `sed -n 54,86p scripts/tests/codex-observability-hook.test.mjs` |
-| `scripts/tests/codex-task-run.test.mjs` | `telemetry-enabled launcher establishes an opt-in binding that settles without task-close` | 35 | `sed -n 23,55p scripts/tests/codex-task-run.test.mjs` |
+| `scripts/tests/codex-task-run.test.mjs` | `telemetry-enabled launcher establishes an opt-in binding that settles without task-close` | 37 | `sed -n 25,57p scripts/tests/codex-task-run.test.mjs` |
 | `scripts/tests/task-receipt.test.mjs` | `standalone receipt writes only explicit sanitized scope and states skipped QA` | 16 | `sed -n 4,36p scripts/tests/task-receipt.test.mjs` |
 | `scripts/qa-gate.mjs` | `selectToolingQa` | 115 | `sed -n 103,135p scripts/qa-gate.mjs` |
 | `scripts/fixtures/agent-observability/provider-events.json` | `events` | 25 | `sed -n 13,45p scripts/fixtures/agent-observability/provider-events.json` |

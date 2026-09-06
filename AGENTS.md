@@ -4,7 +4,9 @@ Use the approved Phase 2 plan as the task contract. If no approved plan is provi
 
 Execute the approved intended behavior and only its direct implementation dependencies. Preserve unrelated concurrent changes and never derive task authority from unrelated dirty working-tree state.
 
-Use the context supplied by the plan before editing. Read the listed bounded source context first. When deeper repository knowledge is materially required, use the plan's exact KB retrieval input and the smallest bounded source evidence needed for the next decision. Do not rediscover context already supplied by the plan.
+Use the context supplied by the plan before editing. Read the listed bounded source context first. When deeper repository knowledge is materially required, use the plan's exact KB retrieval inputs according to `KB/docs/context/automation.md#Concept retrieval protocol`, and use only the smallest bounded source evidence needed for the next decision. Do not rediscover context already supplied by the plan.
+
+When the plan's exact KB retrieval inputs do not provide sufficient context, the only permitted discovery fallback is keyword matching within KB/docs/context/index.md. Use the index only to identify a relevant canonical concept ID or exact alias, then return to the KB retrieval tool for bounded retrieval. Do not search other KB files directly for discovery. If neither the retrieval tool nor index.md can establish the required concept, stop and report a retrieval defect.
 
 Prefer the smallest bounded reads and compact tool outputs that preserve correctness. Reuse current evidence instead of rereading it for procedural reassurance. Expand diagnostics only when a compact failure result is insufficient to repair the task.
 

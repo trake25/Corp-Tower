@@ -12,6 +12,10 @@ import {
 } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { dirname, posix, relative, resolve, sep } from 'node:path';
+import {
+  activeOrchestrationWorkerClaims,
+  withOrchestrationStateLock,
+} from './orchestration-state.mjs';
 
 export const TASK_OWNERSHIP_DIRECTORY = '.agent-state/automation/task-ownership';
 const LOCK_PATH = '.agent-state/automation/task-ownership.lock';
@@ -298,6 +302,12 @@ export function releaseTaskOwnership({ ownership, root = '.', now = new Date().t
   return withLock(base, () => {
     const current = resolveTaskOwnership(ownership, { root: base });
     if (current.status === 'released') return result('duplicate', current);
+    const activeWorkers = withOrchestrationStateLock({ root: base, runId: current.run_id }, () =>
+      activeOrchestrationWorkerClaims({ root: base, runId: current.run_id, ownedPaths: current.owned_paths }));
+    if (activeWorkers.length) {
+      const claims = activeWorkers.map(worker => `${worker.worker_id}: ${worker.paths.join(', ')}`).join('; ');
+      throw new Error(`active subordinate orchestration worker claims block ownership release: ${claims}`);
+    }
     const record = {
       ...current,
       status: 'released',

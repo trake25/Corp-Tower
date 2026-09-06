@@ -9,6 +9,11 @@ import {
   releaseTaskOwnership,
   resolveTaskOwnership,
 } from '../lib/task-ownership.mjs';
+import {
+  claimWorkerScope,
+  finalizeOrchestrationScope,
+  releaseWorkerScope,
+} from '../lib/orchestration-scope.mjs';
 
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'corp-task-ownership-'));
@@ -83,4 +88,38 @@ test('task ownership rejects unsafe paths and missing direct-dependency evidence
   assert.throws(() => acquireTaskOwnership({ root, task: 'Unsafe', paths: ['../outside.mjs'] }), /repository/);
   const ownership = acquireTaskOwnership({ root, task: 'Safe', paths: ['src/one.mjs'], runId: 'safe' });
   assert.throws(() => amendTaskOwnership({ root, ownership: ownership.ownership, paths: ['src/two.mjs'], reason: '' }), /amendment reason/);
+});
+
+test('parent ownership remains active until subordinate worker claims are released', t => {
+  const root = fixture(t);
+  const parent = acquireTaskOwnership({
+    root,
+    task: 'Parent ownership fixture',
+    paths: ['src/one.mjs'],
+    runId: 'parent-ownership',
+  });
+  const scope = { root, parent: parent.ownership.path };
+  claimWorkerScope({ ...scope, worker: 'worker-a', paths: ['src/one.mjs'] });
+
+  assert.throws(() => releaseTaskOwnership({ root, ownership: parent.ownership }),
+    /active subordinate orchestration worker claims block ownership release: worker-a: src\/one\.mjs/);
+  assert.equal(resolveTaskOwnership(parent.ownership, { root, requireActive: true }).status, 'active');
+  assert.throws(() => acquireTaskOwnership({
+    root,
+    task: 'Successor ownership fixture',
+    paths: ['src/one.mjs'],
+    runId: 'successor-ownership',
+  }), /overlapping active task ownership/);
+
+  releaseWorkerScope({ ...scope, worker: 'worker-a' });
+  const released = releaseTaskOwnership({ root, ownership: parent.ownership });
+  assert.equal(released.status, 'released');
+  assert.equal(releaseTaskOwnership({ root, ownership: parent.ownership }).status, 'duplicate');
+  assert.equal(finalizeOrchestrationScope(scope).state_exists, false);
+  assert.equal(acquireTaskOwnership({
+    root,
+    task: 'Successor ownership fixture',
+    paths: ['src/one.mjs'],
+    runId: 'successor-ownership',
+  }).status, 'acquired');
 });

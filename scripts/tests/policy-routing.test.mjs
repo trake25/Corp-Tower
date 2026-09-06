@@ -14,6 +14,14 @@ function filesBelow(path) {
   });
 }
 
+function markerSection(source, marker) {
+  const start = source.indexOf(`\n${marker}\n`);
+  assert.notEqual(start, -1, `missing ${marker}`);
+  const bodyStart = start + marker.length + 2;
+  const next = source.slice(bodyStart).search(/\n#[A-Z][A-Z-]*#\n/);
+  return source.slice(start, next === -1 ? undefined : bodyStart + next);
+}
+
 test('universal policy excludes optional process routing', () => {
   const agents = read('AGENTS.md');
   assert.match(agents, /approved Phase 2 plan/);
@@ -53,6 +61,41 @@ test('Planner compiles the seven-section handoff and optional policy instead of 
   assert.match(codex, /Planner-side policy source/);
   assert.match(codex, /Normal Codex execution does not read this file/);
   assert.doesNotMatch(read('AGENTS.md'), /policy\/(?:CODEX|IMPLEMENT|FIX)\.md/);
+});
+
+test('Planner-selected process policy requires exact non-default override encoding', () => {
+  const planner = read('policy/PLANNER.md');
+  const codex = read('policy/CODEX.md');
+  const router = markerSection(codex, '#PROCESS-ROUTER#');
+  const telemetry = markerSection(codex, '#TELEMETRY#');
+
+  assert.match(planner, /Normal single-run execution and default-OFF processes are implicit and omitted/);
+  assert.match(planner, /every selected non-default process, encode its effective value exactly once under `## Execution Overrides`/i);
+  assert.match(planner, /Do not encode default values/);
+  assert.match(planner, /ORCHESTRATED requires the non-default ownership process; encode `task_ownership=ON` exactly once/);
+  assert.match(planner, /If telemetry is selected ON, the plan must contain exactly one `telemetry=ON` assignment/);
+  assert.match(planner, /If explicitly disabled, encode `plan_archival=OFF` exactly once/);
+
+  assert.match(router, /Default values are omitted completely/);
+  assert.match(router, /Every process whose effective value differs from its repository default must appear exactly once under `## Execution Overrides`/);
+  assert.match(router, /`<process_name>=ON` or `<process_name>=OFF`/);
+  assert.match(router, /telemetry selected ON → `telemetry=ON`/);
+  assert.match(router, /task-close selected ON → both `task_ownership=ON` and `task_close=ON`/);
+  assert.match(router, /plan archival explicitly disabled → `plan_archival=OFF`/);
+  assert.match(router, /ORCHESTRATED → `task_ownership=ON`/);
+  assert.match(telemetry, /exactly one `telemetry=ON` assignment under `## Execution Overrides`/);
+
+  const everythingOn = router.slice(router.indexOf('For "Everything ON"'), router.indexOf('`plan_archival=ON` remains implicit'));
+  assert.deepEqual([...everythingOn.matchAll(/^\s*- `([a-z_]+)=ON`$/gm)].map(match => match[1]), [
+    'task_ownership',
+    'task_close',
+    'telemetry',
+    'workflow_inefficiency_flagging',
+    'qa',
+    'qa_coverage',
+    'qa_receipt',
+  ]);
+  assert.doesNotMatch(everythingOn, /plan_archival=ON/);
 });
 
 test('Planner-side policy sources contain no runtime skill route', () => {

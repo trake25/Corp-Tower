@@ -6,8 +6,8 @@ import { randomUUID } from 'node:crypto';
 import { dirname, posix, relative, resolve, sep } from 'node:path';
 import { taskProcessControlsForManifest } from './task-process-controls.mjs';
 import { resolveTaskOwnership } from './task-ownership.mjs';
+import { ORCHESTRATION_STATE_DIRECTORY, withOrchestrationStateLock } from './orchestration-state.mjs';
 
-const STATE_DIRECTORY = '.agent-state/automation/orchestration';
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 
 function repositoryPath(root, input, label, { inspect = true } = {}) {
@@ -92,7 +92,7 @@ function loadParent({ parent, root = process.env.TASK_CLOSE_ROOT || '.' }, claim
       ownedPaths = [...new Set(manifest.owned_paths.map(path => repositoryPath(repositoryRoot, path, 'parent owned path', { inspect: false })))].sort();
     }
   }
-  const statePath = `${STATE_DIRECTORY}/${runId}.json`;
+  const statePath = `${ORCHESTRATION_STATE_DIRECTORY}/${runId}.json`;
   repositoryPath(repositoryRoot, statePath, 'orchestration state');
   return { root: repositoryRoot, manifestPath, runId, ownedPaths, statePath: resolve(repositoryRoot, statePath) };
 }
@@ -163,24 +163,11 @@ function saveState(parent, state) {
 
 function withState(options, action, claiming = false) {
   const initial = loadParent(options, claiming);
-  // Keep the lock outside the removable state directory and serialize read/modify/replace.
-  const lockPath = `.agent-state/automation/orchestration-${initial.runId}.lock`;
-  repositoryPath(initial.root, lockPath, 'orchestration lock');
-  const lock = resolve(initial.root, lockPath);
-  mkdirSync(dirname(lock), { recursive: true, mode: 0o700 });
-  let descriptor;
-  try { descriptor = openSync(lock, 'wx', 0o600); } catch (error) {
-    if (error.code === 'EEXIST') throw new Error(`orchestration scope is busy; retry after ${lockPath} is released`);
-    throw error;
-  }
-  try {
+  return withOrchestrationStateLock({ root: initial.root, runId: initial.runId }, () => {
     const parent = loadParent(options, claiming);
     if (parent.runId !== initial.runId) throw new Error('parent run_id changed while acquiring orchestration ownership');
     return action(parent, readState(parent));
-  } finally {
-    closeSync(descriptor);
-    unlinkSync(lock);
-  }
+  });
 }
 
 export function claimWorkerScope({ worker, paths, ...options }) {

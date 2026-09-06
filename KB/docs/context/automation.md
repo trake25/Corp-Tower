@@ -164,8 +164,9 @@ selected, it acquires one explicit parent scope from planned task paths before e
 scope only for a proven direct dependency, and releases it after integrated completion.
 
 Ownership authority never comes from the dirty working tree. Active claims reject provable
-incompatible overlap and keep private state under `.agent-state`. When ownership is not selected, no
-ownership policy or lifecycle is present in Codex runtime context.
+incompatible overlap and keep private state under `.agent-state`. Parent ownership release fails
+closed while subordinate orchestration worker claims remain active. When ownership is not selected,
+no ownership policy or lifecycle is present in Codex runtime context.
 
 <!-- kb
 id: automation.orchestration.execution

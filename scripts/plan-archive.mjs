@@ -2,7 +2,7 @@
 import { parseArgs } from 'node:util';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { archivePlan, planBindingFor } from './lib/plan-archive.mjs';
+import { archivePlan, standaloneArchiveBindingFor } from './lib/plan-archive.mjs';
 
 export function main(argv = process.argv.slice(2), { root = '.' } = {}) {
   const { values, tokens } = parseArgs({
@@ -13,7 +13,7 @@ export function main(argv = process.argv.slice(2), { root = '.' } = {}) {
   });
   if (tokens.filter(token => token.kind === 'option' && token.name === 'plan').length !== 1 || !values.plan)
     throw new Error('usage: plan-archive --plan <active-phase-2-plan.md> [--json]');
-  const result = archivePlan(planBindingFor(values.plan, root), root);
+  const result = archivePlan(standaloneArchiveBindingFor(values.plan, root), root);
   if (result.status !== 'archived') throw new Error(`plan archive failed: ${result.diagnostic || result.status}`);
   if (values.json) console.log(JSON.stringify(result));
   else console.log(`PASS — archived plan: ${result.archive_path}`);

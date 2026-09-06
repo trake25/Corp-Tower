@@ -123,7 +123,7 @@ Include only selected task policy. Default-OFF optional policy is completely abs
 Summarize implementation-relevant KB prose already read by Planner.
 
 #### `### KB Retrieval Inputs`
-List exact canonical concept IDs/aliases for deeper detail only if needed.
+List the exact canonical concept IDs and Planner-resolved retrieval aliases/search inputs Codex may use for deeper detail only if needed. Each listed input must resolve to the intended concept through the KB retrieval protocol. Do not supply open-ended repository-search keywords.
 
 #### `### Source Context`
 List exact current source files plus bounded symbols/sections Codex should inspect and why.

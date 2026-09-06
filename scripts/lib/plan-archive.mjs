@@ -15,19 +15,39 @@ export function unboundPlan() {
 }
 
 function recordedPlanPaths(plan, root = '.') {
-  const repositoryRoot = resolve(root);
-  const source = resolve(repositoryRoot, plan.source_path || '');
-  const archive = resolve(repositoryRoot, plan.archive_path || '');
-  const planRoot = resolve(repositoryRoot, 'plan');
-  const expectedArchive = resolve(planRoot, 'done', basename(source));
-  if (!plan?.source_path || !source.startsWith(`${planRoot}${sep}`) || source.startsWith(`${resolve(planRoot, 'done')}${sep}`))
-    throw new Error('recorded plan source is unsafe');
-  if (archive !== expectedArchive) throw new Error('recorded plan archive destination is unsafe');
-  return { source, archive };
+  if (!plan?.source_path) throw new Error('recorded plan source is unsafe');
+  const paths = planPathsFor(plan.source_path, root, {
+    requireActiveSource: false,
+    requireFreeArchive: false,
+  });
+  if (plan.archive_path !== displayPath(paths.repositoryRoot, paths.archive))
+    throw new Error('recorded plan archive destination is unsafe');
+  return paths;
 }
 
-export function planBindingFor(input, root = '.') {
-  if (!input) return unboundPlan();
+function lstatOrNull(path) {
+  try { return lstatSync(path); } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+function assertPlanTraversal(planRoot, target) {
+  const relativeTarget = relative(planRoot, target);
+  if (!relativeTarget || relativeTarget.startsWith('..') || relativeTarget === '..')
+    throw new Error('--plan must stay inside the repository plan directory');
+  let current = planRoot;
+  for (const part of relativeTarget.split(sep)) {
+    current = resolve(current, part);
+    const info = lstatOrNull(current);
+    if (!info) break;
+    if (info.isSymbolicLink()) throw new Error('--plan must not traverse symbolic links');
+    if (current !== target && !info.isDirectory()) throw new Error('--plan path must use directories before its filename');
+  }
+}
+
+function planPathsFor(input, root, { requireActiveSource, requireFreeArchive }) {
+  if (typeof input !== 'string' || !input) throw new Error('--plan is required');
   const repositoryRoot = resolve(root);
   const planRoot = resolve(repositoryRoot, 'plan');
   const source = resolve(repositoryRoot, input);
@@ -37,19 +57,53 @@ export function planBindingFor(input, root = '.') {
   const activeRelative = relative(planRoot, source);
   if (activeRelative.split(sep)[0] === 'done') throw new Error('--plan cannot already be under plan/done/');
   if (!source.endsWith('.md')) throw new Error('--plan must name a Markdown file');
-  if (!existsSync(source) || !lstatSync(source).isFile()) throw new Error('--plan must name an existing active plan');
   const realPlanRoot = realpathSync(planRoot);
-  const realSource = realpathSync(source);
-  if (realSource === realPlanRoot || !realSource.startsWith(`${realPlanRoot}${sep}`))
-    throw new Error('--plan resolves outside plan/');
+  assertPlanTraversal(planRoot, source);
+  const sourceInfo = lstatOrNull(source);
+  if (sourceInfo) {
+    if (!sourceInfo.isFile()) throw new Error('--plan must name an existing active plan');
+    const realSource = realpathSync(source);
+    if (realSource === realPlanRoot || !realSource.startsWith(`${realPlanRoot}${sep}`))
+      throw new Error('--plan resolves outside plan/');
+  } else if (requireActiveSource) {
+    throw new Error('--plan must name an existing active plan');
+  }
   const archive = resolve(planRoot, 'done', basename(source));
-  if (existsSync(archive)) throw new Error(`plan archive destination already exists: ${displayPath(repositoryRoot, archive)}`);
+  assertPlanTraversal(planRoot, archive);
+  const archiveInfo = lstatOrNull(archive);
+  if (archiveInfo) {
+    if (!archiveInfo.isFile()) throw new Error('plan archive destination must be a regular file');
+    const realArchive = realpathSync(archive);
+    if (realArchive === realPlanRoot || !realArchive.startsWith(`${realPlanRoot}${sep}`))
+      throw new Error('plan archive destination resolves outside plan/');
+  }
+  if (requireFreeArchive && archiveInfo)
+    throw new Error(`plan archive destination already exists: ${displayPath(repositoryRoot, archive)}`);
+  return { repositoryRoot, source, archive };
+}
+
+function bindingForPaths({ repositoryRoot, source, archive }) {
   return {
     status: 'pending',
     source_path: displayPath(repositoryRoot, source),
     archive_path: displayPath(repositoryRoot, archive),
     diagnostic: null,
   };
+}
+
+export function planBindingFor(input, root = '.') {
+  if (!input) return unboundPlan();
+  return bindingForPaths(planPathsFor(input, root, {
+    requireActiveSource: true,
+    requireFreeArchive: true,
+  }));
+}
+
+export function standaloneArchiveBindingFor(input, root = '.') {
+  return bindingForPaths(planPathsFor(input, root, {
+    requireActiveSource: false,
+    requireFreeArchive: false,
+  }));
 }
 
 export function archivePlan(plan, root = '.') {

@@ -18,12 +18,18 @@ test('standalone plan archival is collision-safe and idempotent without task-clo
   assert.equal(archivePlan(binding, root).status, 'archived');
 });
 
-test('standalone archive CLI uses only an active explicit plan', t => {
+test('standalone archive CLI is idempotent for its original plan path and rejects true collisions', t => {
   const root = mkdtempSync(join(tmpdir(), 'corp-plan-archive-cli-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'plan'), { recursive: true });
   writeFileSync(join(root, 'plan/cli.md'), '# Active\n');
-  const result = main(['--plan', 'plan/cli.md'], { root });
-  assert.equal(result.status, 'archived');
-  assert.throws(() => main(['--plan', 'plan/cli.md'], { root }), /destination already exists|active plan/);
+  assert.equal(main(['--plan', 'plan/cli.md'], { root }).status, 'archived');
+  assert.equal(main(['--plan', 'plan/cli.md'], { root }).status, 'archived');
+
+  writeFileSync(join(root, 'plan/collision.md'), '# Active collision\n');
+  writeFileSync(join(root, 'plan/done/collision.md'), '# Existing archive\n');
+  assert.throws(() => main(['--plan', 'plan/collision.md'], { root }), /active plan and archive destination both exist/);
+  assert.equal(readFileSync(join(root, 'plan/collision.md'), 'utf8'), '# Active collision\n');
+  assert.equal(readFileSync(join(root, 'plan/done/collision.md'), 'utf8'), '# Existing archive\n');
+  assert.throws(() => main(['--plan', 'plan/missing.md'], { root }), /active plan is absent and no completed archive exists/);
 });
