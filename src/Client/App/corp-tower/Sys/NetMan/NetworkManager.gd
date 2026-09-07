@@ -281,6 +281,11 @@ func _connect_with_pending_entry() -> void:
 			connect_after_close = true
 			return
 
+	# A close can be observed before _process clears the connection flags. This
+	# pending entry owns the closed peer, so do not let those stale flags block
+	# the fresh gameplay transport or turn the old close into a rejection.
+	is_conn_estab = false
+	is_connecting = false
 	connect_after_close = false
 	connect_server(false, true)
 
