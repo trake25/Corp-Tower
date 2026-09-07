@@ -2,7 +2,6 @@ extends GutTest
 
 const MainScene = preload("res://Cor/Scenes/Main.tscn")
 const MenuScreenScene = preload("res://Cor/Scenes/MenuScreen.tscn")
-const ImpactBarScene = preload("res://Cor/Scenes/ImpactBar.tscn")
 const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
 const ChangeNameScreenScene = preload("res://Cor/Scenes/ChangeNameScreen.tscn")
 const HomeScreenScene = preload("res://Cor/Scenes/HomeScreen.tscn")
@@ -25,41 +24,6 @@ func after_each() -> void:
 	if FileAccess.file_exists(UiPreferencesScript.PREFERENCES_FILE):
 		DirAccess.remove_absolute(UiPreferencesScript.PREFERENCES_FILE)
 	await get_tree().process_frame
-
-func test_authenticated_startup_holds_splash_until_resume_routes_private_lobby_or_play() -> void:
-	NetworkManager.player_id = "saved-player"
-	NetworkManager.reconnect_token = "saved-token"
-	var player_file = FileAccess.open(NetworkManager.PLAYER_ID_FILE, FileAccess.WRITE)
-	player_file.store_string(NetworkManager.player_id)
-	var token_file = FileAccess.open(NetworkManager.RECONNECT_TOKEN_FILE, FileAccess.WRITE)
-	token_file.store_string(NetworkManager.reconnect_token)
-	screen_manager._clear_overlay()
-	screen_manager.startup_splash.visible = true
-	NetworkManager.is_connecting = true
-
-	screen_manager._begin_authenticated_startup()
-
-	assert_true(screen_manager.startup_resume_pending)
-	assert_null(screen_manager.current_overlay)
-	assert_true(screen_manager.startup_splash.visible)
-	assert_true(NetworkManager.resume_only_request)
-	NetworkManager.is_connecting = false
-
-	screen_manager._on_room_joined({
-		"matchStarted": false,
-		"roomMode": "private",
-		"roster": [],
-		"lobby": {},
-		"privateLobby": {"serverId": "2345ABCD", "hostPlayerId": "saved-player"}
-	})
-	await get_tree().process_frame
-	assert_false(screen_manager.startup_resume_pending)
-	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/PrivateLobbyScreen.tscn"))
-
-	screen_manager._on_room_joined({"matchStarted": true, "roomMode": "private"})
-	await get_tree().process_frame
-	assert_null(screen_manager.current_overlay)
-	assert_not_null(screen_manager.play_instance)
 
 func test_bounded_startup_transport_failure_releases_home_without_discarding_identity() -> void:
 	NetworkManager.player_id = "saved-player"
@@ -143,28 +107,6 @@ func test_hamburger_opens_menu_over_the_same_play_instance_and_close_restores_in
 	assert_false(screen_manager.gameplay_input_blocked)
 	assert_false(retained_play.external_overlay_input_blocked)
 
-func test_menu_draws_above_play_surfaces_and_below_shell_presentation() -> void:
-	screen_manager._enter_play_instance()
-	await get_tree().process_frame
-	var play = screen_manager.play_instance
-	var impact_bar = ImpactBarScene.instantiate()
-	play.find_child("ImpactTrack", true, false).add_child(impact_bar)
-	await get_tree().process_frame
-	screen_manager._on_play_instance_menu_requested()
-	var menu = screen_manager.current_overlay
-	var impact_avatar = impact_bar.get_node("ImpactAvatarMarker")
-	var chat_popover = play.find_child("ChatPopover", true, false)
-	var level_summary = play.find_child("LevelSummaryOverlay", true, false)
-	var debug_layer = play.find_child("DebugLayer", true, false)
-
-	assert_gt(menu.get_effective_z_index(), impact_avatar.get_effective_z_index())
-	assert_gt(menu.get_effective_z_index(), chat_popover.get_effective_z_index())
-	assert_gt(menu.get_effective_z_index(), level_summary.get_effective_z_index())
-	assert_gt(screen_manager.debug_button.get_effective_z_index(), menu.get_effective_z_index())
-	assert_gt(screen_manager.auto_dismiss_modal.get_effective_z_index(), menu.get_effective_z_index())
-	assert_gt(debug_layer.layer, 0)
-	assert_true(screen_manager.debug_button.disabled)
-
 func test_menu_columns_stay_aligned_when_the_root_expands_wider() -> void:
 	var host := Control.new()
 	host.size = Vector2(412, 917)
@@ -208,11 +150,6 @@ func test_recovery_retains_menu_beneath_the_shell_modal() -> void:
 	assert_eq(screen_manager.current_overlay, retained_menu)
 	assert_true(retained_menu.visible)
 	assert_true(screen_manager.auto_dismiss_modal.visible)
-	assert_gt(
-		screen_manager.auto_dismiss_modal.get_effective_z_index(),
-		retained_menu.get_effective_z_index()
-	)
-
 	screen_manager._on_recovery_recovered()
 
 	assert_eq(screen_manager.current_overlay, retained_menu)

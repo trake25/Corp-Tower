@@ -43,8 +43,8 @@ jobs:
       - name: Install server dependencies
         run: npm ci
 
-      - name: Run server tests
-        run: npm test
+      - name: Run curated server release tests
+        run: npm run test:release
 
       - name: Verify tutorial defaults match server authority
         working-directory: ${{ github.workspace }}

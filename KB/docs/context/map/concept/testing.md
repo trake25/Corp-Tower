@@ -89,7 +89,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:181-184` → **Release gates**
+Owner: `KB/docs/context/testing.md:181-194` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

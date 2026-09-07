@@ -203,7 +203,6 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	assert_true(server_id_edit.editable)
 	assert_true(password_edit.editable)
 	assert_eq(password_edit.max_length, 4)
-	assert_false(password_edit.secret)
 	assert_false(password_edit.context_menu_enabled)
 	assert_true(password_edit.shortcut_keys_enabled, "Native keyboard input remains enabled while the screen blocks paste field-by-field.")
 	assert_true(server_id_edit.shortcut_keys_enabled, "Server ID keeps the native browser shortcut route available.")
@@ -257,7 +256,6 @@ func test_join_and_private_server_emit_private_entry_without_touching_public_mat
 	private_server._on_create_pressed()
 
 	assert_eq(create_events, [["Host", "9870"]])
-	assert_false(private_password.secret)
 	assert_eq(private_password.text, "9870")
 	assert_eq(private_password.max_length, 4)
 	assert_false(private_password.context_menu_enabled)

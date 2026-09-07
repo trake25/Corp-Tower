@@ -180,4 +180,14 @@ adjacent: deploy.eks.workflows
 -->
 ## Release gates
 
-Android deployment runs client smoke and required GUT before export. EKS server deployment runs the complete Node suite before image build/push. Release gates are broader than ordinary local task QA because they protect the shipping artifact.
+Release gates answer whether a shipping artifact is safe to deploy; they do not
+run every retained permanent regression merely because it exists. Android
+deployment runs client smoke plus the curated release GUT suite, which protects
+durable player journeys and client correctness. EKS game-server deployment runs
+syntax/loadability checks plus curated Node cases protecting authoritative
+identity, room/session, gameplay, score/state, and persistence contracts;
+tutorial-default parity remains its focused cross-domain authority check.
+
+Narrow permanent regressions remain available through targeted QA and the
+broader local regression commands. Balance and tuning simulations or probes are
+diagnostic instruments, never release pass/fail authorities.

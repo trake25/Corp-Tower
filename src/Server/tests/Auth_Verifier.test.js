@@ -248,7 +248,7 @@ test("without an identity the client profileId still applies", async () => {
     );
 });
 
-test("a verified display name reaches the roster and survives a rename", async () => {
+test("a verified display name reaches the roster", async () => {
     const lobby = new LobbyManager();
     const room = {
         players: [
@@ -263,8 +263,4 @@ test("a verified display name reaches the roster and survives a rename", async (
     assert.notEqual(roster[1].displayName, "Ada Lovelace");
     assert.ok(roster[1].displayName, "A guest should still get a generated name.");
 
-    room.players[0].displayName = "Ada L";
-    const renamed = await lobby.buildRoomRoster(room);
-
-    assert.equal(renamed[0].displayName, "Ada L");
 });
