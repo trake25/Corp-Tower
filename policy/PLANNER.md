@@ -83,6 +83,10 @@ Compile only the selected rules that materially constrain this task into `## 2. 
 
 Repository agent-policy/adapter Markdown is user-owned manual configuration. If approved behavior requires changing `AGENTS.md`, `policy/*.md`, or `CLAUDE.md`, ChatGPT provides the complete replacement file for the user to apply before Codex implementation. Never assign those files to Codex write scope.
 
+## PLAN-PHASE-2-B (Scenario based only)
+
+If plan needs human (user) manual intervention to fully complete the task. Also create a manual runbook .md files. It must be detailed step by step guide. Example - User need to manually configure play dev console, meta dev console, sudo, etc. Manual game testing is not included unless specified in the prompt. The guide must be up to date as some consoles, commands, UI might already be outdated.
+
 ## Context ownership
 
 The plan has exactly three authority layers:

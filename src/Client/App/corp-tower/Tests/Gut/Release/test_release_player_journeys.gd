@@ -1,6 +1,5 @@
 extends GutTest
 
-const AuthManagerScript := preload("res://Sys/Auth/Auth_Manager.gd")
 const MainScene := preload("res://Cor/Scenes/Main.tscn")
 const NetworkManagerScript := preload("res://Sys/NetMan/NetworkManager.gd")
 const HarnessScript := preload("res://Tests/Gut/Helpers/GameUiHarness.gd")
@@ -29,32 +28,28 @@ class NetworkStub:
 	func place_block(index: int, _column: int = -1, _origin_y: int = -1) -> void:
 		placed.append(index)
 
-var auth
 var screen_manager
 var harness
 
 func before_each() -> void:
 	NetworkManager.disconnect_server()
 	NetworkManager.abandon_room_identity()
-	auth = AuthManagerScript.new()
+	AuthManager.sign_out()
 
 func after_each() -> void:
-	auth.sign_out()
-	auth.free()
+	AuthManager.sign_out()
 	NetworkManager.disconnect_server()
 	NetworkManager.abandon_room_identity()
 
-func test_authenticated_session_keeps_the_player_identity_available() -> void:
-	assert_true(auth._apply_session({
+func test_authenticated_startup_resumes_a_saved_private_room_then_play() -> void:
+	assert_true(AuthManager._apply_session({
 		"access_token": "access-value",
 		"refresh_token": "refresh-value",
 		"expires_in": 3600,
 		"user": {"id": "player-uuid", "is_anonymous": false}
 	}))
-	assert_eq(auth.access_token_value, "access-value")
-	assert_eq(auth.user_id, "player-uuid")
-
-func test_authenticated_startup_routes_a_resumed_private_lobby_then_play() -> void:
+	assert_eq(AuthManager.access_token_value, "access-value")
+	assert_eq(AuthManager.user_id, "player-uuid")
 	screen_manager = MainScene.instantiate()
 	add_child_autofree(screen_manager)
 	await get_tree().process_frame
@@ -78,6 +73,27 @@ func test_authenticated_startup_routes_a_resumed_private_lobby_then_play() -> vo
 	await get_tree().process_frame
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/PrivateLobbyScreen.tscn"))
 	screen_manager._on_room_joined({"matchStarted": true, "roomMode": "private"})
+	await get_tree().process_frame
+	assert_not_null(screen_manager.play_instance)
+
+func test_public_matchmaking_routes_through_public_lobby_then_play() -> void:
+	screen_manager = MainScene.instantiate()
+	add_child_autofree(screen_manager)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	NetworkManager.is_conn_estab = true
+	screen_manager._on_find_match_requested()
+	assert_true(screen_manager.find_match_active)
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/FindMatchScreen.tscn"))
+	screen_manager._on_room_joined({
+		"matchStarted": false,
+		"roomMode": "public",
+		"roster": [],
+		"lobby": {}
+	})
+	await get_tree().process_frame
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/PublicLobbyScreen.tscn"))
+	screen_manager._on_room_joined({"matchStarted": true, "roomMode": "public"})
 	await get_tree().process_frame
 	assert_not_null(screen_manager.play_instance)
 
