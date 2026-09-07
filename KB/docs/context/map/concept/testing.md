@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:132-149` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:144-161` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -28,7 +28,7 @@ Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifec
 
 ## testing.balance.tools
 
-Owner: `KB/docs/context/testing.md:106-109` → **Balance tools**
+Owner: `KB/docs/context/testing.md:118-121` → **Balance tools**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -53,20 +53,22 @@ Adjacent concepts: none
 
 ## testing.client.rendered
 
-Owner: `KB/docs/context/testing.md:66-81` → **Rendered client verification**
+Owner: `KB/docs/context/testing.md:68-93` → **Rendered client verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_main_scene_ready` | 126 | `sed -n 114,146p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_begin_collapse` | 894 | `sed -n 882,914p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
-| `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 101 | `sed -n 89,121p scripts/rendered-client-verify.mjs` |
+| `scripts/rendered-client-verify.mjs` | `runRenderedVerification` | 108 | `sed -n 96,128p scripts/rendered-client-verify.mjs` |
+| `scripts/rendered-client-verify-xvfb.sh` | `run_virtual_display_verification` | 18 | `sed -n 6,38p scripts/rendered-client-verify-xvfb.sh` |
+| `scripts/ensure-godot-binary.sh` | `provision_godot_binary` | 26 | `sed -n 14,46p scripts/ensure-godot-binary.sh` |
 | `scripts/qa-gate.mjs` | `selectGodotBinary` | 216 | `sed -n 204,236p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.rendered-verification`
 
 ## testing.client.snapgrid-isolation
 
-Owner: `KB/docs/context/testing.md:89-94` → **SnapGrid shared-state isolation**
+Owner: `KB/docs/context/testing.md:101-106` → **SnapGrid shared-state isolation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -77,7 +79,7 @@ Adjacent concepts: none
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:156-159` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:168-171` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -87,7 +89,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:169-172` → **Release gates**
+Owner: `KB/docs/context/testing.md:181-184` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

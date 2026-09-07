@@ -59,6 +59,8 @@ alias: manual visual QA
 source: src/Client/App/corp-tower/Tests/CiSmokeTest.gd#check_main_scene_ready
 source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_begin_collapse
 source: scripts/rendered-client-verify.mjs#runRenderedVerification
+source: scripts/rendered-client-verify-xvfb.sh#run_virtual_display_verification
+source: scripts/ensure-godot-binary.sh#provision_godot_binary
 source: scripts/qa-gate.mjs#selectGodotBinary
 adjacent: hud.constraint.rendered-verification
 adjacent: ui.constraint.rendered-verification
@@ -69,15 +71,25 @@ Headless tests establish structure and deterministic behavior but cannot prove
 final visual fidelity, touch pairing, or Tower Stack frame behavior. Rendered
 verification supplements that correctness gate for drag state, collapse framing,
 responsive layout, native provider flows, and other device-specific
-presentation. Run it from the repository root with `node scripts/rendered-client-verify.mjs --authorized`; optional `--project` remains
-bounded to `src/Client/App/corp-tower`. An approved Phase 2 plan that explicitly
-selects rendered verification authorizes that `--authorized` flag only; it never
-authorizes changing X-server or display access. The helper uses only inherited
-`DISPLAY`/`XAUTHORITY` and fails closed without usable display access. It launches
-only the task-owned repository application with the QA-selected Godot executable,
-accepts one exact-PID window with valid bounds, captures only that rectangle under
-a task-specific `/tmp` directory, and terminates only the retained PID. Ambiguous
-ownership or invalid bounds also fails closed; visual judgment remains with the LLM.
+presentation. From a Linux SSH or tmux session, run
+`scripts/rendered-client-verify-xvfb.sh --authorized`; an inherited graphical
+display is reused, otherwise the wrapper owns an isolated Xvfb display plus the
+EWMH window manager required for exact `wmctrl` discovery. The application's
+standard game window and the isolated virtual screen are both 412×917. Capture
+targets the exact window ID rather than desktop coordinates, avoiding window-frame
+offsets and removing any need to inflate the virtual desktop.
+
+The wrapper first verifies the ignored root `Godot_v4.7.2-stable_linux.x86_64`
+binary and restores that exact checksum-pinned editor from its official release
+when absent. Ignored binaries are machine-local dependencies rather than durable
+Git contents, so rendered QA never assumes one survived worktree creation or
+cleanup. A screen-specific check may add a project-bounded scene such as
+`--scene Cor/Scenes/ProfileScreen.tscn`; direct scene launch avoids authentication
+or navigation prerequisites that are irrelevant to presentation. The verifier
+waits for one exact-PID window, allows a startup settle interval, captures that
+window directly under a task-specific `/tmp` directory, and terminates only its
+retained process. Ambiguous ownership, invalid bounds, an out-of-project scene,
+or an unexpected binary fails closed; visual judgment remains with the LLM.
 
 <!-- kb
 id: testing.client.snapgrid-isolation

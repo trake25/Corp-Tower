@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdtempSync } from 'node:fs';
+import { closeSync, existsSync, mkdtempSync, openSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, relative, resolve, sep } from 'node:path';
@@ -37,9 +37,9 @@ export function exactWindowForPid(output, pid) {
   return window;
 }
 
-export function windowCaptureArgs({ display, window, output }) {
-  if (!display || !window || window.width <= 0 || window.height <= 0) throw new Error('window bounds are required');
-  return ['-y', '-f', 'x11grab', '-video_size', `${window.width}x${window.height}`, '-i', `${display}+${window.x},${window.y}`, '-frames:v', '1', output];
+export function windowCaptureArgs({ window, output }) {
+  if (!window?.id || window.width <= 0 || window.height <= 0) throw new Error('window bounds are required');
+  return ['-window', window.id, output];
 }
 
 export function displayContextFor(env) {
@@ -94,6 +94,13 @@ function projectPath(root, project) {
   return candidate;
 }
 
+function scenePath(project, scene) {
+  if (!scene) return null;
+  const candidate = resolve(project, scene);
+  if (!inside(project, candidate) || !candidate.endsWith('.tscn') || !existsSync(candidate)) return false;
+  return candidate;
+}
+
 function terminateOwnedProcess(child) {
   if (child?.pid && typeof child.kill === 'function') child.kill('SIGTERM');
 }
@@ -103,6 +110,8 @@ export async function runRenderedVerification({
   project = CLIENT_ROOT,
   authorized = false,
   timeoutMs = 10_000,
+  settleMs = 0,
+  scene = '',
   env = process.env,
   dependencies = {},
 } = {}) {
@@ -110,6 +119,8 @@ export async function runRenderedVerification({
   const resolvedRoot = resolve(root);
   const resolvedProject = projectPath(resolvedRoot, project);
   if (!resolvedProject) return compact('failed', 'project is not the repository client application');
+  const resolvedScene = scenePath(resolvedProject, scene);
+  if (resolvedScene === false) return compact('failed', 'scene is not a repository client .tscn');
   const displayContext = displayContextFor(env);
   if (!displayContext) return compact('failed', 'usable inherited display context is unavailable; host display authorization is required');
   const available = dependencies.displayReady || displayReady;
@@ -119,11 +130,23 @@ export async function runRenderedVerification({
   let child = null;
   try {
     const godot = dependencies.godot || selectGodotBinary({ root: resolvedRoot });
-    child = (dependencies.spawn || spawn)(godot, ['--path', relative(resolvedRoot, resolvedProject)], {
+    const godotArgs = ['--path', relative(resolvedRoot, resolvedProject)];
+    if (resolvedScene) godotArgs.push(relative(resolvedProject, resolvedScene));
+    let stdoutDescriptor = null;
+    let stderrDescriptor = null;
+    let stdio = 'ignore';
+    if (!dependencies.spawn) {
+      stdoutDescriptor = openSync(join(temporaryDirectory, 'godot.stdout.log'), 'a');
+      stderrDescriptor = openSync(join(temporaryDirectory, 'godot.stderr.log'), 'a');
+      stdio = ['ignore', stdoutDescriptor, stderrDescriptor];
+    }
+    child = (dependencies.spawn || spawn)(godot, godotArgs, {
       cwd: resolvedRoot,
       env,
-      stdio: 'ignore',
+      stdio,
     });
+    if (stdoutDescriptor !== null) closeSync(stdoutDescriptor);
+    if (stderrDescriptor !== null) closeSync(stderrDescriptor);
     if (!Number.isInteger(child?.pid) || child.pid <= 0) return compact('failed', 'task-owned process PID was unavailable', { temporary_directory: temporaryDirectory });
     const window = await waitForExactWindow({
       pid: child.pid,
@@ -133,8 +156,9 @@ export async function runRenderedVerification({
       sleep: dependencies.sleep,
     });
     if (!window) return compact('failed', 'no unambiguous task-owned window', { temporary_directory: temporaryDirectory });
+    if (settleMs > 0) await (dependencies.sleep || (delay => new Promise(resolveDelay => setTimeout(resolveDelay, delay))))(settleMs);
     const output = join(temporaryDirectory, 'window.png');
-    const capture = (dependencies.capture || spawnSync)(dependencies.ffmpeg || 'ffmpeg', windowCaptureArgs({ display: displayContext.display, window, output }), {
+    const capture = (dependencies.capture || spawnSync)(dependencies.captureTool || 'import', windowCaptureArgs({ window, output }), {
       cwd: resolvedRoot,
       env,
       stdio: 'ignore',
@@ -156,7 +180,7 @@ function parseArgs(argv) {
       values.set(key, 'true');
       continue;
     }
-    if (!['project', 'timeout-ms'].includes(key)) throw new Error(`unknown option --${key}`);
+    if (!['project', 'scene', 'timeout-ms', 'settle-ms'].includes(key)) throw new Error(`unknown option --${key}`);
     const value = argv[index + 1];
     if (!value || value.startsWith('--')) throw new Error(`--${key} needs a value`);
     values.set(key, value);
@@ -168,11 +192,15 @@ function parseArgs(argv) {
 async function main() {
   const values = parseArgs(process.argv.slice(2));
   const timeoutMs = Number(values.get('timeout-ms') || '10000');
+  const settleMs = Number(values.get('settle-ms') || '3000');
   if (!Number.isInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 60_000) throw new Error('--timeout-ms must be an integer from 100 to 60000');
+  if (!Number.isInteger(settleMs) || settleMs < 0 || settleMs > 30_000) throw new Error('--settle-ms must be an integer from 0 to 30000');
   const result = await runRenderedVerification({
     authorized: values.get('authorized') === 'true',
     project: values.get('project') || CLIENT_ROOT,
+    scene: values.get('scene') || '',
     timeoutMs,
+    settleMs,
   });
   console.log(JSON.stringify(result));
   if (result.status !== 'passed') process.exitCode = 1;

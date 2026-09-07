@@ -62,12 +62,11 @@ test('rendered verification accepts only inherited display context and fails clo
 
 test('rendered verification uses window bounds and never a desktop fallback', () => {
   const args = windowCaptureArgs({
-    display: ':runtime',
-    window: { x: 14, y: 28, width: 640, height: 480 },
+    window: { id: '0x002', x: 14, y: 28, width: 640, height: 480 },
     output: '/tmp/corp-tower-rendered-test/window.png',
   });
 
-  assert.deepEqual(args.slice(0, 7), ['-y', '-f', 'x11grab', '-video_size', '640x480', '-i', ':runtime+14,28']);
+  assert.deepEqual(args, ['-window', '0x002', '/tmp/corp-tower-rendered-test/window.png']);
   assert.equal(args.includes('1920x1080'), false);
 });
 
@@ -76,6 +75,7 @@ test('rendered verification captures and terminates only its retained task PID',
   const result = await runRenderedVerification({
     root: ROOT,
     authorized: true,
+    scene: 'Cor/Scenes/ProfileScreen.tscn',
     env: { DISPLAY: ':runtime' },
     dependencies: {
       displayReady: () => true,
@@ -96,8 +96,21 @@ test('rendered verification captures and terminates only its retained task PID',
   assert.equal(result.status, 'passed');
   assert.equal(result.capture, '/tmp/corp-tower-rendered-task-owned/window.png');
   assert.equal(calls.spawned.args.includes('--path'), true);
+  assert.equal(calls.spawned.args.at(-1), 'Cor/Scenes/ProfileScreen.tscn');
   assert.deepEqual(calls.killed, ['SIGTERM']);
-  assert.equal(calls.capture.includes(':runtime+14,28'), true);
+  assert.equal(calls.capture.includes('0x002'), true);
+});
+
+test('rendered verification rejects a scene outside the client project', async () => {
+  const result = await runRenderedVerification({
+    root: ROOT,
+    authorized: true,
+    scene: '../../../../README.md',
+    env: { DISPLAY: ':runtime' },
+  });
+
+  assert.equal(result.status, 'failed');
+  assert.equal(result.reason, 'scene is not a repository client .tscn');
 });
 
 test('rendered verification fails closed for zero or ambiguous task windows without capture', async () => {
@@ -153,4 +166,15 @@ test('rendered verification contains no machine-specific credentials or broad cl
   assert.doesNotMatch(source, /\b(?:pkill|killall|xhost)\b/);
   assert.doesNotMatch(source, /filterPidWindowRows/);
   assert.match(source, /child\.kill\('SIGTERM'\)/);
+});
+
+test('isolated rendered verification pins its virtual desktop and Godot editor', () => {
+  const wrapper = readFileSync(join(ROOT, 'scripts/rendered-client-verify-xvfb.sh'), 'utf8');
+  const provisioner = readFileSync(join(ROOT, 'scripts/ensure-godot-binary.sh'), 'utf8');
+
+  assert.match(wrapper, /412x917x24/);
+  assert.match(wrapper, /metacity --sm-disable --replace/);
+  assert.match(wrapper, /ensure-godot-binary\.sh/);
+  assert.match(provisioner, /godot_version=4\.7\.2/);
+  assert.match(provisioner, /8d106cbe6144c2dc7e881d61d2429c1a8a76e6b22ef48bd5e48dcf934953f71e/);
 });
