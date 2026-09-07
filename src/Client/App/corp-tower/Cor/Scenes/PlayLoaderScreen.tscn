@@ -50,7 +50,7 @@ mouse_filter = 2
 theme_override_colors/font_color = Color(0.1, 0.1, 0.12, 1)
 theme_override_fonts/font = ExtResource("3_poppins")
 theme_override_font_sizes/font_size = 24
-text = "Connecting to private server"
+text = "Loading.. Please wait."
 horizontal_alignment = 1
 
 [node name="LoadingProgressBar" type="ProgressBar" parent="."]
