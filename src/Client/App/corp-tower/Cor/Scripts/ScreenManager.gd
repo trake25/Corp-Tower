@@ -32,8 +32,6 @@ const SPECTATOR_PRESET_THREE_ENGINEERS := 2
 const SPECTATOR_PRESET_THREE_OPPORTUNISTS := 3
 const SPECTATOR_PRESET_CUSTOM := 4
 const SPECTATOR_TRAIT_KEYS := ["reactionMs", "skill", "riskTolerance", "greed", "repairAwareness", "powerUse"]
-const MOBILE_WEB_HORIZONTAL_FIT_META := &"mobile_web_horizontal_fit"
-const DESIGN_VIEWPORT_SIZE := Vector2(412.0, 917.0)
 const SPECTATOR_PROFILE_DEFAULTS := {
 	"climber": {
 		"personality": "climber", "reactionMs": 1400, "skill": 0.78,
@@ -50,7 +48,6 @@ const SPECTATOR_PROFILE_DEFAULTS := {
 }
 
 @onready var screen_container: Control = $ScreenContainer
-@onready var startup_splash_bleed: TextureRect = %StartupSplashBleed
 @onready var startup_splash: TextureRect = %StartupSplash
 @onready var debug_button: Button = $DebugButton
 @onready var auto_dismiss_modal: Control = $AutoDismissModal
@@ -83,9 +80,6 @@ var profile_route_pending := ""
 var change_name_entry_context := "profile"
 var provider_link_pending_provider := ""
 var provider_link_stage := ""
-var mobile_web_horizontal_fit_active := false
-var mobile_web_visual_viewport = null
-var mobile_web_visual_viewport_resize_callback = null
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
@@ -114,86 +108,8 @@ func _ready() -> void:
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
 	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
-	_configure_mobile_web_horizontal_fit()
 	_configure_runtime_android_splash()
 	_show_initial_screen()
-
-func _exit_tree() -> void:
-	if mobile_web_visual_viewport != null and mobile_web_visual_viewport_resize_callback != null:
-		mobile_web_visual_viewport.removeEventListener(
-			"resize",
-			mobile_web_visual_viewport_resize_callback
-		)
-
-func _configure_mobile_web_horizontal_fit() -> void:
-	if not _is_mobile_web_browser():
-		return
-
-	mobile_web_horizontal_fit_active = true
-	startup_splash_bleed.visible = true
-	get_window().size_changed.connect(_on_mobile_web_window_size_changed)
-	_connect_mobile_web_visual_viewport_resize()
-	_apply_mobile_web_horizontal_fit()
-
-func _is_mobile_web_browser() -> bool:
-	if not OS.has_feature("web"):
-		return false
-
-	return bool(JavaScriptBridge.eval(
-		"(typeof navigator !== 'undefined' && ((navigator.userAgentData && navigator.userAgentData.mobile === true) || /Android|webOS|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobi/i.test(navigator.userAgent || '')))",
-		true
-	))
-
-func _connect_mobile_web_visual_viewport_resize() -> void:
-	if not bool(JavaScriptBridge.eval(
-		"typeof window !== 'undefined' && window.visualViewport && typeof window.visualViewport.addEventListener === 'function'",
-		true
-	)):
-		return
-
-	mobile_web_visual_viewport = JavaScriptBridge.get_interface("window").visualViewport
-	mobile_web_visual_viewport_resize_callback = JavaScriptBridge.create_callback(
-		_on_mobile_web_visual_viewport_resized
-	)
-	mobile_web_visual_viewport.addEventListener(
-		"resize",
-		mobile_web_visual_viewport_resize_callback
-	)
-
-func _on_mobile_web_window_size_changed() -> void:
-	_apply_mobile_web_horizontal_fit()
-
-func _on_mobile_web_visual_viewport_resized(_args: Array) -> void:
-	_apply_mobile_web_horizontal_fit()
-
-func _apply_mobile_web_horizontal_fit() -> void:
-	if not mobile_web_horizontal_fit_active:
-		return
-
-	var usable_viewport_size := _get_mobile_web_usable_viewport_size()
-	if usable_viewport_size.x <= 0.0 or usable_viewport_size.y <= 0.0:
-		return
-
-	var usable_aspect := usable_viewport_size.x / usable_viewport_size.y
-	var design_aspect := DESIGN_VIEWPORT_SIZE.x / DESIGN_VIEWPORT_SIZE.y
-	var desired_aspect := Window.CONTENT_SCALE_ASPECT_KEEP
-	if usable_aspect > design_aspect:
-		desired_aspect = Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT
-
-	var root_window := get_window()
-	if root_window.content_scale_aspect != desired_aspect:
-		root_window.content_scale_aspect = desired_aspect
-
-func _get_mobile_web_usable_viewport_size() -> Vector2:
-	var width := float(JavaScriptBridge.eval(
-		"(window.visualViewport && window.visualViewport.width) || window.innerWidth || 0",
-		true
-	))
-	var height := float(JavaScriptBridge.eval(
-		"(window.visualViewport && window.visualViewport.height) || window.innerHeight || 0",
-		true
-	))
-	return Vector2(width, height)
 
 func _configure_runtime_android_splash() -> void:
 	if OS.get_name() != "Android":
@@ -902,7 +818,6 @@ func _ensure_play_instance() -> void:
 		return
 
 	play_instance = PlayScreenScene.instantiate()
-	_apply_mobile_web_horizontal_fit_metadata(play_instance)
 	screen_container.add_child(play_instance)
 
 	if play_instance.has_signal("tutorial_requested"):
@@ -932,14 +847,9 @@ func _set_debug_context(context: String) -> void:
 func _set_overlay(screen: Node) -> void:
 	_clear_overlay()
 	current_overlay = screen
-	_apply_mobile_web_horizontal_fit_metadata(screen)
 	screen_container.add_child(screen)
 	startup_splash.visible = false
 	_complete_startup_handoff()
-
-func _apply_mobile_web_horizontal_fit_metadata(screen: Node) -> void:
-	if mobile_web_horizontal_fit_active:
-		screen.set_meta(MOBILE_WEB_HORIZONTAL_FIT_META, true)
 
 func _complete_startup_handoff() -> void:
 	if startup_handoff_complete:

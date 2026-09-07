@@ -65,11 +65,7 @@ var bot_insight_button: Button
 var external_overlay_input_blocked := false
 var bot_insight_enabled := true
 
-const MOBILE_WEB_HORIZONTAL_FIT_META := &"mobile_web_horizontal_fit"
-const DESIGN_VIEWPORT_WIDTH := 412.0
-
 func _ready() -> void:
-	_configure_mobile_web_background()
 	tuning = UiTuningScript.new()
 	accessibility = AccessibilitySettingsScript.new()
 	players_ctx = PlayerContextScript.new()
@@ -158,21 +154,6 @@ func _ready() -> void:
 
 	reset_ui()
 	connect_network_signals()
-
-func _configure_mobile_web_background() -> void:
-	if not has_meta(MOBILE_WEB_HORIZONTAL_FIT_META):
-		return
-
-	var bleed := get_node_or_null("MobileWebBackgroundBleed") as TextureRect
-	var background_art := get_node_or_null("BgArt") as TextureRect
-	if bleed == null or background_art == null:
-		return
-
-	bleed.visible = true
-	background_art.anchor_left = 0.5
-	background_art.anchor_right = 0.5
-	background_art.offset_left = -DESIGN_VIEWPORT_WIDTH * 0.5
-	background_art.offset_right = DESIGN_VIEWPORT_WIDTH * 0.5
 
 func apply_accessibility() -> void:
 	inventory.set_parallel_placement(

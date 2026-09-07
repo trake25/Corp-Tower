@@ -31,20 +31,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MobileWebBackgroundBleed" type="TextureRect" parent="." unique_id=935119191]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("8_bg")
-expand_mode = 1
-stretch_mode = 6
-
 [node name="BgArt" type="TextureRect" parent="." unique_id=935119192]
 unique_name_in_owner = true
 layout_mode = 1

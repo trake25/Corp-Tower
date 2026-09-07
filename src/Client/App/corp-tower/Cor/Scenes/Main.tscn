@@ -15,20 +15,6 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_screenmanager")
 
-[node name="StartupSplashBleed" type="TextureRect" parent="." unique_id=160675654]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("4_splash")
-expand_mode = 1
-stretch_mode = 6
-
 [node name="StartupSplash" type="TextureRect" parent="." unique_id=160675655]
 unique_name_in_owner = true
 layout_mode = 1
