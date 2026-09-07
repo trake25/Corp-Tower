@@ -272,7 +272,7 @@ func _begin_private_entry(mode: String, display_name: String, server_id: String,
 	return true
 
 func _connect_with_pending_entry() -> void:
-	if is_conn_estab or is_connecting:
+	if ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
 		disconnect_server(false, false)
 		if ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
 			if ws.get_ready_state() != WebSocketPeer.STATE_CLOSING:
@@ -281,6 +281,7 @@ func _connect_with_pending_entry() -> void:
 			connect_after_close = true
 			return
 
+	connect_after_close = false
 	connect_server(false, true)
 
 func _set_private_entry(mode: String, display_name: String, server_id: String, password: String) -> void:
@@ -954,14 +955,14 @@ func _process(delta: float) -> void:
 			is_connecting = false
 			reset_latency_probe()
 
-			if was_profile:
-				profile_connection_changed.emit(false)
-			elif recovery_reconnect_pending:
+			if recovery_reconnect_pending:
 				start_pending_recovery_reconnect()
 			elif connect_after_close:
 				connect_after_close = false
 				ws = WebSocketPeer.new()
 				connect_server(false, pending_entry_mode != "public")
+			elif was_profile:
+				profile_connection_changed.emit(false)
 			elif was_connecting:
 				if spectator_active:
 					_clear_spectator_state()
