@@ -177,25 +177,36 @@ func disconnect_server(clear_private_entry := true, clear_spectator_entry := tru
 		ws.close()
 
 func connect_profile_server() -> bool:
-	if connection_purpose == PROFILE_CONNECTION_PURPOSE and (is_conn_estab or is_connecting):
-		return true
+	var ready_state := ws.get_ready_state()
+	if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+		if (
+			not manual_disconnect_requested
+			and (is_conn_estab or is_connecting)
+			and ready_state != WebSocketPeer.STATE_CLOSED
+			and ready_state != WebSocketPeer.STATE_CLOSING
+		):
+			return true
+
+		# A retiring Profile peer can still report OPEN or CONNECTING after its
+		# lifecycle flags have been cleared. Queue the replacement rather than
+		# treating that local transition as an unavailable server.
+		if ready_state != WebSocketPeer.STATE_CLOSED:
+			return _queue_profile_connection_after_close(
+				ready_state != WebSocketPeer.STATE_CLOSING
+			)
+
+		# The retiring peer is already closed, so its flags cannot block the new
+		# Profile connection attempt.
+		is_conn_estab = false
+		is_connecting = false
+
 	if is_conn_estab or is_connecting:
 		return false
 
-	if ws.get_ready_state() == WebSocketPeer.STATE_CLOSING:
-		connection_purpose = PROFILE_CONNECTION_PURPOSE
-		profile_snapshot = {}
-		manual_disconnect_requested = false
-		connect_after_close = false
-		auto_reconnect_enabled = false
-		auto_reconnect_delay_remaining = -1.0
-		profile_connect_after_close = true
-		is_connecting = true
-		connect_attempt_elapsed = 0.0
-		profile_connection_changed.emit(false)
-		return true
+	if ready_state == WebSocketPeer.STATE_CLOSING:
+		return _queue_profile_connection_after_close()
 
-	if ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
+	if ready_state != WebSocketPeer.STATE_CLOSED:
 		return false
 
 	ws = WebSocketPeer.new()
@@ -203,18 +214,39 @@ func connect_profile_server() -> bool:
 	profile_snapshot = {}
 	manual_disconnect_requested = false
 	connect_after_close = false
+	profile_connect_after_close = false
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
+	is_conn_estab = false
 	is_connecting = true
 	connect_attempt_elapsed = 0.0
 	profile_connection_changed.emit(false)
 
-	var error := ws.connect_to_url(SERVER_URL)
+	var error := _start_profile_connection()
 	if error != OK:
 		is_connecting = false
 		profile_connection_changed.emit(false)
 		return false
 	return true
+
+func _queue_profile_connection_after_close(close_retiring_peer := false) -> bool:
+	connection_purpose = PROFILE_CONNECTION_PURPOSE
+	profile_snapshot = {}
+	manual_disconnect_requested = false
+	connect_after_close = false
+	auto_reconnect_enabled = false
+	auto_reconnect_delay_remaining = -1.0
+	profile_connect_after_close = true
+	is_conn_estab = false
+	is_connecting = true
+	connect_attempt_elapsed = 0.0
+	profile_connection_changed.emit(false)
+	if close_retiring_peer:
+		ws.close()
+	return true
+
+func _start_profile_connection() -> Error:
+	return ws.connect_to_url(SERVER_URL)
 
 func disconnect_profile_server() -> void:
 	if connection_purpose != PROFILE_CONNECTION_PURPOSE:
@@ -227,7 +259,10 @@ func disconnect_profile_server() -> void:
 	is_connecting = false
 	profile_snapshot = {}
 	profile_connection_changed.emit(false)
-	if ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
+	if (
+		ws.get_ready_state() == WebSocketPeer.STATE_OPEN
+		or ws.get_ready_state() == WebSocketPeer.STATE_CONNECTING
+	):
 		ws.close()
 
 func is_profile_connected() -> bool:

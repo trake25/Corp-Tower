@@ -7,6 +7,7 @@ class FakeSocket:
 
 	var sent_messages: Array = []
 	var ready_state := WebSocketPeer.STATE_OPEN
+	var close_calls := 0
 
 	func send_text(raw: String) -> Error:
 		sent_messages.append(JSON.parse_string(raw))
@@ -16,7 +17,23 @@ class FakeSocket:
 		return ready_state
 
 	func close() -> Error:
+		close_calls += 1
 		ready_state = WebSocketPeer.STATE_CLOSING
+		return OK
+
+	func poll() -> Error:
+		return OK
+
+	func get_available_packet_count() -> int:
+		return 0
+
+class ProfileHandoffNetworkManager:
+	extends NetworkManagerScript
+
+	var profile_connection_starts := 0
+
+	func _start_profile_connection() -> Error:
+		profile_connection_starts += 1
 		return OK
 
 func test_presentation_states_do_not_start_stale_stream_recovery() -> void:
@@ -86,6 +103,108 @@ func test_manual_disconnect_releases_connection_flags_for_a_new_match() -> void:
 	assert_false(network.is_connecting, "A cancelled connection must not keep matchmaking in its spinner.")
 	assert_eq(network.last_state_revision, -1, "A new match must not inherit the previous room revision.")
 	assert_eq(network.last_game_state_msec, -1, "A new match must not inherit the previous room liveness clock.")
+	network.free()
+
+func test_profile_handoff_queues_retiring_open_or_connecting_socket() -> void:
+	for retiring_state in [WebSocketPeer.STATE_OPEN, WebSocketPeer.STATE_CONNECTING]:
+		var network = ProfileHandoffNetworkManager.new()
+		var retiring_socket = FakeSocket.new()
+		retiring_socket.ready_state = retiring_state
+		network.ws = retiring_socket
+		network.connection_purpose = NetworkManagerScript.PROFILE_CONNECTION_PURPOSE
+		network.is_conn_estab = true
+		network.is_connecting = true
+
+		network.disconnect_profile_server()
+		# Simulate the peer retaining its old ready state for one transition.
+		retiring_socket.ready_state = retiring_state
+
+		assert_true(
+			network.connect_profile_server(),
+			"A retiring Profile peer must queue a handoff instead of reporting unavailable."
+		)
+		assert_true(network.profile_connect_after_close)
+		assert_false(network.connect_after_close)
+		assert_false(network.is_conn_estab)
+		assert_true(network.is_connecting)
+		assert_eq(retiring_socket.close_calls, 2)
+		network.free()
+
+func test_profile_handoff_queues_closing_socket_without_a_duplicate_close() -> void:
+	var network = ProfileHandoffNetworkManager.new()
+	var retiring_socket = FakeSocket.new()
+	retiring_socket.ready_state = WebSocketPeer.STATE_CLOSING
+	network.ws = retiring_socket
+	network.connection_purpose = NetworkManagerScript.PROFILE_CONNECTION_PURPOSE
+	network.is_conn_estab = true
+	network.is_connecting = true
+	network.manual_disconnect_requested = true
+	network.connect_after_close = true
+
+	assert_true(network.connect_profile_server())
+	assert_true(network.profile_connect_after_close)
+	assert_false(network.connect_after_close)
+	assert_false(network.is_conn_estab)
+	assert_true(network.is_connecting)
+	assert_eq(retiring_socket.close_calls, 0)
+	network.free()
+
+func test_profile_handoff_starts_a_new_connection_from_a_closed_peer() -> void:
+	var network = ProfileHandoffNetworkManager.new()
+	var closed_socket = FakeSocket.new()
+	closed_socket.ready_state = WebSocketPeer.STATE_CLOSED
+	network.ws = closed_socket
+	network.connection_purpose = NetworkManagerScript.PROFILE_CONNECTION_PURPOSE
+	network.is_conn_estab = true
+	network.is_connecting = true
+	network.profile_connect_after_close = true
+
+	assert_true(network.connect_profile_server())
+	assert_eq(network.profile_connection_starts, 1)
+	assert_ne(network.ws, closed_socket)
+	assert_eq(network.connection_purpose, NetworkManagerScript.PROFILE_CONNECTION_PURPOSE)
+	assert_false(network.profile_connect_after_close)
+	assert_false(network.is_conn_estab)
+	assert_true(network.is_connecting)
+	network.free()
+
+func test_profile_handoff_does_not_steal_an_active_gameplay_transport() -> void:
+	var network = ProfileHandoffNetworkManager.new()
+	var gameplay_socket = FakeSocket.new()
+	network.ws = gameplay_socket
+	network.connection_purpose = "gameplay"
+	network.is_conn_estab = true
+	network.connect_after_close = true
+
+	assert_false(network.connect_profile_server())
+	assert_eq(network.connection_purpose, "gameplay")
+	assert_true(network.is_conn_estab)
+	assert_true(network.connect_after_close)
+	assert_false(network.profile_connect_after_close)
+	assert_eq(gameplay_socket.close_calls, 0)
+	network.free()
+
+func test_profile_handoff_wins_the_closed_transition_without_starting_gameplay() -> void:
+	var network = ProfileHandoffNetworkManager.new()
+	var retiring_socket = FakeSocket.new()
+	retiring_socket.ready_state = WebSocketPeer.STATE_CLOSING
+	network.ws = retiring_socket
+	network.connection_purpose = NetworkManagerScript.PROFILE_CONNECTION_PURPOSE
+	network.connect_after_close = true
+
+	assert_true(network.connect_profile_server())
+	assert_true(network.profile_connect_after_close)
+	assert_false(network.connect_after_close)
+
+	retiring_socket.ready_state = WebSocketPeer.STATE_CLOSED
+	network._process(0.0)
+
+	assert_eq(network.profile_connection_starts, 1)
+	assert_eq(network.connection_purpose, NetworkManagerScript.PROFILE_CONNECTION_PURPOSE)
+	assert_false(network.profile_connect_after_close)
+	assert_false(network.connect_after_close)
+	assert_true(network.is_connecting)
+	network.free()
 
 func test_private_lobby_foreground_does_not_enter_play_resync() -> void:
 	var network = NetworkManagerScript.new()
