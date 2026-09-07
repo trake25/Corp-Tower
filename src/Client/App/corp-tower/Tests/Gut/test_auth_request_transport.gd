@@ -16,3 +16,12 @@ func test_setup_normalizes_trailing_slashes() -> void:
 	transport.setup("https://example.invalid///", "anon-key")
 
 	assert_eq(transport.base_url, "https://example.invalid")
+
+func test_identity_conflict_is_retained_as_a_sanitized_auth_error_code() -> void:
+	var transport = AuthRequestTransportScript.new()
+
+	assert_eq(
+		transport._sanitized_error_code({"code": "identity_already_exists"}),
+		"identity_conflict"
+	)
+	assert_eq(transport._sanitized_error_code({"message": "sensitive raw response"}), "")

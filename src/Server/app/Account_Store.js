@@ -1,7 +1,16 @@
 const { createHmac, randomUUID } = require("crypto");
 
 const REQUEST_TIMEOUT_MS = 4000;
+const GOOGLE_PROVIDER = "google";
 const FACEBOOK_PROVIDER = "facebook";
+const EXTERNAL_PROVIDERS = new Set([GOOGLE_PROVIDER, FACEBOOK_PROVIDER]);
+const LINK_RESULTS = new Set([
+    "accepted",
+    "allowed",
+    "provider_conflict",
+    "identity_conflict",
+    "rejected"
+]);
 
 function normalizeUrl(value) {
     return String(value || "").trim().replace(/\/+$/, "");
@@ -10,6 +19,11 @@ function normalizeUrl(value) {
 function positiveInteger(value, fallback) {
     const parsed = Number(value);
     return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function normalizedProvider(value) {
+    const provider = String(value || "").trim().toLowerCase();
+    return EXTERNAL_PROVIDERS.has(provider) ? provider : "";
 }
 
 class AccountStore {
@@ -71,12 +85,23 @@ class AccountStore {
             return null;
         }
 
-        if (identity.provider === FACEBOOK_PROVIDER) {
-            const providerSubject = await this.fetchFacebookProviderSubject(
-                identity.accessToken, identity.supabaseUserId
-            );
+        if (identity.isAnonymous) {
+            const anonymousAccount = await this.findOrCreateSupabaseAccount(identity.supabaseUserId);
+            return this.identityForAccount(anonymousAccount, identity);
+        }
+
+        const user = await this.fetchSupabaseUser(identity.accessToken, identity.supabaseUserId);
+        const providers = this.logicalProvidersForUser(user, identity.provider);
+
+        if (providers.size > 1) {
+            throw new Error("Verified user has more than one external provider");
+        }
+
+        const provider = [...providers][0] || "";
+
+        if (provider === FACEBOOK_PROVIDER) {
             return this.resolveFacebook(
-                providerSubject,
+                this.providerSubjectFromUser(user, FACEBOOK_PROVIDER),
                 identity.supabaseUserId,
                 identity.displayName,
                 identity.isAnonymous
@@ -84,12 +109,23 @@ class AccountStore {
         }
 
         const account = await this.findOrCreateSupabaseAccount(identity.supabaseUserId);
-        return this.identityForAccount(account, identity);
+
+        if (provider === GOOGLE_PROVIDER) {
+            this.requireAcceptedClaim(await this.claimProvider(account.id, provider));
+        }
+
+        return this.identityForAccount(await this.findAccountById(account.id), identity);
     }
 
     identityForAccount(account, identity) {
+        if (!account) {
+            throw new Error("Player account is missing");
+        }
+
         return {
             userId: account.id,
+            supabaseUserId: account.supabase_user_id || null,
+            linkedProvider: account.linked_provider || null,
             isAnonymous: Boolean(identity.isAnonymous),
             displayName: identity.displayName || null,
             nameOnboardingSeen: Boolean(account.name_onboarding_seen)
@@ -116,32 +152,96 @@ class AccountStore {
             .digest("base64url");
     }
 
-    async resolveFacebook(subject, supabaseUserId, displayName, isAnonymous) {
+    async preflightProviderLink(accountId, provider, facebookSubject = null) {
+        const normalized = normalizedProvider(provider);
+
+        if (!normalized) {
+            return { result: "rejected" };
+        }
+
+        const account = await this.findAccountById(accountId);
+
+        if (!account) {
+            return { result: "rejected" };
+        }
+
+        if (account.linked_provider && account.linked_provider !== normalized) {
+            return { result: "provider_conflict" };
+        }
+
+        if (normalized === FACEBOOK_PROVIDER && typeof facebookSubject === "string") {
+            const found = await this.findFacebookIdentity(facebookSubject);
+            if (found && found.player_account_id !== account.id) {
+                return { result: "identity_conflict" };
+            }
+        }
+
+        return { result: "allowed" };
+    }
+
+    async commitProviderLink(accountId, expectedSupabaseUserId, credential, provider) {
+        const normalized = normalizedProvider(provider);
+
+        if (
+            !normalized ||
+            !credential ||
+            credential.kind !== "supabase" ||
+            credential.supabaseUserId !== expectedSupabaseUserId
+        ) {
+            return { result: "rejected" };
+        }
+
+        const account = await this.findAccountById(accountId);
+
+        if (!account || account.supabase_user_id !== expectedSupabaseUserId) {
+            return { result: "rejected" };
+        }
+
+        const user = await this.fetchSupabaseUser(
+            credential.accessToken, credential.supabaseUserId
+        );
+        const providers = this.logicalProvidersForUser(user, credential.provider);
+
+        if (providers.size > 1 || !providers.has(normalized)) {
+            return { result: "provider_conflict" };
+        }
+
+        const subject = normalized === FACEBOOK_PROVIDER
+            ? this.providerSubjectFromUser(user, FACEBOOK_PROVIDER)
+            : null;
+        const result = await this.claimProvider(account.id, normalized, subject);
+        return { result };
+    }
+
+    async resolveFacebook(subject, supabaseUserId, displayName, isAnonymous, knownSupabaseAccount = null) {
         if (typeof subject !== "string" || subject === "") {
             throw new Error("Facebook provider identity is missing");
         }
 
         const found = await this.findFacebookIdentity(subject);
-        let account = found ? await this.findAccountById(found.player_account_id) : null;
+        const identityAccount = found ? await this.findAccountById(found.player_account_id) : null;
 
-        if (found && !account) {
+        if (found && !identityAccount) {
             throw new Error("Facebook identity references a missing player account");
         }
+
+        const supabaseAccount = knownSupabaseAccount || (
+            supabaseUserId ? await this.findAccountBySupabaseUserId(supabaseUserId) : null
+        );
+
+        if (identityAccount && supabaseAccount && identityAccount.id !== supabaseAccount.id) {
+            throw new Error("Facebook identity is already linked to another durable account");
+        }
+
+        let account = identityAccount || supabaseAccount;
 
         if (!account) {
             account = supabaseUserId
                 ? await this.findOrCreateSupabaseAccount(supabaseUserId)
                 : await this.createAccount(null);
-            await this.insertFacebookIdentity(account.id, subject);
-            const linkedIdentity = await this.findFacebookIdentity(subject);
-            account = linkedIdentity
-                ? await this.findAccountById(linkedIdentity.player_account_id)
-                : null;
-
-            if (!account) {
-                throw new Error("Facebook identity creation did not persist");
-            }
         }
+
+        this.requireAcceptedClaim(await this.claimProvider(account.id, FACEBOOK_PROVIDER, subject));
 
         if (supabaseUserId) {
             account = await this.bindSupabaseUser(account, supabaseUserId);
@@ -162,17 +262,12 @@ class AccountStore {
             FACEBOOK_PROVIDER, subject, this.previousHmacSecret
         );
         identity = await this.findIdentity(this.previousHmacKeyVersion, previousHash);
-
-        if (identity) {
-            await this.insertIdentity(identity.player_account_id, this.hmacKeyVersion, activeHash);
-        }
-
         return identity;
     }
 
-    async fetchFacebookProviderSubject(accessToken, expectedUserId) {
+    async fetchSupabaseUser(accessToken, expectedUserId) {
         if (typeof accessToken !== "string" || accessToken === "") {
-            throw new Error("Facebook OAuth access token is missing");
+            throw new Error("Supabase access token is missing");
         }
 
         const doFetch = this.fetchImpl || fetch;
@@ -185,27 +280,96 @@ class AccountStore {
         });
 
         if (!response.ok) {
-            throw new Error("Supabase Facebook identity lookup failed");
+            throw new Error("Supabase identity lookup failed");
         }
 
         const user = await response.json();
 
         if (!user || String(user.id || "") !== expectedUserId) {
-            throw new Error("Supabase Facebook identity did not match the verified user");
+            throw new Error("Supabase identity did not match the verified user");
         }
 
-        const facebookIdentity = Array.isArray(user.identities)
-            ? user.identities.find(identity => identity && identity.provider === FACEBOOK_PROVIDER)
+        return user;
+    }
+
+    logicalProvidersForUser(user, fallbackProvider = "") {
+        const providers = new Set();
+
+        if (Array.isArray(user && user.identities)) {
+            for (const identity of user.identities) {
+                const provider = normalizedProvider(identity && identity.provider);
+                if (provider) providers.add(provider);
+            }
+        }
+
+        const fallback = normalizedProvider(fallbackProvider);
+        if (!providers.size && fallback) providers.add(fallback);
+
+        return providers;
+    }
+
+    providerSubjectFromUser(user, provider) {
+        const identity = Array.isArray(user && user.identities)
+            ? user.identities.find(candidate => candidate && candidate.provider === provider)
             : null;
-        const providerSubject = facebookIdentity && (
-            facebookIdentity.provider_id || facebookIdentity.id
-        );
+        const subject = identity && (identity.provider_id || identity.id);
 
-        if (typeof providerSubject !== "string" || providerSubject === "") {
-            throw new Error("Supabase Facebook provider identity is missing");
+        if (typeof subject !== "string" || subject === "") {
+            throw new Error(`${provider} provider identity is missing`);
         }
 
-        return providerSubject;
+        return subject;
+    }
+
+    async claimProvider(accountId, provider, facebookSubject = null) {
+        const normalized = normalizedProvider(provider);
+
+        if (!normalized) {
+            return "rejected";
+        }
+
+        const payload = {
+            p_account_id: accountId,
+            p_provider: normalized
+        };
+
+        if (normalized === FACEBOOK_PROVIDER) {
+            if (typeof facebookSubject !== "string" || facebookSubject === "") {
+                return "rejected";
+            }
+            payload.p_facebook_key_version = this.hmacKeyVersion;
+            payload.p_facebook_subject_hmac = this.hashProviderSubject(
+                FACEBOOK_PROVIDER, facebookSubject
+            );
+        }
+
+        const response = await this.request("rpc/claim_player_provider", {
+            method: "POST",
+            headers: { Prefer: "return=representation" },
+            body: JSON.stringify(payload)
+        });
+        const body = await response.json();
+        const rawResult = Array.isArray(body) ? body[0] : body;
+        const result = typeof rawResult === "string"
+            ? rawResult
+            : rawResult && rawResult.claim_player_provider;
+        return LINK_RESULTS.has(result) ? result : "rejected";
+    }
+
+    requireAcceptedClaim(result) {
+        if (result === "accepted") {
+            return;
+        }
+
+        if (result === "identity_conflict") {
+            throw new Error("Provider identity is already linked to another durable account");
+        }
+
+        if (result === "provider_conflict") {
+            throw new Error("Durable account already has a different external provider");
+        }
+
+        throw new Error("Provider claim was rejected");
     }
 
     async findOrCreateSupabaseAccount(supabaseUserId) {
@@ -238,38 +402,53 @@ class AccountStore {
     }
 
     async bindSupabaseUser(account, supabaseUserId) {
+        const existing = await this.findAccountBySupabaseUserId(supabaseUserId);
+
+        if (existing && existing.id !== account.id) {
+            throw new Error("Supabase user is already linked to another durable account");
+        }
+
         if (account.supabase_user_id && account.supabase_user_id !== supabaseUserId) {
             throw new Error("Facebook identity is already linked to another Supabase user");
         }
 
-        if (!account.supabase_user_id) {
-            await this.request(`player_accounts?id=eq.${encodeURIComponent(account.id)}`, {
+        if (account.supabase_user_id === supabaseUserId) {
+            return account;
+        }
+
+        await this.request(
+            `player_accounts?id=eq.${encodeURIComponent(account.id)}&supabase_user_id=is.null`,
+            {
                 method: "PATCH",
                 headers: { Prefer: "return=minimal" },
                 body: JSON.stringify({ supabase_user_id: supabaseUserId })
-            });
-            const linkedAccount = await this.findAccountById(account.id);
-
-            if (!linkedAccount) {
-                throw new Error("Supabase account link did not persist");
             }
+        );
 
+        const linkedAccount = await this.findAccountById(account.id);
+
+        if (linkedAccount && linkedAccount.supabase_user_id === supabaseUserId) {
             return linkedAccount;
         }
 
-        return account;
+        const competing = await this.findAccountBySupabaseUserId(supabaseUserId);
+        if (competing && competing.id !== account.id) {
+            throw new Error("Supabase user is already linked to another durable account");
+        }
+
+        throw new Error("Supabase account link did not persist");
     }
 
     async findAccountById(accountId) {
         const rows = await this.fetchRows(
-            `player_accounts?id=eq.${encodeURIComponent(accountId)}&select=id,supabase_user_id,name_onboarding_seen`
+            `player_accounts?id=eq.${encodeURIComponent(accountId)}&select=id,supabase_user_id,name_onboarding_seen,linked_provider`
         );
         return rows[0] || null;
     }
 
     async findAccountBySupabaseUserId(supabaseUserId) {
         const rows = await this.fetchRows(
-            `player_accounts?supabase_user_id=eq.${encodeURIComponent(supabaseUserId)}&select=id,supabase_user_id,name_onboarding_seen`
+            `player_accounts?supabase_user_id=eq.${encodeURIComponent(supabaseUserId)}&select=id,supabase_user_id,name_onboarding_seen,linked_provider`
         );
         return rows[0] || null;
     }
@@ -279,27 +458,6 @@ class AccountStore {
             `player_identities?provider=eq.${FACEBOOK_PROVIDER}&key_version=eq.${keyVersion}&subject_hmac=eq.${encodeURIComponent(subjectHash)}&select=player_account_id`
         );
         return rows[0] || null;
-    }
-
-    async insertFacebookIdentity(accountId, subject) {
-        return this.insertIdentity(
-            accountId,
-            this.hmacKeyVersion,
-            this.hashProviderSubject(FACEBOOK_PROVIDER, subject)
-        );
-    }
-
-    async insertIdentity(accountId, keyVersion, subjectHash) {
-        await this.request("player_identities", {
-            method: "POST",
-            headers: { Prefer: "return=minimal,resolution=ignore-duplicates" },
-            body: JSON.stringify([{
-                provider: FACEBOOK_PROVIDER,
-                key_version: keyVersion,
-                subject_hmac: subjectHash,
-                player_account_id: accountId
-            }])
-        });
     }
 
     async insertAccount(id, supabaseUserId) {

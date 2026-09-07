@@ -67,6 +67,19 @@ func test_authorize_url_encodes_the_redirect_and_pins_s256() -> void:
 		"The challenge must be encoded, not interpolated raw."
 	)
 
+func test_link_authorize_path_uses_the_authenticated_identity_link_endpoint_and_state() -> void:
+	var path: String = auth._build_link_authorize_path(
+		"google",
+		"com.galaxxigames.tod://auth-callback",
+		"challenge-value",
+		"link-state"
+	)
+
+	assert_true(path.begins_with("/auth/v1/user/identities/authorize?"))
+	assert_true(path.contains("provider=google"))
+	assert_true(path.contains("code_challenge_method=s256"))
+	assert_true(path.contains("state=link-state"))
+
 func test_callback_query_extracts_the_code() -> void:
 	var parsed: Dictionary = auth._parse_callback_query("?code=abc123&state=xyz")
 

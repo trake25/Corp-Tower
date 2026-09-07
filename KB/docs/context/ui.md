@@ -150,7 +150,17 @@ source: src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn#SettingsScreen
 -->
 ## Settings
 
-Settings presents account/session state and shared presentation preferences. Sign-out uses the shared confirmation flow, clears the authentication session only after confirmation, and returns to Sign-in. Music and sound switches may persist UI preference even while audio side effects are not yet implemented.
+Settings presents account/session state and shared presentation preferences. Account identifies the
+player's accepted external provider account rather than the Top or Drop Profile identity. An anonymous
+player may link exactly one configured external provider—Google or Facebook—using the same provider
+presentation conventions as Sign In. Linking upgrades the current guest in place: success refreshes
+linked account presentation and hides all provider-link controls, while cancellation, rejection, or
+provider conflict leaves the existing player identity intact. Google account recognition may show the
+provider display name plus a masked account email that reveals no more than the first four local-part
+characters; Facebook uses a generic Facebook-account fallback until provider-ID retrieval is
+implemented. An identity already owned by another Top or Drop account is never auto-merged. Sign-out
+uses the shared confirmation flow and clears the authentication session only after confirmation. Music
+and sound switches may persist UI preference even while audio side effects are not yet implemented.
 
 <!-- kb
 id: ui.public-lobby.flow

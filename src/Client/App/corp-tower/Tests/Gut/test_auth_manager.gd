@@ -74,9 +74,42 @@ func test_apply_session_retains_linked_provider_and_profile_name() -> void:
 	assert_eq(auth.current_provider, "google")
 	assert_eq(auth.display_name, "Ada Player")
 
+func test_google_provider_email_is_retained_only_for_google_presentation() -> void:
+	auth._apply_session({
+		"access_token": "access-value",
+		"refresh_token": "refresh-value",
+		"expires_in": 3600,
+		"user": {
+			"id": "linked-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "google"},
+			"identities": [{
+				"provider": "google",
+				"identity_data": {"email": "enriqueta@gmail.com"}
+			}]
+		}
+	})
+
+	assert_eq(auth.google_email, "enriqueta@gmail.com")
+
+	auth._apply_session({
+		"access_token": "facebook-access",
+		"refresh_token": "facebook-refresh",
+		"expires_in": 3600,
+		"user": {
+			"id": "facebook-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "facebook"},
+			"user_metadata": {"email": "do-not-show@example.com"}
+		}
+	})
+
+	assert_eq(auth.google_email, "")
+
 func test_anonymous_session_clears_linked_presentation_metadata() -> void:
 	auth.current_provider = "facebook"
 	auth.display_name = "Previous Player"
+	auth.google_email = "previous@example.com"
 
 	auth._apply_session({
 		"access_token": "guest-access",
@@ -87,14 +120,17 @@ func test_anonymous_session_clears_linked_presentation_metadata() -> void:
 
 	assert_eq(auth.current_provider, "")
 	assert_eq(auth.display_name, "")
+	assert_eq(auth.google_email, "")
 
 func test_sign_out_clears_presentation_metadata() -> void:
 	auth.current_provider = "google"
 	auth.display_name = "Ada Player"
+	auth.google_email = "ada@example.com"
 	auth.sign_out()
 
 	assert_eq(auth.current_provider, "")
 	assert_eq(auth.display_name, "")
+	assert_eq(auth.google_email, "")
 
 func test_presentation_metadata_restores_with_the_saved_session() -> void:
 	auth.access_token_value = "access-value"
@@ -102,13 +138,113 @@ func test_presentation_metadata_restores_with_the_saved_session() -> void:
 	auth.expires_at_unix = int(Time.get_unix_time_from_system()) + 3600
 	auth.current_provider = "google"
 	auth.display_name = "Ada Player"
+	auth.google_email = "ada@example.com"
 	auth._save_session()
 	var restored = AuthManagerScript.new()
 	restored._load_session()
 
 	assert_eq(restored.current_provider, "google")
 	assert_eq(restored.display_name, "Ada Player")
+	assert_eq(restored.google_email, "ada@example.com")
 	restored.free()
+
+func test_link_id_token_body_uses_authenticated_manual_linking_semantics() -> void:
+	var body: Dictionary = auth._build_link_id_token_body("google-id-token")
+
+	assert_eq(body["provider"], "google")
+	assert_eq(body["id_token"], "google-id-token")
+	assert_eq(body["link_identity"], true)
+	assert_eq(body["client_id"], EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID)
+
+func test_link_session_staging_requires_the_original_guest_user() -> void:
+	var flow := {
+		"purpose": auth.FLOW_LINK,
+		"provider": "google",
+		"pre_link_user_id": "guest-user",
+		"state": "state-value"
+	}
+
+	assert_eq(auth._stage_link_session({
+		"access_token": "linked-access",
+		"refresh_token": "linked-refresh",
+		"user": {"id": "another-user", "is_anonymous": false}
+	}, flow), auth.REASON_REJECTED)
+	assert_false(auth.has_pending_provider_link())
+
+	assert_eq(auth._stage_link_session({
+		"access_token": "linked-access",
+		"refresh_token": "linked-refresh",
+		"user": {
+			"id": "guest-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "google"},
+			"user_metadata": {"full_name": "Provider Name"}
+		}
+	}, flow), auth.REASON_NONE)
+	assert_true(auth.has_pending_provider_link())
+	assert_eq(auth.pending_link_provider(), "google")
+
+func test_link_callback_state_persists_the_provider_and_original_guest_identity() -> void:
+	auth._save_link_flow("google", "guest-user", "callback-state")
+	var restored = AuthManagerScript.new()
+	var flow := restored._load_link_flow()
+
+	assert_eq(flow.get("purpose", ""), auth.FLOW_LINK)
+	assert_eq(flow.get("provider", ""), "google")
+	assert_eq(flow.get("pre_link_user_id", ""), "guest-user")
+	assert_eq(flow.get("state", ""), "callback-state")
+	assert_eq(
+		await restored._consume_link_callback({
+			"code": "",
+			"error": "access_denied",
+			"state": "callback-state"
+		}),
+		auth.REASON_CANCELLED
+	)
+	restored.free()
+
+func test_finishing_or_rejecting_a_link_preserves_the_guest_until_accepted() -> void:
+	auth._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	var flow := {
+		"purpose": auth.FLOW_LINK,
+		"provider": "google",
+		"pre_link_user_id": "guest-user",
+		"state": "state-value"
+	}
+	auth._stage_link_session({
+		"access_token": "linked-access",
+		"refresh_token": "linked-refresh",
+		"expires_in": 3600,
+		"user": {
+			"id": "guest-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "google"}
+		}
+	}, flow)
+
+	auth.reject_provider_link()
+	assert_eq(auth.access_token_value, "guest-access")
+	assert_true(auth.is_anonymous)
+
+	auth._stage_link_session({
+		"access_token": "linked-access",
+		"refresh_token": "linked-refresh",
+		"expires_in": 3600,
+		"user": {
+			"id": "guest-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "google"}
+		}
+	}, flow)
+	assert_true(auth.finish_provider_link())
+	assert_eq(auth.access_token_value, "linked-access")
+	assert_false(auth.is_anonymous)
+	assert_eq(auth.current_provider, "google")
 
 func test_seconds_until_expiry_is_zero_without_a_session() -> void:
 	assert_eq(

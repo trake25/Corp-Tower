@@ -90,6 +90,8 @@ signal profile_name_changed(data)
 signal profile_name_rejected(data)
 signal profile_connection_changed(online: bool)
 signal profile_onboarding_seen_result(persisted: bool)
+signal provider_link_preflight_result(data)
+signal provider_link_commit_result(data)
 
 func connect_server(is_auto_reconnect := false, preserve_entry := false, resume_only := false):
 	if profile_connect_after_close:
@@ -244,6 +246,32 @@ func mark_profile_onboarding_seen() -> bool:
 	if not is_profile_connected():
 		return false
 	ws.send_text(JSON.stringify({"type": "profile_onboarding_seen"}))
+	return true
+
+func send_provider_link_preflight(provider: String, credential: String = "") -> bool:
+	if not is_profile_connected():
+		return false
+
+	var payload := {
+		"type": "provider_link_preflight",
+		"provider": provider
+	}
+
+	if credential != "":
+		payload["providerCredential"] = credential
+
+	ws.send_text(JSON.stringify(payload))
+	return true
+
+func send_provider_link_commit(provider: String, access_token: String) -> bool:
+	if not is_profile_connected() or access_token == "":
+		return false
+
+	ws.send_text(JSON.stringify({
+		"type": "provider_link_commit",
+		"provider": provider,
+		"accessToken": access_token
+	}))
 	return true
 
 func send_profile_connect_request() -> void:
@@ -867,6 +895,12 @@ func _process(delta: float) -> void:
 					if persisted:
 						profile_snapshot["nameOnboardingSeen"] = true
 					profile_onboarding_seen_result.emit(persisted)
+			"provider_link_preflight_result":
+				if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+					provider_link_preflight_result.emit(data)
+			"provider_link_commit_result":
+				if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+					provider_link_commit_result.emit(data)
 			"profile_unavailable":
 				if connection_purpose == PROFILE_CONNECTION_PURPOSE:
 					profile_connection_changed.emit(false)

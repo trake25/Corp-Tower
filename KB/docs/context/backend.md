@@ -141,7 +141,18 @@ adjacent: ui.profile.presentation
 -->
 ## Durable profiles
 
-Account Store converts verified provider identity into durable account identity and stores Facebook subjects only as versioned HMACs. Profile Store owns durable profile presentation and the one-time player-name lifecycle. First-login naming exposure is durable account state, permanent-name consumption is durable profile state, and permanent names are database-enforced case-insensitive unique values. Provider presentation metadata never overwrites a successfully chosen permanent player name. Redis remains active-session storage rather than durable profile storage.
+Account Store converts verified provider identity into durable account identity and stores Facebook
+subjects only as versioned HMACs. Account Store owns the accepted external-provider state for each
+durable account: no provider, Google, or Facebook. A durable Top or Drop account may accept at most
+one logical external provider. Facebook HMAC-key rotation may create multiple storage rows for the
+same logical Facebook identity, so raw identity-row count is not the provider-count invariant. Provider
+claiming is atomic and same-provider resolution may be idempotent, but a different provider or a
+provider identity already owned by another durable account is a conflict, never a merge. Provider
+linking must not reparent or overwrite the durable Profile. Profile Store owns durable profile
+presentation and the one-time player-name lifecycle. First-login naming exposure is durable account
+state, permanent-name consumption is durable profile state, and permanent names are database-enforced
+case-insensitive unique values. Provider presentation metadata never overwrites a successfully chosen
+permanent player name. Redis remains active-session storage rather than durable profile storage.
 
 <!-- kb
 id: backend.lobby.debug-config

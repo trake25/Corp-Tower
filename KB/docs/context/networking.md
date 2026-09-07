@@ -25,7 +25,15 @@ adjacent: ui.profile.presentation
 -->
 ## Profile session
 
-Profile and first-login naming use an authenticated profile-only WebSocket path on the existing client/server transport. This path resolves the durable verified account but never enters matchmaking or room membership. The server supplies authoritative profile state and owns the one-time name mutation; the client presents that state and derives Profile connectivity from the live profile connection.
+Profile and first-login naming use an authenticated profile-only WebSocket path on the existing
+client/server transport. This path resolves the durable verified account but never enters matchmaking
+or room membership. The server supplies authoritative profile state and owns the one-time name
+mutation; the client presents that state and derives Profile connectivity from the live profile
+connection. The authenticated profile-only connection may carry bounded provider-link eligibility,
+ownership-preflight, and canonical-provider commit results because it already resolves the current
+durable account without entering matchmaking. Provider credentials are verified server-side and are
+never echoed to the client; the wire exposes only the result needed to continue, reject, or refresh
+Account presentation.
 
 <!-- kb
 id: network.session.resume-only

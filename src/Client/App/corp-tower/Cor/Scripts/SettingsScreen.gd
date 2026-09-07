@@ -32,7 +32,7 @@ func _ready() -> void:
 
 func refresh_account_state() -> void:
 	apply_account_state(
-		AuthManager.is_signed_in() and not AuthManager.is_anonymous,
+		AuthManager.has_accepted_provider(),
 		AuthManager.current_provider
 	)
 

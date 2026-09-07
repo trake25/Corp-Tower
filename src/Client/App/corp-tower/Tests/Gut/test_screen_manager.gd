@@ -229,6 +229,16 @@ func test_home_settings_and_account_navigation_returns_through_the_stack() -> vo
 
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
 
+func test_web_link_callback_failure_returns_to_account_without_startup_or_onboarding() -> void:
+	AuthManager.last_provider_link_reason = AuthManager.REASON_CANCELLED
+	AuthManager.provider_link_result_pending = true
+
+	screen_manager._resume_provider_link_callback()
+
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/AccountScreen.tscn"))
+	assert_eq(screen_manager.current_overlay.error_label.text, "Account linking cancelled.")
+	assert_true(screen_manager.current_overlay.error_label.visible)
+
 func test_profile_and_change_name_navigation_respects_entry_context() -> void:
 	var profile := {
 		"accountUid": "11111111-2222-3333-4444-555555555555",

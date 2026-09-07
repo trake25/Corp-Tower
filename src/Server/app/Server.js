@@ -37,16 +37,100 @@ function sendJson(ws, data) {
     }
 }
 
-async function handleProfileMessage(ws, identity, message) {
+function normalizedLinkProvider(value) {
+    const provider = String(value || "").trim().toLowerCase();
+    return provider === "google" || provider === "facebook" ? provider : "";
+}
+
+function boundedLinkResult(value) {
+    return ["allowed", "accepted", "provider_conflict", "identity_conflict", "rejected"]
+        .includes(value)
+        ? value
+        : "rejected";
+}
+
+async function handleProfileMessage(ws, identity, message, dependencies = {}) {
     const data = safeJson(message);
 
     if (!data) {
         return;
     }
 
+    const store = dependencies.accountStore || accountStore;
+    const verifier = dependencies.authVerifier || authVerifier;
+
+    if (data.type === "provider_link_preflight") {
+        const provider = normalizedLinkProvider(data.provider);
+        let result = "rejected";
+
+        try {
+            if (!provider) {
+                throw new Error("Unknown provider link request");
+            }
+
+            const providerCredential = String(data.providerCredential || "");
+            if (providerCredential !== "") {
+                if (provider !== "facebook") {
+                    throw new Error("Unexpected provider credential");
+                }
+
+                const credential = await verifier.verifyAccessToken(providerCredential, "facebook");
+                if (!credential || credential.kind !== "facebook_native") {
+                    throw new Error("Provider credential rejected");
+                }
+
+                result = (await store.preflightProviderLink(
+                    identity.userId, provider, credential.providerSubject
+                )).result;
+            } else {
+                result = (await store.preflightProviderLink(identity.userId, provider)).result;
+            }
+        } catch (error) {
+            console.log("Provider link preflight failed:", error.message);
+        }
+
+        sendJson(ws, {
+            type: "provider_link_preflight_result",
+            provider,
+            result: boundedLinkResult(result)
+        });
+        return;
+    }
+
+    if (data.type === "provider_link_commit") {
+        const provider = normalizedLinkProvider(data.provider);
+        let result = "rejected";
+
+        try {
+            if (!provider || !identity.supabaseUserId) {
+                throw new Error("Provider link commit has no guest Supabase identity");
+            }
+
+            const credential = await verifier.verifyAccessToken(String(data.accessToken || ""));
+            if (!credential || credential.kind !== "supabase") {
+                throw new Error("Provider link credential rejected");
+            }
+            result = (await store.commitProviderLink(
+                identity.userId,
+                identity.supabaseUserId,
+                credential,
+                provider
+            )).result;
+        } catch (error) {
+            console.log("Provider link commit failed:", error.message);
+        }
+
+        sendJson(ws, {
+            type: "provider_link_commit_result",
+            provider,
+            result: boundedLinkResult(result)
+        });
+        return;
+    }
+
     if (data.type === "profile_onboarding_seen") {
         try {
-            const persisted = await accountStore.markNameOnboardingSeen(identity.userId);
+            const persisted = await store.markNameOnboardingSeen(identity.userId);
             if (!persisted) {
                 throw new Error("Onboarding acknowledgement did not persist");
             }
@@ -60,7 +144,8 @@ async function handleProfileMessage(ws, identity, message) {
     }
 
     if (data.type === "profile_change_name") {
-        const result = await lobbyManager.profileStore.changeName(identity.userId, data.name);
+        const profileStore = dependencies.profileStore || lobbyManager.profileStore;
+        const result = await profileStore.changeName(identity.userId, data.name);
 
         if (!result.ok) {
             const rejection = {
@@ -130,6 +215,9 @@ async function main() {
             if (credential) {
                 try {
                     identity = await accountStore.resolve(credential);
+                    if (identity && credential.kind === "supabase") {
+                        identity.supabaseUserId = credential.supabaseUserId;
+                    }
                 } catch (error) {
                     console.log("Account identity rejected:", error.message);
                 }

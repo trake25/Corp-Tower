@@ -24,6 +24,7 @@ function createFakeSupabase() {
         const parsed = new URL(url);
         const method = init.method || "GET";
         const headers = init.headers || {};
+        const body = init.body ? JSON.parse(init.body) : null;
         calls.push({ url, method, headers, body: init.body });
 
         if (parsed.pathname === "/auth/v1/user") {
@@ -31,8 +32,45 @@ function createFakeSupabase() {
             return response(usersByToken.get(token) || null, usersByToken.has(token) ? 200 : 401);
         }
 
+        if (parsed.pathname === "/rest/v1/rpc/claim_player_provider") {
+            const account = accounts.get(body.p_account_id);
+            const provider = body.p_provider;
+
+            if (!account || !["google", "facebook"].includes(provider)) {
+                return response("rejected");
+            }
+            if (account.linked_provider && account.linked_provider !== provider) {
+                return response("provider_conflict");
+            }
+
+            if (provider === "facebook") {
+                if (!body.p_facebook_key_version || !body.p_facebook_subject_hmac) {
+                    return response("rejected");
+                }
+                const key = [
+                    "facebook",
+                    body.p_facebook_key_version,
+                    body.p_facebook_subject_hmac
+                ].join(":");
+                const existing = identities.get(key);
+                if (existing && existing.player_account_id !== account.id) {
+                    return response("identity_conflict");
+                }
+                if (!existing) {
+                    identities.set(key, {
+                        provider: "facebook",
+                        key_version: body.p_facebook_key_version,
+                        subject_hmac: body.p_facebook_subject_hmac,
+                        player_account_id: account.id
+                    });
+                }
+            }
+
+            account.linked_provider = provider;
+            return response("accepted");
+        }
+
         const table = parsed.pathname.split("/").pop();
-        const body = init.body ? JSON.parse(init.body) : null;
 
         if (table === "player_accounts") {
             if (method === "GET") {
@@ -40,7 +78,11 @@ function createFakeSupabase() {
                 const supabaseUserId = parsed.searchParams.get("supabase_user_id");
                 const rows = [...accounts.values()].filter(account =>
                     (!id || account.id === id.replace("eq.", "")) &&
-                    (!supabaseUserId || account.supabase_user_id === supabaseUserId.replace("eq.", ""))
+                    (!supabaseUserId || (
+                        supabaseUserId === "is.null"
+                            ? account.supabase_user_id == null
+                            : account.supabase_user_id === supabaseUserId.replace("eq.", "")
+                    ))
                 );
                 return response(rows);
             }
@@ -55,6 +97,7 @@ function createFakeSupabase() {
                     )) {
                         accounts.set(account.id, {
                             name_onboarding_seen: false,
+                            linked_provider: null,
                             ...account
                         });
                     }
@@ -67,6 +110,10 @@ function createFakeSupabase() {
                 const account = accounts.get(id);
                 if (!account) {
                     return response(null, 404);
+                }
+                const supabaseUserId = parsed.searchParams.get("supabase_user_id");
+                if (supabaseUserId === "is.null" && account.supabase_user_id != null) {
+                    return response(null, 204);
                 }
                 Object.assign(account, body);
                 return response(null, 204);
@@ -178,6 +225,11 @@ test("a non-Facebook Supabase user receives a durable game account", async () =>
     const store = createStore(database);
     await store.connect();
 
+    database.usersByToken.set("google-token", {
+        id: "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+        identities: [{ provider: "google", provider_id: "google-user-42" }]
+    });
+
     const identity = await store.resolve({
         kind: "supabase",
         supabaseUserId: "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
@@ -192,9 +244,9 @@ test("a non-Facebook Supabase user receives a durable game account", async () =>
     assert.equal(identity.nameOnboardingSeen, false);
     assert.equal(database.accounts.get(identity.userId).supabase_user_id, "bbbbbbbb-cccc-dddd-eeee-ffffffffffff");
     assert.equal(database.identities.size, 0);
-    assert.equal(
+    assert.ok(
         database.calls.some(call => new URL(call.url).pathname === "/auth/v1/user"),
-        false
+        "A verified external provider must be checked through Supabase before it is accepted."
     );
 });
 
@@ -202,6 +254,10 @@ test("onboarding acknowledgement is persisted as durable account state", async (
     const database = createFakeSupabase();
     const store = createStore(database);
     await store.connect();
+    database.usersByToken.set("google-token", {
+        id: "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+        identities: [{ provider: "google", provider_id: "google-user-42" }]
+    });
     const identity = await store.resolve({
         kind: "supabase",
         supabaseUserId: "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
@@ -245,6 +301,7 @@ test("an HMAC key rotation recognizes the prior Facebook identity and records th
 
     assert.equal(rotated.userId, original.userId);
     assert.equal(database.identities.size, 2);
+    assert.equal(database.accounts.get(original.userId).linked_provider, "facebook");
 });
 
 test("a disabled account store never accepts an identity", async () => {
@@ -256,4 +313,102 @@ test("a disabled account store never accepts an identity", async () => {
     await store.connect();
 
     assert.equal(await store.resolve({ kind: "facebook_native" }), null);
+});
+
+test("a durable account accepts one provider atomically and repeats the same provider idempotently", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+
+    const identity = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "guest-google-provider",
+        accessToken: "guest-token",
+        isAnonymous: true,
+        displayName: null
+    });
+
+    assert.equal(await store.claimProvider(identity.userId, "google"), "accepted");
+    assert.equal(await store.claimProvider(identity.userId, "google"), "accepted");
+    assert.equal(await store.claimProvider(identity.userId, "facebook", "meta-user-42"), "provider_conflict");
+    assert.equal(database.accounts.get(identity.userId).linked_provider, "google");
+});
+
+test("racing different provider claims cannot accept both providers", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+
+    const identity = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "guest-race-provider",
+        accessToken: "guest-token",
+        isAnonymous: true,
+        displayName: null
+    });
+    const results = await Promise.all([
+        store.claimProvider(identity.userId, "google"),
+        store.claimProvider(identity.userId, "facebook", "meta-race-user")
+    ]);
+
+    assert.equal(results.filter(result => result === "accepted").length, 1);
+    assert.equal(results.filter(result => result === "provider_conflict").length, 1);
+    assert.ok(["google", "facebook"].includes(database.accounts.get(identity.userId).linked_provider));
+});
+
+test("Facebook subject ownership is rejected before a second durable account can bind it", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+
+    const owner = await store.resolve({
+        kind: "facebook_native",
+        providerSubject: "meta-owned-user",
+        isAnonymous: false,
+        displayName: null
+    });
+    const guest = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "guest-facebook-provider",
+        accessToken: "guest-token",
+        isAnonymous: true,
+        displayName: null
+    });
+
+    assert.deepEqual(
+        await store.preflightProviderLink(guest.userId, "facebook", "meta-owned-user"),
+        { result: "identity_conflict" }
+    );
+    await assert.rejects(
+        store.resolveFacebook("meta-owned-user", "guest-facebook-provider", null, false),
+        /already linked to another durable account/
+    );
+    assert.equal(database.accounts.get(owner.userId).supabase_user_id, null);
+    assert.equal(database.accounts.get(guest.userId).supabase_user_id, "guest-facebook-provider");
+});
+
+test("an active verified second provider is rejected rather than becoming accepted account state", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+    database.usersByToken.set("multi-provider-token", {
+        id: "multi-provider-user",
+        identities: [
+            { provider: "google", provider_id: "google-user" },
+            { provider: "facebook", provider_id: "facebook-user" }
+        ]
+    });
+
+    await assert.rejects(
+        store.resolve({
+            kind: "supabase",
+            supabaseUserId: "multi-provider-user",
+            accessToken: "multi-provider-token",
+            provider: "google",
+            isAnonymous: false,
+            displayName: null
+        }),
+        /more than one external provider/
+    );
+    assert.equal(database.accounts.size, 0);
 });

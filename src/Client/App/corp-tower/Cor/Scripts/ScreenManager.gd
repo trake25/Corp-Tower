@@ -78,6 +78,8 @@ var home_spectator_trait_labels: Dictionary = {}
 var home_spectator_trait_sliders: Dictionary = {}
 var profile_route_pending := ""
 var change_name_entry_context := "profile"
+var provider_link_pending_provider := ""
+var provider_link_stage := ""
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
@@ -96,6 +98,11 @@ func _ready() -> void:
 	NetworkManager.profile_name_changed.connect(_on_profile_name_changed)
 	NetworkManager.profile_name_rejected.connect(_on_profile_name_rejected)
 	NetworkManager.profile_connection_changed.connect(_on_profile_connection_changed)
+	NetworkManager.provider_link_preflight_result.connect(_on_provider_link_preflight_result)
+	NetworkManager.provider_link_commit_result.connect(_on_provider_link_commit_result)
+	AuthManager.provider_link_completed.connect(_on_provider_link_completed)
+	AuthManager.facebook_link_credential_ready.connect(_on_facebook_link_credential_ready)
+	AuthManager.facebook_link_preflight_failed.connect(_on_facebook_link_preflight_failed)
 	auto_dismiss_modal.dismissed.connect(_on_auto_dismiss_modal_dismissed)
 	auto_dismiss_modal.confirmed.connect(_on_auto_dismiss_modal_dismissed)
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
@@ -121,7 +128,13 @@ func _show_initial_screen() -> void:
 		show_home_screen()
 		return
 
-	if await AuthManager.restore_session():
+	var restored := await AuthManager.restore_session()
+
+	if AuthManager.has_provider_link_result():
+		_resume_provider_link_callback()
+		return
+
+	if restored:
 		_begin_authenticated_startup()
 		return
 
@@ -420,6 +433,19 @@ func _on_profile_name_rejected(data: Dictionary) -> void:
 func _on_profile_connection_changed(online: bool) -> void:
 	if current_overlay != null and current_overlay.has_method("set_online"):
 		current_overlay.call("set_online", online)
+
+	if online and provider_link_pending_provider != "":
+		_continue_provider_link_over_profile_connection()
+		return
+
+	if (
+		not online
+		and provider_link_pending_provider != ""
+		and not NetworkManager.is_connecting
+	):
+		_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+		return
+
 	if online or NetworkManager.is_connecting or profile_route_pending == "":
 		return
 	var failed_route := profile_route_pending
@@ -453,8 +479,174 @@ func show_settings_screen() -> void:
 func show_account_screen() -> void:
 	var screen := AccountScreenScene.instantiate()
 	screen.back_requested.connect(show_settings_screen)
+	screen.provider_link_requested.connect(_on_provider_link_requested)
 	_set_overlay(screen)
 	_set_debug_context(DEBUG_CONTEXT_NONE)
+
+func _resume_provider_link_callback() -> void:
+	var reason := AuthManager.take_provider_link_result()
+	show_account_screen()
+
+	if reason != AuthManager.REASON_NONE:
+		_finish_provider_link_error(reason)
+		return
+
+	if not AuthManager.has_pending_provider_link():
+		_finish_provider_link_error(AuthManager.REASON_REJECTED)
+		return
+
+	provider_link_pending_provider = AuthManager.pending_link_provider()
+	provider_link_stage = "commit"
+	_set_account_link_busy(true)
+	_ensure_provider_link_profile_connection()
+
+func _on_provider_link_requested(provider: String) -> void:
+	if provider_link_pending_provider != "":
+		return
+
+	if AuthManager.has_pending_provider_link():
+		if AuthManager.pending_link_provider() != provider:
+			_finish_provider_link_error(AuthManager.REASON_REJECTED)
+			return
+		provider_link_pending_provider = provider
+		provider_link_stage = "commit"
+		_set_account_link_busy(true)
+		_ensure_provider_link_profile_connection()
+		return
+
+	provider_link_pending_provider = provider
+	provider_link_stage = "eligibility"
+	_set_account_link_busy(true)
+	_ensure_provider_link_profile_connection()
+
+func _ensure_provider_link_profile_connection() -> void:
+	if provider_link_pending_provider == "":
+		return
+
+	if NetworkManager.is_profile_connected():
+		_continue_provider_link_over_profile_connection()
+		return
+
+	if not NetworkManager.connect_profile_server():
+		_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+
+func _continue_provider_link_over_profile_connection() -> void:
+	if provider_link_pending_provider == "":
+		return
+
+	if provider_link_stage == "eligibility":
+		if not NetworkManager.send_provider_link_preflight(provider_link_pending_provider):
+			_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+		return
+
+	if provider_link_stage == "commit":
+		if not NetworkManager.send_provider_link_commit(
+			provider_link_pending_provider,
+			AuthManager.pending_link_access_token()
+		):
+			_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+
+func _on_provider_link_preflight_result(data: Dictionary) -> void:
+	if str(data.get("provider", "")) != provider_link_pending_provider:
+		return
+
+	var result := str(data.get("result", "rejected"))
+	if result != "allowed":
+		_finish_provider_link_error(result)
+		return
+
+	if provider_link_stage == "eligibility":
+		if provider_link_pending_provider == "facebook":
+			provider_link_stage = "facebook_credential"
+			var facebook_reason := AuthManager.begin_facebook_link_preflight()
+			if facebook_reason != AuthManager.REASON_NONE:
+				_finish_provider_link_error(facebook_reason)
+			return
+
+		provider_link_stage = "launch"
+		var launch_reason := await AuthManager.link_with_provider(provider_link_pending_provider)
+		if launch_reason != AuthManager.REASON_NONE:
+			_finish_provider_link_error(launch_reason)
+		return
+
+	if provider_link_stage == "facebook_subject":
+		provider_link_stage = "launch"
+		var link_reason := await AuthManager.complete_facebook_link_after_preflight()
+		if link_reason != AuthManager.REASON_NONE:
+			_finish_provider_link_error(link_reason)
+
+func _on_facebook_link_credential_ready(access_token: String) -> void:
+	if provider_link_pending_provider != "facebook" or provider_link_stage != "facebook_credential":
+		return
+
+	provider_link_stage = "facebook_subject"
+	if not NetworkManager.send_provider_link_preflight("facebook", access_token):
+		_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+
+func _on_facebook_link_preflight_failed(reason: String) -> void:
+	if provider_link_pending_provider == "facebook" and provider_link_stage == "facebook_credential":
+		_finish_provider_link_error(reason)
+
+func _on_provider_link_completed(reason: String) -> void:
+	if not AuthManager.has_provider_link_result():
+		return
+
+	var completion_reason := AuthManager.take_provider_link_result()
+	if completion_reason != reason:
+		completion_reason = reason
+
+	if completion_reason != AuthManager.REASON_NONE:
+		_finish_provider_link_error(completion_reason)
+		return
+
+	if not AuthManager.has_pending_provider_link():
+		_finish_provider_link_error(AuthManager.REASON_REJECTED)
+		return
+
+	provider_link_pending_provider = AuthManager.pending_link_provider()
+	provider_link_stage = "commit"
+	_set_account_link_busy(true)
+	_ensure_provider_link_profile_connection()
+
+func _on_provider_link_commit_result(data: Dictionary) -> void:
+	if (
+		provider_link_stage != "commit"
+		or str(data.get("provider", "")) != provider_link_pending_provider
+	):
+		return
+
+	var result := str(data.get("result", "rejected"))
+	if result != "accepted":
+		AuthManager.reject_provider_link()
+		_finish_provider_link_error(result)
+		return
+
+	if not AuthManager.finish_provider_link():
+		_finish_provider_link_error(AuthManager.REASON_REJECTED)
+		return
+
+	provider_link_pending_provider = ""
+	provider_link_stage = ""
+	_set_account_link_busy(false)
+	if current_overlay != null and current_overlay.has_method("refresh_account_state"):
+		current_overlay.call("refresh_account_state")
+	NetworkManager.disconnect_profile_server()
+
+func _set_account_link_busy(busy: bool) -> void:
+	if current_overlay != null and current_overlay.has_method("set_busy"):
+		current_overlay.call("set_busy", busy)
+
+func _finish_provider_link_error(reason: String) -> void:
+	if AuthManager.has_pending_provider_link() and reason != AuthManager.REASON_UNREACHABLE:
+		AuthManager.reject_provider_link()
+
+	provider_link_pending_provider = ""
+	provider_link_stage = ""
+	_set_account_link_busy(false)
+	if current_overlay != null and current_overlay.has_method("show_error"):
+		current_overlay.call("show_error", reason)
+	if NetworkManager.is_profile_connected():
+		NetworkManager.disconnect_profile_server()
 
 func _on_settings_sign_out_requested() -> void:
 	NetworkManager.disconnect_server()
