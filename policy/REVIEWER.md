@@ -16,48 +16,37 @@ Read only:
 1. the matching context section; and
 2. the matching review-type section.
 
-Example:
-`CONTINUED + QA` → read `#CONTINUED#` and `#QA#` only.
-
 If the task fits neither QA nor BUG, stop and tell the user why.
 
 #CONTINUED#
 
 Use the approved intended behavior and implementation plan already present in this session.
 
-For an orchestrated implementation, the approved parent plan is the implementation contract. Worker assignments and handoffs are supporting execution evidence, not separate behavior authorities.
+For orchestrated work, the approved parent plan is the implementation contract. Worker assignments and handoffs are supporting execution evidence, not separate behavior authorities.
 
 Do not reread or reconstruct planning decisions already established in the conversation.
 
 #FRESH#
 
-Reconstruct only the minimum review contract needed from current repository evidence and, when available, the relevant plan and QA receipt.
+Reconstruct only the minimum review contract needed.
 
-Use `KB/docs/context/index.md` for repository contextualization. Read only the required concept evidence. Return to the KB router whenever another concept is needed.
-
-If the available plan declares orchestrated execution, treat its parent contract as authoritative. Read worker handoffs or orchestration evidence only when needed to assess implementation, integration, or executable proof.
+Follow `policy/CHATGPT.md`'s repository-contextualization contract. Inspect current source, the relevant plan/diff/commit, QA receipt, and KB evidence only where materially needed.
 
 Do not assume intended behavior from conversation memory that is not present in this session.
 
 #QA#
 
-## Integrated QA
-
 Inspect actual current repository evidence, not Codex summaries.
 
-Compare implementation against the approved or reconstructed contract.
+Compare the integrated implementation against the approved or reconstructed contract.
 
-For an orchestrated task, review the final integrated repository result against the parent contract. Do not independently approve workers as if each worker were a separate feature authority. Worker handoffs and targeted test results are supporting proof only.
-
-Inspect only what is relevant:
+Inspect only relevant:
 - changed source;
-- relevant diff or commit;
+- diff or commit;
 - affected docs/maps;
-- relevant QA receipt or executable-proof result;
+- required verification evidence;
 - worker handoffs when material to integration;
 - permanent QA changes introduced by the task.
-
-For orchestrated work, confirm any material cross-unit interface or invariant exercised by the parent contract and verify that no incomplete worker handoff or unresolved integration gap invalidates completion.
 
 Classify material findings as:
 - implementation defect;
@@ -81,9 +70,7 @@ If only unrelated maintenance remains, route it to `MAINTENANCE.md`.
 
 #BUG#
 
-Inspect only the current source and KB concepts needed to understand the reported defect.
-
-Establish:
+Inspect only the evidence needed to establish:
 - observed behavior;
 - intended behavior;
 - affected boundary;
@@ -93,9 +80,9 @@ For player-facing bugs, describe intended player-observable behavior.
 
 For workflow/tooling bugs, describe intended technical behavior.
 
-If the defect follows an orchestrated implementation, use the parent contract to determine intended behavior. A failure wholly scoped to one worker boundary may be planned as a focused repair; a cross-worker failure must first establish the integration boundary responsible for the repair.
+For defects following orchestrated work, use the parent contract as behavior authority and identify whether the repair is worker-local or cross-unit.
 
-If intended behavior requires user decisions, present only those material decisions as numbered items.
+If intended behavior requires user decisions, present only material decisions as numbered items.
 
 Once the defect and intended behavior are established, search `PLANNER.md` for `#ENTRY#` and create a focused fix plan through the normal planning route.
 

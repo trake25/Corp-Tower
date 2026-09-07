@@ -2,22 +2,8 @@
 
 For repository-dependent planning, follow `policy/CHATGPT.md`'s repository-contextualization contract.
 
-Prefer direct local/workspace repository search and bounded reads when available. Read known exact paths or symbols directly. Use bounded task-relevant search to discover implementation files when their location is not yet known. Current source discovered this way is ordinary authority for current implementation facts.
-
-Use the KB Tree when durable intended behavior, architecture, ownership, terminology, or another semantic contract materially helps the task. KB routing is not a prerequisite or access-control gate for source discovery. When KB evidence is used, resolve only the concepts materially needed and do not load adjacency automatically.
-
-Do not duplicate the same evidence through GitHub when direct local/workspace access already provided it. Stop contextualizing when current evidence is sufficient for the next planning decision.
-
-Before Phase 2, contextualize far enough to establish:
-- the relevant durable system contracts, when material;
-- the exact bounded source files/sections Codex should read;
-- the likely direct-edit files;
-- authored KB/docs and generated outputs expected to change;
-- the minimum verification needed to prove completion.
-
-Do not guess implementation files merely to make a plan look complete.
-
 Identify the planning type:
+
 - GAME
 - WORKFLOW
 
@@ -59,109 +45,118 @@ Once the complete numbered contract is approved, proceed to `#PLAN-PHASE-2#`.
 
 #PLAN-PHASE-2#
 
-Phase 2 is a self-contained execution handoff. Planner performs policy selection and repository contextualization once so Codex does not repeat that reasoning.
+Phase 2 is a self-contained execution handoff.
+
+Only at Phase 2, contextualize far enough to establish:
+- relevant durable system contracts when material;
+- exact bounded source files/sections Codex should inspect;
+- likely direct-edit files;
+- authored KB/docs and generated outputs expected to change;
+- minimum verification needed to prove completion.
+
+Do not guess implementation files merely to make a plan look complete.
 
 ## Policy selection
 
-Read `policy/CODEX.md#ENTRY#`, classify the implementation as IMPLEMENT or FIX, then read only the matching entry:
-- IMPLEMENT → `policy/IMPLEMENT.md#ENTRY#`
-- FIX → `policy/FIX.md#ENTRY#`
+Read `policy/CODEX.md#ENTRY#` and follow only the implementation and conditional sections it selects for the task.
 
-Domain/task-scope knowledge comes from Planner-selected current source plus KB context only when semantic or durable-contract evidence is materially needed. It never comes from runtime skills.
+Compile only selected task policy into `## 2. Task-Specific Policy` and any exact non-default process assignments required by CODEX policy into `## Execution Overrides`.
 
-Optional execution/process policy is selected only when it actually applies:
-- If the user requests process customization or "everything ON", read `policy/CODEX.md#PROCESS-ROUTER#`.
-- If a specific non-default process is enabled, read `policy/CODEX.md#PROCESS-ROUTER#` for its exact plan encoding, then read only that process's exact section.
-- If ORCHESTRATED execution is selected, read `policy/CODEX.md#ORCHESTRATION#`.
-- If strict execution is selected, read `policy/CODEX.md#STRICT-EXECUTION#`.
+Do not copy universal `AGENTS.md` rules or duplicate CODEX routing/process prose in the plan.
 
-A default-OFF process is absent from the Phase 2 plan and absent from Codex runtime context. Do not name, explain, disable, or route through an optional process merely because its tooling exists.
-
-For every selected non-default process, encode its effective value exactly once under `## Execution Overrides` using the assignment form defined by `policy/CODEX.md#PROCESS-ROUTER#`. Do not encode default values. This assignment is deterministic tooling input as well as task policy.
-
-Compile only the selected rules that materially constrain this task into `## 2. Task-Specific Policy` and, when needed, `## Execution Overrides`. Do not copy universal `AGENTS.md` rules into the plan.
-
-Repository agent-policy/adapter Markdown is user-owned manual configuration. If approved behavior requires changing `AGENTS.md`, `policy/*.md`, or `CLAUDE.md`, ChatGPT provides the complete replacement file for the user to apply before Codex implementation. Never assign those files to Codex write scope.
+Repository agent-policy/adapter Markdown is user-owned manual configuration. If approved behavior requires changing `AGENTS.md`, `policy/*.md`, or `CLAUDE.md`, ChatGPT provides complete replacement files for the user to apply before Codex implementation. Never assign those files to Codex write scope.
 
 ## PLAN-PHASE-2-B (Scenario based only)
 
-If plan needs human (user) manual intervention to fully complete the task. Also create a manual runbook .md files. It must be detailed step by step guide. Example - User need to manually configure play dev console, meta dev console, sudo, etc. Manual game testing is not included unless specified in the prompt. The guide must be up to date as some consoles, commands, UI might already be outdated.
+If completing the task requires user manual intervention outside ordinary manual game testing, also create a detailed current runbook `.md` for those steps.
 
 ## Context ownership
 
 The plan has exactly three authority layers:
+
 1. `AGENTS.md` — universal Codex execution policy.
 2. Phase 2 task policy — only policy selected for this task.
 3. Planner-selected repository context — current source plus KB evidence only where semantic or durable-contract context is materially needed.
 
-Do not use or route through agent skills. Do not copy domain instructions into universal policy.
+Do not use or route through agent skills.
 
 ## Defaults and selected policy
 
-Normal single-run execution and default-OFF processes are implicit and omitted.
+Normal single-run execution and default process values are implicit.
 
-`## Execution Overrides` appears only when execution differs from defaults. When present, it contains the exact non-default process assignments required by deterministic tooling plus any other selected execution override. The heading and encoding are Planner/tooling mechanics; `AGENTS.md` must not teach Codex how they work.
+Follow `policy/CODEX.md` for any non-default process encoding or selected execution shape.
 
-Plan archival is enabled by repository default. Treat it as a deterministic completion mechanic, not universal Codex policy prose. Unless explicitly disabled, include only the concrete archival completion action/criterion needed for the current plan. If explicitly disabled, encode `plan_archival=OFF` exactly once under `## Execution Overrides`.
+Plan archival remains enabled by repository default unless explicitly disabled.
 
 ## Execution-shape planning
 
-Use the default single-run shape unless semantic decomposition materially reduces reconstruction/integration risk enough to justify coordination.
+Use the default single-run shape unless semantic decomposition materially reduces reconstruction/integration risk.
 
-Select ORCHESTRATED only when that benefit is real. Orchestration is a parent reasoning/execution shape, not a deterministic scope lifecycle. When selected, state `Execution shape: ORCHESTRATED` exactly once in `## 2. Task-Specific Policy` and compile only the orchestration rules needed for bounded worker decomposition, sequencing, compact worker-to-parent handoffs, verification, and parent integration.
+If ORCHESTRATED is selected, follow `policy/CODEX.md#ORCHESTRATION#` and state `Execution shape: ORCHESTRATED` exactly once in `## 2. Task-Specific Policy`.
 
 ## Standard Phase 2 format
 
 Every plan uses:
 
 ### `## 1. Intended Behavior`
+
 Copy the approved Phase 1 numbered contract without reinterpretation.
 
 ### `## 2. Task-Specific Policy`
-Include only selected task policy. Default-OFF optional policy is completely absent.
+
+Include only selected task policy.
 
 ### `## 3. Context`
 
 #### `### Compacted KB Context`
-Include only implementation-relevant KB prose actually used by Planner. If no KB semantic context was materially required, state `None required`; do not perform KB retrieval merely to populate this section.
+
+Include only implementation-relevant KB prose actually used by Planner. If no KB semantic context was materially required, state `None required`.
 
 #### `### KB Retrieval Inputs`
-List exact canonical concept IDs and Planner-resolved aliases only when Codex may materially need deeper KB detail during implementation. If none are needed, state `None required`. Do not supply open-ended repository-search keywords and do not force a KB input merely to satisfy the format.
+
+List exact canonical concept IDs and Planner-resolved aliases only when Codex may materially need deeper KB detail during implementation. If none are needed, state `None required`.
 
 #### `### Source Context`
-List exact current source files plus bounded symbols/sections Codex should inspect and why. Source paths may come from direct repository search/read and do not require a prior KB grant.
+
+List exact current source files plus bounded symbols/sections Codex should inspect and why.
 
 ### `## 4. Expected Write Scope`
 
 #### `### Direct Edits`
+
 List likely authored files.
 
 #### `### Generated Outputs`
+
 List only deterministic generated outputs expected to change.
 
 This is evidence-based expected scope, not a hard whitelist unless strict execution is selected. Policy/adapter files requiring manual replacement are never Codex direct edits.
 
 ### `## 5. Implementation`
+
 Provide ordered required outcomes, material interfaces/invariants, compatibility constraints, and exact authored prose when wording carries behavior. Leave low-level code structure to current-source judgment unless strict execution is selected.
 
 ### `## 6. Verification`
+
 Specify only minimum task-required verification plus consistency/generated mechanics required by actual changed scope or selected task policy.
 
 ### `## 7. Done Criteria`
-State observable completion conditions. Include deterministic plan archival when enabled, without explaining the process-control system.
+
+State observable completion conditions. Include deterministic plan archival when enabled.
 
 ### `## Execution Overrides`
-Append only when a non-default execution/process rule is selected. Encode each selected process value exactly once using `name=ON` or `name=OFF` as defined by the process router.
+
+Append only when required by selected non-default policy.
 
 ## Plan quality and delivery
 
-Phase 2 is not ready until current evidence supports its source context, likely write scope, verification, and any KB semantic context that is actually material to the task.
+Phase 2 is ready only when current evidence supports its source context, likely write scope, verification, and any KB semantic context actually required.
 
 Keep unrelated maintenance out of scope and do not repeat requirements across sections.
 
 Deliver the plan as `[short-task-name].md`.
 
-In the accompanying reply state task complexity, recommended model/effort, and a short reason. If manual policy/adapter replacements are required, provide them and tell the user to apply them before Codex. If telemetry is selected ON, the plan must contain exactly one `telemetry=ON` assignment and tell the user outside the plan to start that implementation session through `node scripts/codex-task-run.mjs <phase-2-plan-path>`.
+In the accompanying reply state task complexity, recommended model/effort, and a short reason. Follow any selected CODEX policy that requires an out-of-plan user instruction.
 
 After delivering Phase 2, stop. Implementation belongs to Codex.
 
