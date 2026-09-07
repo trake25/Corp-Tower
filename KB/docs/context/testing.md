@@ -133,7 +133,6 @@ source: scripts/tests/context-query.test.mjs#automation protocol paths remain ma
 source: scripts/tests/task-ownership.test.mjs#lightweight task ownership acquires explicit scope, rejects active overlap, and releases independently
 source: scripts/tests/plan-archive.test.mjs#standalone plan archival is collision-safe and idempotent without task-close
 source: scripts/tests/orchestration-scope.test.mjs#parallel worker ownership rejects overlapping write claims
-source: scripts/tests/policy-routing.test.mjs#universal policy excludes optional process routing
 source: scripts/tests/concept-kb.test.mjs#the repository concept registry is complete, deterministic, and source-grounded
 source: scripts/benchmark-rag.mjs#runConceptBenchmark
 source: scripts/lib/kb-calibration.mjs#measureKbCalibration

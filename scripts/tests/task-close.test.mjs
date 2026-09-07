@@ -315,7 +315,7 @@ test('task-close derives authored KB documents from exact concept source grants'
   const server = taskCloseIntake([SOURCE]);
   const site = taskCloseIntake(['site/src/styles/global.css']);
   const siteWorker = taskCloseIntake(['site/worker/index.js']);
-  const testOnly = taskCloseIntake(['scripts/tests/policy-routing.test.mjs']);
+  const testOnly = taskCloseIntake(['scripts/tests/qa-gate.test.mjs']);
   const combined = taskCloseIntake([
     'src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd',
     SOURCE,

@@ -189,7 +189,7 @@ alias: orchestrated execution
 alias: multi-agent implementation
 source: policy/PLANNER.md#Execution-shape planning
 source: policy/CODEX.md#Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.
-source: policy/REVIEWER.md#Integrated QA
+source: policy/REVIEWER.md#For orchestrated work, the approved parent plan is the implementation contract.
 adjacent: automation.planning.phase2
 adjacent: automation.orchestration.ownership
 adjacent: automation.task-close.lifecycle

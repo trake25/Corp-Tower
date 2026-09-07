@@ -52,7 +52,7 @@ Owner: `KB/docs/context/automation.md:148-163` → **Provider-visible I/O discip
 |---|---|---:|---|
 | `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
 | `scripts/task-close.mjs` | `compactOutput` | 936 | `sed -n 924,956p scripts/task-close.mjs` |
-| `scripts/qa-gate.mjs` | `fail` | 192 | `sed -n 180,212p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `fail` | 190 | `sed -n 178,210p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `automation.observability.usage`
 
@@ -115,9 +115,9 @@ Owner: `KB/docs/context/automation.md:197-212` → **Orchestrated execution**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/PLANNER.md` | `Execution-shape planning` | 103 | `sed -n 91,123p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Execution-shape planning` | 91 | `sed -n 79,111p policy/PLANNER.md` |
 | `policy/CODEX.md` | `Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.` | 112 | `sed -n 100,123p policy/CODEX.md` |
-| `policy/REVIEWER.md` | `Integrated QA` | 44 | `sed -n 32,64p policy/REVIEWER.md` |
+| `policy/REVIEWER.md` | `For orchestrated work, the approved parent plan is the implementation contract.` | 25 | `sed -n 13,45p policy/REVIEWER.md` |
 
 Adjacent concepts: `automation.planning.phase2`, `automation.orchestration.ownership`, `automation.task-close.lifecycle`
 
@@ -140,9 +140,9 @@ Owner: `KB/docs/context/automation.md:46-63` → **Phase 2 execution handoff**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/PLANNER.md` | `Policy selection` | 64 | `sed -n 52,84p policy/PLANNER.md` |
-| `policy/PLANNER.md` | `Defaults and selected policy` | 95 | `sed -n 83,115p policy/PLANNER.md` |
-| `policy/PLANNER.md` | `Standard Phase 2 format` | 109 | `sed -n 97,129p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Policy selection` | 59 | `sed -n 47,79p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Defaults and selected policy` | 83 | `sed -n 71,103p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Standard Phase 2 format` | 97 | `sed -n 85,117p policy/PLANNER.md` |
 | `policy/CODEX.md` | `Agent-supported repository process defaults` | 32 | `sed -n 20,52p policy/CODEX.md` |
 
 Adjacent concepts: `automation.retrieval.direct`, `automation.orchestration.execution`, `automation.task-close.process-controls`
@@ -174,7 +174,7 @@ Owner: `KB/docs/context/automation.md:17-33` → **Direct retrieval discipline**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
-| `policy/PLANNER.md` | `Standard Phase 2 format` | 109 | `sed -n 97,129p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Standard Phase 2 format` | 97 | `sed -n 85,117p policy/PLANNER.md` |
 | `policy/CHATGPT.md` | `Repository contextualization` | 16 | `sed -n 4,36p policy/CHATGPT.md` |
 
 Adjacent concepts: `automation.planning.phase2`, `automation.retrieval.protocol`

@@ -51,7 +51,6 @@ const automationTests = Object.freeze({
   stripComments: 'scripts/tests/strip-comments.test.mjs',
   observability: 'scripts/tests/agent-observability.test.mjs',
   observabilityHook: 'scripts/tests/codex-observability-hook.test.mjs',
-  policyRouting: 'scripts/tests/policy-routing.test.mjs',
 });
 
 export const AUTOMATION_PROTOCOL_TESTS = Object.freeze(Object.values(automationTests)
