@@ -25,9 +25,6 @@ reference/
 task/
 repair/
 report/benchmarks/raw/
-# Machine-local Godot editors are restored deterministically by
-# scripts/ensure-godot-binary.sh; never rely on an ignored binary surviving a
-# fresh worktree or cleanup.
 *.x86_64
 
 # Private art asset pipeline — R2 credentials for local dev.
