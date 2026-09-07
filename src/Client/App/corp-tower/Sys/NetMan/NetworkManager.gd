@@ -8,6 +8,7 @@ var auto_reconnect_enabled := false
 var auto_reconnect_attempts := 0
 var auto_reconnect_delay_remaining := -1.0
 var connect_after_close := false
+var profile_connect_after_close := false
 var recovery_state := "healthy"
 var recovery_request_id := ""
 var recovery_deadline_msec := -1
@@ -91,6 +92,10 @@ signal profile_connection_changed(online: bool)
 signal profile_onboarding_seen_result(persisted: bool)
 
 func connect_server(is_auto_reconnect := false, preserve_entry := false, resume_only := false):
+	if profile_connect_after_close:
+		profile_connect_after_close = false
+		is_connecting = false
+
 	connection_purpose = "gameplay"
 	if not is_auto_reconnect and not preserve_entry:
 		_clear_pending_private_entry()
@@ -153,6 +158,7 @@ func disconnect_server(clear_private_entry := true, clear_spectator_entry := tru
 	status_changed.emit("Disconnecting...")
 	manual_disconnect_requested = true
 	connect_after_close = false
+	profile_connect_after_close = false
 	is_conn_estab = false
 	is_connecting = false
 	auto_reconnect_enabled = false
@@ -171,7 +177,23 @@ func disconnect_server(clear_private_entry := true, clear_spectator_entry := tru
 func connect_profile_server() -> bool:
 	if connection_purpose == PROFILE_CONNECTION_PURPOSE and (is_conn_estab or is_connecting):
 		return true
-	if is_conn_estab or is_connecting or ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
+	if is_conn_estab or is_connecting:
+		return false
+
+	if ws.get_ready_state() == WebSocketPeer.STATE_CLOSING:
+		connection_purpose = PROFILE_CONNECTION_PURPOSE
+		profile_snapshot = {}
+		manual_disconnect_requested = false
+		connect_after_close = false
+		auto_reconnect_enabled = false
+		auto_reconnect_delay_remaining = -1.0
+		profile_connect_after_close = true
+		is_connecting = true
+		connect_attempt_elapsed = 0.0
+		profile_connection_changed.emit(false)
+		return true
+
+	if ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
 		return false
 
 	ws = WebSocketPeer.new()
@@ -198,6 +220,7 @@ func disconnect_profile_server() -> void:
 
 	manual_disconnect_requested = true
 	connect_after_close = false
+	profile_connect_after_close = false
 	is_conn_estab = false
 	is_connecting = false
 	profile_snapshot = {}
@@ -960,7 +983,10 @@ func _process(delta: float) -> void:
 			is_connecting = false
 			reset_latency_probe()
 
-			if recovery_reconnect_pending:
+			if profile_connect_after_close:
+				profile_connect_after_close = false
+				connect_profile_server()
+			elif recovery_reconnect_pending:
 				start_pending_recovery_reconnect()
 			elif connect_after_close:
 				connect_after_close = false

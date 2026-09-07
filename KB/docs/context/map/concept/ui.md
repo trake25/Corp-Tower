@@ -82,7 +82,7 @@ Owner: `KB/docs/context/ui.md:197-200` → **Server-driven navigation**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_room_joined` | 148 | `sed -n 136,168p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `room_joined` | 71 | `sed -n 59,91p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `room_joined` | 72 | `sed -n 60,92p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `network.room.close`, `network.session.resume-only`
 
