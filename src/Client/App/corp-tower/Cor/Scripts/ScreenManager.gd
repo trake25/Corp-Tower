@@ -32,6 +32,9 @@ const SPECTATOR_PRESET_THREE_ENGINEERS := 2
 const SPECTATOR_PRESET_THREE_OPPORTUNISTS := 3
 const SPECTATOR_PRESET_CUSTOM := 4
 const SPECTATOR_TRAIT_KEYS := ["reactionMs", "skill", "riskTolerance", "greed", "repairAwareness", "powerUse"]
+const DESIGN_VIEWPORT_SIZE := Vector2(412.0, 917.0)
+const DESIGN_VIEWPORT_WIDTH := DESIGN_VIEWPORT_SIZE.x
+const MOBILE_WEB_BLEED_SHADER := preload("res://Cor/Shaders/MobileWebEdgeBleed.gdshader")
 const SPECTATOR_PROFILE_DEFAULTS := {
 	"climber": {
 		"personality": "climber", "reactionMs": 1400, "skill": 0.78,
@@ -80,6 +83,13 @@ var profile_route_pending := ""
 var change_name_entry_context := "profile"
 var provider_link_pending_provider := ""
 var provider_link_stage := ""
+var mobile_web_horizontal_fit_active := false
+var mobile_web_visual_viewport = null
+var mobile_web_visual_viewport_resize_callback = null
+var mobile_web_startup_bleed: TextureRect = null
+var mobile_web_bleeds: Array[Dictionary] = []
+var mobile_web_play_bleed: TextureRect = null
+var mobile_web_play_background: Control = null
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
@@ -108,8 +118,221 @@ func _ready() -> void:
 	debug_button.gui_input.connect(_on_debug_button_gui_input)
 	debug_button.visible = EndpointConfig.DEBUG_UI_ENABLED
 	reset_debug_button_position()
+	_configure_mobile_web_horizontal_fit()
 	_configure_runtime_android_splash()
 	_show_initial_screen()
+
+func _exit_tree() -> void:
+	if mobile_web_visual_viewport != null and mobile_web_visual_viewport_resize_callback != null:
+		mobile_web_visual_viewport.removeEventListener(
+			"resize",
+			mobile_web_visual_viewport_resize_callback
+		)
+
+func _process(_delta: float) -> void:
+	if mobile_web_play_bleed == null or not is_instance_valid(mobile_web_play_bleed):
+		return
+	if mobile_web_play_background == null or not is_instance_valid(mobile_web_play_background):
+		return
+	_update_mobile_web_bleed(mobile_web_play_bleed, mobile_web_play_background.position.y)
+
+func _configure_mobile_web_horizontal_fit() -> void:
+	if not _is_mobile_web_browser():
+		return
+
+	mobile_web_horizontal_fit_active = true
+	get_window().size_changed.connect(_on_mobile_web_window_size_changed)
+	_connect_mobile_web_visual_viewport_resize()
+	_apply_mobile_web_horizontal_fit()
+	mobile_web_startup_bleed = _create_mobile_web_bleed(
+		startup_splash,
+		TextureRect.STRETCH_KEEP_ASPECT_CENTERED,
+		DESIGN_VIEWPORT_WIDTH
+	)
+	_dismiss_mobile_web_boot_overlay()
+
+func _is_mobile_web_browser() -> bool:
+	if not OS.has_feature("web"):
+		return false
+
+	return bool(JavaScriptBridge.eval(
+		"(typeof navigator !== 'undefined' && ((navigator.userAgentData && navigator.userAgentData.mobile === true) || /Android|webOS|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobi/i.test(navigator.userAgent || '')))",
+		true
+	))
+
+func _connect_mobile_web_visual_viewport_resize() -> void:
+	if not bool(JavaScriptBridge.eval(
+		"typeof window !== 'undefined' && window.visualViewport && typeof window.visualViewport.addEventListener === 'function'",
+		true
+	)):
+		return
+
+	mobile_web_visual_viewport = JavaScriptBridge.get_interface("window").visualViewport
+	mobile_web_visual_viewport_resize_callback = JavaScriptBridge.create_callback(
+		_on_mobile_web_visual_viewport_resized
+	)
+	mobile_web_visual_viewport.addEventListener(
+		"resize",
+		mobile_web_visual_viewport_resize_callback
+	)
+
+func _on_mobile_web_window_size_changed() -> void:
+	_apply_mobile_web_horizontal_fit()
+
+func _on_mobile_web_visual_viewport_resized(_args: Array) -> void:
+	_apply_mobile_web_horizontal_fit()
+
+func _apply_mobile_web_horizontal_fit() -> void:
+	if not mobile_web_horizontal_fit_active:
+		return
+
+	var usable_viewport_size := _get_mobile_web_usable_viewport_size()
+	if usable_viewport_size.x <= 0.0 or usable_viewport_size.y <= 0.0:
+		return
+
+	var desired_aspect := Window.CONTENT_SCALE_ASPECT_KEEP
+	if usable_viewport_size.x / usable_viewport_size.y > DESIGN_VIEWPORT_SIZE.x / DESIGN_VIEWPORT_SIZE.y:
+		desired_aspect = Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT
+
+	var root_window := get_window()
+	if root_window.content_scale_aspect != desired_aspect:
+		root_window.content_scale_aspect = desired_aspect
+	call_deferred("_update_mobile_web_bleeds")
+
+func _get_mobile_web_usable_viewport_size() -> Vector2:
+	var width := float(JavaScriptBridge.eval(
+		"(window.visualViewport && window.visualViewport.width) || window.innerWidth || 0",
+		true
+	))
+	var height := float(JavaScriptBridge.eval(
+		"(window.visualViewport && window.visualViewport.height) || window.innerHeight || 0",
+		true
+	))
+	return Vector2(width, height)
+
+func _dismiss_mobile_web_boot_overlay() -> void:
+	JavaScriptBridge.eval(
+		"if (typeof window !== 'undefined' && typeof window.__topOrDropDismissMobileBootOverlay === 'function') window.__topOrDropDismissMobileBootOverlay();",
+		true
+	)
+
+func _configure_mobile_web_screen(screen: Node) -> void:
+	if not mobile_web_horizontal_fit_active or not (screen is Control):
+		return
+
+	var background := screen.get_node_or_null("Background") as TextureRect
+	if background == null or background.stretch_mode != TextureRect.STRETCH_KEEP_ASPECT_COVERED:
+		return
+
+	_create_mobile_web_bleed(background, TextureRect.STRETCH_KEEP_ASPECT_COVERED)
+	_constrain_mobile_web_center(background)
+
+func _configure_mobile_web_play() -> void:
+	if not mobile_web_horizontal_fit_active or play_instance == null:
+		return
+
+	var background_art := play_instance.get_node_or_null("BgArt") as TextureRect
+	var image := play_instance.get_node_or_null("BgArt/Image") as TextureRect
+	if background_art == null or image == null or image.texture == null:
+		return
+
+	mobile_web_play_bleed = _create_mobile_web_bleed_from_texture(
+		background_art,
+		image.texture,
+		TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	)
+	mobile_web_play_background = background_art
+	_constrain_mobile_web_center(background_art)
+
+func _constrain_mobile_web_center(background: Control) -> void:
+	background.anchor_left = 0.5
+	background.anchor_right = 0.5
+	background.offset_left = -DESIGN_VIEWPORT_WIDTH * 0.5
+	background.offset_right = DESIGN_VIEWPORT_WIDTH * 0.5
+
+func _create_mobile_web_bleed(
+	source: TextureRect,
+	stretch_mode: int,
+	protected_width := 0.0
+) -> TextureRect:
+	return _create_mobile_web_bleed_from_texture(
+		source,
+		source.texture,
+		stretch_mode,
+		protected_width
+	)
+
+func _create_mobile_web_bleed_from_texture(
+	source: Control,
+	texture: Texture2D,
+	stretch_mode: int,
+	protected_width := 0.0
+) -> TextureRect:
+	if texture == null or not (source.get_parent() is Control):
+		return null
+
+	var bleed := TextureRect.new()
+	bleed.name = "MobileWebEdgeBleed"
+	bleed.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bleed.texture = texture
+	bleed.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bleed.stretch_mode = TextureRect.STRETCH_SCALE
+	bleed.modulate = source.modulate
+	bleed.self_modulate = source.self_modulate
+	bleed.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var material := ShaderMaterial.new()
+	material.shader = MOBILE_WEB_BLEED_SHADER
+	material.set_shader_parameter("source_mapping", int(stretch_mode))
+	bleed.material = material
+	var parent := source.get_parent() as Control
+	parent.add_child(bleed)
+	parent.move_child(bleed, source.get_index())
+	mobile_web_bleeds.append({
+		"bleed": bleed,
+		"source": source,
+		"protected_width": protected_width
+	})
+	_update_mobile_web_bleed(bleed, source.position.y)
+	call_deferred("_update_mobile_web_bleed", bleed, source.position.y)
+	return bleed
+
+func _update_mobile_web_bleeds() -> void:
+	for entry in mobile_web_bleeds:
+		var bleed := entry.get("bleed") as TextureRect
+		var source := entry.get("source") as Control
+		if bleed == null or source == null or not is_instance_valid(bleed) or not is_instance_valid(source):
+			continue
+		_update_mobile_web_bleed(bleed, source.position.y)
+
+func _update_mobile_web_bleed(bleed: TextureRect, source_offset_y: float) -> void:
+	if bleed.material == null or not (bleed.material is ShaderMaterial):
+		return
+	var material := bleed.material as ShaderMaterial
+	var viewport_size := bleed.size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+	var entry := _mobile_web_bleed_entry(bleed)
+	var source := entry.get("source") as Control
+	if source == null:
+		return
+	material.set_shader_parameter("viewport_size", viewport_size)
+	var protected_size := source.size
+	var protected_width := float(entry.get("protected_width", 0.0))
+	if protected_width > 0.0:
+		protected_size.x = protected_width
+	material.set_shader_parameter("protected_size", protected_size)
+	material.set_shader_parameter("source_offset_y", source_offset_y)
+
+func _mobile_web_bleed_entry(bleed: TextureRect) -> Dictionary:
+	for entry in mobile_web_bleeds:
+		if entry.get("bleed") == bleed:
+			return entry
+	return {}
+
+func _clear_mobile_web_startup_bleed() -> void:
+	if mobile_web_startup_bleed != null and is_instance_valid(mobile_web_startup_bleed):
+		mobile_web_startup_bleed.queue_free()
+	mobile_web_startup_bleed = null
 
 func _configure_runtime_android_splash() -> void:
 	if OS.get_name() != "Android":
@@ -818,6 +1041,7 @@ func _ensure_play_instance() -> void:
 		return
 
 	play_instance = PlayScreenScene.instantiate()
+	_configure_mobile_web_play()
 	screen_container.add_child(play_instance)
 
 	if play_instance.has_signal("tutorial_requested"):
@@ -831,6 +1055,8 @@ func _ensure_play_instance() -> void:
 
 func _teardown_play_instance() -> void:
 	_set_gameplay_input_blocked(false)
+	mobile_web_play_bleed = null
+	mobile_web_play_background = null
 
 	if play_instance != null and is_instance_valid(play_instance):
 		play_instance.queue_free()
@@ -847,8 +1073,10 @@ func _set_debug_context(context: String) -> void:
 func _set_overlay(screen: Node) -> void:
 	_clear_overlay()
 	current_overlay = screen
+	_configure_mobile_web_screen(screen)
 	screen_container.add_child(screen)
 	startup_splash.visible = false
+	_clear_mobile_web_startup_bleed()
 	_complete_startup_handoff()
 
 func _complete_startup_handoff() -> void:
@@ -889,6 +1117,7 @@ func _show_private_entry_loader() -> void:
 		return
 
 	private_entry_loader = PlayLoaderScreenScene.instantiate()
+	_configure_mobile_web_screen(private_entry_loader)
 	screen_container.add_child(private_entry_loader)
 
 func _clear_private_entry_loader() -> void:
@@ -902,6 +1131,7 @@ func _show_profile_entry_loader() -> void:
 		return
 
 	profile_entry_loader = PlayLoaderScreenScene.instantiate()
+	_configure_mobile_web_screen(profile_entry_loader)
 	screen_container.add_child(profile_entry_loader)
 
 func _clear_profile_entry_loader() -> void:
