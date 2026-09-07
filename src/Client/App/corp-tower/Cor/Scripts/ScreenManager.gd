@@ -54,6 +54,7 @@ const SPECTATOR_PROFILE_DEFAULTS := {
 
 var current_overlay: Node = null
 var private_entry_loader: Node = null
+var profile_entry_loader: Node = null
 var play_instance: Node = null
 var tutorial_active := false
 var find_match_active := false
@@ -332,8 +333,13 @@ func _on_home_settings_requested() -> void:
 	show_settings_screen()
 
 func _on_home_profile_requested() -> void:
+	if profile_route_pending != "":
+		return
+
 	profile_route_pending = "profile"
-	if not NetworkManager.connect_profile_server():
+	if NetworkManager.connect_profile_server():
+		_show_profile_entry_loader()
+	else:
 		profile_route_pending = ""
 
 func _on_profile_snapshot_received(data: Dictionary) -> void:
@@ -349,6 +355,7 @@ func _on_profile_snapshot_received(data: Dictionary) -> void:
 
 	if profile_route_pending == "profile":
 		profile_route_pending = ""
+		_clear_profile_entry_loader()
 		show_profile_screen(data)
 		return
 
@@ -417,6 +424,7 @@ func _on_profile_connection_changed(online: bool) -> void:
 		return
 	var failed_route := profile_route_pending
 	profile_route_pending = ""
+	_clear_profile_entry_loader()
 	if failed_route == "startup":
 		show_home_screen()
 
@@ -659,6 +667,11 @@ func _complete_startup_handoff() -> void:
 	_show_runtime_android_system_bars()
 
 func _clear_overlay() -> void:
+	if profile_route_pending == "profile":
+		profile_route_pending = ""
+		_clear_profile_entry_loader()
+		NetworkManager.disconnect_profile_server()
+
 	find_match_active = false
 	_clear_private_entry_loader()
 	_clear_home_spectator_setup()
@@ -691,6 +704,19 @@ func _clear_private_entry_loader() -> void:
 		private_entry_loader.queue_free()
 
 	private_entry_loader = null
+
+func _show_profile_entry_loader() -> void:
+	if profile_entry_loader != null and is_instance_valid(profile_entry_loader):
+		return
+
+	profile_entry_loader = PlayLoaderScreenScene.instantiate()
+	screen_container.add_child(profile_entry_loader)
+
+func _clear_profile_entry_loader() -> void:
+	if profile_entry_loader != null and is_instance_valid(profile_entry_loader):
+		profile_entry_loader.queue_free()
+
+	profile_entry_loader = null
 
 func update_debug_button_availability() -> void:
 	var has_play_instance: bool = (

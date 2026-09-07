@@ -12,6 +12,7 @@ func _ready() -> void:
 	%BackButton.pressed.connect(func(): back_requested.emit())
 	%EditNameButton.pressed.connect(func(): change_name_requested.emit())
 	%CopyUidButton.pressed.connect(_copy_full_uid)
+	%CopyToastTimer.timeout.connect(_on_copy_toast_timeout)
 
 func set_profile(data: Dictionary) -> void:
 	profile_data = data.duplicate(true)
@@ -38,6 +39,11 @@ func _short_uid(value: String) -> String:
 func _copy_full_uid() -> void:
 	if account_uid != "":
 		DisplayServer.clipboard_set(account_uid)
+		%CopyToast.visible = true
+		%CopyToastTimer.start()
+
+func _on_copy_toast_timeout() -> void:
+	%CopyToast.visible = false
 
 func _avatar_texture(avatar_id: String) -> Texture2D:
 	return PlayerRailEntry.load_avatar_texture(avatar_id)

@@ -17,6 +17,9 @@ var allowed_name := RegEx.create_from_string("^[\\p{L}\\p{N} _-]+$")
 func _ready() -> void:
 	%BackButton.pressed.connect(func(): back_requested.emit())
 	name_input.text_changed.connect(func(_value): _refresh_save_state())
+	name_input.text_submitted.connect(_on_text_submitted)
+	name_input.editing_toggled.connect(_on_text_editing_toggled)
+	name_input.focus_exited.connect(_on_text_focus_exited)
 	save_button.pressed.connect(_on_save_pressed)
 	confirm_modal.confirmed.connect(_on_confirmed)
 	_refresh_save_state()
@@ -88,3 +91,14 @@ func _on_confirmed() -> void:
 		return
 	set_submission_pending(true)
 	name_change_requested.emit(normalized_candidate())
+
+func _on_text_submitted(_value: String) -> void:
+	name_input.caret_force_displayed = false
+	name_input.release_focus()
+	DisplayServer.virtual_keyboard_hide()
+
+func _on_text_editing_toggled(editing: bool) -> void:
+	name_input.caret_force_displayed = editing
+
+func _on_text_focus_exited() -> void:
+	name_input.caret_force_displayed = false
