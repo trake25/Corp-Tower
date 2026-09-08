@@ -7,6 +7,7 @@ var tower_stack
 var match_state
 var inventory
 var overlay_blocked: Callable = Callable()
+var navigation_popup_available: bool = true
 var trouble_button: Button
 var back_button: Button
 var tower_drop_zone: Control
@@ -24,12 +25,14 @@ func setup(
 	new_tower_stack,
 	new_match_state,
 	new_inventory,
-	new_overlay_blocked: Callable = Callable()
+	new_overlay_blocked: Callable = Callable(),
+	new_navigation_popup_available: bool = true
 ) -> void:
 	tower_stack = new_tower_stack
 	match_state = new_match_state
 	inventory = new_inventory
 	overlay_blocked = new_overlay_blocked
+	navigation_popup_available = new_navigation_popup_available
 	if trouble_button != null and !trouble_button.pressed.is_connected(_on_trouble_pressed):
 		trouble_button.pressed.connect(_on_trouble_pressed)
 	if back_button != null and !back_button.pressed.is_connected(_on_back_pressed):
@@ -128,9 +131,9 @@ func refresh() -> void:
 	var show_back: bool = tower_stack.is_scroll_manually_displaced()
 	_set_visible(show_trouble, show_back)
 	if trouble_button != null:
-		trouble_button.disabled = placement_blocked
+		trouble_button.disabled = placement_blocked or !navigation_popup_available
 	if back_button != null:
-		back_button.disabled = placement_blocked
+		back_button.disabled = placement_blocked or !navigation_popup_available
 
 func reset() -> void:
 	_cancel_pan()
@@ -142,12 +145,12 @@ func reset() -> void:
 
 func _set_visible(show_trouble: bool, show_back: bool) -> void:
 	if trouble_button != null:
-		trouble_button.visible = show_trouble
+		trouble_button.visible = navigation_popup_available and show_trouble
 	if back_button != null:
-		back_button.visible = show_back
+		back_button.visible = navigation_popup_available and show_back
 
 func _on_trouble_pressed() -> void:
-	if trouble_button == null or trouble_button.disabled:
+	if !navigation_popup_available or trouble_button == null or trouble_button.disabled:
 		return
 	var target: Dictionary = tower_stack.trouble_target()
 	if target.is_empty():
@@ -158,7 +161,7 @@ func _on_trouble_pressed() -> void:
 	refresh()
 
 func _on_back_pressed() -> void:
-	if back_button == null or back_button.disabled:
+	if !navigation_popup_available or back_button == null or back_button.disabled:
 		return
 	selected_block_id = ""
 	tower_stack.return_to_auto_scroll()

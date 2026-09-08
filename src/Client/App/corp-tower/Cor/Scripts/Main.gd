@@ -25,6 +25,9 @@ const VisualHooksControllerScript = preload("res://Cor/Scripts/GameUi/VisualHook
 const TutorialControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialController.gd")
 const TutorialMenuControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/TutorialMenuController.gd")
 
+# Temporary presentation disable pending the Top/Drop navigation popup redesign.
+const TOP_DROP_NAVIGATION_POPUP_AVAILABLE := false
+
 signal tutorial_requested(lesson_id: StringName)
 signal tutorial_exited
 signal menu_requested
@@ -140,7 +143,13 @@ func _ready() -> void:
 		"players_ctx": players_ctx
 	})
 	tutorial_menu.setup(tutorial, _on_tutorial_menu_exit)
-	tower_navigation.setup(tower_stack, match_state, inventory, should_block_tower_navigation)
+	tower_navigation.setup(
+		tower_stack,
+		match_state,
+		inventory,
+		should_block_tower_navigation,
+		TOP_DROP_NAVIGATION_POPUP_AVAILABLE
+	)
 	presentation_visibility.setup(reset_ui)
 
 	if tower_stack.has_signal("scroll_offset_changed"):
