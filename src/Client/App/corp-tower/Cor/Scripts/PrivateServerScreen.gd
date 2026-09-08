@@ -31,6 +31,7 @@ func _ready() -> void:
 	_configure_text_input(password_edit)
 	password_edit.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER
 	password_edit.z_index = 1
+	password_mask_label.z_index = 2
 	password_visibility_button.z_index = 2
 	password_mask_timer = Timer.new()
 	password_mask_timer.one_shot = true
