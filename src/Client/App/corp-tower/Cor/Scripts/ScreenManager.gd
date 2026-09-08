@@ -80,6 +80,7 @@ var profile_route_pending := ""
 var change_name_entry_context := "profile"
 var provider_link_pending_provider := ""
 var provider_link_stage := ""
+var provider_link_waiting_for_server_result := false
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
@@ -443,7 +444,10 @@ func _on_profile_connection_changed(online: bool) -> void:
 		and provider_link_pending_provider != ""
 		and not NetworkManager.is_connecting
 	):
-		_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+		_finish_provider_link_error(
+			AuthManager.REASON_UNREACHABLE,
+			"L7" if provider_link_waiting_for_server_result else "L2"
+		)
 		return
 
 	if online or NetworkManager.is_connecting or profile_route_pending == "":
@@ -486,9 +490,13 @@ func show_account_screen() -> void:
 func _resume_provider_link_callback() -> void:
 	var reason := AuthManager.take_provider_link_result()
 	show_account_screen()
+	provider_link_waiting_for_server_result = false
 
 	if reason != AuthManager.REASON_NONE:
-		_finish_provider_link_error(reason)
+		_finish_provider_link_error(
+			reason,
+			"L5" if reason == AuthManager.REASON_UNREACHABLE else ""
+		)
 		return
 
 	if not AuthManager.has_pending_provider_link():
@@ -503,6 +511,7 @@ func _resume_provider_link_callback() -> void:
 func _on_provider_link_requested(provider: String) -> void:
 	if provider_link_pending_provider != "":
 		return
+	provider_link_waiting_for_server_result = false
 
 	if AuthManager.has_pending_provider_link():
 		if AuthManager.pending_link_provider() != provider:
@@ -528,7 +537,7 @@ func _ensure_provider_link_profile_connection() -> void:
 		return
 
 	if not NetworkManager.connect_profile_server():
-		_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+		_finish_provider_link_error(AuthManager.REASON_UNREACHABLE, "L1")
 
 func _continue_provider_link_over_profile_connection() -> void:
 	if provider_link_pending_provider == "":
@@ -536,7 +545,9 @@ func _continue_provider_link_over_profile_connection() -> void:
 
 	if provider_link_stage == "eligibility":
 		if not NetworkManager.send_provider_link_preflight(provider_link_pending_provider):
-			_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+			_finish_provider_link_error(AuthManager.REASON_UNREACHABLE, "L3")
+		else:
+			provider_link_waiting_for_server_result = true
 		return
 
 	if provider_link_stage == "commit":
@@ -544,11 +555,14 @@ func _continue_provider_link_over_profile_connection() -> void:
 			provider_link_pending_provider,
 			AuthManager.pending_link_access_token()
 		):
-			_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+			_finish_provider_link_error(AuthManager.REASON_UNREACHABLE, "L6")
+		else:
+			provider_link_waiting_for_server_result = true
 
 func _on_provider_link_preflight_result(data: Dictionary) -> void:
 	if str(data.get("provider", "")) != provider_link_pending_provider:
 		return
+	provider_link_waiting_for_server_result = false
 
 	var result := str(data.get("result", "rejected"))
 	if result != "allowed":
@@ -566,14 +580,20 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 		provider_link_stage = "launch"
 		var launch_reason := await AuthManager.link_with_provider(provider_link_pending_provider)
 		if launch_reason != AuthManager.REASON_NONE:
-			_finish_provider_link_error(launch_reason)
+			_finish_provider_link_error(
+				launch_reason,
+				"L5" if launch_reason == AuthManager.REASON_UNREACHABLE else ""
+			)
 		return
 
 	if provider_link_stage == "facebook_subject":
 		provider_link_stage = "launch"
 		var link_reason := await AuthManager.complete_facebook_link_after_preflight()
 		if link_reason != AuthManager.REASON_NONE:
-			_finish_provider_link_error(link_reason)
+			_finish_provider_link_error(
+				link_reason,
+				"L5" if link_reason == AuthManager.REASON_UNREACHABLE else ""
+			)
 
 func _on_facebook_link_credential_ready(access_token: String) -> void:
 	if provider_link_pending_provider != "facebook" or provider_link_stage != "facebook_credential":
@@ -581,7 +601,9 @@ func _on_facebook_link_credential_ready(access_token: String) -> void:
 
 	provider_link_stage = "facebook_subject"
 	if not NetworkManager.send_provider_link_preflight("facebook", access_token):
-		_finish_provider_link_error(AuthManager.REASON_UNREACHABLE)
+		_finish_provider_link_error(AuthManager.REASON_UNREACHABLE, "L4")
+	else:
+		provider_link_waiting_for_server_result = true
 
 func _on_facebook_link_preflight_failed(reason: String) -> void:
 	if provider_link_pending_provider == "facebook" and provider_link_stage == "facebook_credential":
@@ -596,7 +618,10 @@ func _on_provider_link_completed(reason: String) -> void:
 		completion_reason = reason
 
 	if completion_reason != AuthManager.REASON_NONE:
-		_finish_provider_link_error(completion_reason)
+		_finish_provider_link_error(
+			completion_reason,
+			"L5" if completion_reason == AuthManager.REASON_UNREACHABLE else ""
+		)
 		return
 
 	if not AuthManager.has_pending_provider_link():
@@ -605,6 +630,7 @@ func _on_provider_link_completed(reason: String) -> void:
 
 	provider_link_pending_provider = AuthManager.pending_link_provider()
 	provider_link_stage = "commit"
+	provider_link_waiting_for_server_result = false
 	_set_account_link_busy(true)
 	_ensure_provider_link_profile_connection()
 
@@ -614,6 +640,7 @@ func _on_provider_link_commit_result(data: Dictionary) -> void:
 		or str(data.get("provider", "")) != provider_link_pending_provider
 	):
 		return
+	provider_link_waiting_for_server_result = false
 
 	var result := str(data.get("result", "rejected"))
 	if result != "accepted":
@@ -627,6 +654,7 @@ func _on_provider_link_commit_result(data: Dictionary) -> void:
 
 	provider_link_pending_provider = ""
 	provider_link_stage = ""
+	provider_link_waiting_for_server_result = false
 	_set_account_link_busy(false)
 	if current_overlay != null and current_overlay.has_method("refresh_account_state"):
 		current_overlay.call("refresh_account_state")
@@ -636,15 +664,16 @@ func _set_account_link_busy(busy: bool) -> void:
 	if current_overlay != null and current_overlay.has_method("set_busy"):
 		current_overlay.call("set_busy", busy)
 
-func _finish_provider_link_error(reason: String) -> void:
+func _finish_provider_link_error(reason: String, diagnostic_code := "") -> void:
 	if AuthManager.has_pending_provider_link() and reason != AuthManager.REASON_UNREACHABLE:
 		AuthManager.reject_provider_link()
 
 	provider_link_pending_provider = ""
 	provider_link_stage = ""
+	provider_link_waiting_for_server_result = false
 	_set_account_link_busy(false)
 	if current_overlay != null and current_overlay.has_method("show_error"):
-		current_overlay.call("show_error", reason)
+		current_overlay.call("show_error", reason, diagnostic_code)
 	if NetworkManager.is_profile_connected():
 		NetworkManager.disconnect_profile_server()
 

@@ -116,8 +116,11 @@ func set_busy(busy: bool) -> void:
 	if busy:
 		error_label.visible = false
 
-func show_error(reason: String) -> void:
-	error_label.text = ERROR_MESSAGES.get(reason, ERROR_MESSAGES["rejected"])
+func show_error(reason: String, diagnostic_code := "") -> void:
+	if reason == "unreachable" and ["L1", "L2", "L3", "L4", "L5", "L6", "L7"].has(diagnostic_code):
+		error_label.text = "Servers unavailable. [%s]" % diagnostic_code
+	else:
+		error_label.text = ERROR_MESSAGES.get(reason, ERROR_MESSAGES["rejected"])
 	error_label.visible = true
 
 static func mask_google_email(value: String) -> String:
