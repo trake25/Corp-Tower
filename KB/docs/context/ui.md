@@ -110,6 +110,7 @@ source: src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn#PrivateSer
 source: src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd#_configure_text_input
 source: src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd#_on_password_text_changed
 source: src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd#_refresh_password_presentation
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_show_private_entry_loader
 adjacent: network.room.private
 -->
 ## Private Server creation

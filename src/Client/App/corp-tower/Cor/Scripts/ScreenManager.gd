@@ -918,6 +918,7 @@ func _show_private_entry_loader() -> void:
 		return
 
 	private_entry_loader = PlayLoaderScreenScene.instantiate()
+	private_entry_loader.z_index = 3
 	screen_container.add_child(private_entry_loader)
 
 func _clear_private_entry_loader() -> void:

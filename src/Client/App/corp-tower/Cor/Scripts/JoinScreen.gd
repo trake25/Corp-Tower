@@ -288,6 +288,7 @@ func _set_password_text(value: String) -> void:
 
 func _refresh_password_presentation() -> void:
 	var value := password_edit.text
+	password_mask_label.add_theme_color_override("font_color", STATUS_COLOR)
 	password_edit.secret = not password_revealed
 	password_edit.secret_character = "*"
 	password_edit.add_theme_color_override("font_color", Color.TRANSPARENT if not password_revealed else STATUS_COLOR)
