@@ -97,6 +97,111 @@ test("profile link commit binds only the same verified Supabase user and returns
     assert.equal(JSON.stringify(ws.sent).includes(credential), false);
 });
 
+test("native Facebook commit reverifies the credential and claims only its trusted subject", async () => {
+    const ws = profileSocket();
+    const credential = "native-facebook-commit-token";
+    const trustedSubject = "verified-facebook-subject";
+    const clientSubject = "client-supplied-subject";
+    const verifierCalls = [];
+    let received = null;
+
+    await handleProfileMessage(ws, {
+        userId: "durable-account-a",
+        supabaseUserId: "guest-user-a"
+    }, JSON.stringify({
+        type: "provider_link_commit",
+        provider: "facebook",
+        providerCredential: credential,
+        providerSubject: clientSubject
+    }), {
+        authVerifier: {
+            verifyAccessToken: async (...args) => {
+                verifierCalls.push(args);
+                return { kind: "facebook_native", providerSubject: trustedSubject };
+            }
+        },
+        accountStore: {
+            commitNativeFacebookProviderLink: async (...args) => {
+                received = args;
+                return { result: "accepted" };
+            }
+        }
+    });
+
+    assert.deepEqual(verifierCalls, [[credential, "facebook"]]);
+    assert.deepEqual(received, [
+        "durable-account-a", "guest-user-a", trustedSubject
+    ]);
+    assert.deepEqual(ws.sent, [{
+        type: "provider_link_commit_result",
+        provider: "facebook",
+        result: "accepted"
+    }]);
+    const response = JSON.stringify(ws.sent);
+    assert.equal(response.includes(credential), false);
+    assert.equal(response.includes(trustedSubject), false);
+    assert.equal(response.includes(clientSubject), false);
+});
+
+test("native Facebook commit rejection never reaches the account store", async () => {
+    const ws = profileSocket();
+    let storeCalls = 0;
+
+    await handleProfileMessage(ws, {
+        userId: "durable-account-a",
+        supabaseUserId: "guest-user-a"
+    }, JSON.stringify({
+        type: "provider_link_commit",
+        provider: "facebook",
+        providerCredential: "expired-facebook-token"
+    }), {
+        authVerifier: { verifyAccessToken: async () => null },
+        accountStore: {
+            commitNativeFacebookProviderLink: async () => {
+                storeCalls += 1;
+                return { result: "accepted" };
+            }
+        }
+    });
+
+    assert.equal(storeCalls, 0);
+    assert.deepEqual(ws.sent, [{
+        type: "provider_link_commit_result",
+        provider: "facebook",
+        result: "rejected"
+    }]);
+});
+
+test("native Facebook commit propagates only bounded ownership conflicts", async () => {
+    for (const result of ["provider_conflict", "identity_conflict", "unexpected"]) {
+        const ws = profileSocket();
+        await handleProfileMessage(ws, {
+            userId: "durable-account-a",
+            supabaseUserId: "guest-user-a"
+        }, JSON.stringify({
+            type: "provider_link_commit",
+            provider: "facebook",
+            providerCredential: "native-facebook-token"
+        }), {
+            authVerifier: {
+                verifyAccessToken: async () => ({
+                    kind: "facebook_native",
+                    providerSubject: "verified-facebook-subject"
+                })
+            },
+            accountStore: {
+                commitNativeFacebookProviderLink: async () => ({ result })
+            }
+        });
+
+        assert.equal(
+            ws.sent[0].result,
+            result === "unexpected" ? "rejected" : result
+        );
+        assert.deepEqual(Object.keys(ws.sent[0]).sort(), ["provider", "result", "type"]);
+    }
+});
+
 test("profile link rejects an unavailable verifier without exposing request material", async () => {
     const ws = profileSocket();
     const credential = "unverified-token";

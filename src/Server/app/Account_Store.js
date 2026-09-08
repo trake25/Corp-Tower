@@ -213,6 +213,29 @@ class AccountStore {
         return { result };
     }
 
+    async commitNativeFacebookProviderLink(
+        accountId, expectedSupabaseUserId, facebookSubject
+    ) {
+        if (
+            typeof accountId !== "string" || accountId === "" ||
+            typeof expectedSupabaseUserId !== "string" || expectedSupabaseUserId === "" ||
+            typeof facebookSubject !== "string" || facebookSubject === ""
+        ) {
+            return { result: "rejected" };
+        }
+
+        const account = await this.findAccountById(accountId);
+
+        if (!account || account.supabase_user_id !== expectedSupabaseUserId) {
+            return { result: "rejected" };
+        }
+
+        const result = await this.claimProvider(
+            account.id, FACEBOOK_PROVIDER, facebookSubject
+        );
+        return { result };
+    }
+
     async resolveFacebook(subject, supabaseUserId, displayName, isAnonymous, knownSupabaseAccount = null) {
         if (typeof subject !== "string" || subject === "") {
             throw new Error("Facebook provider identity is missing");

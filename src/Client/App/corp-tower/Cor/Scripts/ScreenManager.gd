@@ -673,10 +673,21 @@ func _continue_provider_link_over_profile_connection() -> void:
 		return
 
 	if provider_link_stage == "commit":
-		if not NetworkManager.send_provider_link_commit(
-			provider_link_pending_provider,
-			AuthManager.pending_link_access_token()
+		var commit_sent := false
+		if (
+			provider_link_pending_provider == "facebook"
+			and AuthManager.has_pending_native_facebook_link()
 		):
+			commit_sent = NetworkManager.send_provider_link_native_commit(
+				provider_link_pending_provider,
+				AuthManager.pending_native_facebook_credential()
+			)
+		else:
+			commit_sent = NetworkManager.send_provider_link_commit(
+				provider_link_pending_provider,
+				AuthManager.pending_link_access_token()
+			)
+		if not commit_sent:
 			_finish_provider_link_error(AuthManager.REASON_UNREACHABLE, "L6")
 		else:
 			provider_link_waiting_for_server_result = true
@@ -717,14 +728,8 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 		return
 
 	if provider_link_stage == "facebook_subject":
-		provider_link_stage = "launch"
-		var link_reason := await AuthManager.complete_facebook_link_after_preflight()
-		if link_reason != AuthManager.REASON_NONE:
-			_finish_provider_link_error(
-				link_reason,
-				"L5" if link_reason == AuthManager.REASON_UNREACHABLE else
-				_facebook_rejection_diagnostic("facebook", link_reason, "F3")
-			)
+		provider_link_stage = "commit"
+		_continue_provider_link_over_profile_connection()
 
 func _on_facebook_link_credential_ready(access_token: String) -> void:
 	if provider_link_pending_provider != "facebook" or provider_link_stage != "facebook_credential":
@@ -790,7 +795,13 @@ func _on_provider_link_commit_result(data: Dictionary) -> void:
 		_finish_provider_link_error(result, diagnostic_code)
 		return
 
-	if not AuthManager.finish_provider_link():
+	var link_finished := (
+		AuthManager.finish_native_facebook_provider_link()
+		if provider_link_pending_provider == "facebook"
+			and AuthManager.has_pending_native_facebook_link()
+		else AuthManager.finish_provider_link()
+	)
+	if not link_finished:
 		_finish_provider_link_error(
 			AuthManager.REASON_REJECTED,
 			_facebook_finish_failure_diagnostic(provider_link_pending_provider)

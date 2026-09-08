@@ -334,6 +334,125 @@ test("a durable account accepts one provider atomically and repeats the same pro
     assert.equal(database.accounts.get(identity.userId).linked_provider, "google");
 });
 
+test("native Facebook linking claims the same durable Guest without changing its Supabase binding", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+    const guest = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "guest-native-facebook",
+        accessToken: "guest-token",
+        isAnonymous: true,
+        displayName: null
+    });
+    const accountCount = database.accounts.size;
+    const accountInsertCount = database.calls.filter(call =>
+        new URL(call.url).pathname === "/rest/v1/player_accounts" && call.method === "POST"
+    ).length;
+
+    assert.deepEqual(
+        await store.commitNativeFacebookProviderLink(
+            guest.userId, "guest-native-facebook", "meta-native-user"
+        ),
+        { result: "accepted" }
+    );
+    assert.deepEqual(
+        await store.commitNativeFacebookProviderLink(
+            guest.userId, "guest-native-facebook", "meta-native-user"
+        ),
+        { result: "accepted" }
+    );
+
+    assert.equal(database.accounts.size, accountCount);
+    assert.equal(database.accounts.get(guest.userId).supabase_user_id, "guest-native-facebook");
+    assert.equal(database.accounts.get(guest.userId).linked_provider, "facebook");
+    assert.equal(database.identities.size, 1);
+    assert.equal(database.calls.filter(call =>
+        new URL(call.url).pathname === "/rest/v1/player_accounts" && call.method === "POST"
+    ).length, accountInsertCount);
+});
+
+test("native Facebook linking rejects a mismatched expected Guest binding", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+    const guest = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "guest-native-facebook",
+        accessToken: "guest-token",
+        isAnonymous: true,
+        displayName: null
+    });
+
+    assert.deepEqual(
+        await store.commitNativeFacebookProviderLink(
+            guest.userId, "another-guest", "meta-native-user"
+        ),
+        { result: "rejected" }
+    );
+    assert.deepEqual(
+        await store.commitNativeFacebookProviderLink(
+            guest.userId, "guest-native-facebook", ""
+        ),
+        { result: "rejected" }
+    );
+    assert.equal(database.accounts.get(guest.userId).linked_provider, null);
+    assert.equal(database.accounts.get(guest.userId).supabase_user_id, "guest-native-facebook");
+    assert.equal(database.identities.size, 0);
+});
+
+test("native Facebook linking preserves an existing Google provider claim", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+    const guest = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "guest-google-first",
+        accessToken: "guest-token",
+        isAnonymous: true,
+        displayName: null
+    });
+    assert.equal(await store.claimProvider(guest.userId, "google"), "accepted");
+
+    assert.deepEqual(
+        await store.commitNativeFacebookProviderLink(
+            guest.userId, "guest-google-first", "meta-native-user"
+        ),
+        { result: "provider_conflict" }
+    );
+    assert.equal(database.accounts.get(guest.userId).linked_provider, "google");
+    assert.equal(database.identities.size, 0);
+});
+
+test("native Facebook linking preserves existing Facebook subject ownership", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+    const owner = await store.resolve({
+        kind: "facebook_native",
+        providerSubject: "meta-owned-native-user",
+        isAnonymous: false,
+        displayName: null
+    });
+    const guest = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "guest-facebook-second",
+        accessToken: "guest-token",
+        isAnonymous: true,
+        displayName: null
+    });
+
+    assert.deepEqual(
+        await store.commitNativeFacebookProviderLink(
+            guest.userId, "guest-facebook-second", "meta-owned-native-user"
+        ),
+        { result: "identity_conflict" }
+    );
+    assert.equal(database.accounts.get(owner.userId).supabase_user_id, null);
+    assert.equal(database.accounts.get(guest.userId).supabase_user_id, "guest-facebook-second");
+    assert.equal(database.accounts.get(guest.userId).linked_provider, null);
+});
+
 test("racing different provider claims cannot accept both providers", async () => {
     const database = createFakeSupabase();
     const store = createStore(database);

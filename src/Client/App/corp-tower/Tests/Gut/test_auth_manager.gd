@@ -331,6 +331,87 @@ func test_finishing_or_rejecting_a_link_preserves_the_guest_until_accepted() -> 
 	assert_false(auth.is_anonymous)
 	assert_eq(auth.current_provider, "google")
 
+func test_native_facebook_link_stages_credential_without_mutating_guest() -> void:
+	var expires_at := int(Time.get_unix_time_from_system()) + 3600
+	var ready_credentials: Array[String] = []
+	auth.facebook_link_credential_ready.connect(
+		func(credential: String): ready_credentials.append(credential)
+	)
+	auth._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	auth.active_flow_purpose = auth.FLOW_FACEBOOK_LINK_PREFLIGHT
+	auth.native_signin_in_flight = true
+
+	auth._on_facebook_sign_in_success("native-facebook-token", expires_at)
+
+	assert_eq(ready_credentials, ["native-facebook-token"])
+	assert_true(auth.has_pending_provider_link())
+	assert_true(auth.has_pending_native_facebook_link())
+	assert_eq(auth.pending_link_provider(), "facebook")
+	assert_eq(auth.pending_native_facebook_credential(), "native-facebook-token")
+	assert_eq(auth.access_token_value, "guest-access")
+	assert_eq(auth.refresh_token_value, "guest-refresh")
+	assert_eq(auth.user_id, "guest-user")
+	assert_true(auth.is_anonymous)
+	assert_eq(auth.current_provider, "")
+	assert_eq(auth.facebook_access_token_value, "")
+
+func test_native_facebook_link_finalizes_only_after_acceptance() -> void:
+	var expires_at := int(Time.get_unix_time_from_system()) + 3600
+	auth._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	assert_true(auth._stage_native_facebook_link_credential("native-facebook-token", expires_at))
+
+	auth.reject_provider_link()
+	assert_eq(auth.access_token_value, "guest-access")
+	assert_eq(auth.refresh_token_value, "guest-refresh")
+	assert_eq(auth.user_id, "guest-user")
+	assert_true(auth.is_anonymous)
+	assert_eq(auth.current_provider, "")
+	assert_eq(auth.facebook_access_token_value, "")
+
+	assert_true(auth._stage_native_facebook_link_credential("native-facebook-token", expires_at))
+	assert_true(auth.finish_native_facebook_provider_link())
+	assert_eq(auth.access_token_value, "")
+	assert_eq(auth.refresh_token_value, "")
+	assert_eq(auth.user_id, "guest-user")
+	assert_false(auth.is_anonymous)
+	assert_eq(auth.current_provider, "facebook")
+	assert_eq(auth.facebook_access_token_value, "native-facebook-token")
+	assert_eq(auth.facebook_expires_at_unix, expires_at)
+	assert_false(auth.has_pending_provider_link())
+	var restored = AuthManagerScript.new()
+	restored._load_session()
+	assert_eq(restored.user_id, "guest-user")
+	assert_eq(restored.current_provider, "facebook")
+	assert_eq(restored.facebook_access_token_value, "native-facebook-token")
+	assert_eq(restored.access_token_value, "")
+	restored.free()
+
+func test_native_facebook_link_rejects_invalid_staged_credential() -> void:
+	var failures: Array[String] = []
+	auth.facebook_link_preflight_failed.connect(
+		func(reason: String): failures.append(reason)
+	)
+	auth.active_flow_purpose = auth.FLOW_FACEBOOK_LINK_PREFLIGHT
+	auth.native_signin_in_flight = true
+
+	auth._on_facebook_sign_in_success(
+		"native-facebook-token", int(Time.get_unix_time_from_system()) - 1
+	)
+
+	assert_eq(failures, [auth.REASON_REJECTED])
+	assert_false(auth.has_pending_provider_link())
+	assert_eq(auth.facebook_access_token_value, "")
+
 func test_seconds_until_expiry_is_zero_without_a_session() -> void:
 	assert_eq(
 		auth.seconds_until_expiry(),

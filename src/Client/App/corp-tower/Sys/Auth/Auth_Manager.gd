@@ -55,6 +55,8 @@ var last_provider_link_provider := ""
 var provider_link_result_pending := false
 var pending_link_session: Dictionary = {}
 var pending_link_provider_value := ""
+var pending_native_facebook_access_token_value := ""
+var pending_native_facebook_expires_at_unix := 0
 var active_flow_purpose := FLOW_SIGN_IN
 var deeplink_node: Node = null
 var google_signin_node: Node = null
@@ -290,7 +292,17 @@ func provider_link_result_provider() -> String:
 	return last_provider_link_provider
 
 func has_pending_provider_link() -> bool:
-	return not pending_link_session.is_empty() and pending_link_provider_value != ""
+	return (
+		(not pending_link_session.is_empty() and pending_link_provider_value != "")
+		or has_pending_native_facebook_link()
+	)
+
+func has_pending_native_facebook_link() -> bool:
+	return (
+		pending_link_provider_value == "facebook"
+		and pending_native_facebook_access_token_value != ""
+		and pending_native_facebook_expires_at_unix > int(Time.get_unix_time_from_system())
+	)
 
 func pending_link_provider() -> String:
 	return pending_link_provider_value
@@ -298,8 +310,14 @@ func pending_link_provider() -> String:
 func pending_link_access_token() -> String:
 	return str(pending_link_session.get("access_token", ""))
 
+func pending_native_facebook_credential() -> String:
+	if not has_pending_native_facebook_link():
+		return ""
+
+	return pending_native_facebook_access_token_value
+
 func finish_provider_link() -> bool:
-	if not has_pending_provider_link():
+	if pending_link_session.is_empty() or pending_link_provider_value == "":
 		return false
 
 	var provider := pending_link_provider_value
@@ -312,6 +330,23 @@ func finish_provider_link() -> bool:
 	is_anonymous = false
 	current_provider = provider
 	_apply_link_presentation_metadata(user if user is Dictionary else {}, provider)
+	_save_session()
+	_clear_pending_link_state()
+	return true
+
+func finish_native_facebook_provider_link() -> bool:
+	if not has_pending_native_facebook_link():
+		return false
+
+	var native_access_token := pending_native_facebook_access_token_value
+	var native_expires_at_unix := pending_native_facebook_expires_at_unix
+
+	if not _apply_facebook_session(native_access_token, native_expires_at_unix):
+		return false
+
+	access_token_value = ""
+	refresh_token_value = ""
+	expires_at_unix = 0
 	_save_session()
 	_clear_pending_link_state()
 	return true
@@ -425,6 +460,8 @@ func _has_active_link_flow() -> bool:
 func _clear_pending_link_state() -> void:
 	pending_link_session = {}
 	pending_link_provider_value = ""
+	pending_native_facebook_access_token_value = ""
+	pending_native_facebook_expires_at_unix = 0
 	provider_link_result_pending = false
 	last_provider_link_reason = REASON_NONE
 	last_provider_link_provider = ""
@@ -444,6 +481,8 @@ func _record_provider_link_result(reason: String, emit_completion: bool = true) 
 		_clear_link_flow()
 		pending_link_session = {}
 		pending_link_provider_value = ""
+		pending_native_facebook_access_token_value = ""
+		pending_native_facebook_expires_at_unix = 0
 
 	active_flow_purpose = FLOW_SIGN_IN
 	last_provider_link_reason = reason
@@ -552,7 +591,10 @@ func _on_facebook_sign_in_success(access_token: String, native_expires_at_unix: 
 
 	if active_flow_purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
 		active_flow_purpose = FLOW_SIGN_IN
-		facebook_link_credential_ready.emit(access_token)
+		if not _stage_native_facebook_link_credential(access_token, native_expires_at_unix):
+			facebook_link_preflight_failed.emit(REASON_REJECTED)
+			return
+		facebook_link_credential_ready.emit(pending_native_facebook_access_token_value)
 		return
 
 	if not _store_facebook_session(access_token, native_expires_at_unix):
@@ -640,6 +682,7 @@ func begin_facebook_link_preflight() -> String:
 	if not native_facebook_enabled or not _native_facebook_ready():
 		return REASON_PROVIDER_UNAVAILABLE
 
+	_clear_pending_link_state()
 	active_flow_purpose = FLOW_FACEBOOK_LINK_PREFLIGHT
 	native_signin_in_flight = true
 
@@ -884,6 +927,8 @@ func _stage_link_session(data: Variant, flow: Dictionary) -> String:
 
 	pending_link_session = data.duplicate(true)
 	pending_link_provider_value = str(flow.get("provider", ""))
+	pending_native_facebook_access_token_value = ""
+	pending_native_facebook_expires_at_unix = 0
 
 	if not PROVIDERS.has(pending_link_provider_value):
 		pending_link_session = {}
@@ -891,6 +936,18 @@ func _stage_link_session(data: Variant, flow: Dictionary) -> String:
 		return REASON_REJECTED
 
 	return REASON_NONE
+
+func _stage_native_facebook_link_credential(
+	access_token: String, native_expires_at_unix: int
+) -> bool:
+	if access_token == "" or native_expires_at_unix <= int(Time.get_unix_time_from_system()):
+		return false
+
+	pending_link_session = {}
+	pending_link_provider_value = "facebook"
+	pending_native_facebook_access_token_value = access_token
+	pending_native_facebook_expires_at_unix = native_expires_at_unix
+	return true
 
 func ensure_fresh_token() -> bool:
 	if refresh_token_value == "":

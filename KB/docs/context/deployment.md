@@ -44,12 +44,17 @@ Server verification uses public Supabase project information plus runtime authen
 hosted Supabase Auth project enables anonymous sign-in, Google, Facebook, and Manual Linking; these
 capability facts are intentionally public KB context so agents can reason about supported authentication
 flows. Top or Drop accepts at most one external provider per durable account and treats its backend
-account state as authoritative for that product rule. Manual linking upgrades the currently authenticated
-guest in place and must preserve the durable Top or Drop account and Profile. Public project/client
-capability information may be injected into builds, but repository prose records capabilities rather
-than deployed credential values. Service-role keys, provider client secrets, signing secrets,
-player-identity HMAC secrets, access/refresh tokens, and other credentials remain private and must
-never be written to KB prose, logs, generated plans, or client configuration.
+account state as authoritative for that product rule. Provider linking upgrades the currently authenticated
+Guest in place and preserves the durable Top or Drop account and Profile. Google linking uses the Supabase
+identity-link path. Android Facebook linking keeps the ordinary native Facebook access-token flow: the
+server verifies the token with Facebook, confirms ownership against the authenticated Guest account, and
+atomically claims the Facebook subject in Top or Drop's account store. This Android Facebook-link path does
+not require attaching Facebook as a Supabase Auth identity or opening browser OAuth; the existing anonymous
+Supabase binding remains associated with the durable account. Public project/client capability information
+may be injected into builds, but repository prose records capabilities rather than deployed credential
+values. Service-role keys, provider client secrets, signing secrets, player-identity HMAC secrets,
+access/refresh tokens, and other credentials remain private and must never be written to KB prose, logs,
+generated plans, or client configuration.
 
 <!-- kb
 id: deploy.shared.secret-rollout

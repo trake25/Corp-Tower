@@ -333,6 +333,17 @@ func send_provider_link_commit(provider: String, access_token: String) -> bool:
 	}))
 	return true
 
+func send_provider_link_native_commit(provider: String, provider_credential: String) -> bool:
+	if not is_profile_connected() or provider != "facebook" or provider_credential == "":
+		return false
+
+	ws.send_text(JSON.stringify({
+		"type": "provider_link_commit",
+		"provider": provider,
+		"providerCredential": provider_credential
+	}))
+	return true
+
 func send_profile_connect_request() -> void:
 	ws.send_text(JSON.stringify({
 		"type": "profile_connect",

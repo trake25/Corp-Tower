@@ -510,6 +510,86 @@ func test_facebook_link_stage_diagnostics_keep_conflicts_and_transport_semantics
 		""
 	)
 
+func test_facebook_subject_preflight_commits_native_credential_without_browser_link() -> void:
+	var expires_at := int(Time.get_unix_time_from_system()) + 3600
+	AuthManager._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	_acknowledge_account_profile_readiness()
+	screen_manager.show_account_screen()
+	await get_tree().process_frame
+	var socket = NetworkManager.ws
+	assert_true(AuthManager._stage_native_facebook_link_credential(
+		"native-facebook-token", expires_at
+	))
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "facebook_subject"
+
+	screen_manager._on_provider_link_preflight_result({
+		"provider": "facebook", "result": "allowed"
+	})
+
+	assert_eq(screen_manager.provider_link_stage, "commit")
+	assert_true(screen_manager.provider_link_waiting_for_server_result)
+	assert_eq(socket.sent_messages.size(), 1)
+	assert_eq(socket.sent_messages[0], {
+		"type": "provider_link_commit",
+		"provider": "facebook",
+		"providerCredential": "native-facebook-token"
+	})
+	assert_false(socket.sent_messages[0].has("accessToken"))
+	assert_false(AuthManager.oauth_in_flight)
+	assert_true(AuthManager.is_anonymous)
+	assert_eq(AuthManager.current_provider, "")
+
+	screen_manager._on_provider_link_commit_result({
+		"provider": "facebook", "result": "accepted"
+	})
+
+	assert_eq(AuthManager.user_id, "guest-user")
+	assert_false(AuthManager.is_anonymous)
+	assert_eq(AuthManager.current_provider, "facebook")
+	assert_eq(AuthManager.facebook_access_token_value, "native-facebook-token")
+	assert_eq(AuthManager.access_token_value, "")
+	assert_false(AuthManager.has_pending_provider_link())
+	AuthManager.sign_out()
+
+func test_rejected_native_facebook_commit_preserves_guest_and_clears_credential() -> void:
+	var expires_at := int(Time.get_unix_time_from_system()) + 3600
+	AuthManager._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	screen_manager.show_account_screen()
+	await get_tree().process_frame
+	assert_true(AuthManager._stage_native_facebook_link_credential(
+		"native-facebook-token", expires_at
+	))
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "commit"
+
+	screen_manager._on_provider_link_commit_result({
+		"provider": "facebook", "result": AuthManager.REASON_IDENTITY_CONFLICT
+	})
+
+	assert_eq(AuthManager.access_token_value, "guest-access")
+	assert_eq(AuthManager.refresh_token_value, "guest-refresh")
+	assert_eq(AuthManager.user_id, "guest-user")
+	assert_true(AuthManager.is_anonymous)
+	assert_eq(AuthManager.current_provider, "")
+	assert_eq(AuthManager.facebook_access_token_value, "")
+	assert_false(AuthManager.has_pending_provider_link())
+	assert_eq(
+		screen_manager.current_overlay.error_label.text,
+		"This account is already linked. Sign out and sign in with it instead."
+	)
+	AuthManager.sign_out()
+
 func test_profile_and_change_name_navigation_respects_entry_context() -> void:
 	var profile := {
 		"accountUid": "11111111-2222-3333-4444-555555555555",

@@ -106,16 +106,37 @@ async function handleProfileMessage(ws, identity, message, dependencies = {}) {
                 throw new Error("Provider link commit has no guest Supabase identity");
             }
 
-            const credential = await verifier.verifyAccessToken(String(data.accessToken || ""));
-            if (!credential || credential.kind !== "supabase") {
-                throw new Error("Provider link credential rejected");
+            const providerCredential = String(data.providerCredential || "");
+            if (providerCredential !== "") {
+                if (provider !== "facebook") {
+                    throw new Error("Unexpected provider credential");
+                }
+
+                const credential = await verifier.verifyAccessToken(
+                    providerCredential, "facebook"
+                );
+                if (!credential || credential.kind !== "facebook_native") {
+                    throw new Error("Provider credential rejected");
+                }
+                result = (await store.commitNativeFacebookProviderLink(
+                    identity.userId,
+                    identity.supabaseUserId,
+                    credential.providerSubject
+                )).result;
+            } else {
+                const credential = await verifier.verifyAccessToken(
+                    String(data.accessToken || "")
+                );
+                if (!credential || credential.kind !== "supabase") {
+                    throw new Error("Provider link credential rejected");
+                }
+                result = (await store.commitProviderLink(
+                    identity.userId,
+                    identity.supabaseUserId,
+                    credential,
+                    provider
+                )).result;
             }
-            result = (await store.commitProviderLink(
-                identity.userId,
-                identity.supabaseUserId,
-                credential,
-                provider
-            )).result;
         } catch (error) {
             console.log("Provider link commit failed:", error.message);
         }
