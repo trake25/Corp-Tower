@@ -155,6 +155,22 @@ case-insensitive unique values. Provider presentation metadata never overwrites 
 permanent player name. Redis remains active-session storage rather than durable profile storage.
 
 <!-- kb
+id: backend.persistence.durable-foundation
+alias: durable Supabase foundation
+alias: persistent account data
+source: src/Server/migrations/0005_persistent_foundation.sql#tod_kb_durable_foundation_anchor
+adjacent: backend.identity.profile
+adjacent: backend.authority.persistence
+adjacent: backend.impacts.rollback
+-->
+## Durable Supabase foundation
+
+Durable product persistence is rooted in `player_accounts`. Supabase stores account and Profile lifecycle, exact-trio identity and high-water progression, compact run summaries, economy balances and immutable ledger history, milestone claims, catalog-backed ownership and loadouts, keyed stats, achievements, personal progression, challenges, durable social edges, and Site/content configuration.
+Extensible product content is row-driven where practical so new currencies, items, stats, achievements, challenges, offers, Sites, modifiers, and progression tracks normally add data rather than schema columns.
+
+Active rooms, tower and physics state, hands and draw piles, timers, active Power inventory and cooldowns, matchmaking, Party/presence state, and reconnect snapshots remain server/Redis runtime state rather than long-term Supabase product state. Durable progression and economy mutations that must agree are committed through server-only database transactions with database uniqueness and integrity constraints; clients do not directly author authoritative persistent state.
+
+<!-- kb
 id: backend.lobby.debug-config
 alias: runtime debug config
 alias: runtime tuning

@@ -61,7 +61,7 @@ Owner: `KB/docs/context/ui.md:233-236` → **Debug entry**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` | `toggle` | 19 | `sed -n 7,21p src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 1037 | `sed -n 1025,1057p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 1232 | `sed -n 1220,1252p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `backend.lobby.debug-config`, `network.room.bot-spectator`
 
@@ -81,7 +81,7 @@ Owner: `KB/docs/context/ui.md:208-211` → **Server-driven navigation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_room_joined` | 162 | `sed -n 150,182p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_room_joined` | 169 | `sed -n 157,189p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `room_joined` | 73 | `sed -n 61,93p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `network.room.close`, `network.session.resume-only`
@@ -102,7 +102,7 @@ Owner: `KB/docs/context/ui.md:195-198` → **Active-match recovery**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_recovery_started` | 178 | `sed -n 166,198p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_on_recovery_started` | 185 | `sed -n 173,205p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `network.session.recovery`
 
@@ -123,10 +123,10 @@ Owner: `KB/docs/context/ui.md:116-119` → **Private Server creation**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn` | `PrivateServerScreen` | 23 | `sed -n 11,43p src/Client/App/corp-tower/Cor/Scenes/PrivateServerScreen.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_configure_text_input` | 73 | `sed -n 61,93p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_on_password_text_changed` | 92 | `sed -n 80,112p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_refresh_password_presentation` | 121 | `sed -n 109,141p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_show_private_entry_loader` | 916 | `sed -n 904,936p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_configure_text_input` | 74 | `sed -n 62,94p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_on_password_text_changed` | 93 | `sed -n 81,113p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_refresh_password_presentation` | 122 | `sed -n 110,142p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_show_private_entry_loader` | 1097 | `sed -n 1085,1117p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `network.room.private`
 
@@ -137,11 +137,11 @@ Owner: `KB/docs/context/ui.md:132-136` → **Join Server**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn` | `JoinScreen` | 36 | `sed -n 24,56p src/Client/App/corp-tower/Cor/Scenes/JoinScreen.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_configure_text_input` | 241 | `sed -n 229,261p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_input` | 120 | `sed -n 108,140p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_on_server_id_long_press_timeout` | 145 | `sed -n 133,165p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_on_password_text_changed` | 260 | `sed -n 248,280p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_refresh_password_presentation` | 289 | `sed -n 277,309p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_configure_text_input` | 242 | `sed -n 230,262p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_input` | 121 | `sed -n 109,141p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_on_server_id_long_press_timeout` | 146 | `sed -n 134,166p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_on_password_text_changed` | 261 | `sed -n 249,281p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` | `_refresh_password_presentation` | 290 | `sed -n 278,310p src/Client/App/corp-tower/Cor/Scripts/JoinScreen.gd` |
 
 Adjacent concepts: `network.room.private`
 
@@ -153,7 +153,7 @@ Owner: `KB/docs/context/ui.md:101-104` → **Profile presentation**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/ProfileScreen.tscn` | `ProfileScreen` | 82 | `sed -n 70,102p src/Client/App/corp-tower/Cor/Scenes/ProfileScreen.tscn` |
 | `src/Client/App/corp-tower/Cor/Scenes/ChangeNameScreen.tscn` | `ChangeNameScreen` | 64 | `sed -n 52,84p src/Client/App/corp-tower/Cor/Scenes/ChangeNameScreen.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `show_profile_screen` | 379 | `sed -n 367,399p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `show_profile_screen` | 386 | `sed -n 374,406p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `backend.identity.profile`, `network.profile.session`
 
@@ -184,7 +184,7 @@ Owner: `KB/docs/context/ui.md:12-15` → **Client shell**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/Main.tscn` | `Main` | 8 | `sed -n 1,28p src/Client/App/corp-tower/Cor/Scenes/Main.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_ready` | 85 | `sed -n 73,105p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_ready` | 92 | `sed -n 80,112p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: none
 
@@ -204,7 +204,7 @@ Owner: `KB/docs/context/ui.md:78-81` → **Startup restoration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_begin_authenticated_startup` | 144 | `sed -n 132,164p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_begin_authenticated_startup` | 151 | `sed -n 139,171p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `network.session.resume-only`, `ui.startup.splash`
 

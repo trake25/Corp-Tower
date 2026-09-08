@@ -76,6 +76,7 @@ implicitly widen KB adjacency.
 | `backend.lobby.debug-config` | [backend.md#debug-configuration](./backend.md#debug-configuration) | runtime debug config, runtime tuning |
 | `backend.lobby.private` | [backend.md#private-rooms](./backend.md#private-rooms) | private lobby, private server room |
 | `backend.lobby.public` | [backend.md#public-matchmaking](./backend.md#public-matchmaking) | public matchmaking room, matchmaking |
+| `backend.persistence.durable-foundation` | [backend.md#durable-supabase-foundation](./backend.md#durable-supabase-foundation) | durable Supabase foundation, persistent account data |
 | `backend.redis.hydration` | [backend.md#hydration-continuity](./backend.md#hydration-continuity) | room hydration, persisted room |
 | `backend.redis.leases` | [backend.md#redis-leases](./backend.md#redis-leases) | Redis State, room lease |
 | `backend.scoring.transaction` | [backend.md#scoring-transaction](./backend.md#scoring-transaction) | Scoring.js, placement scoring |
