@@ -82,6 +82,12 @@ var change_name_entry_context := "profile"
 var provider_link_pending_provider := ""
 var provider_link_stage := ""
 var provider_link_waiting_for_server_result := false
+var account_link_loader: Node = null
+var account_link_readiness_active := false
+var account_link_readiness_pending := false
+var account_link_ready := false
+var account_link_connection_starting := false
+var account_link_connection_owned := false
 
 func _ready() -> void:
 	NetworkManager.room_joined.connect(_on_room_joined)
@@ -436,6 +442,27 @@ func _on_profile_connection_changed(online: bool) -> void:
 	if current_overlay != null and current_overlay.has_method("set_online"):
 		current_overlay.call("set_online", online)
 
+	if account_link_readiness_active:
+		if online:
+			_complete_account_link_readiness()
+			if provider_link_pending_provider != "":
+				_continue_provider_link_over_profile_connection()
+			return
+
+		if account_link_connection_starting or NetworkManager.is_connecting:
+			return
+
+		if provider_link_pending_provider != "":
+			_finish_provider_link_error(
+				AuthManager.REASON_UNREACHABLE,
+				"L7" if provider_link_waiting_for_server_result else "L2"
+			)
+			return
+
+		if account_link_readiness_pending or account_link_ready:
+			_finish_account_link_readiness_error("L2")
+			return
+
 	if online and provider_link_pending_provider != "":
 		_continue_provider_link_over_profile_connection()
 		return
@@ -488,6 +515,82 @@ func show_account_screen() -> void:
 	_set_overlay(screen)
 	_set_debug_context(DEBUG_CONTEXT_NONE)
 
+	if AuthManager.has_accepted_provider():
+		return
+
+	account_link_readiness_active = true
+	if NetworkManager.is_profile_connected():
+		account_link_ready = true
+		account_link_connection_owned = true
+		return
+
+	_begin_account_link_readiness()
+
+func _begin_account_link_readiness() -> void:
+	if not account_link_readiness_active or account_link_readiness_pending:
+		return
+
+	if NetworkManager.is_profile_connected():
+		_complete_account_link_readiness()
+		return
+
+	account_link_readiness_pending = true
+	account_link_connection_starting = true
+	_set_account_link_busy(true)
+	_show_account_link_loader()
+	var started := NetworkManager.connect_profile_server()
+	account_link_connection_starting = false
+
+	if not started:
+		if provider_link_pending_provider != "":
+			_finish_provider_link_error(AuthManager.REASON_UNREACHABLE, "L1")
+		else:
+			_finish_account_link_readiness_error("L1")
+		return
+
+	account_link_connection_owned = true
+
+func _complete_account_link_readiness() -> void:
+	if not account_link_readiness_active:
+		return
+
+	account_link_readiness_pending = false
+	account_link_connection_starting = false
+	account_link_ready = true
+	account_link_connection_owned = true
+	_clear_account_link_loader()
+	if provider_link_pending_provider == "":
+		_set_account_link_busy(false)
+
+func _finish_account_link_readiness_error(diagnostic_code: String) -> void:
+	if not account_link_readiness_active:
+		return
+
+	var disconnect_owned_connection := account_link_connection_owned
+	account_link_readiness_pending = false
+	account_link_connection_starting = false
+	account_link_ready = false
+	account_link_connection_owned = false
+	_clear_account_link_loader()
+	_set_account_link_busy(false)
+	if current_overlay != null and current_overlay.has_method("show_error"):
+		current_overlay.call("show_error", AuthManager.REASON_UNREACHABLE, diagnostic_code)
+	if disconnect_owned_connection:
+		NetworkManager.disconnect_profile_server()
+
+func _clear_account_link_readiness() -> void:
+	var disconnect_owned_connection := (
+		account_link_readiness_active and account_link_connection_owned
+	)
+	account_link_readiness_active = false
+	account_link_readiness_pending = false
+	account_link_connection_starting = false
+	account_link_ready = false
+	account_link_connection_owned = false
+	_clear_account_link_loader()
+	if disconnect_owned_connection:
+		NetworkManager.disconnect_profile_server()
+
 func _resume_provider_link_callback() -> void:
 	var callback_provider := AuthManager.provider_link_result_provider()
 	var reason := AuthManager.take_provider_link_result()
@@ -517,22 +620,35 @@ func _resume_provider_link_callback() -> void:
 func _on_provider_link_requested(provider: String) -> void:
 	if provider_link_pending_provider != "":
 		return
-	provider_link_waiting_for_server_result = false
+	if not account_link_readiness_active:
+		return
+	if not account_link_ready:
+		if account_link_readiness_pending:
+			return
+		if not _queue_provider_link_request(provider):
+			return
+		_begin_account_link_readiness()
+		return
 
+	if not _queue_provider_link_request(provider):
+		return
+	_ensure_provider_link_profile_connection()
+
+func _queue_provider_link_request(provider: String) -> bool:
+	provider_link_waiting_for_server_result = false
 	if AuthManager.has_pending_provider_link():
 		if AuthManager.pending_link_provider() != provider:
 			_finish_provider_link_error(AuthManager.REASON_REJECTED)
-			return
+			return false
 		provider_link_pending_provider = provider
 		provider_link_stage = "commit"
 		_set_account_link_busy(true)
-		_ensure_provider_link_profile_connection()
-		return
+		return true
 
 	provider_link_pending_provider = provider
 	provider_link_stage = "eligibility"
 	_set_account_link_busy(true)
-	_ensure_provider_link_profile_connection()
+	return true
 
 func _ensure_provider_link_profile_connection() -> void:
 	if provider_link_pending_provider == "":
@@ -687,7 +803,7 @@ func _on_provider_link_commit_result(data: Dictionary) -> void:
 	_set_account_link_busy(false)
 	if current_overlay != null and current_overlay.has_method("refresh_account_state"):
 		current_overlay.call("refresh_account_state")
-	NetworkManager.disconnect_profile_server()
+	_clear_account_link_readiness()
 
 func _facebook_rejection_diagnostic(provider: String, reason: String, code: String) -> String:
 	if provider == "facebook" and reason == AuthManager.REASON_REJECTED:
@@ -728,9 +844,15 @@ func _finish_provider_link_error(reason: String, diagnostic_code := "") -> void:
 	provider_link_pending_provider = ""
 	provider_link_stage = ""
 	provider_link_waiting_for_server_result = false
-	_set_account_link_busy(false)
+	if reason == AuthManager.REASON_UNREACHABLE and account_link_readiness_active:
+		_finish_account_link_readiness_error(diagnostic_code if diagnostic_code != "" else "L2")
+		return
+
+	_set_account_link_busy(account_link_readiness_pending)
 	if current_overlay != null and current_overlay.has_method("show_error"):
 		current_overlay.call("show_error", reason, diagnostic_code)
+	if account_link_readiness_active:
+		return
 	if NetworkManager.is_profile_connected():
 		NetworkManager.disconnect_profile_server()
 
@@ -945,6 +1067,8 @@ func _complete_startup_handoff() -> void:
 	_show_runtime_android_system_bars()
 
 func _clear_overlay() -> void:
+	_clear_account_link_readiness()
+
 	if profile_route_pending == "profile":
 		profile_route_pending = ""
 		_clear_profile_entry_loader()
@@ -996,6 +1120,20 @@ func _clear_profile_entry_loader() -> void:
 		profile_entry_loader.queue_free()
 
 	profile_entry_loader = null
+
+func _show_account_link_loader() -> void:
+	if account_link_loader != null and is_instance_valid(account_link_loader):
+		return
+
+	account_link_loader = PlayLoaderScreenScene.instantiate()
+	account_link_loader.z_index = 3
+	screen_container.add_child(account_link_loader)
+
+func _clear_account_link_loader() -> void:
+	if account_link_loader != null and is_instance_valid(account_link_loader):
+		account_link_loader.queue_free()
+
+	account_link_loader = null
 
 func update_debug_button_availability() -> void:
 	var has_play_instance: bool = (

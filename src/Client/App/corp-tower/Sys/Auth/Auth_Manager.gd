@@ -728,7 +728,7 @@ func _build_link_authorize_path(
 	challenge: String,
 	state: String
 ) -> String:
-	return "/auth/v1/user/identities/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=s256&state=%s" % [
+	return "/auth/v1/user/identities/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=s256&state=%s&skip_http_redirect=true" % [
 		provider.uri_encode(),
 		redirect_to.uri_encode(),
 		challenge.uri_encode(),

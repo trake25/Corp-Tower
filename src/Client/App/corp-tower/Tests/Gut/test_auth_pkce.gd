@@ -63,6 +63,10 @@ func test_authorize_url_encodes_the_redirect_and_pins_s256() -> void:
 		"The plain method must never be requested."
 	)
 	assert_false(
+		url.contains("skip_http_redirect"),
+		"Ordinary provider sign-in must retain its redirect behavior."
+	)
+	assert_false(
 		url.contains("challenge+value/here"),
 		"The challenge must be encoded, not interpolated raw."
 	)
@@ -79,6 +83,7 @@ func test_link_authorize_path_uses_the_authenticated_identity_link_endpoint_and_
 	assert_true(path.contains("provider=google"))
 	assert_true(path.contains("code_challenge_method=s256"))
 	assert_true(path.contains("state=link-state"))
+	assert_true(path.contains("skip_http_redirect=true"))
 
 func test_callback_query_extracts_the_code() -> void:
 	var parsed: Dictionary = auth._parse_callback_query("?code=abc123&state=xyz")

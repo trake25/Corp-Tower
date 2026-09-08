@@ -6,6 +6,30 @@ const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
 const ChangeNameScreenScene = preload("res://Cor/Scenes/ChangeNameScreen.tscn")
 const HomeScreenScene = preload("res://Cor/Scenes/HomeScreen.tscn")
 
+class AccountProfileSocket extends RefCounted:
+	var ready_state := WebSocketPeer.STATE_CONNECTING
+	var sent_messages: Array = []
+
+	func get_ready_state() -> int:
+		return ready_state
+
+	func poll() -> Error:
+		return OK
+
+	func get_available_packet_count() -> int:
+		return 0
+
+	func get_packet() -> PackedByteArray:
+		return PackedByteArray()
+
+	func send_text(raw: String) -> Error:
+		sent_messages.append(JSON.parse_string(raw))
+		return OK
+
+	func close() -> Error:
+		ready_state = WebSocketPeer.STATE_CLOSING
+		return OK
+
 var screen_manager
 
 func before_each() -> void:
@@ -21,9 +45,36 @@ func before_each() -> void:
 func after_each() -> void:
 	NetworkManager.disconnect_server()
 	NetworkManager.abandon_room_identity()
+	NetworkManager.ws = WebSocketPeer.new()
+	NetworkManager.connection_purpose = "gameplay"
+	NetworkManager.is_conn_estab = false
+	NetworkManager.is_connecting = false
+	NetworkManager.profile_handshake_pending = false
+	NetworkManager.profile_connect_after_close = false
 	if FileAccess.file_exists(UiPreferencesScript.PREFERENCES_FILE):
 		DirAccess.remove_absolute(UiPreferencesScript.PREFERENCES_FILE)
 	await get_tree().process_frame
+
+func _acknowledge_account_profile_readiness() -> void:
+	var socket := AccountProfileSocket.new()
+	socket.ready_state = WebSocketPeer.STATE_OPEN
+	NetworkManager.ws = socket
+	NetworkManager.connection_purpose = NetworkManager.PROFILE_CONNECTION_PURPOSE
+	NetworkManager.is_conn_estab = true
+	NetworkManager.is_connecting = false
+	NetworkManager.profile_handshake_pending = false
+	NetworkManager.profile_connection_changed.emit(true)
+
+func _show_unlinked_account() -> void:
+	AuthManager.is_anonymous = true
+	AuthManager.current_provider = ""
+	NetworkManager.ws = AccountProfileSocket.new()
+	NetworkManager.connection_purpose = NetworkManager.PROFILE_CONNECTION_PURPOSE
+	NetworkManager.is_conn_estab = false
+	NetworkManager.is_connecting = true
+	NetworkManager.manual_disconnect_requested = false
+	NetworkManager.profile_handshake_pending = false
+	screen_manager.show_account_screen()
 
 func test_bounded_startup_transport_failure_releases_home_without_discarding_identity() -> void:
 	NetworkManager.player_id = "saved-player"
@@ -228,6 +279,155 @@ func test_home_settings_and_account_navigation_returns_through_the_stack() -> vo
 	await get_tree().process_frame
 
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
+
+func test_unlinked_account_waits_for_profile_readiness_before_provider_linking() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	var account = screen_manager.current_overlay
+
+	assert_true(screen_manager.account_link_readiness_pending)
+	assert_false(screen_manager.account_link_ready)
+	assert_not_null(screen_manager.account_link_loader)
+	assert_true(account.google_button.disabled)
+	assert_true(account.facebook_button.disabled)
+
+	screen_manager._on_provider_link_requested("facebook")
+
+	assert_eq(screen_manager.provider_link_pending_provider, "")
+	assert_eq(screen_manager.provider_link_stage, "")
+	assert_true(NetworkManager.ws.sent_messages.is_empty())
+	_acknowledge_account_profile_readiness()
+
+	assert_false(screen_manager.account_link_readiness_pending)
+	assert_true(screen_manager.account_link_ready)
+	assert_null(screen_manager.account_link_loader)
+	assert_false(account.google_button.disabled)
+	assert_false(account.facebook_button.disabled)
+
+func test_ready_unlinked_account_skips_the_readiness_loader() -> void:
+	AuthManager.is_anonymous = true
+	AuthManager.current_provider = ""
+	_acknowledge_account_profile_readiness()
+
+	screen_manager.show_account_screen()
+	await get_tree().process_frame
+	var account = screen_manager.current_overlay
+
+	assert_true(screen_manager.account_link_ready)
+	assert_false(screen_manager.account_link_readiness_pending)
+	assert_null(screen_manager.account_link_loader)
+	assert_false(account.google_button.disabled)
+	assert_false(account.facebook_button.disabled)
+
+func test_connecting_account_profile_handoff_keeps_waiting_without_an_l2_error() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	var account = screen_manager.current_overlay
+	account.clear_error()
+	screen_manager.account_link_readiness_pending = true
+	screen_manager.account_link_ready = false
+	screen_manager._set_account_link_busy(true)
+	screen_manager._show_account_link_loader()
+	NetworkManager.is_connecting = true
+
+	NetworkManager.profile_connection_changed.emit(false)
+
+	assert_true(screen_manager.account_link_readiness_pending)
+	assert_not_null(screen_manager.account_link_loader)
+	assert_false(account.error_label.visible)
+
+func test_account_profile_readiness_failure_releases_the_loader_and_keeps_retry_available() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	var account = screen_manager.current_overlay
+	screen_manager.account_link_readiness_pending = true
+	screen_manager.account_link_ready = false
+	screen_manager.account_link_connection_starting = false
+	screen_manager.account_link_connection_owned = false
+	screen_manager._set_account_link_busy(true)
+	screen_manager._show_account_link_loader()
+	NetworkManager.is_connecting = false
+
+	NetworkManager.profile_connection_changed.emit(false)
+
+	assert_false(screen_manager.account_link_readiness_pending)
+	assert_false(screen_manager.account_link_ready)
+	assert_null(screen_manager.account_link_loader)
+	assert_false(account.google_button.disabled)
+	assert_false(account.facebook_button.disabled)
+	assert_eq(account.error_label.text, "Servers unavailable. [L2]")
+	assert_true(account.error_label.visible)
+
+	screen_manager._on_provider_link_requested("google")
+
+	assert_true(screen_manager.account_link_readiness_pending)
+	assert_eq(screen_manager.provider_link_pending_provider, "google")
+	assert_eq(screen_manager.provider_link_stage, "eligibility")
+	assert_false(screen_manager.provider_link_waiting_for_server_result)
+	assert_true(account.google_button.disabled)
+
+func test_profile_ready_keeps_an_active_provider_operation_busy() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	var account = screen_manager.current_overlay
+	screen_manager.provider_link_pending_provider = "google"
+	screen_manager.provider_link_stage = "eligibility"
+
+	_acknowledge_account_profile_readiness()
+	var socket = NetworkManager.ws
+
+	assert_true(screen_manager.account_link_ready)
+	assert_null(screen_manager.account_link_loader)
+	assert_true(account.google_button.disabled)
+	assert_true(account.facebook_button.disabled)
+	assert_true(screen_manager.provider_link_waiting_for_server_result)
+	assert_eq(socket.sent_messages.size(), 1)
+	assert_eq(str(socket.sent_messages[0].get("type", "")), "provider_link_preflight")
+
+func test_failed_provider_retry_clears_its_deferred_request_without_stealing_gameplay() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	NetworkManager.is_connecting = false
+	screen_manager.account_link_readiness_pending = false
+	screen_manager.account_link_ready = false
+	screen_manager.account_link_connection_owned = false
+	NetworkManager.connection_purpose = "gameplay"
+	NetworkManager.is_conn_estab = true
+
+	screen_manager._on_provider_link_requested("google")
+
+	assert_eq(screen_manager.provider_link_pending_provider, "")
+	assert_eq(screen_manager.provider_link_stage, "")
+	assert_eq(screen_manager.current_overlay.error_label.text, "Servers unavailable. [L1]")
+	assert_false(screen_manager.current_overlay.google_button.disabled)
+	assert_true(NetworkManager.is_conn_estab)
+
+func test_leaving_unlinked_account_retires_its_prepared_profile_connection() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	_acknowledge_account_profile_readiness()
+
+	assert_true(NetworkManager.is_profile_connected())
+	screen_manager.show_settings_screen()
+
+	assert_false(screen_manager.account_link_readiness_active)
+	assert_false(NetworkManager.is_conn_estab)
+	assert_false(NetworkManager.is_connecting)
+
+func test_semantic_provider_errors_keep_the_account_profile_connection_warm() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	_acknowledge_account_profile_readiness()
+	screen_manager.provider_link_pending_provider = "google"
+	screen_manager.provider_link_stage = "eligibility"
+
+	screen_manager._finish_provider_link_error(AuthManager.REASON_CANCELLED)
+
+	assert_true(screen_manager.account_link_ready)
+	assert_true(NetworkManager.is_profile_connected())
+	assert_eq(screen_manager.provider_link_pending_provider, "")
+	assert_false(screen_manager.current_overlay.google_button.disabled)
+	assert_eq(screen_manager.current_overlay.error_label.text, "Account linking cancelled.")
 
 func test_web_link_callback_failure_returns_to_account_without_startup_or_onboarding() -> void:
 	AuthManager.last_provider_link_reason = AuthManager.REASON_CANCELLED
