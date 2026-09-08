@@ -13,6 +13,9 @@ afterEach(() => {
         [
             lobby.roomReconnectTimers,
             lobby.roomLobbyTimers,
+            lobby.publicLobbyBotFillTimers,
+            lobby.publicLobbyBotReadyTimers,
+            lobby.publicLobbyReconnectExpiryTimers,
             lobby.privateLobbyStartTimers,
             lobby.privateLobbyGraceTimers,
             lobby.privateLobbyExpiryTimers

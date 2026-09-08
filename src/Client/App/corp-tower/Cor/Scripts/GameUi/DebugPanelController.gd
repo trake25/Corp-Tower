@@ -26,6 +26,7 @@ var close_debug_button: Button
 var category_dropdown: OptionButton
 var category_panels: Dictionary = {}
 var bots_toggle: CheckButton
+var public_lobby_bot_fill_toggle: CheckButton
 var bot_strategy_button: OptionButton
 var bot_count_label: Label
 var bot_count_slider: HSlider
@@ -142,6 +143,7 @@ func bind_nodes(binder) -> void:
 	restart_level_button = binder.optional_node("RestartLevelButton") as Button
 	close_debug_button = binder.optional_node("CloseDebugButton") as Button
 	bots_toggle = binder.optional_node("BotsToggle") as CheckButton
+	public_lobby_bot_fill_toggle = binder.optional_node("PublicLobbyBotFillToggle") as CheckButton
 	impact_beat_toggle = binder.optional_node("ImpactBeatToggle") as CheckButton
 	screen_shake_toggle = binder.optional_node("ScreenShakeToggle") as CheckButton
 	latency_indicator_toggle = binder.optional_node("LatencyIndicatorToggle") as CheckButton
@@ -272,6 +274,8 @@ func setup(
 
 	if bots_toggle != null:
 		bots_toggle.toggled.connect(on_bots_toggle)
+	if public_lobby_bot_fill_toggle != null:
+		public_lobby_bot_fill_toggle.toggled.connect(on_public_lobby_bot_fill_toggle)
 
 	if impact_beat_toggle != null:
 		impact_beat_toggle.toggled.connect(on_impact_beat_toggle)
@@ -514,6 +518,11 @@ func on_bots_toggle(enabled: bool) -> void:
 		return
 	network.update_config("debugBotsEnabled", enabled)
 
+func on_public_lobby_bot_fill_toggle(enabled: bool) -> void:
+	if is_syncing_debug_config:
+		return
+	network.update_config("publicLobbyBotFillEnabled", enabled)
+
 func on_impact_beat_toggle(enabled: bool) -> void:
 	if is_syncing_debug_config:
 		return
@@ -613,6 +622,10 @@ func apply_config(config) -> void:
 	is_syncing_debug_config = true
 	tuning.placement_cooldown_ms = int(config.get("placementCooldown", tuning.placement_cooldown_ms))
 	bots_toggle.set_pressed_no_signal(bool(config.get("debugBotsEnabled", false)))
+	if public_lobby_bot_fill_toggle != null:
+		public_lobby_bot_fill_toggle.set_pressed_no_signal(
+			bool(config.get("publicLobbyBotFillEnabled", true))
+		)
 	if impact_beat_toggle != null:
 		impact_beat_toggle.set_pressed_no_signal(
 			bool(config.get("visualHookImpactBeat", true))

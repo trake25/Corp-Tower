@@ -11,6 +11,7 @@ class NetworkStub:
 const CONFIG_FIXTURE := {
 	"placementCooldown": 1500,
 	"debugBotsEnabled": true,
+	"publicLobbyBotFillEnabled": true,
 	"debugBotStrategy": "mvp_greedy",
 	"debugBotCount": 2,
 	"debugBotDelayMin": 500,
@@ -62,6 +63,7 @@ func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	harness.main.update_debug_config(CONFIG_FIXTURE)
 	assert_eq((harness.find("BotCountSlider") as HSlider).value, 2.0, "The bot count slider should sync from the config payload.")
 	assert_true((harness.find("BotsToggle") as CheckButton).button_pressed, "The bots toggle should sync from the config payload.")
+	assert_true((harness.find("PublicLobbyBotFillToggle") as CheckButton).button_pressed, "The public lobby bot-fill toggle should sync from the config payload.")
 	assert_eq((harness.find("BotStrategyButton") as OptionButton).selected, 1, "The MVP greedy strategy should select the second option.")
 	assert_true((harness.find("PowerLastChanceToggle") as CheckButton).button_pressed, "Last Chance should sync from the config payload.")
 	assert_true((harness.find("LatencyIndicatorToggle") as CheckButton).button_pressed, "The latency toggle should sync from the config payload.")
@@ -139,6 +141,16 @@ func test_lateral_load_share_row_converts_percent_to_the_server_fraction() -> vo
 	assert_eq(network_stub.updates[0][0], "towerLateralLoadShare")
 	assert_almost_eq(float(network_stub.updates[0][1]), 0.65, 0.001)
 	assert_eq((harness.find("TowerLateralLoadShareLabel") as Button).text, "Lateral Load Share: 65%")
+
+func test_public_lobby_bot_fill_toggle_uses_its_dedicated_server_key() -> void:
+	var network_stub := NetworkStub.new()
+	harness.main.debug_panel.network = network_stub
+	var toggle := harness.find("PublicLobbyBotFillToggle") as CheckButton
+
+	harness.main.update_debug_config(CONFIG_FIXTURE)
+	toggle.button_pressed = false
+
+	assert_eq(network_stub.updates, [["publicLobbyBotFillEnabled", false]])
 
 func test_mood_threshold_reaches_the_tower_renderer() -> void:
 	var tower_stack: Node = harness.find("TowerStack")

@@ -2,6 +2,7 @@ const GameConfig = require("./Game_Config");
 
 const FIELD_PATHS = {
     debugBotsEnabled: ["game", "debugBotsEnabled"],
+    publicLobbyBotFillEnabled: ["game", "publicLobbyBotFillEnabled"],
     showLatencyIndicator: ["game", "showLatencyIndicator"],
     debugBotCount: ["game", "debugBotCount"],
     debugBotStrategy: ["game", "debugBotStrategy"],
@@ -54,6 +55,7 @@ const FIELD_PATHS = {
 
 const RULES = {
     debugBotsEnabled: ["bool"],
+    publicLobbyBotFillEnabled: ["bool"],
     showLatencyIndicator: ["bool"],
     debugBotCount: ["int", 0, 2],
     debugBotStrategy: ["enum", ["cooperative", "mvp_greedy"]],

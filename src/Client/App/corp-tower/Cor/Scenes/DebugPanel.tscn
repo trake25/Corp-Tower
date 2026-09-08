@@ -108,6 +108,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Bots"
 
+[node name="PublicLobbyBotFillToggle" type="CheckButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Public Lobby Bot Fill"
+
 [node name="BotStrategyLabel" type="Label" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/Bots/BotsRows" unique_id=290450912]
 unique_name_in_owner = true
 layout_mode = 2

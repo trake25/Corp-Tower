@@ -55,7 +55,10 @@ adjacent: network.room.public
 -->
 ## Public matchmaking
 
-Public rooms have three seats and may include debug bots. They start only when full and ready. Open-room seating runs under the matchmaking lock, and a pod that claims a room it cannot own must return the id before trying another. Bot spectator matches bypass this seating and open-room path entirely.
+Public rooms have three seats. The first real player establishes a two-minute human-matchmaking threshold.
+With production Public Lobby bot fill enabled, any capacity still open at or after that threshold is filled by cooperative production bots; their seats remain replaceable by newly matched real players until match start. Production public bots are distinct from the existing debug-bot controls and carry explicit cooperative profiles.
+A dedicated runtime debug toggle may disable production fill for waiting Public Lobbies, removing only those production bots and reopening their seats without altering matches already in progress. Reconnect-eligible disconnected humans retain their real seats until they resume, intentionally leave, or expire.
+Open-room seating runs under the matchmaking lock, and a public room with no real or reconnect-eligible human closes through the normal room teardown lifecycle. Private and bot-spectator rooms never use this lifecycle.
 
 <!-- kb
 id: backend.lobby.private

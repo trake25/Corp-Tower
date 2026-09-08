@@ -15,6 +15,12 @@ afterEach(() => {
         lobby.roomLobbyTimers.clear();
         lobby.roomReconnectTimers.forEach(timer => clearTimeout(timer));
         lobby.roomReconnectTimers.clear();
+        lobby.publicLobbyBotFillTimers.forEach(timer => clearTimeout(timer));
+        lobby.publicLobbyBotFillTimers.clear();
+        lobby.publicLobbyBotReadyTimers.forEach(timer => clearTimeout(timer));
+        lobby.publicLobbyBotReadyTimers.clear();
+        lobby.publicLobbyReconnectExpiryTimers.forEach(timer => clearTimeout(timer));
+        lobby.publicLobbyReconnectExpiryTimers.clear();
     });
     activeLobbies.length = 0;
 });
@@ -478,7 +484,7 @@ test("resume-only with no resumable room reports Home without entering matchmaki
     assert.equal(messagesOfType(staleWs, "resume_unavailable").at(-1).destination, "home");
 });
 
-test("resume-only cannot reclaim a public pre-match seat before its old socket closes", async () => {
+test("resume-only reclaims a public pre-match seat and ignores the superseded close", async () => {
     const cluster = createSharedFakeCluster();
     const lobby = new LobbyManager(cluster.makeStore("podA"));
     activeLobbies.push(lobby);
@@ -494,15 +500,15 @@ test("resume-only cannot reclaim a public pre-match seat before its old socket c
         resumeOnly: true
     });
 
-    assert.equal(attemptedResume.room, undefined);
-    assert.equal(publicRoom.players.some(player => player.id === original.id), false);
-    assert.equal(messagesOfType(resumeWs, "room_resumed").length, 0);
+    assert.equal(attemptedResume.room, publicRoom);
+    assert.equal(publicRoom.players.some(player => player.id === original.id), true);
+    assert.equal(messagesOfType(resumeWs, "room_resumed").length, 1);
     assert.equal(messagesOfType(resumeWs, "room_created").length, 0);
-    assert.equal(messagesOfType(resumeWs, "resume_unavailable").at(-1).destination, "home");
-    assert.equal(lobby.rooms.length, 0);
+    assert.equal(messagesOfType(resumeWs, "resume_unavailable").length, 0);
+    assert.equal(lobby.rooms.length, 1);
 
     await lobby.removePlayer(original);
-    assert.equal(lobby.rooms.length, 0, "the superseded close cannot resurrect the evicted seat");
+    assert.equal(lobby.rooms.length, 1, "the superseded close cannot remove the restored seat");
 });
 
 test("leave_game is a no-op until the room has started", async () => {
@@ -714,7 +720,7 @@ test("remote-owner leave_game returns only a targeted acknowledgement", async ()
     assert.equal(lobbyB.rooms.length, 1);
 });
 
-test("dropping the socket during ready-up breaks off just that player", async () => {
+test("dropping the socket during ready-up reserves the public seat through reconnect TTL", async () => {
     const { lobby, players, sockets, room } = await createLobbyOfThree();
 
     sockets[0].readyState = 3;
@@ -723,7 +729,7 @@ test("dropping the socket during ready-up breaks off just that player", async ()
     assert.equal(
         lobby.roomReconnectTimers.has(room.id),
         false,
-        "the reconnect grace window belongs to started matches, not the lobby"
+        "started-match reconnect timers remain separate from public lobby seat reservation"
     );
 
     [sockets[1], sockets[2]].forEach(ws => {
@@ -731,7 +737,12 @@ test("dropping the socket during ready-up breaks off just that player", async ()
     });
 
     assert.equal(lobby.rooms.length, 1);
-    assert.equal(room.players.length, 2);
+    assert.equal(room.players.length, 3);
+    assert.equal(room.players[0].presence, "disconnected");
+    assert.ok(
+        lobby.publicLobbyReconnectExpiryTimers.has(`${room.id}:${players[0].id}`),
+        "the reserved public seat must carry its own reconnect expiry"
+    );
 });
 
 test("reconnecting mid-lobby resumes the ready state without a stray game_state", async () => {
@@ -871,6 +882,177 @@ test("changing the bot roster resets ready players and broadcasts their unready 
 
     const disabledUpdate = messagesOfType(ws, "lobby_update").pop();
     assert.deepEqual(disabledUpdate.readyPlayerIds, []);
+});
+
+test("a mature public threshold fills only vacant seats with unready cooperative production bots", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+    activeLobbies.push(lobby);
+    await lobby.start();
+    assert.equal(lobby.getDebugConfig().publicLobbyBotFillEnabled, true);
+
+    const player = await lobby.createPlayer(createFakeWs(), {});
+    await lobby.addPlayer(player);
+    const room = player.room;
+
+    assert.equal(room.players.filter(candidate => candidate.isBot).length, 0);
+    assert.ok(room.publicLobbyBotFillDeadlineAt > Date.now());
+
+    lobby.cancelPublicLobbyBotFill(room.id);
+    room.publicLobbyBotFillDeadlineAt = Date.now() - 1;
+    await lobby.reconcilePublicLobby(room);
+
+    const bots = room.players.filter(candidate => candidate.botCategory === "public_fill");
+    assert.equal(bots.length, 2);
+    bots.forEach(bot => {
+        assert.ok(bot.botProfile, "production bots carry an explicit cooperative profile");
+        assert.equal(room.readyPlayerIds.has(bot.id), false);
+        bot.publicLobbyBotReadyAt = Date.now() - 1;
+        lobby.cancelProductionPublicBotReady(room.id, bot.id);
+    });
+
+    for (const bot of bots) {
+        await lobby.handleProductionPublicBotReady(room.id, bot.id, bot.publicLobbyBotReadyAt);
+    }
+
+    assert.deepEqual(
+        bots.map(bot => room.readyPlayerIds.has(bot.id)),
+        [true, true],
+        "each production bot enters the normal ready roster only after its own delay"
+    );
+});
+
+test("real matchmaking replaces a provisional production bot without exceeding three seats", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+    activeLobbies.push(lobby);
+    await lobby.start();
+
+    const first = await lobby.createPlayer(createFakeWs(), {});
+    await lobby.addPlayer(first);
+    const room = first.room;
+    lobby.cancelPublicLobbyBotFill(room.id);
+    room.publicLobbyBotFillDeadlineAt = Date.now() - 1;
+    await lobby.reconcilePublicLobby(room);
+    const originalBotIds = room.players.filter(player => player.isBot).map(player => player.id);
+
+    const entrant = await lobby.createPlayer(createFakeWs(), {});
+    await lobby.addPlayer(entrant);
+
+    assert.equal(entrant.room, room);
+    assert.equal(room.players.length, 3);
+    assert.equal(room.players.filter(player => !player.isBot).length, 2);
+    assert.equal(room.players.filter(player => player.botCategory === "public_fill").length, 1);
+    assert.equal(
+        originalBotIds.some(id => room.players.some(player => player.id === id)),
+        true,
+        "one existing provisional bot remains until another real entrant arrives"
+    );
+    assert.equal(room.readyPlayerIds.has(entrant.id), false);
+});
+
+test("the public bot-fill toggle removes only waiting production bots and preserves its threshold", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+    activeLobbies.push(lobby);
+    await lobby.start();
+
+    const player = await lobby.createPlayer(createFakeWs(), {});
+    await lobby.addPlayer(player);
+    const room = player.room;
+    lobby.cancelPublicLobbyBotFill(room.id);
+    room.publicLobbyBotFillDeadlineAt = Date.now() - 1;
+    await lobby.reconcilePublicLobby(room);
+    const threshold = room.publicLobbyBotFillDeadlineAt;
+
+    await lobby.updateDebugConfig("publicLobbyBotFillEnabled", false);
+
+    assert.equal(room.players.filter(candidate => candidate.botCategory === "public_fill").length, 0);
+    assert.equal(room.publicLobbyBotFillDeadlineAt, threshold);
+    assert.equal(lobby.publicLobbyBotReadyTimers.size, 0);
+    assert.equal(cluster.shared.openRooms.has(room.id), true);
+
+    await lobby.updateDebugConfig("publicLobbyBotFillEnabled", true);
+
+    assert.equal(room.players.filter(candidate => candidate.botCategory === "public_fill").length, 2);
+});
+
+test("public bot-fill state survives hydration and only the owner restores lobby timers", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+    activeLobbies.push(lobby);
+    await lobby.start();
+
+    const socket = createFakeWs();
+    const player = await lobby.createPlayer(socket, {});
+    await lobby.addPlayer(player);
+    const room = player.room;
+    lobby.cancelPublicLobbyBotFill(room.id);
+    room.publicLobbyBotFillDeadlineAt = Date.now() - 1;
+    await lobby.reconcilePublicLobby(room);
+
+    const productionBot = room.players.find(candidate => {
+        return candidate.botCategory === "public_fill";
+    });
+    const readyAt = productionBot.publicLobbyBotReadyAt;
+
+    socket.readyState = 3;
+    await lobby.removePlayer(player);
+    const reconnectExpiresAt = room.players.find(candidate => candidate.id === player.id)
+        .publicLobbyReconnectExpiresAt;
+
+    const replica = new LobbyManager(cluster.makeStore("podB"));
+    activeLobbies.push(replica);
+    await replica.start();
+    const remoteRoom = await replica.hydrateRoom(room.id);
+    const remoteBot = remoteRoom.players.find(candidate => candidate.id === productionBot.id);
+    const remotePlayer = remoteRoom.players.find(candidate => candidate.id === player.id);
+
+    assert.equal(replica.isRoomOwner(remoteRoom), false);
+    assert.equal(remoteRoom.publicLobbyBotFillDeadlineAt, room.publicLobbyBotFillDeadlineAt);
+    assert.equal(remoteBot.botCategory, "public_fill");
+    assert.equal(remoteBot.botProfile.personality, "engineer");
+    assert.equal(remoteBot.publicLobbyBotReadyAt, readyAt);
+    assert.equal(remotePlayer.presence, "disconnected");
+    assert.equal(remotePlayer.publicLobbyReconnectExpiresAt, reconnectExpiresAt);
+    assert.equal(replica.publicLobbyBotFillTimers.size, 0);
+    assert.equal(replica.publicLobbyBotReadyTimers.size, 0);
+    assert.equal(replica.publicLobbyReconnectExpiryTimers.size, 0);
+
+    const restartedOwner = new LobbyManager(cluster.makeStore("podA"));
+    activeLobbies.push(restartedOwner);
+    await restartedOwner.start();
+    const hydratedRoom = await restartedOwner.hydrateRoom(room.id);
+
+    assert.equal(restartedOwner.isRoomOwner(hydratedRoom), true);
+    assert.equal(restartedOwner.publicLobbyBotFillTimers.size, 1);
+    assert.equal(restartedOwner.publicLobbyBotReadyTimers.size, 2);
+    assert.equal(restartedOwner.publicLobbyReconnectExpiryTimers.size, 1);
+});
+
+test("public reconnect expiry removes the reserved final human and closes the bot-only room", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+    activeLobbies.push(lobby);
+    await lobby.start();
+
+    const socket = createFakeWs();
+    const player = await lobby.createPlayer(socket, {});
+    await lobby.addPlayer(player);
+    const room = player.room;
+    socket.readyState = 3;
+    await lobby.removePlayer(player);
+    const reserved = room.players.find(candidate => candidate.id === player.id);
+    reserved.publicLobbyReconnectExpiresAt = Date.now() - 1;
+    lobby.cancelPublicLobbyReconnectExpiry(room.id, reserved.id);
+
+    await lobby.handlePublicLobbyReconnectExpired(
+        room.id, reserved.id, reserved.publicLobbyReconnectExpiresAt
+    );
+
+    assert.equal(lobby.rooms.length, 0);
+    assert.equal(cluster.shared.rooms.has(room.id), false);
+    assert.equal(cluster.shared.openRooms.has(room.id), false);
 });
 
 test("players connecting to different pods each land in a room, even without a shared one", async () => {

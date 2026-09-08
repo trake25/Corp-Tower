@@ -44,6 +44,10 @@ function stripRuntimePlayer(player) {
         privateLobbyExpiresAt: player.privateLobbyExpiresAt || 0,
         presence,
         isBot: Boolean(player.isBot),
+        botCategory: player.botCategory || null,
+        botProfile: player.botProfile || null,
+        publicLobbyBotReadyAt: player.publicLobbyBotReadyAt || 0,
+        publicLobbyReconnectExpiresAt: player.publicLobbyReconnectExpiresAt || 0,
         score: player.score || 0,
         levelScore: player.levelScore || 0,
         levelImpactContribution: player.levelImpactContribution || 0,
@@ -77,6 +81,7 @@ function stripRuntimeRoom(room) {
         privateStartDeadlineAt: room.privateStartDeadlineAt || 0,
         readyPlayerIds: Array.from(room.readyPlayerIds || []),
         lobbyDeadlineAt: room.lobbyDeadlineAt || 0,
+        publicLobbyBotFillDeadlineAt: room.publicLobbyBotFillDeadlineAt || 0,
         state: {
             level: engineRoom.level || 1,
             stateRevision: engineRoom.stateRevision || 0,

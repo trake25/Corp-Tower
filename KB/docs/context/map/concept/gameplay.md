@@ -71,7 +71,7 @@ Owner: `KB/docs/context/gameplay.md:294-299` → **Debug tuning**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Debug_Config.js` | `applyValue` | 130 | `sed -n 118,150p src/Server/app/Debug_Config.js` |
+| `src/Server/app/Debug_Config.js` | `applyValue` | 132 | `sed -n 120,152p src/Server/app/Debug_Config.js` |
 | `src/Server/app/Game_Config.js` | `GameConfig` | 1 | `sed -n 1,21p src/Server/app/Game_Config.js` |
 
 Adjacent concepts: `backend.lobby.debug-config`
@@ -230,7 +230,7 @@ Owner: `KB/docs/context/gameplay.md:26-29` → **Reconnect meaning**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `resumePlayer` | 329 | `sed -n 317,349p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `resumePlayer` | 363 | `sed -n 351,383p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.session.recovery`
 

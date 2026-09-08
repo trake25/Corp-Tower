@@ -6,6 +6,7 @@ const TUNABLE_CLASSES = Object.freeze({
 
 const RUNTIME_EXPOSED_SERVER_FIELDS = Object.freeze({
     debugBotsEnabled: "debugBotsEnabled",
+    publicLobbyBotFillEnabled: "publicLobbyBotFillEnabled",
     showLatencyIndicator: "showLatencyIndicator",
     debugBotCount: "debugBotCount",
     debugBotStrategy: "debugBotStrategy",
@@ -82,6 +83,7 @@ const SERVER_DESIGNER_ONLY_PATHS = Object.freeze([
     "powerGuaranteedBaseline", "powerImpactMvpReward", "powerLifetime",
     "privateLobbyGracePhaseMs", "privateLobbyReconnectPhaseMs",
     "privateLobbyStartCountdownMs", "quickChatTemplates", "refreshGenerationAttempts",
+    "publicLobbyBotFillDelayMs", "publicLobbyBotReadyDelayMs",
     "scoring.assistBonusPerLevel", "scoring.assistContributionThreshold",
     "scoring.criticalSaveMaxPerLevel", "scoring.criticalSaveMinLoadShare",
     "scoring.criticalSaveMinRiskReduction", "scoring.finisherBonusPerLevel",

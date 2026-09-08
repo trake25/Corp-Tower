@@ -82,7 +82,11 @@ adjacent: backend.lobby.public
 -->
 ## Public lobby
 
-Public seats fill incrementally and assignment arrives as soon as a seat is owned. A full room starts a ready window; every seat must be ready before match start. Leaving or disconnecting during ready-up removes the affected public seat, resets survivor readiness, and cancels the timer until the room fills again.
+Public seats fill incrementally and assignment arrives as soon as a real seat is owned. The first real player establishes a two-minute production-bot threshold.
+When production Public Lobby bot fill is enabled and the threshold has matured, cooperative bots fill only remaining capacity; each such bot becomes ready only after its two-second join delay has elapsed while at least one real player is connected. Bot seats remain replaceable by real matchmaking entrants until match start.
+The dedicated debug toggle may disable production fill in waiting public rooms, removing production bots and reopening their seats while preserving the original threshold for later re-enable; it never removes bots from a match already in progress and is independent of the existing debug-bot controls.
+A full current roster uses the normal ready window and every participant must be ready before the match starts. A public transport disconnect preserves the real seat through reconnect eligibility, clears that human's ready state, and prevents bot-only start; reconnect restores the seat, while intentional leave or reconnect expiry removes it.
+When no real or reconnect-eligible seat remains, the room closes instead of leaving a bot-only public room alive.
 
 <!-- kb
 id: network.room.private
