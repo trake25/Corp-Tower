@@ -145,12 +145,14 @@ alias: worried brick
 alias: red outline
 alias: weak support
 source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#_has_danger_outline
+source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#trouble_target
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd#refresh
 adjacent: gameplay.scoring.critical-save
 adjacent: gameplay.tower.stability
 -->
 ## Weak-support feedback
 
-Standing critical supports receive emphasized danger presentation tied to their authoritative support stability. The worried brick/outline follows the rendered structural pose. Recovered and fallen supports lose that critical emphasis while warning-only modes may hide the numeric meter but preserve structural feedback.
+Standing critical supports receive emphasized danger presentation tied to their authoritative support stability. The worried brick/outline follows the rendered structural pose. One non-interactive lower-screen warning communicates when any critical support is below the rendered tower view; it disappears when none qualify and never moves the camera. Recovered and fallen supports lose that critical emphasis while warning-only modes may hide the numeric meter but preserve structural feedback.
 
 <!-- kb
 id: hud.tower.collapse.presentation

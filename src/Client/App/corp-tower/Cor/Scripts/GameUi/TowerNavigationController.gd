@@ -2,6 +2,8 @@ extends Node
 
 const PointerEventsScript = preload("res://Cor/Scripts/GameUi/PointerEvents.gd")
 const WHEEL_PAN_UNITS := 1.0
+const WEAK_SUPPORT_ARROW_BOUNCE_PIXELS := 3.0
+const WEAK_SUPPORT_ARROW_BOUNCE_SECONDS := 0.45
 
 var tower_stack
 var match_state
@@ -10,6 +12,9 @@ var overlay_blocked: Callable = Callable()
 var navigation_popup_available: bool = true
 var trouble_button: Button
 var back_button: Button
+var weak_support_indicator: Control
+var weak_support_indicator_arrows: TextureRect
+var weak_support_arrow_tween: Tween
 var tower_drop_zone: Control
 var selected_block_id: String = ""
 var was_playing: bool = false
@@ -19,6 +24,8 @@ var pan_pointer_id: int = PointerEventsScript.POINTER_MOUSE
 func bind_nodes(binder) -> void:
 	trouble_button = binder.require_node("TroubleDownButton") as Button
 	back_button = binder.require_node("BackToTopButton") as Button
+	weak_support_indicator = binder.require_node("WeakSupportIndicator") as Control
+	weak_support_indicator_arrows = binder.require_node("WeakSupportIndicatorArrows") as TextureRect
 	tower_drop_zone = binder.require_node("TowerDropZone") as Control
 
 func setup(
@@ -99,7 +106,7 @@ func handle_input(event: InputEvent) -> void:
 
 func refresh() -> void:
 	if tower_stack == null or match_state == null:
-		_set_visible(false, false)
+		_set_visible(false, false, false)
 		return
 
 	var playing: bool = str(match_state.current_match_state) == "playing"
@@ -109,7 +116,7 @@ func refresh() -> void:
 			tower_stack.reset_navigation()
 		selected_block_id = ""
 		was_playing = false
-		_set_visible(false, false)
+		_set_visible(false, false, false)
 		return
 
 	was_playing = true
@@ -118,7 +125,7 @@ func refresh() -> void:
 		presentation_blocked = presentation_blocked or bool(overlay_blocked.call())
 	if presentation_blocked:
 		_cancel_pan()
-		_set_visible(false, false)
+		_set_visible(false, false, false)
 		return
 
 	if selected_block_id != "" and !tower_stack.is_scroll_navigating():
@@ -129,7 +136,8 @@ func refresh() -> void:
 	)
 	var show_trouble: bool = !trouble.is_empty() and selected_block_id == ""
 	var show_back: bool = tower_stack.is_scroll_manually_displaced()
-	_set_visible(show_trouble, show_back)
+	var show_weak_support_indicator: bool = !trouble.is_empty()
+	_set_visible(show_trouble, show_back, show_weak_support_indicator)
 	if trouble_button != null:
 		trouble_button.disabled = placement_blocked or !navigation_popup_available
 	if back_button != null:
@@ -141,13 +149,52 @@ func reset() -> void:
 	was_playing = false
 	if tower_stack != null:
 		tower_stack.reset_navigation()
-	_set_visible(false, false)
+	_set_visible(false, false, false)
 
-func _set_visible(show_trouble: bool, show_back: bool) -> void:
+func _set_visible(show_trouble: bool, show_back: bool, show_weak_support_indicator: bool) -> void:
 	if trouble_button != null:
 		trouble_button.visible = navigation_popup_available and show_trouble
 	if back_button != null:
 		back_button.visible = navigation_popup_available and show_back
+	_set_weak_support_indicator_visible(show_weak_support_indicator)
+
+func _set_weak_support_indicator_visible(should_show: bool) -> void:
+	if weak_support_indicator == null or weak_support_indicator.visible == should_show:
+		return
+
+	weak_support_indicator.visible = should_show
+	if should_show:
+		_start_weak_support_indicator_animation()
+	else:
+		_stop_weak_support_indicator_animation()
+
+func _start_weak_support_indicator_animation() -> void:
+	if weak_support_indicator_arrows == null:
+		return
+
+	_stop_weak_support_indicator_animation()
+	weak_support_arrow_tween = create_tween()
+	weak_support_arrow_tween.set_loops()
+	weak_support_arrow_tween.tween_property(
+		weak_support_indicator_arrows,
+		"position:y",
+		WEAK_SUPPORT_ARROW_BOUNCE_PIXELS,
+		WEAK_SUPPORT_ARROW_BOUNCE_SECONDS
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	weak_support_arrow_tween.tween_property(
+		weak_support_indicator_arrows,
+		"position:y",
+		0.0,
+		WEAK_SUPPORT_ARROW_BOUNCE_SECONDS
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func _stop_weak_support_indicator_animation() -> void:
+	if weak_support_arrow_tween != null and is_instance_valid(weak_support_arrow_tween):
+		weak_support_arrow_tween.kill()
+	weak_support_arrow_tween = null
+
+	if weak_support_indicator_arrows != null:
+		weak_support_indicator_arrows.position = Vector2.ZERO
 
 func _on_trouble_pressed() -> void:
 	if !navigation_popup_available or trouble_button == null or trouble_button.disabled:
