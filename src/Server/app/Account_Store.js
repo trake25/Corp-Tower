@@ -174,6 +174,10 @@ class AccountStore {
             if (found && found.player_account_id !== account.id) {
                 return { result: "identity_conflict" };
             }
+
+            if (!found && await this.accountHasFacebookIdentity(account.id)) {
+                return { result: "identity_conflict" };
+            }
         }
 
         return { result: "allowed" };
@@ -351,21 +355,43 @@ class AccountStore {
             return "rejected";
         }
 
-        const payload = {
-            p_account_id: accountId,
-            p_provider: normalized
-        };
-
         if (normalized === FACEBOOK_PROVIDER) {
             if (typeof facebookSubject !== "string" || facebookSubject === "") {
                 return "rejected";
             }
-            payload.p_facebook_key_version = this.hmacKeyVersion;
-            payload.p_facebook_subject_hmac = this.hashProviderSubject(
-                FACEBOOK_PROVIDER, facebookSubject
-            );
+
+            const payload = {
+                p_account_id: accountId,
+                p_facebook_key_version: this.hmacKeyVersion,
+                p_facebook_subject_hmac: this.hashProviderSubject(
+                    FACEBOOK_PROVIDER, facebookSubject
+                )
+            };
+
+            if (this.previousHmacSecret !== "" && this.previousHmacKeyVersion > 0) {
+                payload.p_previous_key_version = this.previousHmacKeyVersion;
+                payload.p_previous_subject_hmac = this.hashProviderSubject(
+                    FACEBOOK_PROVIDER, facebookSubject, this.previousHmacSecret
+                );
+            }
+
+            const response = await this.request("rpc/claim_player_facebook_provider", {
+                method: "POST",
+                headers: { Prefer: "return=representation" },
+                body: JSON.stringify(payload)
+            });
+            const body = await response.json();
+            const rawResult = Array.isArray(body) ? body[0] : body;
+            const result = typeof rawResult === "string"
+                ? rawResult
+                : rawResult && rawResult.claim_player_facebook_provider;
+            return LINK_RESULTS.has(result) ? result : "rejected";
         }
 
+        const payload = {
+            p_account_id: accountId,
+            p_provider: normalized
+        };
         const response = await this.request("rpc/claim_player_provider", {
             method: "POST",
             headers: { Prefer: "return=representation" },
@@ -481,6 +507,13 @@ class AccountStore {
             `player_identities?provider=eq.${FACEBOOK_PROVIDER}&key_version=eq.${keyVersion}&subject_hmac=eq.${encodeURIComponent(subjectHash)}&select=player_account_id`
         );
         return rows[0] || null;
+    }
+
+    async accountHasFacebookIdentity(accountId) {
+        const rows = await this.fetchRows(
+            `player_identities?provider=eq.${FACEBOOK_PROVIDER}&player_account_id=eq.${encodeURIComponent(accountId)}&select=player_account_id&limit=1`
+        );
+        return rows.length > 0;
     }
 
     async insertAccount(id, supabaseUserId) {

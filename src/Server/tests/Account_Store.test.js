@@ -36,37 +36,74 @@ function createFakeSupabase() {
             const account = accounts.get(body.p_account_id);
             const provider = body.p_provider;
 
-            if (!account || !["google", "facebook"].includes(provider)) {
+            if (!account || provider !== "google") {
                 return response("rejected");
             }
             if (account.linked_provider && account.linked_provider !== provider) {
                 return response("provider_conflict");
             }
+            account.linked_provider = provider;
+            return response("accepted");
+        }
 
-            if (provider === "facebook") {
-                if (!body.p_facebook_key_version || !body.p_facebook_subject_hmac) {
-                    return response("rejected");
-                }
-                const key = [
+        if (parsed.pathname === "/rest/v1/rpc/claim_player_facebook_provider") {
+            const account = accounts.get(body.p_account_id);
+            const activeKey = [
+                "facebook",
+                body.p_facebook_key_version,
+                body.p_facebook_subject_hmac
+            ].join(":");
+            const activeIdentity = identities.get(activeKey);
+            const hasPreviousPair = body.p_previous_key_version != null ||
+                body.p_previous_subject_hmac != null;
+
+            if (
+                !account ||
+                !body.p_facebook_key_version ||
+                !body.p_facebook_subject_hmac ||
+                (hasPreviousPair && (!body.p_previous_key_version || !body.p_previous_subject_hmac))
+            ) {
+                return response("rejected");
+            }
+            if (account.linked_provider && account.linked_provider !== "facebook") {
+                return response("provider_conflict");
+            }
+            if (activeIdentity && activeIdentity.player_account_id !== account.id) {
+                return response("identity_conflict");
+            }
+
+            let previousIdentity = null;
+            if (hasPreviousPair) {
+                const previousKey = [
                     "facebook",
-                    body.p_facebook_key_version,
-                    body.p_facebook_subject_hmac
+                    body.p_previous_key_version,
+                    body.p_previous_subject_hmac
                 ].join(":");
-                const existing = identities.get(key);
-                if (existing && existing.player_account_id !== account.id) {
+                previousIdentity = identities.get(previousKey);
+                if (previousIdentity && previousIdentity.player_account_id !== account.id) {
                     return response("identity_conflict");
-                }
-                if (!existing) {
-                    identities.set(key, {
-                        provider: "facebook",
-                        key_version: body.p_facebook_key_version,
-                        subject_hmac: body.p_facebook_subject_hmac,
-                        player_account_id: account.id
-                    });
                 }
             }
 
-            account.linked_provider = provider;
+            const hasFacebookIdentity = [...identities.values()].some(identity => {
+                return identity.provider === "facebook" && identity.player_account_id === account.id;
+            });
+            if (hasFacebookIdentity && !activeIdentity && !previousIdentity) {
+                return response("identity_conflict");
+            }
+
+            if (!activeIdentity) {
+                identities.set(activeKey, {
+                    provider: "facebook",
+                    key_version: body.p_facebook_key_version,
+                    subject_hmac: body.p_facebook_subject_hmac,
+                    player_account_id: account.id
+                });
+            }
+
+            if (!account.linked_provider) {
+                account.linked_provider = "facebook";
+            }
             return response("accepted");
         }
 
@@ -122,6 +159,18 @@ function createFakeSupabase() {
 
         if (table === "player_identities") {
             if (method === "GET") {
+                const accountId = parsed.searchParams.get("player_account_id");
+
+                if (accountId) {
+                    const rows = [...identities.values()].filter(identity => {
+                        return (
+                            identity.provider === parsed.searchParams.get("provider").replace("eq.", "") &&
+                            identity.player_account_id === accountId.replace("eq.", "")
+                        );
+                    });
+                    return response(rows.slice(0, Number(parsed.searchParams.get("limit")) || rows.length));
+                }
+
                 const key = [
                     parsed.searchParams.get("provider").replace("eq.", ""),
                     parsed.searchParams.get("key_version").replace("eq.", ""),
@@ -367,9 +416,50 @@ test("native Facebook linking claims the same durable Guest without changing its
     assert.equal(database.accounts.get(guest.userId).supabase_user_id, "guest-native-facebook");
     assert.equal(database.accounts.get(guest.userId).linked_provider, "facebook");
     assert.equal(database.identities.size, 1);
+    assert.deepEqual(
+        await store.preflightProviderLink(guest.userId, "facebook", "meta-native-user"),
+        { result: "allowed" },
+        "a lost response may retry the same verified Facebook subject"
+    );
+    assert.ok(database.calls.some(call => {
+        return new URL(call.url).pathname === "/rest/v1/rpc/claim_player_facebook_provider";
+    }));
     assert.equal(database.calls.filter(call =>
         new URL(call.url).pathname === "/rest/v1/player_accounts" && call.method === "POST"
     ).length, accountInsertCount);
+});
+
+test("a durable Facebook account rejects a different unowned Facebook subject", async () => {
+    const database = createFakeSupabase();
+    const store = createStore(database);
+    await store.connect();
+    const guest = await store.resolve({
+        kind: "supabase",
+        supabaseUserId: "guest-facebook-subject-guard",
+        accessToken: "guest-token",
+        isAnonymous: true,
+        displayName: null
+    });
+
+    assert.deepEqual(
+        await store.commitNativeFacebookProviderLink(
+            guest.userId, "guest-facebook-subject-guard", "meta-original-subject"
+        ),
+        { result: "accepted" }
+    );
+    assert.deepEqual(
+        await store.preflightProviderLink(guest.userId, "facebook", "meta-different-subject"),
+        { result: "identity_conflict" }
+    );
+    assert.deepEqual(
+        await store.commitNativeFacebookProviderLink(
+            guest.userId, "guest-facebook-subject-guard", "meta-different-subject"
+        ),
+        { result: "identity_conflict" }
+    );
+
+    assert.equal(database.accounts.get(guest.userId).linked_provider, "facebook");
+    assert.equal(database.identities.size, 1, "the rejected subject must not create an identity row");
 });
 
 test("native Facebook linking rejects a mismatched expected Guest binding", async () => {
