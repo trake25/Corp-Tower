@@ -15,6 +15,22 @@ class FakeFacebookLinkProvider extends Node:
 		reset_calls += 1
 		return true
 
+class FakeFacebookJniSingleton extends Node:
+	var available_java_methods: Dictionary = {}
+	var java_method_checks: Array[StringName] = []
+	var fresh_selection_calls := 0
+	var reset_calls := 0
+
+	func has_java_method(method: StringName) -> bool:
+		java_method_checks.append(method)
+		return available_java_methods.has(method)
+
+	func sign_in_fresh() -> void:
+		fresh_selection_calls += 1
+
+	func reset_session() -> void:
+		reset_calls += 1
+
 var auth
 
 func before_each() -> void:
@@ -47,6 +63,42 @@ func test_facebook_runtime_reset_methods_are_safe_without_a_native_singleton() -
 	assert_false(node.sign_in_fresh())
 	assert_false(node.reset_session())
 
+	node.free()
+
+func test_facebook_runtime_fresh_and_reset_use_java_method_capabilities() -> void:
+	var script: GDScript = load(AuthManagerScript.FACEBOOK_SIGNIN_SCRIPT)
+	var node = script.new()
+	var singleton := FakeFacebookJniSingleton.new()
+	singleton.available_java_methods = {
+		&"sign_in_fresh": true,
+		&"reset_session": true,
+	}
+	node._plugin_singleton = singleton
+
+	assert_true(node.sign_in_fresh())
+	assert_true(node.reset_session())
+	assert_eq(singleton.java_method_checks, [&"sign_in_fresh", &"reset_session"])
+	assert_eq(singleton.fresh_selection_calls, 1)
+	assert_eq(singleton.reset_calls, 1)
+
+	node._plugin_singleton = null
+	singleton.free()
+	node.free()
+
+func test_facebook_runtime_rejects_missing_java_methods_even_when_callable_methods_exist() -> void:
+	var script: GDScript = load(AuthManagerScript.FACEBOOK_SIGNIN_SCRIPT)
+	var node = script.new()
+	var singleton := FakeFacebookJniSingleton.new()
+	node._plugin_singleton = singleton
+
+	assert_false(node.sign_in_fresh())
+	assert_false(node.reset_session())
+	assert_eq(singleton.java_method_checks, [&"sign_in_fresh", &"reset_session"])
+	assert_eq(singleton.fresh_selection_calls, 0)
+	assert_eq(singleton.reset_calls, 0)
+
+	node._plugin_singleton = null
+	singleton.free()
 	node.free()
 
 func test_facebook_addon_files_and_singleton_name_are_pinned() -> void:

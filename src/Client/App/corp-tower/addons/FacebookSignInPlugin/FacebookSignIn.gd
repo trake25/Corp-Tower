@@ -29,13 +29,13 @@ func sign_in() -> bool:
 	return true
 
 func sign_in_fresh() -> bool:
-	if _plugin_singleton == null or not _plugin_singleton.has_method("sign_in_fresh"):
+	if _plugin_singleton == null or not _plugin_singleton.has_java_method(&"sign_in_fresh"):
 		return false
 	_plugin_singleton.sign_in_fresh()
 	return true
 
 func reset_session() -> bool:
-	if _plugin_singleton == null or not _plugin_singleton.has_method("reset_session"):
+	if _plugin_singleton == null or not _plugin_singleton.has_java_method(&"reset_session"):
 		return false
 	_plugin_singleton.reset_session()
 	return true

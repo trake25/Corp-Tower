@@ -35,14 +35,14 @@ func sign_in(server_client_id: String) -> bool:
 	return true
 
 func sign_in_fresh(server_client_id: String) -> bool:
-	if _plugin_singleton == null or not _plugin_singleton.has_method("sign_in_fresh"):
+	if _plugin_singleton == null or not _plugin_singleton.has_java_method(&"sign_in_fresh"):
 		return false
 
 	_plugin_singleton.sign_in_fresh(server_client_id)
 	return true
 
 func reset_session(server_client_id: String) -> bool:
-	if _plugin_singleton == null or not _plugin_singleton.has_method("reset_session"):
+	if _plugin_singleton == null or not _plugin_singleton.has_java_method(&"reset_session"):
 		return false
 
 	_plugin_singleton.reset_session(server_client_id)
