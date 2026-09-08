@@ -44,6 +44,25 @@ class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 
 	@UsedByGodot
 	fun sign_in() {
+		beginSignIn(false)
+	}
+
+	@UsedByGodot
+	fun sign_in_fresh() {
+		beginSignIn(true)
+	}
+
+	@UsedByGodot
+	fun reset_session(): Boolean {
+		if (!is_available()) {
+			return false
+		}
+
+		LoginManager.getInstance().logOut()
+		return true
+	}
+
+	private fun beginSignIn(resetSession: Boolean) {
 		val hostActivity = activity
 		val manager = callbackManager
 
@@ -52,7 +71,12 @@ class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 			return
 		}
 
-		LoginManager.getInstance().registerCallback(manager, object : FacebookCallback<LoginResult> {
+		val loginManager = LoginManager.getInstance()
+		if (resetSession) {
+			loginManager.logOut()
+		}
+
+		loginManager.registerCallback(manager, object : FacebookCallback<LoginResult> {
 			override fun onSuccess(result: LoginResult) {
 				val accessToken = result.accessToken
 
@@ -74,7 +98,6 @@ class FacebookSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 			}
 		})
 
-		val loginManager = LoginManager.getInstance()
 		loginManager.setLoginBehavior(LoginBehavior.NATIVE_ONLY)
 		loginManager.logInWithReadPermissions(
 			hostActivity,

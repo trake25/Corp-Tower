@@ -2,6 +2,30 @@ extends GutTest
 
 const AuthManagerScript := preload("res://Sys/Auth/Auth_Manager.gd")
 
+class FakeGoogleProviderSession extends Node:
+	var reset_calls := 0
+	var fresh_selection_calls := 0
+
+	func reset_session(_server_client_id: String) -> bool:
+		reset_calls += 1
+		return true
+
+	func sign_in_fresh(_server_client_id: String) -> bool:
+		fresh_selection_calls += 1
+		return true
+
+class FakeFacebookProviderSession extends Node:
+	var reset_calls := 0
+	var fresh_selection_calls := 0
+
+	func reset_session() -> bool:
+		reset_calls += 1
+		return true
+
+	func sign_in_fresh() -> bool:
+		fresh_selection_calls += 1
+		return true
+
 var auth
 
 func before_each() -> void:
@@ -132,6 +156,58 @@ func test_sign_out_clears_presentation_metadata() -> void:
 	assert_eq(auth.display_name, "")
 	assert_eq(auth.google_email, "")
 
+func test_native_provider_session_reset_preserves_the_current_guest_session() -> void:
+	var google = FakeGoogleProviderSession.new()
+	var facebook = FakeFacebookProviderSession.new()
+	auth.google_signin_node = google
+	auth.facebook_signin_node = facebook
+	auth._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "durable-guest-user", "is_anonymous": true}
+	})
+
+	auth._reset_native_provider_sessions()
+
+	assert_eq(google.reset_calls, 1)
+	assert_eq(facebook.reset_calls, 1)
+	assert_eq(google.fresh_selection_calls, 0)
+	assert_eq(facebook.fresh_selection_calls, 0)
+	assert_eq(auth.user_id, "durable-guest-user")
+	assert_true(auth.is_anonymous)
+	assert_eq(auth.current_provider, "")
+
+	auth.google_signin_node = null
+	auth.facebook_signin_node = null
+	google.free()
+	facebook.free()
+
+func test_sign_out_resets_provider_sessions_without_launching_provider_selection() -> void:
+	var google = FakeGoogleProviderSession.new()
+	var facebook = FakeFacebookProviderSession.new()
+	auth.google_signin_node = google
+	auth.facebook_signin_node = facebook
+	auth.native_signin_in_flight = true
+	auth.oauth_in_flight = true
+	auth.pending_link_session = {"access_token": "staged-access"}
+	auth.pending_link_provider_value = "google"
+
+	auth.sign_out()
+
+	assert_eq(google.reset_calls, 1)
+	assert_eq(facebook.reset_calls, 1)
+	assert_eq(google.fresh_selection_calls, 0)
+	assert_eq(facebook.fresh_selection_calls, 0)
+	assert_false(auth.native_signin_in_flight)
+	assert_false(auth.oauth_in_flight)
+	assert_false(auth.has_pending_provider_link())
+
+	auth.google_signin_node = null
+	auth.facebook_signin_node = null
+	google.free()
+	facebook.free()
+
 func test_presentation_metadata_restores_with_the_saved_session() -> void:
 	auth.access_token_value = "access-value"
 	auth.refresh_token_value = "refresh-value"
@@ -202,6 +278,15 @@ func test_link_callback_state_persists_the_provider_and_original_guest_identity(
 		auth.REASON_CANCELLED
 	)
 	restored.free()
+
+func test_provider_link_result_keeps_only_its_provider_metadata_until_consumed() -> void:
+	auth._save_link_flow("facebook", "guest-user", "callback-state")
+	auth._record_provider_link_result(auth.REASON_REJECTED, false)
+
+	assert_true(auth.has_provider_link_result())
+	assert_eq(auth.provider_link_result_provider(), "facebook")
+	assert_eq(auth.take_provider_link_result(), auth.REASON_REJECTED)
+	assert_eq(auth.provider_link_result_provider(), "")
 
 func test_finishing_or_rejecting_a_link_preserves_the_guest_until_accepted() -> void:
 	auth._apply_session({

@@ -239,6 +239,77 @@ func test_web_link_callback_failure_returns_to_account_without_startup_or_onboar
 	assert_eq(screen_manager.current_overlay.error_label.text, "Account linking cancelled.")
 	assert_true(screen_manager.current_overlay.error_label.visible)
 
+func test_facebook_link_stage_diagnostics_keep_conflicts_and_transport_semantics_distinct() -> void:
+	screen_manager.show_account_screen()
+	await get_tree().process_frame
+	var account = screen_manager.current_overlay
+
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "facebook_credential"
+	screen_manager._on_facebook_link_preflight_failed(AuthManager.REASON_REJECTED)
+	assert_eq(account.error_label.text, "Could not link your account. [F1]")
+
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "facebook_subject"
+	screen_manager._on_provider_link_preflight_result({
+		"provider": "facebook", "result": AuthManager.REASON_REJECTED
+	})
+	assert_eq(account.error_label.text, "Could not link your account. [F2]")
+
+	assert_eq(
+		screen_manager._facebook_rejection_diagnostic(
+			"facebook", AuthManager.REASON_REJECTED, "F3"
+		),
+		"F3"
+	)
+	account.show_error(
+		AuthManager.REASON_REJECTED,
+		screen_manager._facebook_rejection_diagnostic(
+			"facebook", AuthManager.REASON_REJECTED, "F3"
+		)
+	)
+	assert_eq(account.error_label.text, "Could not link your account. [F3]")
+
+	AuthManager.last_provider_link_provider = "facebook"
+	AuthManager.last_provider_link_reason = AuthManager.REASON_REJECTED
+	AuthManager.provider_link_result_pending = true
+	screen_manager._on_provider_link_completed(AuthManager.REASON_REJECTED)
+	assert_eq(account.error_label.text, "Could not link your account. [F4]")
+
+	AuthManager.last_provider_link_provider = "facebook"
+	AuthManager.last_provider_link_reason = AuthManager.REASON_NONE
+	AuthManager.provider_link_result_pending = true
+	screen_manager._on_provider_link_completed(AuthManager.REASON_NONE)
+	assert_eq(account.error_label.text, "Could not link your account. [F5]")
+
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "commit"
+	screen_manager._on_provider_link_commit_result({
+		"provider": "facebook", "result": "unexpected_result"
+	})
+	assert_eq(account.error_label.text, "Could not link your account. [F6]")
+
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "commit"
+	screen_manager._on_provider_link_commit_result({
+		"provider": "facebook", "result": "accepted"
+	})
+	assert_eq(account.error_label.text, "Could not link your account. [F7]")
+
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "facebook_subject"
+	screen_manager._on_provider_link_preflight_result({
+		"provider": "facebook", "result": AuthManager.REASON_IDENTITY_CONFLICT
+	})
+	assert_eq(
+		account.error_label.text,
+		"This account is already linked. Sign out and sign in with it instead."
+	)
+	assert_eq(
+		screen_manager._facebook_commit_diagnostic("facebook", "provider_conflict"),
+		""
+	)
+
 func test_profile_and_change_name_navigation_respects_entry_context() -> void:
 	var profile := {
 		"accountUid": "11111111-2222-3333-4444-555555555555",

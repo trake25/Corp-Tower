@@ -15,6 +15,16 @@ const PROVIDER_BUTTONS := {
 	"google": "GoogleButton",
 	"facebook": "FacebookButton"
 }
+const TRANSPORT_DIAGNOSTIC_CODES := ["L1", "L2", "L3", "L4", "L5", "L6", "L7"]
+const FACEBOOK_DIAGNOSTIC_CODES := ["F1", "F2", "F3", "F4", "F5", "F6", "F7"]
+const SEMANTIC_LINK_ERROR_REASONS := [
+	"unreachable",
+	"cancelled",
+	"browser",
+	"identity_conflict",
+	"provider_unavailable",
+	"provider_conflict"
+]
 
 @onready var back_button: TextureButton = %BackButton
 @onready var guest_content: VBoxContainer = %GuestContent
@@ -52,7 +62,10 @@ func _apply_provider_availability(oauth_enabled: bool = AuthManager.is_oauth_ena
 		button.visible = available.has(provider)
 		if button.visible and button.pressed.get_connections().is_empty():
 			var provider_id := str(provider)
-			button.pressed.connect(func(): provider_link_requested.emit(provider_id))
+			button.pressed.connect(func():
+				clear_error()
+				provider_link_requested.emit(provider_id)
+			)
 
 	social_row.visible = not available.is_empty()
 
@@ -116,9 +129,17 @@ func set_busy(busy: bool) -> void:
 	if busy:
 		error_label.visible = false
 
+func clear_error() -> void:
+	error_label.visible = false
+
 func show_error(reason: String, diagnostic_code := "") -> void:
-	if reason == "unreachable" and ["L1", "L2", "L3", "L4", "L5", "L6", "L7"].has(diagnostic_code):
+	if reason == "unreachable" and TRANSPORT_DIAGNOSTIC_CODES.has(diagnostic_code):
 		error_label.text = "Servers unavailable. [%s]" % diagnostic_code
+	elif (
+		FACEBOOK_DIAGNOSTIC_CODES.has(diagnostic_code)
+		and not SEMANTIC_LINK_ERROR_REASONS.has(reason)
+	):
+		error_label.text = "Could not link your account. [%s]" % diagnostic_code
 	else:
 		error_label.text = ERROR_MESSAGES.get(reason, ERROR_MESSAGES["rejected"])
 	error_label.visible = true

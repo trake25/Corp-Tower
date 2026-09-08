@@ -3,6 +3,18 @@ extends GutTest
 const AuthManagerScript := preload("res://Sys/Auth/Auth_Manager.gd")
 const PLUGIN_CFG_PATH := "res://addons/FacebookSignInPlugin/plugin.cfg"
 
+class FakeFacebookLinkProvider extends Node:
+	var fresh_selection_calls := 0
+	var reset_calls := 0
+
+	func sign_in_fresh() -> bool:
+		fresh_selection_calls += 1
+		return true
+
+	func reset_session() -> bool:
+		reset_calls += 1
+		return true
+
 var auth
 
 func before_each() -> void:
@@ -16,6 +28,26 @@ func test_facebook_is_an_enabled_provider() -> void:
 
 func test_native_facebook_is_unavailable_without_android_plugin() -> void:
 	assert_false(auth._native_facebook_ready())
+
+func test_native_facebook_link_selection_uses_the_fresh_session_seam() -> void:
+	var provider = FakeFacebookLinkProvider.new()
+	auth.facebook_signin_node = provider
+
+	assert_true(auth._begin_native_facebook_link_selection())
+	assert_eq(provider.fresh_selection_calls, 1)
+	assert_eq(provider.reset_calls, 0)
+
+	auth.facebook_signin_node = null
+	provider.free()
+
+func test_facebook_runtime_reset_methods_are_safe_without_a_native_singleton() -> void:
+	var script: GDScript = load(AuthManagerScript.FACEBOOK_SIGNIN_SCRIPT)
+	var node = script.new()
+
+	assert_false(node.sign_in_fresh())
+	assert_false(node.reset_session())
+
+	node.free()
 
 func test_facebook_addon_files_and_singleton_name_are_pinned() -> void:
 	assert_true(

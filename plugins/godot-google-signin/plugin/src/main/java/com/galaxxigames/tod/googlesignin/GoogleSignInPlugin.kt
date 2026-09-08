@@ -2,6 +2,7 @@ package com.galaxxigames.tod.googlesignin
 
 import android.content.Intent
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.api.ApiException
@@ -14,6 +15,7 @@ class GoogleSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 
 	private val signInSuccessSignal = SignalInfo("sign_in_success", String::class.java)
 	private val signInFailedSignal = SignalInfo("sign_in_failed", String::class.java, String::class.java)
+	private var freshSelectionGeneration = 0
 
 	override fun getPluginName() = BuildConfig.GODOT_PLUGIN_NAME
 
@@ -24,11 +26,61 @@ class GoogleSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 
 	@UsedByGodot
 	fun sign_in(serverClientId: String) {
+		freshSelectionGeneration += 1
 		val hostActivity = activity
+		val client = createSignInClient(serverClientId)
 
-		if (hostActivity == null) {
+		if (hostActivity == null || client == null) {
 			emitSignal(signInFailedSignal.name, CODE_PROVIDER_UNAVAILABLE, "no host activity")
 			return
+		}
+
+		hostActivity.startActivityForResult(client.signInIntent, RC_SIGN_IN)
+	}
+
+	@UsedByGodot
+	fun sign_in_fresh(serverClientId: String) {
+		val selectionGeneration = ++freshSelectionGeneration
+		val hostActivity = activity
+		val client = createSignInClient(serverClientId)
+
+		if (hostActivity == null || client == null) {
+			emitSignal(signInFailedSignal.name, CODE_PROVIDER_UNAVAILABLE, "no host activity")
+			return
+		}
+
+		client.signOut().addOnCompleteListener { task ->
+			if (selectionGeneration != freshSelectionGeneration) {
+				return@addOnCompleteListener
+			}
+
+			if (!task.isSuccessful) {
+				emitSignal(signInFailedSignal.name, CODE_ERROR, "could not clear previous Google sign-in")
+				return@addOnCompleteListener
+			}
+
+			val currentActivity = activity
+			if (currentActivity == null) {
+				emitSignal(signInFailedSignal.name, CODE_PROVIDER_UNAVAILABLE, "no host activity")
+				return@addOnCompleteListener
+			}
+
+			currentActivity.startActivityForResult(client.signInIntent, RC_SIGN_IN)
+		}
+	}
+
+	@UsedByGodot
+	fun reset_session(serverClientId: String): Boolean {
+		freshSelectionGeneration += 1
+		val client = createSignInClient(serverClientId) ?: return false
+		client.signOut()
+		return true
+	}
+
+	private fun createSignInClient(serverClientId: String): GoogleSignInClient? {
+		val hostActivity = activity ?: return null
+		if (serverClientId.isBlank()) {
+			return null
 		}
 
 		val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -36,8 +88,7 @@ class GoogleSignInPlugin(godot: Godot) : GodotPlugin(godot) {
 			.requestEmail()
 			.build()
 
-		val client = GoogleSignIn.getClient(hostActivity, options)
-		hostActivity.startActivityForResult(client.signInIntent, RC_SIGN_IN)
+		return GoogleSignIn.getClient(hostActivity, options)
 	}
 
 	override fun onMainActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

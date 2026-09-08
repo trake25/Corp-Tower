@@ -58,6 +58,22 @@ func test_account_screen_exposes_configured_guest_link_controls_and_emits_reques
 	account.facebook_button.pressed.emit()
 	assert_eq(requests, ["google", "facebook"])
 
+func test_account_provider_retry_clears_the_previous_error_before_emitting() -> void:
+	var account = AccountScreenScene.instantiate()
+	add_child_autofree(account)
+	await get_tree().process_frame
+	account._apply_provider_availability(true)
+	account.show_error("identity_conflict")
+
+	var error_visibility_at_request: Array[bool] = []
+	account.provider_link_requested.connect(func(_provider):
+		error_visibility_at_request.append(account.error_label.visible)
+	)
+	account.google_button.pressed.emit()
+
+	assert_eq(error_visibility_at_request, [false])
+	assert_false(account.error_label.visible)
+
 func test_account_screen_uses_provider_identity_without_using_the_profile_name() -> void:
 	var account = AccountScreenScene.instantiate()
 	add_child_autofree(account)
@@ -104,3 +120,23 @@ func test_account_busy_and_conflict_feedback_restore_link_controls() -> void:
 		"This account is already linked. Sign out and sign in with it instead."
 	)
 	assert_true(account.error_label.visible)
+
+func test_account_screen_renders_facebook_diagnostics_without_replacing_semantic_errors() -> void:
+	var account = AccountScreenScene.instantiate()
+	add_child_autofree(account)
+	await get_tree().process_frame
+
+	account.show_error("rejected", "F4")
+	assert_eq(account.error_label.text, "Could not link your account. [F4]")
+
+	account.show_error("unexpected_result", "F6")
+	assert_eq(account.error_label.text, "Could not link your account. [F6]")
+
+	account.show_error("identity_conflict", "F2")
+	assert_eq(
+		account.error_label.text,
+		"This account is already linked. Sign out and sign in with it instead."
+	)
+
+	account.show_error("unreachable", "L5")
+	assert_eq(account.error_label.text, "Servers unavailable. [L5]")

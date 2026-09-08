@@ -25,6 +25,7 @@ const DEBUG_BUTTON_DRAG_THRESHOLD := 6.0
 const DEBUG_BUTTON_MARGIN := 12.0
 const DRAG_POINTER_MOUSE := -1
 const DRAG_POINTER_NONE := -2
+const PROVIDER_CONFLICT_REASON := "provider_conflict"
 const SPECTATOR_PERSONALITIES := ["climber", "engineer", "opportunist"]
 const SPECTATOR_PRESET_MIXED := 0
 const SPECTATOR_PRESET_THREE_CLIMBERS := 1
@@ -488,6 +489,7 @@ func show_account_screen() -> void:
 	_set_debug_context(DEBUG_CONTEXT_NONE)
 
 func _resume_provider_link_callback() -> void:
+	var callback_provider := AuthManager.provider_link_result_provider()
 	var reason := AuthManager.take_provider_link_result()
 	show_account_screen()
 	provider_link_waiting_for_server_result = false
@@ -495,12 +497,16 @@ func _resume_provider_link_callback() -> void:
 	if reason != AuthManager.REASON_NONE:
 		_finish_provider_link_error(
 			reason,
-			"L5" if reason == AuthManager.REASON_UNREACHABLE else ""
+			"L5" if reason == AuthManager.REASON_UNREACHABLE else
+			_facebook_rejection_diagnostic(callback_provider, reason, "F4")
 		)
 		return
 
 	if not AuthManager.has_pending_provider_link():
-		_finish_provider_link_error(AuthManager.REASON_REJECTED)
+		_finish_provider_link_error(
+			AuthManager.REASON_REJECTED,
+			_facebook_missing_staged_session_diagnostic(callback_provider)
+		)
 		return
 
 	provider_link_pending_provider = AuthManager.pending_link_provider()
@@ -566,7 +572,12 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 
 	var result := str(data.get("result", "rejected"))
 	if result != "allowed":
-		_finish_provider_link_error(result)
+		var diagnostic_code := ""
+		if provider_link_stage == "facebook_subject":
+			diagnostic_code = _facebook_rejection_diagnostic(
+				provider_link_pending_provider, result, "F2"
+			)
+		_finish_provider_link_error(result, diagnostic_code)
 		return
 
 	if provider_link_stage == "eligibility":
@@ -574,7 +585,10 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 			provider_link_stage = "facebook_credential"
 			var facebook_reason := AuthManager.begin_facebook_link_preflight()
 			if facebook_reason != AuthManager.REASON_NONE:
-				_finish_provider_link_error(facebook_reason)
+				_finish_provider_link_error(
+					facebook_reason,
+					_facebook_rejection_diagnostic("facebook", facebook_reason, "F1")
+				)
 			return
 
 		provider_link_stage = "launch"
@@ -592,7 +606,8 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 		if link_reason != AuthManager.REASON_NONE:
 			_finish_provider_link_error(
 				link_reason,
-				"L5" if link_reason == AuthManager.REASON_UNREACHABLE else ""
+				"L5" if link_reason == AuthManager.REASON_UNREACHABLE else
+				_facebook_rejection_diagnostic("facebook", link_reason, "F3")
 			)
 
 func _on_facebook_link_credential_ready(access_token: String) -> void:
@@ -607,12 +622,18 @@ func _on_facebook_link_credential_ready(access_token: String) -> void:
 
 func _on_facebook_link_preflight_failed(reason: String) -> void:
 	if provider_link_pending_provider == "facebook" and provider_link_stage == "facebook_credential":
-		_finish_provider_link_error(reason)
+		_finish_provider_link_error(
+			reason,
+			_facebook_rejection_diagnostic("facebook", reason, "F1")
+		)
 
 func _on_provider_link_completed(reason: String) -> void:
 	if not AuthManager.has_provider_link_result():
 		return
 
+	var completion_provider := AuthManager.provider_link_result_provider()
+	if completion_provider == "":
+		completion_provider = provider_link_pending_provider
 	var completion_reason := AuthManager.take_provider_link_result()
 	if completion_reason != reason:
 		completion_reason = reason
@@ -620,12 +641,16 @@ func _on_provider_link_completed(reason: String) -> void:
 	if completion_reason != AuthManager.REASON_NONE:
 		_finish_provider_link_error(
 			completion_reason,
-			"L5" if completion_reason == AuthManager.REASON_UNREACHABLE else ""
+			"L5" if completion_reason == AuthManager.REASON_UNREACHABLE else
+			_facebook_rejection_diagnostic(completion_provider, completion_reason, "F4")
 		)
 		return
 
 	if not AuthManager.has_pending_provider_link():
-		_finish_provider_link_error(AuthManager.REASON_REJECTED)
+		_finish_provider_link_error(
+			AuthManager.REASON_REJECTED,
+			_facebook_missing_staged_session_diagnostic(completion_provider)
+		)
 		return
 
 	provider_link_pending_provider = AuthManager.pending_link_provider()
@@ -644,12 +669,16 @@ func _on_provider_link_commit_result(data: Dictionary) -> void:
 
 	var result := str(data.get("result", "rejected"))
 	if result != "accepted":
+		var diagnostic_code := _facebook_commit_diagnostic(provider_link_pending_provider, result)
 		AuthManager.reject_provider_link()
-		_finish_provider_link_error(result)
+		_finish_provider_link_error(result, diagnostic_code)
 		return
 
 	if not AuthManager.finish_provider_link():
-		_finish_provider_link_error(AuthManager.REASON_REJECTED)
+		_finish_provider_link_error(
+			AuthManager.REASON_REJECTED,
+			_facebook_finish_failure_diagnostic(provider_link_pending_provider)
+		)
 		return
 
 	provider_link_pending_provider = ""
@@ -659,6 +688,34 @@ func _on_provider_link_commit_result(data: Dictionary) -> void:
 	if current_overlay != null and current_overlay.has_method("refresh_account_state"):
 		current_overlay.call("refresh_account_state")
 	NetworkManager.disconnect_profile_server()
+
+func _facebook_rejection_diagnostic(provider: String, reason: String, code: String) -> String:
+	if provider == "facebook" and reason == AuthManager.REASON_REJECTED:
+		return code
+
+	return ""
+
+func _facebook_missing_staged_session_diagnostic(provider: String) -> String:
+	return "F5" if provider == "facebook" else ""
+
+func _facebook_commit_diagnostic(provider: String, result: String) -> String:
+	if provider != "facebook":
+		return ""
+
+	if [
+		AuthManager.REASON_IDENTITY_CONFLICT,
+		PROVIDER_CONFLICT_REASON,
+		AuthManager.REASON_CANCELLED,
+		AuthManager.REASON_BROWSER,
+		AuthManager.REASON_PROVIDER_UNAVAILABLE,
+		AuthManager.REASON_UNREACHABLE
+	].has(result):
+		return ""
+
+	return "F6"
+
+func _facebook_finish_failure_diagnostic(provider: String) -> String:
+	return "F7" if provider == "facebook" else ""
 
 func _set_account_link_busy(busy: bool) -> void:
 	if current_overlay != null and current_overlay.has_method("set_busy"):

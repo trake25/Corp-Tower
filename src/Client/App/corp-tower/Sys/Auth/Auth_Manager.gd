@@ -51,6 +51,7 @@ var refresh_in_flight := false
 var oauth_in_flight := false
 var last_oauth_reason := ""
 var last_provider_link_reason := ""
+var last_provider_link_provider := ""
 var provider_link_result_pending := false
 var pending_link_session: Dictionary = {}
 var pending_link_provider_value := ""
@@ -282,7 +283,11 @@ func take_provider_link_result() -> String:
 	var reason := last_provider_link_reason
 	provider_link_result_pending = false
 	last_provider_link_reason = REASON_NONE
+	last_provider_link_provider = ""
 	return reason
+
+func provider_link_result_provider() -> String:
+	return last_provider_link_provider
 
 func has_pending_provider_link() -> bool:
 	return not pending_link_session.is_empty() and pending_link_provider_value != ""
@@ -422,11 +427,18 @@ func _clear_pending_link_state() -> void:
 	pending_link_provider_value = ""
 	provider_link_result_pending = false
 	last_provider_link_reason = REASON_NONE
+	last_provider_link_provider = ""
 	active_flow_purpose = FLOW_SIGN_IN
 	_clear_verifier()
 	_clear_link_flow()
 
 func _record_provider_link_result(reason: String, emit_completion: bool = true) -> void:
+	var result_provider := pending_link_provider_value
+	if result_provider == "":
+		result_provider = str(_load_link_flow().get("provider", ""))
+	if not PROVIDERS.has(result_provider):
+		result_provider = ""
+
 	if reason != REASON_NONE:
 		_clear_verifier()
 		_clear_link_flow()
@@ -435,6 +447,7 @@ func _record_provider_link_result(reason: String, emit_completion: bool = true) 
 
 	active_flow_purpose = FLOW_SIGN_IN
 	last_provider_link_reason = reason
+	last_provider_link_provider = result_provider
 	provider_link_result_pending = true
 	if emit_completion:
 		provider_link_completed.emit(reason)
@@ -487,6 +500,8 @@ func _sign_in_with_native_google() -> String:
 	return REASON_NONE
 
 func _on_google_sign_in_success(id_token: String) -> void:
+	if not native_signin_in_flight:
+		return
 	native_signin_in_flight = false
 
 	if active_flow_purpose == FLOW_LINK:
@@ -496,6 +511,8 @@ func _on_google_sign_in_success(id_token: String) -> void:
 	oauth_completed.emit(await _exchange_id_token(id_token))
 
 func _on_google_sign_in_failed(code: String, message: String) -> void:
+	if not native_signin_in_flight:
+		return
 	native_signin_in_flight = false
 
 	if active_flow_purpose == FLOW_LINK:
@@ -529,6 +546,8 @@ func _sign_in_with_native_facebook() -> String:
 	return REASON_NONE
 
 func _on_facebook_sign_in_success(access_token: String, native_expires_at_unix: int) -> void:
+	if not native_signin_in_flight:
+		return
 	native_signin_in_flight = false
 
 	if active_flow_purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
@@ -543,6 +562,8 @@ func _on_facebook_sign_in_success(access_token: String, native_expires_at_unix: 
 	oauth_completed.emit(REASON_NONE)
 
 func _on_facebook_sign_in_failed(code: String, _message: String) -> void:
+	if not native_signin_in_flight:
+		return
 	native_signin_in_flight = false
 
 	if active_flow_purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
@@ -604,7 +625,10 @@ func link_with_provider(provider: String) -> String:
 
 	if provider == "google" and native_google_enabled and _native_google_ready():
 		native_signin_in_flight = true
-		google_signin_node.sign_in(EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID)
+		if not _begin_native_google_link_selection():
+			native_signin_in_flight = false
+			_clear_pending_link_state()
+			return REASON_REJECTED
 		return REASON_NONE
 
 	return await _begin_browser_link(provider)
@@ -619,7 +643,7 @@ func begin_facebook_link_preflight() -> String:
 	active_flow_purpose = FLOW_FACEBOOK_LINK_PREFLIGHT
 	native_signin_in_flight = true
 
-	if not facebook_signin_node.sign_in():
+	if not _begin_native_facebook_link_selection():
 		native_signin_in_flight = false
 		active_flow_purpose = FLOW_SIGN_IN
 		return REASON_REJECTED
@@ -898,6 +922,9 @@ func ensure_fresh_token() -> bool:
 	return _store_session(response["data"])
 
 func sign_out() -> void:
+	_reset_native_provider_sessions()
+	native_signin_in_flight = false
+	oauth_in_flight = false
 	access_token_value = ""
 	refresh_token_value = ""
 	expires_at_unix = 0
@@ -913,6 +940,25 @@ func sign_out() -> void:
 
 	if FileAccess.file_exists(SESSION_FILE):
 		DirAccess.remove_absolute(SESSION_FILE)
+
+func _begin_native_google_link_selection() -> bool:
+	if google_signin_node == null or not google_signin_node.has_method("sign_in_fresh"):
+		return false
+
+	return bool(google_signin_node.sign_in_fresh(EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID))
+
+func _begin_native_facebook_link_selection() -> bool:
+	if facebook_signin_node == null or not facebook_signin_node.has_method("sign_in_fresh"):
+		return false
+
+	return bool(facebook_signin_node.sign_in_fresh())
+
+func _reset_native_provider_sessions() -> void:
+	if google_signin_node != null and google_signin_node.has_method("reset_session"):
+		google_signin_node.reset_session(EndpointConfig.AUTH_GOOGLE_SERVER_CLIENT_ID)
+
+	if facebook_signin_node != null and facebook_signin_node.has_method("reset_session"):
+		facebook_signin_node.reset_session()
 
 func seconds_until_expiry() -> int:
 	if expires_at_unix <= 0:

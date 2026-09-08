@@ -2,6 +2,19 @@ extends GutTest
 
 const AuthManagerScript := preload("res://Sys/Auth/Auth_Manager.gd")
 const PLUGIN_CFG_PATH := "res://addons/GoogleSignInPlugin/plugin.cfg"
+
+class FakeGoogleLinkProvider extends Node:
+	var fresh_selection_calls := 0
+	var reset_calls := 0
+
+	func sign_in_fresh(_server_client_id: String) -> bool:
+		fresh_selection_calls += 1
+		return true
+
+	func reset_session(_server_client_id: String) -> bool:
+		reset_calls += 1
+		return true
+
 var auth
 
 func before_each() -> void:
@@ -34,6 +47,26 @@ func test_native_google_is_never_ready_without_setup() -> void:
 		"The test instance is never add_child()ed, so _setup_native_google() never " +
 		"runs and google_signin_node stays null -- native must never be reachable here."
 	)
+
+func test_native_google_link_selection_uses_the_fresh_session_seam() -> void:
+	var provider = FakeGoogleLinkProvider.new()
+	auth.google_signin_node = provider
+
+	assert_true(auth._begin_native_google_link_selection())
+	assert_eq(provider.fresh_selection_calls, 1)
+	assert_eq(provider.reset_calls, 0)
+
+	auth.google_signin_node = null
+	provider.free()
+
+func test_google_runtime_reset_methods_are_safe_without_a_native_singleton() -> void:
+	var script: GDScript = load(AuthManagerScript.GOOGLE_SIGNIN_SCRIPT)
+	var node = script.new()
+
+	assert_false(node.sign_in_fresh("test-client-id"))
+	assert_false(node.reset_session("test-client-id"))
+
+	node.free()
 
 func test_native_google_resets_to_enabled_for_a_new_manager() -> void:
 	assert_true(auth.is_native_google_enabled(), "Native Google must default to enabled.")

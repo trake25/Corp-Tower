@@ -28,6 +28,18 @@ func sign_in() -> bool:
 	_plugin_singleton.sign_in()
 	return true
 
+func sign_in_fresh() -> bool:
+	if _plugin_singleton == null or not _plugin_singleton.has_method("sign_in_fresh"):
+		return false
+	_plugin_singleton.sign_in_fresh()
+	return true
+
+func reset_session() -> bool:
+	if _plugin_singleton == null or not _plugin_singleton.has_method("reset_session"):
+		return false
+	_plugin_singleton.reset_session()
+	return true
+
 func _on_sign_in_success(payload: String) -> void:
 	var parsed = JSON.parse_string(payload)
 
