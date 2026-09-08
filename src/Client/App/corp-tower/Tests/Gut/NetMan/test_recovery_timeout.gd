@@ -6,6 +6,7 @@ class FakeSocket:
 	extends RefCounted
 
 	var sent_messages: Array = []
+	var incoming_packets: Array[PackedByteArray] = []
 	var ready_state := WebSocketPeer.STATE_OPEN
 	var close_calls := 0
 
@@ -25,7 +26,14 @@ class FakeSocket:
 		return OK
 
 	func get_available_packet_count() -> int:
-		return 0
+		return incoming_packets.size()
+
+	func get_packet() -> PackedByteArray:
+		var packet: PackedByteArray = incoming_packets.pop_front()
+		return packet
+
+	func queue_json(data: Dictionary) -> void:
+		incoming_packets.append(JSON.stringify(data).to_utf8_buffer())
 
 class ProfileHandoffNetworkManager:
 	extends NetworkManagerScript
@@ -204,6 +212,86 @@ func test_profile_handoff_wins_the_closed_transition_without_starting_gameplay()
 	assert_false(network.profile_connect_after_close)
 	assert_false(network.connect_after_close)
 	assert_true(network.is_connecting)
+	network.free()
+
+func test_profile_handshake_waits_for_snapshot_before_exposing_ready_or_preflight() -> void:
+	var network = NetworkManagerScript.new()
+	var socket = FakeSocket.new()
+	var readiness_events: Array = []
+	network.ws = socket
+	network.connection_purpose = NetworkManagerScript.PROFILE_CONNECTION_PURPOSE
+	network.is_connecting = true
+	network.profile_connection_changed.connect(func(online): readiness_events.append(online))
+
+	network._process(0.0)
+
+	assert_eq(socket.sent_messages.size(), 1)
+	assert_eq(str(socket.sent_messages[0].get("type", "")), "profile_connect")
+	assert_true(network.profile_handshake_pending)
+	assert_false(network.is_conn_estab)
+	assert_false(network.is_profile_connected())
+	assert_true(network.is_connecting)
+	assert_false(network.send_provider_link_preflight("google"))
+
+	network._process(0.0)
+
+	assert_eq(socket.sent_messages.size(), 1, "The profile handshake must be the only raw-open message.")
+	assert_eq(readiness_events, [])
+	network.free()
+
+func test_profile_snapshot_acknowledges_readiness_once_and_unblocks_preflight() -> void:
+	var network = NetworkManagerScript.new()
+	var socket = FakeSocket.new()
+	var readiness_events: Array = []
+	network.ws = socket
+	network.connection_purpose = NetworkManagerScript.PROFILE_CONNECTION_PURPOSE
+	network.is_connecting = true
+	network.profile_connection_changed.connect(func(online): readiness_events.append(online))
+
+	network._process(0.0)
+	socket.queue_json({
+		"type": "profile_snapshot",
+		"accountUid": "guest-account",
+		"displayName": "Guest",
+		"avatarId": "avatar_0",
+		"nameChangeUsed": false,
+		"nameOnboardingSeen": true
+	})
+	network._process(0.0)
+
+	assert_eq(readiness_events, [true])
+	assert_false(network.profile_handshake_pending)
+	assert_true(network.is_conn_estab)
+	assert_false(network.is_connecting)
+	assert_true(network.is_profile_connected())
+	assert_true(network.send_provider_link_preflight("google"))
+	assert_eq(socket.sent_messages.size(), 2)
+	assert_eq(str(socket.sent_messages[1].get("type", "")), "provider_link_preflight")
+
+	socket.queue_json({"type": "profile_snapshot", "accountUid": "guest-account"})
+	network._process(0.0)
+
+	assert_eq(readiness_events, [true], "Profile readiness must only be acknowledged once.")
+	network.free()
+
+func test_profile_handshake_timeout_closes_and_reports_offline() -> void:
+	var network = NetworkManagerScript.new()
+	var socket = FakeSocket.new()
+	var readiness_events: Array = []
+	network.ws = socket
+	network.connection_purpose = NetworkManagerScript.PROFILE_CONNECTION_PURPOSE
+	network.is_connecting = true
+	network.profile_connection_changed.connect(func(online): readiness_events.append(online))
+
+	network._process(0.0)
+	network._process(NetworkManagerScript.CONNECT_TIMEOUT_SECONDS + 0.1)
+
+	assert_false(network.profile_handshake_pending)
+	assert_false(network.is_conn_estab)
+	assert_false(network.is_connecting)
+	assert_false(network.is_profile_connected())
+	assert_eq(readiness_events, [false])
+	assert_eq(socket.close_calls, 1)
 	network.free()
 
 func test_private_lobby_foreground_does_not_enter_play_resync() -> void:

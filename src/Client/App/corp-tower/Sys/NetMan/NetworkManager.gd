@@ -36,6 +36,7 @@ var pending_bot_profiles: Array = []
 var resume_only_request := false
 var connection_purpose := "gameplay"
 var profile_snapshot: Dictionary = {}
+var profile_handshake_pending := false
 
 var player_id := ""
 var reconnect_token := ""
@@ -98,6 +99,7 @@ func connect_server(is_auto_reconnect := false, preserve_entry := false, resume_
 		profile_connect_after_close = false
 		is_connecting = false
 
+	profile_handshake_pending = false
 	connection_purpose = "gameplay"
 	if not is_auto_reconnect and not preserve_entry:
 		_clear_pending_private_entry()
@@ -212,6 +214,7 @@ func connect_profile_server() -> bool:
 	ws = WebSocketPeer.new()
 	connection_purpose = PROFILE_CONNECTION_PURPOSE
 	profile_snapshot = {}
+	profile_handshake_pending = false
 	manual_disconnect_requested = false
 	connect_after_close = false
 	profile_connect_after_close = false
@@ -232,6 +235,7 @@ func connect_profile_server() -> bool:
 func _queue_profile_connection_after_close(close_retiring_peer := false) -> bool:
 	connection_purpose = PROFILE_CONNECTION_PURPOSE
 	profile_snapshot = {}
+	profile_handshake_pending = false
 	manual_disconnect_requested = false
 	connect_after_close = false
 	auto_reconnect_enabled = false
@@ -248,6 +252,21 @@ func _queue_profile_connection_after_close(close_retiring_peer := false) -> bool
 func _start_profile_connection() -> Error:
 	return ws.connect_to_url(SERVER_URL)
 
+func _fail_profile_handshake() -> void:
+	if connection_purpose != PROFILE_CONNECTION_PURPOSE or not profile_handshake_pending:
+		return
+
+	profile_handshake_pending = false
+	is_conn_estab = false
+	is_connecting = false
+	connect_attempt_elapsed = 0.0
+	profile_connection_changed.emit(false)
+	if (
+		ws.get_ready_state() == WebSocketPeer.STATE_OPEN
+		or ws.get_ready_state() == WebSocketPeer.STATE_CONNECTING
+	):
+		ws.close()
+
 func disconnect_profile_server() -> void:
 	if connection_purpose != PROFILE_CONNECTION_PURPOSE:
 		return
@@ -258,6 +277,7 @@ func disconnect_profile_server() -> void:
 	is_conn_estab = false
 	is_connecting = false
 	profile_snapshot = {}
+	profile_handshake_pending = false
 	profile_connection_changed.emit(false)
 	if (
 		ws.get_ready_state() == WebSocketPeer.STATE_OPEN
@@ -266,7 +286,11 @@ func disconnect_profile_server() -> void:
 		ws.close()
 
 func is_profile_connected() -> bool:
-	return connection_purpose == PROFILE_CONNECTION_PURPOSE and is_conn_estab
+	return (
+		connection_purpose == PROFILE_CONNECTION_PURPOSE
+		and is_conn_estab
+		and not profile_handshake_pending
+	)
 
 func send_profile_name_change(candidate: String) -> bool:
 	if not is_profile_connected():
@@ -912,7 +936,15 @@ func _process(delta: float) -> void:
 			"profile_snapshot":
 				if connection_purpose != PROFILE_CONNECTION_PURPOSE:
 					continue
+				if not profile_handshake_pending and not is_conn_estab:
+					continue
 				profile_snapshot = data
+				if not is_conn_estab:
+					profile_handshake_pending = false
+					is_conn_estab = true
+					is_connecting = false
+					connect_attempt_elapsed = 0.0
+					profile_connection_changed.emit(true)
 				profile_snapshot_received.emit(profile_snapshot)
 			"profile_name_changed":
 				if connection_purpose != PROFILE_CONNECTION_PURPOSE:
@@ -938,6 +970,10 @@ func _process(delta: float) -> void:
 					provider_link_commit_result.emit(data)
 			"profile_unavailable":
 				if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+					profile_handshake_pending = false
+					is_conn_estab = false
+					is_connecting = false
+					connect_attempt_elapsed = 0.0
 					profile_connection_changed.emit(false)
 			"room_created":
 				resume_only_request = false
@@ -1030,17 +1066,24 @@ func _process(delta: float) -> void:
 					ws.close()
 
 		WebSocketPeer.STATE_OPEN:
-			if not is_conn_estab:
+			if connection_purpose == PROFILE_CONNECTION_PURPOSE:
+				if not is_conn_estab:
+					if not profile_handshake_pending and is_connecting:
+						profile_handshake_pending = true
+						connect_attempt_elapsed = 0.0
+						manual_disconnect_requested = false
+						send_profile_connect_request()
+					elif is_connecting:
+						connect_attempt_elapsed += delta
+						if connect_attempt_elapsed >= CONNECT_TIMEOUT_SECONDS:
+							_fail_profile_handshake()
+			elif not is_conn_estab:
 				is_conn_estab = true
 				is_connecting = false
 				manual_disconnect_requested = false
-				if connection_purpose == PROFILE_CONNECTION_PURPOSE:
-					profile_connection_changed.emit(true)
-					send_profile_connect_request()
-				else:
-					status_changed.emit("Connected")
-					client_status.emit("[Disconnect]")
-					send_reconnect_request()
+				status_changed.emit("Connected")
+				client_status.emit("[Disconnect]")
+				send_reconnect_request()
 
 		WebSocketPeer.STATE_CLOSING:
 			pass
@@ -1050,6 +1093,7 @@ func _process(delta: float) -> void:
 			var was_profile := connection_purpose == PROFILE_CONNECTION_PURPOSE
 			is_conn_estab = false
 			is_connecting = false
+			profile_handshake_pending = false
 			reset_latency_probe()
 
 			if profile_connect_after_close:
