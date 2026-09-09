@@ -54,6 +54,7 @@ var drag_snap: Dictionary = {}
 var last_draw_pile_count: int = 0
 var last_next_draw_block: Variant = null
 var parallel_placement: bool = false
+var tap_to_drag: bool = false
 var selected_slot_index: int = -1
 var armed_snap: Dictionary = {}
 var is_armed: bool = false
@@ -172,6 +173,15 @@ func _on_inventory_card_gui_input(event: InputEvent, index: int) -> void:
 		return
 
 	if is_block_dragging:
+		if (
+			tap_to_drag and
+			event is InputEventMouseButton and
+			event.button_index == MOUSE_BUTTON_LEFT and
+			event.pressed and
+			drag_pointer_id == PointerEventsScript.POINTER_MOUSE
+		):
+			finish_block_drag(event.global_position)
+			get_viewport().set_input_as_handled()
 		return
 
 	if event is InputEventMouseButton:
@@ -207,6 +217,12 @@ func _handle_block_drag_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
 		var mouse_event: InputEventMouseButton = event
+
+		if tap_to_drag and drag_pointer_id == PointerEventsScript.POINTER_MOUSE:
+			if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+				finish_block_drag(mouse_event.global_position)
+				get_viewport().set_input_as_handled()
+			return
 
 		if (
 			mouse_event.button_index == MOUSE_BUTTON_LEFT and
@@ -412,6 +428,8 @@ func set_parallel_placement(enabled: bool) -> void:
 		return
 
 	parallel_placement = enabled
+	if enabled:
+		tap_to_drag = false
 	cancel_block_drag()
 
 	if tower_drop_zone == null:
@@ -427,6 +445,16 @@ func set_parallel_placement(enabled: bool) -> void:
 		tower_drop_zone.gui_input.connect(handler)
 	elif !enabled and tower_drop_zone.gui_input.is_connected(handler):
 		tower_drop_zone.gui_input.disconnect(handler)
+
+func set_tap_to_drag(enabled: bool) -> void:
+	if enabled == tap_to_drag:
+		return
+
+	if enabled:
+		set_parallel_placement(false)
+
+	tap_to_drag = enabled
+	cancel_block_drag()
 
 func set_spectator_mode(enabled: bool) -> void:
 	if spectator_mode == enabled:

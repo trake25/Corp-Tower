@@ -1,7 +1,10 @@
 extends Node
 
 const PointerEventsScript = preload("res://Cor/Scripts/GameUi/PointerEvents.gd")
+const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
 const WHEEL_PAN_UNITS := 1.0
+const KEYBOARD_TAP_PAN_UNITS := 0.35
+const KEYBOARD_PAN_UNITS_PER_SECOND := 5.0
 const WEAK_SUPPORT_ARROW_BOUNCE_PIXELS := 3.0
 const WEAK_SUPPORT_ARROW_BOUNCE_SECONDS := 0.45
 
@@ -20,6 +23,8 @@ var selected_block_id: String = ""
 var was_playing: bool = false
 var pan_active: bool = false
 var pan_pointer_id: int = PointerEventsScript.POINTER_MOUSE
+var keyboard_pan_up_pressed := false
+var keyboard_pan_down_pressed := false
 
 func bind_nodes(binder) -> void:
 	trouble_button = binder.require_node("TroubleDownButton") as Button
@@ -48,8 +53,9 @@ func setup(
 		tower_drop_zone.gui_input.connect(_on_tower_drop_zone_gui_input)
 	refresh()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	refresh()
+	_process_keyboard_pan(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
 	handle_input(event)
@@ -68,6 +74,10 @@ func _on_tower_drop_zone_gui_input(event: InputEvent) -> void:
 	handle_input(event)
 
 func handle_input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		_handle_keyboard_pan_input(event)
+		return
+
 	if PointerEventsScript.is_emulated(event):
 		return
 	PointerEventsScript.note_event(event)
@@ -145,6 +155,7 @@ func refresh() -> void:
 
 func reset() -> void:
 	_cancel_pan()
+	_clear_keyboard_pan()
 	selected_block_id = ""
 	was_playing = false
 	if tower_stack != null:
@@ -230,6 +241,8 @@ func _apply_pan_pixels(delta_pixels: float) -> void:
 		refresh()
 
 func _apply_pan_units(delta_units: float) -> void:
+	if !_can_pan():
+		return
 	if tower_stack.pan_scroll_units(delta_units):
 		selected_block_id = ""
 		get_viewport().set_input_as_handled()
@@ -245,6 +258,66 @@ func _can_pan() -> bool:
 	if tower_stack.is_navigation_blocked_by_presentation():
 		return false
 	return !overlay_blocked.is_valid() or !bool(overlay_blocked.call())
+
+func _handle_keyboard_pan_input(event: InputEventKey) -> void:
+	if !UiPreferencesScript.is_mobile_controls_runtime():
+		var direction := _keyboard_event_direction(event)
+		if direction == 0:
+			return
+
+		if event.pressed:
+			if event.echo:
+				return
+			_set_keyboard_direction_pressed(direction, true)
+			if _keyboard_pan_direction() == direction and _can_keyboard_pan():
+				_apply_pan_units(direction * KEYBOARD_TAP_PAN_UNITS)
+		else:
+			_set_keyboard_direction_pressed(direction, false)
+
+func _process_keyboard_pan(delta: float) -> void:
+	if UiPreferencesScript.is_mobile_controls_runtime():
+		_clear_keyboard_pan()
+		return
+	if !_can_keyboard_pan():
+		_clear_keyboard_pan()
+		return
+
+	var direction := _keyboard_pan_direction()
+	if direction != 0:
+		_apply_pan_units(direction * KEYBOARD_PAN_UNITS_PER_SECOND * delta)
+
+func _can_keyboard_pan() -> bool:
+	if !_can_pan():
+		return false
+
+	var focus_owner := get_viewport().gui_get_focus_owner()
+	if focus_owner is LineEdit:
+		return !focus_owner.editable
+	if focus_owner is TextEdit:
+		return !focus_owner.editable
+	return true
+
+func _keyboard_event_direction(event: InputEventKey) -> int:
+	if event.keycode in [KEY_W, KEY_UP] or event.physical_keycode in [KEY_W, KEY_UP]:
+		return 1
+	if event.keycode in [KEY_S, KEY_DOWN] or event.physical_keycode in [KEY_S, KEY_DOWN]:
+		return -1
+	return 0
+
+func _set_keyboard_direction_pressed(direction: int, pressed: bool) -> void:
+	if direction > 0:
+		keyboard_pan_up_pressed = pressed
+	else:
+		keyboard_pan_down_pressed = pressed
+
+func _keyboard_pan_direction() -> int:
+	if keyboard_pan_up_pressed == keyboard_pan_down_pressed:
+		return 0
+	return 1 if keyboard_pan_up_pressed else -1
+
+func _clear_keyboard_pan() -> void:
+	keyboard_pan_up_pressed = false
+	keyboard_pan_down_pressed = false
 
 func _tower_contains(global_position: Vector2) -> bool:
 	return tower_stack is Control and tower_stack.get_global_rect().has_point(global_position)

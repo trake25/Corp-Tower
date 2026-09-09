@@ -9,7 +9,7 @@ Owner: `KB/docs/context/gameplay.md:353-356` → **Bot calibration limit**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1044 | `sed -n 1032,1064p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1141 | `sed -n 1129,1161p src/Server/app/Bot_Manager.js` |
 | `src/Server/tools/Balance_Simulator.js` | `simulateSmartPlay` | 145 | `sed -n 133,165p src/Server/tools/Balance_Simulator.js` |
 
 Adjacent concepts: `testing.balance.tools`
@@ -31,8 +31,8 @@ Owner: `KB/docs/context/gameplay.md:341-344` → **Profile-driven bot behavior**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Bot_Manager.js` | `normalizeBotProfile` | 71 | `sed -n 59,91p src/Server/app/Bot_Manager.js` |
-| `src/Server/app/Bot_Manager.js` | `chooseBotPlacement` | 705 | `sed -n 693,725p src/Server/app/Bot_Manager.js` |
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1044 | `sed -n 1032,1064p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotPlacement` | 768 | `sed -n 756,788p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1141 | `sed -n 1129,1161p src/Server/app/Bot_Manager.js` |
 
 Adjacent concepts: `backend.bots.preview`, `gameplay.bots.calibration`
 
@@ -42,7 +42,7 @@ Owner: `KB/docs/context/gameplay.md:317-320` → **Bot scoring policy**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1044 | `sed -n 1032,1064p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1141 | `sed -n 1129,1161p src/Server/app/Bot_Manager.js` |
 
 Adjacent concepts: `backend.bots.preview`
 

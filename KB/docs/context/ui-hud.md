@@ -44,7 +44,7 @@ adjacent: hud.placement.armed
 -->
 ## Parallel placement
 
-Parallel placement is an accessibility alternative to dragging: select a card, aim on the tower, then confirm the same resolved position. A changed aim updates preview rather than placing accidentally, and every broadcast revalidates the armed position because another player may fill it first.
+Parallel placement is exposed to Android and mobile-Web players as **Tap to Place**. It remains the accessibility alternative to dragging: select a card, aim on the tower, then confirm the same resolved position. A changed aim updates preview rather than placing accidentally, and every broadcast revalidates the armed position because another player may fill it first. Desktop **Tap to Drag** is a separate pointer gesture that reuses the ordinary drag/snap/release placement path and does not use armed placement.
 
 <!-- kb
 id: hud.spectator.presentation
@@ -204,7 +204,7 @@ source: src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd#pan_scroll_units
 -->
 ## Manual inspection
 
-During play, direct touch/mouse navigation can inspect below the automatic tower frame but cannot pan above its moving target. A lower inspection position remains stable while the tower grows until the player returns to automatic follow.
+During play, direct touch/mouse navigation can inspect below the automatic tower frame but cannot pan above its moving target. Desktop Web and desktop builds additionally map `W`/Up and `S`/Down to the same bounded manual camera movement as wheel/pointer navigation. Keyboard navigation obeys the same placement, overlay, recovery, and presentation locks and is suppressed while an editable text field owns keyboard focus. A lower inspection position remains stable while the tower grows until the player returns to automatic follow.
 
 <!-- kb
 id: hud.navigation.drop-top

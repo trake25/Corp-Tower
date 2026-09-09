@@ -1,6 +1,7 @@
 extends Control
 
 const UiNodeBinderScript = preload("res://Cor/Scripts/GameUi/UiNodeBinder.gd")
+const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
 const SnapGridScript = preload("res://Cor/Scripts/GameUi/SnapGrid.gd")
 const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
@@ -37,6 +38,7 @@ signal menu_requested
 var missing_required_nodes: Array[String] = []
 var tuning
 var accessibility
+var ui_preferences
 var debug_panel
 var latency_indicator
 var players_ctx
@@ -71,6 +73,7 @@ var bot_insight_enabled := true
 func _ready() -> void:
 	tuning = UiTuningScript.new()
 	accessibility = AccessibilitySettingsScript.new()
+	ui_preferences = UiPreferencesScript.new()
 	players_ctx = PlayerContextScript.new()
 	players_ctx.get_local_id = func(): return str(NetworkManager.player_id)
 	match_state = MatchStateScript.new()
@@ -165,10 +168,25 @@ func _ready() -> void:
 	connect_network_signals()
 
 func apply_accessibility() -> void:
-	inventory.set_parallel_placement(
-		accessibility.is_enabled(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
+	var controls_mode := ui_preferences.get_controls_mode()
+	var parallel_placement_enabled := (
+		controls_mode == UiPreferencesScript.CONTROL_MODE_TAP_TO_PLACE
+	)
+	if (
+		accessibility.has_override(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
+		and accessibility.is_enabled(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
+	):
+		parallel_placement_enabled = true
+
+	inventory.set_parallel_placement(parallel_placement_enabled)
+	inventory.set_tap_to_drag(
+		!parallel_placement_enabled and controls_mode == UiPreferencesScript.CONTROL_MODE_TAP_TO_DRAG
 	)
 	debug_panel.refresh_accessibility_row()
+
+func apply_controls_preference() -> void:
+	ui_preferences.reload()
+	apply_accessibility()
 
 func should_block_popovers() -> bool:
 	return (

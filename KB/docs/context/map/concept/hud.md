@@ -19,8 +19,8 @@ Owner: `KB/docs/context/ui-hud.md:27-37` → **Controller architecture**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_ready` | 71 | `sed -n 59,91p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `bind_ui_nodes` | 206 | `sed -n 194,226p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_ready` | 73 | `sed -n 61,93p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `bind_ui_nodes` | 224 | `sed -n 212,244p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` | `require_node` | 9 | `sed -n 1,22p src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` |
 
 Adjacent concepts: `hud.controller.state-application`
@@ -31,7 +31,7 @@ Owner: `KB/docs/context/ui-hud.md:45-48` → **Parallel placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_aim_or_place` | 578 | `sed -n 566,598p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_aim_or_place` | 606 | `sed -n 594,626p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `hud.placement.armed`
 
@@ -41,7 +41,7 @@ Owner: `KB/docs/context/ui-hud.md:13-16` → **State application**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 380 | `sed -n 368,400p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 398 | `sed -n 386,418p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 
 Adjacent concepts: `network.state.snapshot`, `hud.controller.architecture`
 
@@ -112,7 +112,7 @@ Owner: `KB/docs/context/ui-hud.md:254-257` → **Armed placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `revalidate_armed_placement` | 613 | `sed -n 601,633p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `revalidate_armed_placement` | 641 | `sed -n 629,661p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `hud.controller.parallel-placement`
 
@@ -183,9 +183,9 @@ Owner: `KB/docs/context/ui-hud.md:61-64` → **Spectator presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 511 | `sed -n 499,531p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 532 | `sed -n 520,552p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `set_spectator_mode` | 431 | `sed -n 419,451p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 529 | `sed -n 517,549p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 550 | `sed -n 538,570p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `set_spectator_mode` | 459 | `sed -n 447,479p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 268 | `sed -n 256,288p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
 
 Adjacent concepts: `network.room.bot-spectator`, `hud.navigation.drop-top`, `hud.overlays.summary`
@@ -248,6 +248,6 @@ Owner: `KB/docs/context/ui-hud.md:153-156` → **Weak-support feedback**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_has_danger_outline` | 1353 | `sed -n 1341,1373p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `trouble_target` | 541 | `sed -n 529,561p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd` | `refresh` | 107 | `sed -n 95,127p src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd` | `refresh` | 117 | `sed -n 105,137p src/Client/App/corp-tower/Cor/Scripts/GameUi/TowerNavigationController.gd` |
 
 Adjacent concepts: `gameplay.scoring.critical-save`, `gameplay.tower.stability`

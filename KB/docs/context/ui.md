@@ -162,6 +162,7 @@ characters; Facebook uses a generic Facebook-account fallback until provider-ID 
 implemented. An identity already owned by another Top or Drop account is never auto-merged. Sign-out
 uses the shared confirmation flow and clears the authentication session only after confirmation. Music
 and sound switches may persist UI preference even while audio side effects are not yet implemented.
+Settings owns the persisted player-facing **Controls** preference shared with the Play Menu. **Hold to Drag** is the default. Desktop Web and desktop builds expose **Hold to Drag** and **Tap to Drag**; Android and mobile Web expose **Hold to Drag** and **Tap to Place**. The saved identifier is platform-validated so an unavailable mode falls back to **Hold to Drag** rather than being reinterpreted as a different gesture.
 
 <!-- kb
 id: ui.public-lobby.flow
@@ -184,6 +185,7 @@ adjacent: hud.controller.state-application
 ## Play Menu
 
 Play Menu is a full-screen live overlay above the retained Play instance. Ordinary Play presentation remains underneath; recovery modal and Debug are shell-level exceptions above it. Menu blocks gameplay/debug input without pausing the authoritative match, and closing reveals the current live Play state.
+The Play Menu mirrors the same persisted **Controls** preference as Settings. A change applies to the retained Play instance when play resumes, while a pending Leave action disables the selector with the other menu controls.
 
 <!-- kb
 id: ui.play.recovery

@@ -217,6 +217,28 @@ texture_pressed = ExtResource("11_toggle_on")
 ignore_texture_size = true
 stretch_mode = 5
 
+[node name="ControlsRow" type="HBoxContainer" parent="SafeArea/Root/SettingsRows"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Label" type="Label" parent="SafeArea/Root/SettingsRows/ControlsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Controls"
+
+[node name="ControlsDropdown" type="OptionButton" parent="SafeArea/Root/SettingsRows/ControlsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 42)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"WhiteCardButton"
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+
 [node name="PrivacyButton" type="Button" parent="SafeArea/Root/SettingsRows"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 54)

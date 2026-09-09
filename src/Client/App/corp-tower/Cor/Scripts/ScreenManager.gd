@@ -960,6 +960,7 @@ func _on_play_instance_menu_requested() -> void:
 	var screen := MenuScreenScene.instantiate()
 	screen.close_requested.connect(_on_menu_close_requested)
 	screen.leave_game_requested.connect(_on_menu_leave_requested)
+	screen.controls_changed.connect(_on_menu_controls_changed)
 	_set_overlay(screen)
 	_set_gameplay_input_blocked(true)
 	update_debug_button_availability()
@@ -970,6 +971,10 @@ func _on_menu_close_requested() -> void:
 
 	_clear_overlay()
 	_set_debug_context(DEBUG_CONTEXT_PLAY)
+
+func _on_menu_controls_changed(_mode: String) -> void:
+	if play_instance != null and is_instance_valid(play_instance) and play_instance.has_method("apply_controls_preference"):
+		play_instance.call("apply_controls_preference")
 
 func _on_menu_leave_requested() -> void:
 	if current_overlay == null or current_overlay.scene_file_path != MenuScreenScene.resource_path:

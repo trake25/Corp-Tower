@@ -79,7 +79,7 @@ anchor_right = 1.0
 offset_left = 7.0
 offset_top = 79.0
 offset_right = -10.0
-offset_bottom = 255.0
+offset_bottom = 319.0
 grow_horizontal = 2
 theme_override_constants/separation = 16
 
@@ -187,6 +187,28 @@ texture_normal = ExtResource("7_toggle_off")
 texture_pressed = ExtResource("8_toggle_on")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="ControlsRow" type="HBoxContainer" parent="Settings"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Label" type="Label" parent="Settings/ControlsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "Controls"
+
+[node name="ControlsDropdown" type="OptionButton" parent="Settings/ControlsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"WhiteCardButton"
+theme_override_colors/font_color = Color(0.078, 0.078, 0.094, 1)
 
 [node name="ConfirmModal" parent="." instance=ExtResource("10_confirm")]
 unique_name_in_owner = true
