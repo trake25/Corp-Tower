@@ -11,7 +11,7 @@ const ERROR_MESSAGES := {
 	"unreachable": "Servers unavailable. Check your connection and try again.",
 	"rejected": "Sign-in failed. Please try again.",
 	"cancelled": "Sign-in cancelled.",
-	"browser": "Could not open the browser to sign in."
+	"browser": "Could not complete browser sign-in. Please try again."
 }
 const PROVIDER_BUTTONS := {
 	"google": "GoogleButton",

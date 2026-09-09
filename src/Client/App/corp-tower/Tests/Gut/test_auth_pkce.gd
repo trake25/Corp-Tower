@@ -48,14 +48,14 @@ func test_base64url_has_no_padding_or_unsafe_characters() -> void:
 	assert_false(encoded.contains("+"), "'+' must become '-'.")
 	assert_false(encoded.contains("/"), "'/' must become '_'.")
 
-func test_authorize_url_encodes_the_redirect_and_pins_s256() -> void:
+func test_google_web_authorize_url_encodes_the_redirect_and_pins_s256() -> void:
 	var url: String = auth._build_authorize_url(
-		"google", "com.galaxxigames.tod://auth-callback", "challenge+value/here"
+		"google", "https://play.example.com/", "challenge+value/here", true
 	)
 
 	assert_true(url.contains("provider=google"), "Provider must be on the query.")
 	assert_true(
-		url.contains("redirect_to=com.galaxxigames.tod%3A%2F%2Fauth-callback"),
+		url.contains("redirect_to=https%3A%2F%2Fplay.example.com%2F"),
 		"The redirect must be percent-encoded, not raw: " + url
 	)
 	assert_true(
@@ -70,13 +70,42 @@ func test_authorize_url_encodes_the_redirect_and_pins_s256() -> void:
 		url.contains("challenge+value/here"),
 		"The challenge must be encoded, not interpolated raw."
 	)
+	assert_false(url.contains("display="), "Google must not receive Facebook presentation hints.")
+
+func test_facebook_web_authorize_url_requests_popup_presentation() -> void:
+	var url: String = auth._build_authorize_url(
+		"facebook", "https://play.example.com/", "facebook-challenge", true
+	)
+
+	assert_true(url.begins_with(EndpointConfig.SUPABASE_URL.rstrip("/") + "/auth/v1/authorize?"))
+	assert_true(url.contains("provider=facebook"))
+	assert_true(url.contains("code_challenge=facebook-challenge"))
+	assert_true(url.contains("code_challenge_method=s256"))
+	assert_true(url.contains("display=popup"))
+
+func test_android_facebook_authorize_url_has_no_web_presentation_hint() -> void:
+	var url: String = auth._build_authorize_url(
+		"facebook", auth.REDIRECT_ANDROID, "facebook-challenge", false
+	)
+
+	assert_false(url.contains("display="))
+
+func test_web_oauth_navigation_script_replaces_the_current_tab() -> void:
+	var script: String = auth._web_oauth_navigation_script(
+		"https://auth.example.com/authorize?state=one&provider=facebook"
+	)
+
+	assert_true(script.begins_with("window.location.replace("))
+	assert_true(script.contains("auth.example.com/authorize"))
+	assert_false(script.contains("window.open"))
 
 func test_link_authorize_path_uses_the_authenticated_identity_link_endpoint_and_state() -> void:
 	var path: String = auth._build_link_authorize_path(
 		"google",
-		"com.galaxxigames.tod://auth-callback",
+		"https://play.example.com/",
 		"challenge-value",
-		"link-state"
+		"link-state",
+		true
 	)
 
 	assert_true(path.begins_with("/auth/v1/user/identities/authorize?"))
@@ -84,13 +113,15 @@ func test_link_authorize_path_uses_the_authenticated_identity_link_endpoint_and_
 	assert_true(path.contains("code_challenge_method=s256"))
 	assert_true(path.contains("state=link-state"))
 	assert_true(path.contains("skip_http_redirect=true"))
+	assert_false(path.contains("display="))
 
 func test_web_facebook_uses_the_same_authenticated_manual_linking_path() -> void:
 	var path: String = auth._build_link_authorize_path(
 		"facebook",
 		"https://play.example.com/auth-callback",
 		"facebook-challenge",
-		"facebook-link-state"
+		"facebook-link-state",
+		true
 	)
 
 	assert_true(path.begins_with("/auth/v1/user/identities/authorize?"))
@@ -99,6 +130,7 @@ func test_web_facebook_uses_the_same_authenticated_manual_linking_path() -> void
 	assert_true(path.contains("code_challenge_method=s256"))
 	assert_true(path.contains("state=facebook-link-state"))
 	assert_true(path.contains("skip_http_redirect=true"))
+	assert_true(path.contains("display=popup"))
 
 func test_callback_query_extracts_the_code() -> void:
 	var parsed: Dictionary = auth._parse_callback_query("?code=abc123&state=xyz")

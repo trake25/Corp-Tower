@@ -7,7 +7,7 @@ const ERROR_MESSAGES := {
 	"unreachable": "Servers unavailable. Check your connection and try again.",
 	"rejected": "Could not link your account. Please try again.",
 	"cancelled": "Account linking cancelled.",
-	"browser": "Could not open the browser to link your account.",
+	"browser": "Could not complete browser account linking. Please try again.",
 	"identity_conflict": "This account is already linked. Sign out and sign in with it instead.",
 	"provider_unavailable": "Facebook linking is currently unavailable in this build."
 }

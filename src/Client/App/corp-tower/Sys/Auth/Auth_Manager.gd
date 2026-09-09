@@ -36,6 +36,7 @@ const FACEBOOK_LINK_ROUTE_NATIVE := "native"
 
 signal oauth_completed(reason: String)
 signal provider_link_completed(reason: String)
+signal web_oauth_navigation_started(provider: String, purpose: String)
 signal facebook_link_credential_ready(access_token: String)
 signal facebook_link_preflight_failed(reason: String)
 
@@ -258,6 +259,7 @@ func consume_web_callback() -> String:
 	if callback["code"] == "" and callback["error"] == "":
 		return REASON_NONE
 
+	oauth_in_flight = false
 	JavaScriptBridge.eval(
 		"window.history.replaceState({}, '', window.location.pathname)", true
 	)
@@ -432,6 +434,9 @@ func _load_link_flow() -> Dictionary:
 		))
 	elif FileAccess.file_exists(LINK_FLOW_FILE):
 		raw = FileAccess.get_file_as_string(LINK_FLOW_FILE)
+
+	if raw == "":
+		return {}
 
 	var parsed = JSON.parse_string(raw)
 
@@ -656,10 +661,16 @@ func _sign_in_with_browser(provider: String) -> String:
 	var verifier := _generate_code_verifier()
 	_save_verifier(verifier)
 
-	var url := _build_authorize_url(provider, redirect_uri(), _code_challenge(verifier))
+	var url := _build_authorize_url(
+		provider,
+		redirect_uri(),
+		_code_challenge(verifier),
+		OS.has_feature("web")
+	)
 
 	if OS.has_feature("web"):
-		JavaScriptBridge.eval("window.location.replace(%s)" % JSON.stringify(url), true)
+		_mark_web_oauth_navigation_started(provider, FLOW_SIGN_IN)
+		JavaScriptBridge.eval(_web_oauth_navigation_script(url), true)
 		return REASON_NONE
 
 	if OS.shell_open(url) != OK:
@@ -730,7 +741,8 @@ func _begin_browser_link(provider: String) -> String:
 		provider,
 		redirect_uri(),
 		_code_challenge(verifier),
-		str(flow.get("state", ""))
+		str(flow.get("state", "")),
+		OS.has_feature("web")
 	)
 	var response := await _get_auth_authenticated(path, access_token())
 	var response_reason := _link_response_reason(response)
@@ -746,7 +758,8 @@ func _begin_browser_link(provider: String) -> String:
 		return REASON_REJECTED
 
 	if OS.has_feature("web"):
-		JavaScriptBridge.eval("window.location.replace(%s)" % JSON.stringify(url), true)
+		_mark_web_oauth_navigation_started(provider, FLOW_LINK)
+		JavaScriptBridge.eval(_web_oauth_navigation_script(url), true)
 		return REASON_NONE
 
 	if OS.shell_open(url) != OK:
@@ -758,38 +771,60 @@ func _begin_browser_link(provider: String) -> String:
 
 func _expire_oauth_after_grace() -> void:
 	await get_tree().create_timer(OAUTH_RESUME_GRACE_SECONDS).timeout
+	_reject_unresolved_oauth_after_resume(OS.has_feature("web"))
 
+func _reject_unresolved_oauth_after_resume(is_web: bool) -> String:
 	if not oauth_in_flight:
-		return
+		return REASON_NONE
 
 	oauth_in_flight = false
+	var reason := REASON_BROWSER if is_web else REASON_CANCELLED
 
 	if _has_active_link_flow():
-		_record_provider_link_result(REASON_CANCELLED)
-		return
+		_record_provider_link_result(reason)
+		return reason
 
 	_clear_verifier()
-	oauth_completed.emit(REASON_CANCELLED)
+	oauth_completed.emit(reason)
+	return reason
 
-func _build_authorize_url(provider: String, redirect_to: String, challenge: String) -> String:
-	return "%s?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=s256" % [
+func _mark_web_oauth_navigation_started(provider: String, purpose: String) -> void:
+	oauth_in_flight = true
+	web_oauth_navigation_started.emit(provider, purpose)
+
+func _web_oauth_navigation_script(url: String) -> String:
+	return "window.location.replace(%s)" % JSON.stringify(url)
+
+func _web_oauth_presentation_query(provider: String, is_web: bool) -> String:
+	return "&display=popup" if is_web and provider == "facebook" else ""
+
+func _build_authorize_url(
+	provider: String,
+	redirect_to: String,
+	challenge: String,
+	is_web: bool = false
+) -> String:
+	return "%s?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=s256%s" % [
 		_auth_url("/auth/v1/authorize"),
 		provider.uri_encode(),
 		redirect_to.uri_encode(),
-		challenge.uri_encode()
+		challenge.uri_encode(),
+		_web_oauth_presentation_query(provider, is_web)
 	]
 
 func _build_link_authorize_path(
 	provider: String,
 	redirect_to: String,
 	challenge: String,
-	state: String
+	state: String,
+	is_web: bool = false
 ) -> String:
-	return "/auth/v1/user/identities/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=s256&state=%s&skip_http_redirect=true" % [
+	return "/auth/v1/user/identities/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=s256&state=%s&skip_http_redirect=true%s" % [
 		provider.uri_encode(),
 		redirect_to.uri_encode(),
 		challenge.uri_encode(),
-		state.uri_encode()
+		state.uri_encode(),
+		_web_oauth_presentation_query(provider, is_web)
 	]
 
 func _generate_code_verifier() -> String:

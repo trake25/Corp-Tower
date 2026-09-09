@@ -429,6 +429,67 @@ func test_semantic_provider_errors_keep_the_account_profile_connection_warm() ->
 	assert_false(screen_manager.current_overlay.google_button.disabled)
 	assert_eq(screen_manager.current_overlay.error_label.text, "Account linking cancelled.")
 
+func test_browser_sign_in_failure_restores_the_same_screen_for_retry() -> void:
+	screen_manager.show_sign_in_screen()
+	await get_tree().process_frame
+	var sign_in = screen_manager.current_overlay
+	sign_in.set_busy(true)
+
+	screen_manager._finish_provider_login(sign_in, AuthManager.REASON_BROWSER)
+
+	var guest_button: Button = sign_in.get_node("SafeArea/Root/GuestButton")
+	var error_label: Label = sign_in.get_node("SafeArea/Root/ErrorLabel")
+	assert_eq(screen_manager.current_overlay, sign_in)
+	assert_false(guest_button.disabled)
+	assert_true(error_label.visible)
+	assert_true("browser" in error_label.text.to_lower())
+	assert_false("servers unavailable" in error_label.text.to_lower())
+
+func test_web_link_navigation_retires_the_account_profile_connection() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	_acknowledge_account_profile_readiness()
+	var account = screen_manager.current_overlay
+	var retiring_socket = NetworkManager.ws
+	screen_manager.provider_link_pending_provider = "google"
+	screen_manager.provider_link_stage = "launch"
+
+	screen_manager._on_web_oauth_navigation_started("google", AuthManager.FLOW_LINK)
+
+	assert_true(screen_manager.provider_link_browser_round_trip_active)
+	assert_false(screen_manager.account_link_readiness_active)
+	assert_false(screen_manager.account_link_ready)
+	assert_false(screen_manager.account_link_connection_owned)
+	assert_false(NetworkManager.is_profile_connected())
+	assert_eq(retiring_socket.ready_state, WebSocketPeer.STATE_CLOSING)
+	assert_eq(screen_manager.provider_link_pending_provider, "google")
+	assert_eq(screen_manager.provider_link_stage, "launch")
+	assert_true(account.google_button.disabled)
+	assert_false(account.error_label.visible)
+
+func test_interrupted_web_link_returns_a_browser_error_without_l2() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	_acknowledge_account_profile_readiness()
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "launch"
+	screen_manager._on_web_oauth_navigation_started("facebook", AuthManager.FLOW_LINK)
+	AuthManager.last_provider_link_provider = "facebook"
+	AuthManager.last_provider_link_reason = AuthManager.REASON_BROWSER
+	AuthManager.provider_link_result_pending = true
+
+	screen_manager._on_provider_link_completed(AuthManager.REASON_BROWSER)
+
+	var account = screen_manager.current_overlay
+	assert_false(screen_manager.provider_link_browser_round_trip_active)
+	assert_true(screen_manager.account_link_readiness_active)
+	assert_true(screen_manager.account_link_readiness_pending)
+	assert_eq(screen_manager.provider_link_pending_provider, "")
+	assert_true(account.error_label.visible)
+	assert_true("browser" in account.error_label.text.to_lower())
+	assert_false("servers unavailable" in account.error_label.text.to_lower())
+	assert_false("[L2]" in account.error_label.text)
+
 func test_web_link_callback_failure_returns_to_account_without_startup_or_onboarding() -> void:
 	AuthManager.last_provider_link_reason = AuthManager.REASON_CANCELLED
 	AuthManager.provider_link_result_pending = true
@@ -488,13 +549,17 @@ func test_resumed_web_facebook_callback_uses_supabase_commit_and_finalizer() -> 
 	AuthManager.last_provider_link_provider = "facebook"
 	AuthManager.last_provider_link_reason = AuthManager.REASON_NONE
 	AuthManager.provider_link_result_pending = true
-	_acknowledge_account_profile_readiness()
-	var socket = NetworkManager.ws
-
 	screen_manager._resume_provider_link_callback()
 
 	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
 	assert_eq(screen_manager.provider_link_stage, "commit")
+	assert_false(screen_manager.provider_link_waiting_for_server_result)
+	assert_true(screen_manager.account_link_readiness_pending)
+	assert_true(NetworkManager.is_connecting)
+
+	_acknowledge_account_profile_readiness()
+	var socket = NetworkManager.ws
+
 	assert_true(screen_manager.provider_link_waiting_for_server_result)
 	assert_eq(socket.sent_messages.size(), 1)
 	assert_eq(socket.sent_messages[0], {

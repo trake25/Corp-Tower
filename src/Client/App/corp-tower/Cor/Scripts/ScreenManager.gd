@@ -82,6 +82,7 @@ var change_name_entry_context := "profile"
 var provider_link_pending_provider := ""
 var provider_link_stage := ""
 var provider_link_waiting_for_server_result := false
+var provider_link_browser_round_trip_active := false
 var account_link_loader: Node = null
 var account_link_readiness_active := false
 var account_link_readiness_pending := false
@@ -109,6 +110,7 @@ func _ready() -> void:
 	NetworkManager.provider_link_preflight_result.connect(_on_provider_link_preflight_result)
 	NetworkManager.provider_link_commit_result.connect(_on_provider_link_commit_result)
 	AuthManager.provider_link_completed.connect(_on_provider_link_completed)
+	AuthManager.web_oauth_navigation_started.connect(_on_web_oauth_navigation_started)
 	AuthManager.facebook_link_credential_ready.connect(_on_facebook_link_credential_ready)
 	AuthManager.facebook_link_preflight_failed.connect(_on_facebook_link_preflight_failed)
 	auto_dismiss_modal.dismissed.connect(_on_auto_dismiss_modal_dismissed)
@@ -302,11 +304,10 @@ func _on_provider_login_requested(provider: String) -> void:
 		_show_sign_in_error(screen, launch_reason)
 		return
 
-	if OS.has_feature("web"):
-		return
-
 	var reason: String = await AuthManager.oauth_completed
+	_finish_provider_login(screen, reason)
 
+func _finish_provider_login(screen: Node, reason: String) -> void:
 	if reason == AuthManager.REASON_NONE:
 		_begin_authenticated_startup()
 		return
@@ -441,6 +442,9 @@ func _on_profile_name_rejected(data: Dictionary) -> void:
 func _on_profile_connection_changed(online: bool) -> void:
 	if current_overlay != null and current_overlay.has_method("set_online"):
 		current_overlay.call("set_online", online)
+
+	if provider_link_browser_round_trip_active:
+		return
 
 	if account_link_readiness_active:
 		if online:
@@ -592,6 +596,7 @@ func _clear_account_link_readiness() -> void:
 		NetworkManager.disconnect_profile_server()
 
 func _resume_provider_link_callback() -> void:
+	provider_link_browser_round_trip_active = false
 	var callback_provider := AuthManager.provider_link_result_provider()
 	var reason := AuthManager.take_provider_link_result()
 	show_account_screen()
@@ -738,6 +743,18 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 		provider_link_stage = "commit"
 		_continue_provider_link_over_profile_connection()
 
+func _on_web_oauth_navigation_started(provider: String, purpose: String) -> void:
+	if (
+		purpose != AuthManager.FLOW_LINK
+		or provider != provider_link_pending_provider
+		or provider_link_stage != "launch"
+	):
+		return
+
+	provider_link_browser_round_trip_active = true
+	_clear_account_link_readiness()
+	_set_account_link_busy(true)
+
 func _provider_link_stage_after_eligibility(provider: String, facebook_route: String) -> String:
 	if provider != "facebook":
 		return "launch"
@@ -771,6 +788,8 @@ func _on_provider_link_completed(reason: String) -> void:
 	if not AuthManager.has_provider_link_result():
 		return
 
+	var restore_account_after_interruption := provider_link_browser_round_trip_active
+	provider_link_browser_round_trip_active = false
 	var completion_provider := AuthManager.provider_link_result_provider()
 	if completion_provider == "":
 		completion_provider = provider_link_pending_provider
@@ -779,6 +798,8 @@ func _on_provider_link_completed(reason: String) -> void:
 		completion_reason = reason
 
 	if completion_reason != AuthManager.REASON_NONE:
+		if restore_account_after_interruption:
+			show_account_screen()
 		_finish_provider_link_error(
 			completion_reason,
 			"L5" if completion_reason == AuthManager.REASON_UNREACHABLE else
@@ -830,6 +851,7 @@ func _on_provider_link_commit_result(data: Dictionary) -> void:
 	provider_link_pending_provider = ""
 	provider_link_stage = ""
 	provider_link_waiting_for_server_result = false
+	provider_link_browser_round_trip_active = false
 	_set_account_link_busy(false)
 	if current_overlay != null and current_overlay.has_method("refresh_account_state"):
 		current_overlay.call("refresh_account_state")
@@ -874,6 +896,7 @@ func _finish_provider_link_error(reason: String, diagnostic_code := "") -> void:
 	provider_link_pending_provider = ""
 	provider_link_stage = ""
 	provider_link_waiting_for_server_result = false
+	provider_link_browser_round_trip_active = false
 	if reason == AuthManager.REASON_UNREACHABLE and account_link_readiness_active:
 		_finish_account_link_readiness_error(diagnostic_code if diagnostic_code != "" else "L2")
 		return

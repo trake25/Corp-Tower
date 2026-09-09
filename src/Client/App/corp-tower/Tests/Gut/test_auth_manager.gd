@@ -279,6 +279,71 @@ func test_link_callback_state_persists_the_provider_and_original_guest_identity(
 	)
 	restored.free()
 
+func test_web_oauth_navigation_marks_sign_in_and_link_attempts_in_flight() -> void:
+	var starts: Array = []
+	auth.web_oauth_navigation_started.connect(
+		func(provider: String, purpose: String): starts.append([provider, purpose])
+	)
+
+	auth._mark_web_oauth_navigation_started("google", auth.FLOW_SIGN_IN)
+	assert_true(auth.oauth_in_flight)
+	assert_eq(starts, [["google", auth.FLOW_SIGN_IN]])
+
+	auth.oauth_in_flight = false
+	auth._mark_web_oauth_navigation_started("facebook", auth.FLOW_LINK)
+	assert_true(auth.oauth_in_flight)
+	assert_eq(starts, [
+		["google", auth.FLOW_SIGN_IN],
+		["facebook", auth.FLOW_LINK]
+	])
+
+func test_interrupted_web_sign_in_is_a_browser_failure_and_clears_pkce_state() -> void:
+	var completions: Array[String] = []
+	auth.oauth_completed.connect(func(reason: String): completions.append(reason))
+	auth._save_verifier("web-sign-in-verifier")
+	auth.oauth_in_flight = true
+
+	assert_eq(auth._reject_unresolved_oauth_after_resume(true), auth.REASON_BROWSER)
+
+	assert_false(auth.oauth_in_flight)
+	assert_eq(completions, [auth.REASON_BROWSER])
+	assert_eq(auth._load_verifier(), "")
+
+func test_interrupted_web_link_preserves_guest_and_clears_callback_authority() -> void:
+	var completions: Array[String] = []
+	auth.provider_link_completed.connect(func(reason: String): completions.append(reason))
+	auth._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	auth._save_link_flow("facebook", "guest-user", "facebook-link-state")
+	auth._save_verifier("web-link-verifier")
+	auth.oauth_in_flight = true
+
+	assert_eq(auth._reject_unresolved_oauth_after_resume(true), auth.REASON_BROWSER)
+
+	assert_false(auth.oauth_in_flight)
+	assert_eq(completions, [auth.REASON_BROWSER])
+	assert_eq(auth.access_token_value, "guest-access")
+	assert_eq(auth.refresh_token_value, "guest-refresh")
+	assert_eq(auth.user_id, "guest-user")
+	assert_true(auth.is_anonymous)
+	assert_false(auth.has_pending_provider_link())
+	assert_false(auth._has_active_link_flow())
+	assert_eq(auth._load_verifier(), "")
+
+func test_android_oauth_resume_keeps_existing_cancel_semantics() -> void:
+	var completions: Array[String] = []
+	auth.oauth_completed.connect(func(reason: String): completions.append(reason))
+	auth._save_verifier("android-verifier")
+	auth.oauth_in_flight = true
+
+	assert_eq(auth._reject_unresolved_oauth_after_resume(false), auth.REASON_CANCELLED)
+	assert_eq(completions, [auth.REASON_CANCELLED])
+	assert_eq(auth._load_verifier(), "")
+
 func test_web_facebook_route_uses_browser_while_android_stays_native() -> void:
 	assert_eq(
 		auth._facebook_link_route_for_runtime(true, "Web"),
