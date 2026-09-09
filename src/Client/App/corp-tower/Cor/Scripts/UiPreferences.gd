@@ -31,8 +31,11 @@ static func is_mobile_controls_runtime() -> bool:
 		return bool(mobile_controls_runtime)
 	if OS.get_name() == "Android":
 		mobile_controls_runtime = true
-	elif OS.has_feature("web"):
-		mobile_controls_runtime = bool(JavaScriptBridge.eval(MOBILE_WEB_USER_AGENT_QUERY, true))
+	elif OS.has_feature("web") and Engine.has_singleton(&"JavaScriptBridge"):
+		var javascript_bridge = Engine.get_singleton(&"JavaScriptBridge")
+		mobile_controls_runtime = bool(
+			javascript_bridge.call("eval", MOBILE_WEB_USER_AGENT_QUERY, true)
+		) if javascript_bridge != null else false
 	else:
 		mobile_controls_runtime = false
 	return bool(mobile_controls_runtime)

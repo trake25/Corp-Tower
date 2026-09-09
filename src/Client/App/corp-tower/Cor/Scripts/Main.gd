@@ -168,8 +168,8 @@ func _ready() -> void:
 	connect_network_signals()
 
 func apply_accessibility() -> void:
-	var controls_mode := ui_preferences.get_controls_mode()
-	var parallel_placement_enabled := (
+	var controls_mode: String = ui_preferences.get_controls_mode()
+	var parallel_placement_enabled: bool = (
 		controls_mode == UiPreferencesScript.CONTROL_MODE_TAP_TO_PLACE
 	)
 
