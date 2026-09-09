@@ -200,7 +200,7 @@ func should_block_tower_navigation() -> bool:
 	return (
 		external_overlay_input_blocked
 		or NetworkManager.is_recovering()
-		or debug_panel.is_open()
+		or (debug_panel.is_open() and !NetworkManager.spectator_active)
 		or summary.is_overlay_visible()
 		or tutorial.blocks_popovers()
 		or tutorial_menu.is_menu_visible()
@@ -521,6 +521,8 @@ func update_game_state(data) -> void:
 		summary.hide_level_summary()
 
 func _apply_spectator_mode(enabled: bool) -> void:
+	if debug_panel != null:
+		debug_panel.set_spectator_calibration(enabled)
 	if inventory != null:
 		inventory.set_spectator_mode(enabled)
 	if summary != null:

@@ -495,6 +495,10 @@ func set_open(open: bool) -> void:
 	if not open and debug_tooltip != null and debug_tooltip.has_method("close"):
 		debug_tooltip.call("close")
 
+func set_spectator_calibration(enabled: bool) -> void:
+	if debug_overlay != null and debug_overlay.has_method("set_spectator_calibration"):
+		debug_overlay.call("set_spectator_calibration", enabled)
+
 func is_open() -> bool:
 	return debug_overlay != null and debug_overlay.visible
 
