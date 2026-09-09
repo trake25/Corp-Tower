@@ -5,11 +5,11 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## gameplay.bots.calibration
 
-Owner: `KB/docs/context/gameplay.md:352-355` → **Bot calibration limit**
+Owner: `KB/docs/context/gameplay.md:353-356` → **Bot calibration limit**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 792 | `sed -n 780,812p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1044 | `sed -n 1032,1064p src/Server/app/Bot_Manager.js` |
 | `src/Server/tools/Balance_Simulator.js` | `simulateSmartPlay` | 145 | `sed -n 133,165p src/Server/tools/Balance_Simulator.js` |
 
 Adjacent concepts: `testing.balance.tools`
@@ -20,18 +20,19 @@ Owner: `KB/docs/context/gameplay.md:327-330` → **Cooperative bot behavior**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `startBots` | 196 | `sed -n 184,216p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `startBots` | 203 | `sed -n 191,223p src/Server/app/Bot_Manager.js` |
 
 Adjacent concepts: none
 
 ## gameplay.bots.personalities
 
-Owner: `KB/docs/context/gameplay.md:340-343` → **Profile-driven bot behavior**
+Owner: `KB/docs/context/gameplay.md:341-344` → **Profile-driven bot behavior**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `normalizeBotProfile` | 64 | `sed -n 52,84p src/Server/app/Bot_Manager.js` |
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 792 | `sed -n 780,812p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `normalizeBotProfile` | 71 | `sed -n 59,91p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotPlacement` | 705 | `sed -n 693,725p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1044 | `sed -n 1032,1064p src/Server/app/Bot_Manager.js` |
 
 Adjacent concepts: `backend.bots.preview`, `gameplay.bots.calibration`
 
@@ -41,7 +42,7 @@ Owner: `KB/docs/context/gameplay.md:317-320` → **Bot scoring policy**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 792 | `sed -n 780,812p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1044 | `sed -n 1032,1064p src/Server/app/Bot_Manager.js` |
 
 Adjacent concepts: `backend.bots.preview`
 

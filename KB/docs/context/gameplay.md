@@ -333,13 +333,14 @@ id: gameplay.bots.personalities
 alias: bot personalities
 alias: Climber Engineer Opportunist
 source: src/Server/app/Bot_Manager.js#normalizeBotProfile
+source: src/Server/app/Bot_Manager.js#chooseBotPlacement
 source: src/Server/app/Bot_Manager.js#chooseBotAction
 adjacent: backend.bots.preview
 adjacent: gameplay.bots.calibration
 -->
 ## Profile-driven bot behavior
 
-Climbers prioritize height and personal Impact progress, Engineers prioritize stability and repair, and Opportunists protect Impact viability before favoring high-value selfish gains. Reaction delay, skill/noise, risk tolerance, greed/cooperation, repair awareness, and Power use vary independently per bot. Collapse avoidance remains strong but not absolute, so a bounded low-skill or risk-driven mistake is possible while the server remains authoritative.
+Climbers favor height/Impact, Engineers stability/repair, and Opportunists Impact viability before selfish gain. Reaction, skill/noise, risk, greed/cooperation, repair awareness, and Power vary independently. In critical stability, profiles evaluate a bounded active-support rescue lane; Engineers strongly prefer viable rescue while others retain their weighting. Collapse is strongly avoided when a safe action exists. Otherwise personality and risk bound hesitation before the best legal last resort, preventing unchanged critical states from deadlocking.
 
 <!-- kb
 id: gameplay.bots.calibration

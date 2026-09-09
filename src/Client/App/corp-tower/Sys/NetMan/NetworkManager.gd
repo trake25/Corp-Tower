@@ -1145,7 +1145,7 @@ func _process(delta: float) -> void:
 					client_status.emit("[Connect]")
 
 func update_config(key, value):
-	if spectator_active or not is_conn_estab or is_recovering():
+	if not is_conn_estab or is_recovering():
 		return
 
 	var data = {

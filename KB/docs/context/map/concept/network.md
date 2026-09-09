@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## network.adapters.boundaries
 
-Owner: `KB/docs/context/networking.md:259-262` → **Adapter boundaries**
+Owner: `KB/docs/context/networking.md:260-263` → **Adapter boundaries**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -17,7 +17,7 @@ Adjacent concepts: `backend.authority.server`
 
 ## network.compatibility.deploy-together
 
-Owner: `KB/docs/context/networking.md:270-273` → **Compatibility boundary**
+Owner: `KB/docs/context/networking.md:271-274` → **Compatibility boundary**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -28,7 +28,7 @@ Adjacent concepts: none
 
 ## network.messages.families
 
-Owner: `KB/docs/context/networking.md:158-163` → **Message families**
+Owner: `KB/docs/context/networking.md:159-164` → **Message families**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -38,7 +38,7 @@ Adjacent concepts: none
 
 ## network.messages.latency
 
-Owner: `KB/docs/context/networking.md:172-175` → **Latency diagnostics**
+Owner: `KB/docs/context/networking.md:173-176` → **Latency diagnostics**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -49,7 +49,7 @@ Adjacent concepts: none
 
 ## network.placement.contract
 
-Owner: `KB/docs/context/networking.md:185-190` → **Placement contract**
+Owner: `KB/docs/context/networking.md:186-191` → **Placement contract**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -71,7 +71,7 @@ Adjacent concepts: `backend.identity.profile`, `ui.profile.presentation`
 
 ## network.room.active-leave
 
-Owner: `KB/docs/context/networking.md:148-151` → **Active leave**
+Owner: `KB/docs/context/networking.md:149-152` → **Active leave**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -82,19 +82,20 @@ Adjacent concepts: `backend.lobby.active-leave`, `hud.players.presence`
 
 ## network.room.bot-spectator
 
-Owner: `KB/docs/context/networking.md:113-116` → **Bot spectator launch**
+Owner: `KB/docs/context/networking.md:114-117` → **Bot spectator launch**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Server.js` | `handleMessage` | 308 | `sed -n 296,328p src/Server/app/Server.js` |
 | `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2337 | `sed -n 2325,2357p src/Server/app/Lobby_Manager.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `start_bot_spectator_match` | 366 | `sed -n 354,386p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `update_config` | 1147 | `sed -n 1135,1167p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.lobby.bot-spectator`, `ui.debug.entry`
 
 ## network.room.close
 
-Owner: `KB/docs/context/networking.md:135-138` → **Room close**
+Owner: `KB/docs/context/networking.md:136-139` → **Room close**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -104,7 +105,7 @@ Adjacent concepts: `backend.lobby.close`, `ui.navigation.server-routes`
 
 ## network.room.cross-pod
 
-Owner: `KB/docs/context/networking.md:124-127` → **Cross-pod room routing**
+Owner: `KB/docs/context/networking.md:125-128` → **Cross-pod room routing**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -178,7 +179,7 @@ Adjacent concepts: `backend.lobby.connection`
 
 ## network.state.grid-site
 
-Owner: `KB/docs/context/networking.md:211-214` → **Grid and site state**
+Owner: `KB/docs/context/networking.md:212-215` → **Grid and site state**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -188,7 +189,7 @@ Adjacent concepts: `gameplay.tower.site`, `hud.placement.snapping`
 
 ## network.state.impact-status
 
-Owner: `KB/docs/context/networking.md:222-225` → **Impact status state**
+Owner: `KB/docs/context/networking.md:223-226` → **Impact status state**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -198,7 +199,7 @@ Adjacent concepts: `gameplay.impact.eligible`, `hud.players.impact-bars`
 
 ## network.state.revision
 
-Owner: `KB/docs/context/networking.md:246-249` → **State revision and resync**
+Owner: `KB/docs/context/networking.md:247-250` → **State revision and resync**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -209,7 +210,7 @@ Adjacent concepts: `network.session.recovery`
 
 ## network.state.snapshot
 
-Owner: `KB/docs/context/networking.md:199-202` → **Snapshot contract**
+Owner: `KB/docs/context/networking.md:200-203` → **Snapshot contract**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -219,7 +220,7 @@ Adjacent concepts: `backend.engine.lifecycle`, `hud.controller.state-application
 
 ## network.state.transient-events
 
-Owner: `KB/docs/context/networking.md:234-237` → **Transient events**
+Owner: `KB/docs/context/networking.md:235-238` → **Transient events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

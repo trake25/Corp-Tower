@@ -107,12 +107,13 @@ alias: spectator_start_rejected
 source: src/Server/app/Server.js#handleMessage
 source: src/Server/app/Lobby_Manager.js#createBotSpectatorRoom
 source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#start_bot_spectator_match
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#update_config
 adjacent: backend.lobby.bot-spectator
 adjacent: ui.debug.entry
 -->
 ## Bot spectator launch
 
-Debug-enabled clients request `bot_spectator` explicitly before ordinary participant seating and send exactly three independently configured profiles. The server validates and normalizes the launch, returns an explicit rejection for invalid or disabled entry, and creates the observer outside `room.players`. Participant-only placement, Power, chat, ready, kick, and debug-write messages cannot mutate a spectator room; resync and intentional leave remain available. Spectator identity is not saved for automatic recovery, and leaving retires the transient room.
+Debug-enabled clients request `bot_spectator` before participant seating with three profiles. The server validates the launch and creates an observer outside `room.players`. Placement, Power, chat, ready, kick, and other gameplay mutations cannot change a spectator room. Build-gated calibration alone may send `update_config` through the validated Debug Config path shared by participant Play. Resync and intentional leave remain available; spectator identity is not saved and leaving retires the transient room.
 
 <!-- kb
 id: network.room.cross-pod

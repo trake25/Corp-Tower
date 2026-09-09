@@ -5,6 +5,13 @@ const TowerStability =
 
 const MIN_REACTION_MS = 250;
 const MAX_REACTION_MS = 10000;
+const STANDARD_SHORTLIST_SIZE = 8;
+const CRITICAL_RESCUE_SHORTLIST_SIZE = 4;
+const CRITICAL_LAST_RESORT_WAITS = Object.freeze({
+    engineer: 5,
+    climber: 2,
+    opportunist: 0
+});
 
 const PERSONALITY_DEFAULTS = Object.freeze({
     climber: Object.freeze({
@@ -262,6 +269,7 @@ class BotManager {
 
         bot.botTimer = null;
         bot.botLoopLevel = null;
+        bot.criticalRescueWaitState = null;
     }
 
     runBotLoop(
@@ -514,6 +522,13 @@ class BotManager {
             profile.repairAwareness * 0.7;
         const noiseRange = 3 + (1 - profile.skill) * 22;
         const noise = (Math.random() - 0.5) * noiseRange;
+        const criticalRescueBonus = candidate.criticalRescue
+            ? profile.personality === "engineer"
+                ? 5000
+                : profile.personality === "opportunist"
+                    ? 450
+                    : 250
+            : 0;
 
         return (
             Number(candidate.points || 0) * (weights.points + profile.greed * 0.55) +
@@ -522,6 +537,7 @@ class BotManager {
             stability * stabilityWeight -
             instability * (1 - profile.riskTolerance) * 1.8 -
             collapsePenalty +
+            criticalRescueBonus +
             noise
         );
     }
@@ -600,11 +616,93 @@ class BotManager {
         return Math.max(0, Math.round(focusHeight - topRow));
     }
 
-    isVisibleStructuralRepair(engine, candidate) {
-        return candidate.heightGain !== 0 || candidate.originY >= this.getActiveVisibleTowerFloor(engine);
+    getCriticalRescueContext(engine, structureBefore = null) {
+        const entries = engine.room?.towerBlocks || [];
+        const stabilityConfig = engine.resolveStabilityConfig();
+        const result = structureBefore || engine.room?.towerStabilityResult ||
+            TowerStability.evaluate(entries, stabilityConfig);
+        const threshold = Number(GameConfig.towerStabilityCriticalThreshold || 0);
+        const criticalSupport = result?.diagnostics?.criticalSupport;
+
+        if (
+            !criticalSupport ||
+            Boolean(result?.diagnostics?.collapsed) ||
+            Number(result?.stability ?? 100) > threshold
+        ) {
+            return null;
+        }
+
+        const groups = Array.isArray(result?.analysis?.groups)
+            ? result.analysis.groups
+            : [];
+        const supportId = String(criticalSupport.id || "");
+        const componentId = criticalSupport.componentId;
+        const criticalGroup = groups.filter(group => (
+            (componentId === undefined || group.componentId === componentId) &&
+            (supportId === "" || (group.memberBlockIds || []).includes(supportId)) &&
+            Number(group.pivotY) === Number(criticalSupport.pivotY)
+        )).sort((left, right) => {
+            if (right.risk !== left.risk) {
+                return right.risk - left.risk;
+            }
+
+            if (right.carriedLoadShare !== left.carriedLoadShare) {
+                return right.carriedLoadShare - left.carriedLoadShare;
+            }
+
+            return String(left.key).localeCompare(String(right.key));
+        })[0];
+
+        if (!criticalGroup?.signature) {
+            return null;
+        }
+
+        const memberIds = new Set(criticalGroup.memberBlockIds || []);
+        const supportCells = new Set(entries.filter(entry => (
+            memberIds.has(String(entry?.block?.id ?? entry?.blockId ?? ""))
+        )).flatMap(entry => TowerStability.cellsFor(entry)).map(cell => (
+            `${cell.x},${cell.y}`
+        )));
+
+        return {
+            signature: criticalGroup.signature,
+            supportCells,
+            pivotX: Number(criticalSupport.pivotX) || 0,
+            pivotY: Number(criticalSupport.pivotY) || 0,
+            supportWidth: Math.max(1, Number(criticalSupport.effectiveSupportWidth) || 1)
+        };
     }
 
-    chooseBotPlacement(engine, block, strategy = GameConfig.debugBotStrategy) {
+    isCriticalSupportTarget(block, originX, originY, criticalContext) {
+        if (!criticalContext) {
+            return false;
+        }
+
+        const placedCells = TowerStability.cellsFor({ block, originX, originY });
+        const directlySupportsCriticalRegion = placedCells.some(cell => (
+            criticalContext.supportCells.has(`${cell.x},${cell.y + 1}`)
+        ));
+
+        if (directlySupportsCriticalRegion) {
+            return true;
+        }
+
+        const horizontalReach = Math.ceil(criticalContext.supportWidth / 2) + 1;
+
+        return placedCells.some(cell => (
+            cell.y >= Math.floor(criticalContext.pivotY) - 1 &&
+            cell.y <= Math.ceil(criticalContext.pivotY) &&
+            Math.abs((cell.x + 0.5) - criticalContext.pivotX) <= horizontalReach
+        ));
+    }
+
+    isVisibleStructuralRepair(engine, candidate, criticalContext = null) {
+        return candidate.heightGain !== 0 ||
+            candidate.originY >= this.getActiveVisibleTowerFloor(engine) ||
+            Boolean(candidate.criticalSupportTarget && criticalContext);
+    }
+
+    chooseBotPlacement(engine, block, strategy = GameConfig.debugBotStrategy, options = {}) {
         if (!block) {
             return null;
         }
@@ -614,11 +712,28 @@ class BotManager {
         const previousHeight = TowerStability.topHeight(entries);
         const targetHeight = engine.room.targetHeight;
         const currentHeight = engine.room.currentHeight;
-        const releaseRows = this.getVoidReleaseRows(entries, min, max);
         const perHeight = Number(GameConfig.scoring.placementScorePerHeight) || 0;
+        const stabilityConfig = engine.resolveStabilityConfig();
+        const structureBefore = engine.room.towerStabilityResult || TowerStability.evaluate(
+            entries, stabilityConfig
+        );
+        const criticalContext = options.criticalContext === undefined
+            ? this.getCriticalRescueContext(engine, structureBefore)
+            : options.criticalContext;
+        const releaseRows = this.getVoidReleaseRows(entries, min, max);
+
+        if (criticalContext) {
+            const supportRows = [
+                Math.max(0, Math.floor(criticalContext.pivotY) - 1),
+                Math.max(0, Math.floor(criticalContext.pivotY))
+            ];
+
+            releaseRows.push(...supportRows.filter(row => !releaseRows.includes(row)));
+        }
 
         const seen = new Set();
         const cheapCandidates = [];
+        const rescueCandidates = [];
 
         for (let column = min; column <= max; column++) {
             const originX = engine.resolveColumnOriginX(block, column);
@@ -655,18 +770,33 @@ class BotManager {
                 const effectiveHeight = Math.max(
                     0, Math.min(heightGain, targetHeight - currentHeight)
                 );
-                if (!this.isVisibleStructuralRepair(engine, { heightGain, originY: placement.originY })) {
+                const criticalSupportTarget = this.isCriticalSupportTarget(
+                    block, placement.originX, placement.originY, criticalContext
+                );
+                if (!this.isVisibleStructuralRepair(engine, {
+                    heightGain,
+                    originY: placement.originY,
+                    criticalSupportTarget
+                }, criticalContext)) {
                     continue;
                 }
-                cheapCandidates.push({
+                const candidate = {
                     column: column,
                     originX: placement.originX,
                     originY: placement.originY,
                     heightGain: heightGain,
                     effectiveHeight: effectiveHeight,
                     proxy: effectiveHeight * perHeight + supportedCells,
+                    supportedCells,
+                    criticalSupportTarget,
                     projected: projected
-                });
+                };
+
+                if (criticalSupportTarget) {
+                    rescueCandidates.push(candidate);
+                }
+
+                cheapCandidates.push(candidate);
             }
         }
 
@@ -674,14 +804,36 @@ class BotManager {
             return null;
         }
 
-        const survivors = cheapCandidates
+        const ordinarySurvivors = cheapCandidates
             .sort((a, b) => b.proxy - a.proxy)
-            .slice(0, 8);
+            .slice(0, STANDARD_SHORTLIST_SIZE);
+        const rescueSurvivors = rescueCandidates
+            .sort((left, right) => {
+                if (right.supportedCells !== left.supportedCells) {
+                    return right.supportedCells - left.supportedCells;
+                }
 
-        const stabilityConfig = engine.resolveStabilityConfig();
-        const structureBefore = engine.room.towerStabilityResult || TowerStability.evaluate(
-            entries, stabilityConfig
-        );
+                const leftDistance = Math.abs(left.originY - criticalContext.pivotY);
+                const rightDistance = Math.abs(right.originY - criticalContext.pivotY);
+
+                if (leftDistance !== rightDistance) {
+                    return leftDistance - rightDistance;
+                }
+
+                return right.proxy - left.proxy;
+            })
+            .slice(0, CRITICAL_RESCUE_SHORTLIST_SIZE);
+        const survivorKeys = new Set();
+        const survivors = [...ordinarySurvivors, ...rescueSurvivors].filter(candidate => {
+            const key = `${candidate.originX},${candidate.originY}`;
+
+            if (survivorKeys.has(key)) {
+                return false;
+            }
+
+            survivorKeys.add(key);
+            return true;
+        });
 
         const scored = [];
 
@@ -697,6 +849,14 @@ class BotManager {
                 afterResult: result,
                 stabilityConfig
             });
+            const assessment = transaction.assessment || {};
+            const criticalRescue = Boolean(
+                criticalContext &&
+                candidate.criticalSupportTarget &&
+                !transaction.collapse &&
+                assessment.criticalSaveCandidate &&
+                assessment.criticalInterfaceBefore?.signature === criticalContext.signature
+            );
 
             scored.push({
                 column: candidate.column,
@@ -709,20 +869,33 @@ class BotManager {
                 criticalSavePoints: transaction.criticalSavePoints,
                 heightPoints: transaction.heightPoints,
                 criticalSave: Boolean(transaction.criticalSave),
-                riskIncrease: Number(transaction.assessment?.riskIncrease || 0),
+                criticalRescue,
+                riskIncrease: Number(assessment.riskIncrease || 0),
                 collapsed: Boolean(transaction.collapse || result.stability <= 0)
             });
         }
 
         if (this.isLegacyStrategy(strategy)) {
+            const safe = scored.filter(candidate => !candidate.collapsed);
+
+            if (safe.length === 0 && options.allowCollapsedFallback) {
+                return this.rankCriticalLastResort(scored);
+            }
+
             return this.rankByStrategy(
-                scored.filter(candidate => !candidate.collapsed),
+                safe,
                 strategy
             );
         }
 
+        const safe = scored.filter(candidate => !candidate.collapsed);
+
+        if (criticalContext && safe.length === 0) {
+            return this.rankCriticalLastResort(scored);
+        }
+
         return this.rankByProfile(
-            scored,
+            criticalContext ? safe : scored,
             this.normalizeBotProfile(strategy, "engineer")
         );
     }
@@ -789,6 +962,85 @@ class BotManager {
         return Math.random() < errorChance;
     }
 
+    getCriticalTowerFingerprint(engine, criticalContext) {
+        const entries = engine.room?.towerBlocks || [];
+        const tower = entries.map(entry => {
+            return [
+                String(entry?.block?.id ?? entry?.blockId ?? ""),
+                Number(entry?.originX) || 0,
+                Number(entry?.originY ?? entry?.baseHeight) || 0,
+                String(entry?.towerState || "standing")
+            ].join(":");
+        }).join("|");
+
+        return [
+            Number(engine.room?.level) || 0,
+            criticalContext.signature,
+            Number(engine.room?.towerStability ?? 100),
+            tower
+        ].join("/");
+    }
+
+    resetCriticalRescueWaitState(bot) {
+        if (bot) {
+            bot.criticalRescueWaitState = null;
+        }
+    }
+
+    getCriticalLastResortWaitLimit(profile) {
+        const base = CRITICAL_LAST_RESORT_WAITS[profile.personality] ??
+            CRITICAL_LAST_RESORT_WAITS.engineer;
+        const caution = Math.round((1 - profile.riskTolerance) * 2);
+
+        return base + caution;
+    }
+
+    shouldTakeCriticalLastResort(bot, engine, profile, criticalContext) {
+        const fingerprint = this.getCriticalTowerFingerprint(engine, criticalContext);
+        let state = bot?.criticalRescueWaitState;
+
+        if (!state || state.fingerprint !== fingerprint) {
+            state = { fingerprint, waits: 0 };
+            if (bot) {
+                bot.criticalRescueWaitState = state;
+            }
+        }
+
+        if (state.waits >= this.getCriticalLastResortWaitLimit(profile)) {
+            this.resetCriticalRescueWaitState(bot);
+            return true;
+        }
+
+        state.waits += 1;
+        return false;
+    }
+
+    rankCriticalLastResort(candidates) {
+        return candidates.slice().sort((left, right) => {
+            if (right.points !== left.points) {
+                return right.points - left.points;
+            }
+
+            if (right.stability !== left.stability) {
+                return right.stability - left.stability;
+            }
+
+            if (left.riskIncrease !== right.riskIncrease) {
+                return left.riskIncrease - right.riskIncrease;
+            }
+
+            if (right.heightGain !== left.heightGain) {
+                return right.heightGain - left.heightGain;
+            }
+
+            if (left.originY !== right.originY) {
+                return left.originY - right.originY;
+            }
+
+            return left.column - right.column;
+        })[0] || null;
+    }
+
     chooseBotAction(bot, engine, strategy = GameConfig.debugBotStrategy) {
         const profile = this.getBotProfile(bot, strategy);
         const selectionStrategy = bot?.botProfile
@@ -798,6 +1050,11 @@ class BotManager {
             0, engine.room.targetHeight - engine.room.currentHeight
         );
         const blocks = bot.blocks || [];
+        const criticalContext = this.getCriticalRescueContext(engine);
+
+        if (!criticalContext) {
+            this.resetCriticalRescueWaitState(bot);
+        }
 
         const powerSlot = this.choosePowerSlot(bot, engine, profile);
 
@@ -813,7 +1070,7 @@ class BotManager {
             return engine.getBlockHeight(block) === remainingHeight;
         });
 
-        if (exactIndex >= 0) {
+        if (!criticalContext && exactIndex >= 0) {
             const placement = this.chooseBotPlacement(
                 engine, blocks[exactIndex], selectionStrategy
             );
@@ -835,14 +1092,52 @@ class BotManager {
         }
 
         const pairs = [];
+        const placementOptions = {
+            criticalContext,
+            allowCollapsedFallback: Boolean(criticalContext)
+        };
 
         blocks.forEach((block, index) => {
-            const placement = this.chooseBotPlacement(engine, block, selectionStrategy);
+            const placement = this.chooseBotPlacement(
+                engine, block, selectionStrategy, placementOptions
+            );
 
             if (placement) {
                 pairs.push({ ...placement, blockIndex: index });
             }
         });
+
+        if (criticalContext) {
+            const safePairs = pairs.filter(pair => !pair.collapsed);
+            const safeRescues = safePairs.filter(pair => pair.criticalRescue);
+
+            if (safePairs.length > 0) {
+                this.resetCriticalRescueWaitState(bot);
+            } else {
+                const lastResort = this.rankCriticalLastResort(
+                    pairs.filter(pair => pair.collapsed)
+                );
+
+                if (lastResort) {
+                    if (!this.shouldTakeCriticalLastResort(
+                        bot, engine, profile, criticalContext
+                    )) {
+                        return {
+                            type: "wait",
+                            decision: this.buildDecision(profile, "wait", engine)
+                        };
+                    }
+
+                    return this.buildPlacementAction(profile, engine, lastResort);
+                }
+            }
+
+            if (profile.personality === "engineer" && safeRescues.length > 0) {
+                const rescue = this.rankByProfile(safeRescues, profile);
+
+                return this.buildPlacementAction(profile, engine, rescue);
+            }
+        }
 
         if (
             (!this.isLegacyStrategy(selectionStrategy) || selectionStrategy !== "mvp_greedy") &&

@@ -40,8 +40,8 @@ Owner: `KB/docs/context/backend.md:337-340` → **Bot profiles and preview**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Bot_Manager.js` | `normalizeBotProfile` | 64 | `sed -n 52,84p src/Server/app/Bot_Manager.js` |
-| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 792 | `sed -n 780,812p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `normalizeBotProfile` | 71 | `sed -n 59,91p src/Server/app/Bot_Manager.js` |
+| `src/Server/app/Bot_Manager.js` | `chooseBotAction` | 1044 | `sed -n 1032,1064p src/Server/app/Bot_Manager.js` |
 
 Adjacent concepts: `gameplay.bots.scoring`, `gameplay.bots.personalities`
 

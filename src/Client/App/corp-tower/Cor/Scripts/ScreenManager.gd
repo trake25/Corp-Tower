@@ -1162,7 +1162,6 @@ func update_debug_button_availability() -> void:
 		(debug_context == DEBUG_CONTEXT_LOBBY or debug_context == DEBUG_CONTEXT_PLAY)
 		and has_play_instance
 		and NetworkManager.is_conn_estab
-		and not NetworkManager.spectator_active
 		and not NetworkManager.is_recovering()
 		and not gameplay_input_blocked
 	)

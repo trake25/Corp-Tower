@@ -328,7 +328,8 @@ async function handleMessage(player, message) {
     if (
         player.isSpectator &&
         data.type !== "resync_state" &&
-        data.type !== "leave_game"
+        data.type !== "leave_game" &&
+        data.type !== "update_config"
     ) {
         return;
     }

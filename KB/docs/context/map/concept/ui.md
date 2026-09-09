@@ -15,7 +15,7 @@ Adjacent concepts: `network.session.identity`, `build.endpoint-auth.injection`
 
 ## ui.constraint.pointer-input
 
-Owner: `KB/docs/context/ui.md:252-255` → **Pointer pass-through**
+Owner: `KB/docs/context/ui.md:253-256` → **Pointer pass-through**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: none
 
 ## ui.constraint.rendered-verification
 
-Owner: `KB/docs/context/ui.md:263-266` → **Rendered verification**
+Owner: `KB/docs/context/ui.md:264-267` → **Rendered verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: `testing.client.rendered`
 
 ## ui.constraint.scene-order
 
-Owner: `KB/docs/context/ui.md:242-245` → **Scene text-format constraint**
+Owner: `KB/docs/context/ui.md:243-246` → **Scene text-format constraint**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -56,12 +56,13 @@ Adjacent concepts: none
 
 ## ui.debug.entry
 
-Owner: `KB/docs/context/ui.md:233-236` → **Debug entry**
+Owner: `KB/docs/context/ui.md:234-237` → **Debug entry**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` | `toggle` | 19 | `sed -n 7,21p src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 1243 | `sed -n 1231,1263p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 1242 | `sed -n 1230,1262p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `update_debug_button_availability` | 1149 | `sed -n 1137,1169p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `backend.lobby.debug-config`, `network.room.bot-spectator`
 
