@@ -19,7 +19,7 @@ Owner: `KB/docs/context/backend.md:32-35` → **Persistence ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 3030 | `sed -n 3018,3050p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 3031 | `sed -n 3019,3051p src/Server/app/Lobby_Manager.js` |
 | `src/Server/app/Redis_State.js` | `saveRoom` | 547 | `sed -n 535,567p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.redis.leases`
@@ -154,7 +154,7 @@ Owner: `KB/docs/context/backend.md:118-121` → **Intentional active leave**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 2666 | `sed -n 2654,2686p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 2667 | `sed -n 2655,2687p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.room.active-leave`
 
@@ -164,7 +164,7 @@ Owner: `KB/docs/context/backend.md:83-86` → **Bot spectator rooms**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2337 | `sed -n 2325,2357p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2338 | `sed -n 2326,2358p src/Server/app/Lobby_Manager.js` |
 | `src/Server/app/Lobby_Manager.js` | `closeRoom` | 1345 | `sed -n 1333,1365p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.room.bot-spectator`, `backend.bots.preview`
@@ -196,7 +196,7 @@ Owner: `KB/docs/context/backend.md:96-99` → **Cross-pod ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3313 | `sed -n 3301,3333p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3314 | `sed -n 3302,3334p src/Server/app/Lobby_Manager.js` |
 | `src/Server/app/Redis_State.js` | `claimRoomLease` | 586 | `sed -n 574,606p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.redis.leases`, `network.room.cross-pod`
@@ -250,7 +250,7 @@ Owner: `KB/docs/context/backend.md:370-373` → **Hydration continuity**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Redis_State.js` | `saveRoom` | 547 | `sed -n 535,567p src/Server/app/Redis_State.js` |
-| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 3030 | `sed -n 3018,3050p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 3031 | `sed -n 3019,3051p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.state.snapshot`
 

@@ -2205,7 +2205,8 @@ class LobbyManager {
         this.connectedPlayers.set(player.id, player);
 
         await this.reconcilePublicLobby(room, {
-            rosterChanged: Boolean(replacementBot)
+            rosterChanged: Boolean(replacementBot),
+            resetHumanReadiness: Boolean(replacementBot)
         });
         await this.savePlayerRoomSession(player, room);
         await this.sendRoomJoinedMessage(player, room);

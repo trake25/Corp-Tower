@@ -10,7 +10,7 @@ Owner: `KB/docs/context/networking.md:260-263` → **Adapter boundaries**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Server.js` | `handleMessage` | 308 | `sed -n 296,328p src/Server/app/Server.js` |
-| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3313 | `sed -n 3301,3333p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3314 | `sed -n 3302,3334p src/Server/app/Lobby_Manager.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `accept_game_state` | 878 | `sed -n 866,898p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.authority.server`
@@ -75,7 +75,7 @@ Owner: `KB/docs/context/networking.md:149-152` → **Active leave**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 2666 | `sed -n 2654,2686p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 2667 | `sed -n 2655,2687p src/Server/app/Lobby_Manager.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `leave_game` | 571 | `sed -n 559,591p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.lobby.active-leave`, `hud.players.presence`
@@ -87,7 +87,7 @@ Owner: `KB/docs/context/networking.md:114-117` → **Bot spectator launch**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Server.js` | `handleMessage` | 308 | `sed -n 296,328p src/Server/app/Server.js` |
-| `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2337 | `sed -n 2325,2357p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2338 | `sed -n 2326,2358p src/Server/app/Lobby_Manager.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `start_bot_spectator_match` | 366 | `sed -n 354,386p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `update_config` | 1147 | `sed -n 1135,1167p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
@@ -109,7 +109,7 @@ Owner: `KB/docs/context/networking.md:125-128` → **Cross-pod room routing**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3313 | `sed -n 3301,3333p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3314 | `sed -n 3302,3334p src/Server/app/Lobby_Manager.js` |
 | `src/Server/app/Redis_State.js` | `publishRoomAction` | 666 | `sed -n 654,686p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.lobby.cross-pod`
@@ -130,7 +130,7 @@ Owner: `KB/docs/context/networking.md:83-90` → **Public lobby**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `toggleLobbyReady` | 2476 | `sed -n 2464,2496p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `toggleLobbyReady` | 2477 | `sed -n 2465,2497p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `backend.lobby.public`
 

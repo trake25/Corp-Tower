@@ -934,7 +934,13 @@ test("real matchmaking replaces a provisional production bot without exceeding t
     lobby.cancelPublicLobbyBotFill(room.id);
     room.publicLobbyBotFillDeadlineAt = Date.now() - 1;
     await lobby.reconcilePublicLobby(room);
-    const originalBotIds = room.players.filter(player => player.isBot).map(player => player.id);
+    const [replacedBot, remainingBot] = room.players.filter(player => player.isBot);
+    const remainingBotReadyAt = Date.now() - 1;
+    remainingBot.publicLobbyBotReadyAt = remainingBotReadyAt;
+    lobby.cancelProductionPublicBotReady(room.id, remainingBot.id);
+    await lobby.handleProductionPublicBotReady(room.id, remainingBot.id, remainingBotReadyAt);
+    room.readyPlayerIds.add(first.id);
+    room.lobbyDeadlineAt = 1;
 
     const entrant = await lobby.createPlayer(createFakeWs(), {});
     await lobby.addPlayer(entrant);
@@ -943,12 +949,23 @@ test("real matchmaking replaces a provisional production bot without exceeding t
     assert.equal(room.players.length, 3);
     assert.equal(room.players.filter(player => !player.isBot).length, 2);
     assert.equal(room.players.filter(player => player.botCategory === "public_fill").length, 1);
+    assert.equal(room.players.some(player => player.id === replacedBot.id), false);
+    assert.equal(room.players.some(player => player.id === remainingBot.id), true);
+    assert.equal(room.readyPlayerIds.has(replacedBot.id), false);
     assert.equal(
-        originalBotIds.some(id => room.players.some(player => player.id === id)),
-        true,
-        "one existing provisional bot remains until another real entrant arrives"
+        lobby.publicLobbyBotReadyTimers.has(lobby.publicLobbyTimerKey(room.id, replacedBot.id)),
+        false
     );
+    assert.equal(room.readyPlayerIds.has(first.id), false);
     assert.equal(room.readyPlayerIds.has(entrant.id), false);
+    assert.equal(room.readyPlayerIds.has(remainingBot.id), true);
+    assert.ok(room.lobbyDeadlineAt > Date.now());
+    assert.equal(room.matchStarted, false);
+
+    await lobby.toggleLobbyReady(first);
+    assert.equal(room.matchStarted, false);
+    await lobby.toggleLobbyReady(entrant);
+    assert.equal(room.matchStarted, true);
 });
 
 test("the public bot-fill toggle removes only waiting production bots and preserves its threshold", async () => {
