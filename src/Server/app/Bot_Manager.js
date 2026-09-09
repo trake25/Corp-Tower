@@ -702,6 +702,69 @@ class BotManager {
             Boolean(candidate.criticalSupportTarget && criticalContext);
     }
 
+    previewCollapseConsequence(entries, stabilityConfig, initialResult = null) {
+        const projected = entries.map(entry => ({ ...entry }));
+        let result = initialResult || TowerStability.evaluate(projected, stabilityConfig);
+        const fallenEntryIndexes = new Set();
+        const fallenBlockIds = new Set();
+        let collapsedComponentCount = 0;
+        let collapseIterations = 0;
+        const predictedCollapse = Boolean(
+            result?.diagnostics?.collapsed || Number(result?.stability) <= 0
+        );
+
+        for (
+            let iteration = 0;
+            iteration < projected.length && result?.diagnostics?.collapsed;
+            iteration += 1
+        ) {
+            const collapsedComponents = (result.components || []).filter(component => (
+                component.diagnostics?.collapsed
+            ));
+            let applied = false;
+
+            for (const component of collapsedComponents) {
+                const entryIndexes = component.collapseEntryIndexes || component.entryIndexes || [];
+
+                for (const entryIndex of entryIndexes) {
+                    const entry = projected[entryIndex];
+
+                    if (!entry || entry.towerState === "fallen") {
+                        continue;
+                    }
+
+                    entry.towerState = "fallen";
+                    fallenEntryIndexes.add(entryIndex);
+                    const blockId = String(entry.block?.id ?? entry.blockId ?? "");
+                    if (blockId) {
+                        fallenBlockIds.add(blockId);
+                    }
+                    applied = true;
+                }
+            }
+
+            if (!applied) {
+                break;
+            }
+
+            collapsedComponentCount += collapsedComponents.length;
+            collapseIterations += 1;
+            result = TowerStability.evaluate(projected, stabilityConfig);
+        }
+
+        return {
+            collapseSummary: {
+                anyFallen: predictedCollapse,
+                entryIndexes: [...fallenEntryIndexes].sort((left, right) => left - right),
+                blockIds: [...fallenBlockIds].sort()
+            },
+            fallenEntryCount: fallenEntryIndexes.size,
+            collapsedComponentCount,
+            collapseIterations,
+            remainingHeight: TowerStability.topHeight(projected)
+        };
+    }
+
     chooseBotPlacement(engine, block, strategy = GameConfig.debugBotStrategy, options = {}) {
         if (!block) {
             return null;
@@ -839,6 +902,12 @@ class BotManager {
 
         for (const candidate of survivors) {
             const result = TowerStability.evaluate(candidate.projected, stabilityConfig);
+            const predictedCollapse = Boolean(
+                result.diagnostics?.collapsed || Number(result.stability) <= 0
+            );
+            const collapseConsequence = predictedCollapse
+                ? this.previewCollapseConsequence(candidate.projected, stabilityConfig, result)
+                : null;
 
             const placedEntry = candidate.projected[candidate.projected.length - 1];
             const transaction = engine.previewPlacementScore({
@@ -847,7 +916,8 @@ class BotManager {
                 placedEntry,
                 beforeResult: structureBefore,
                 afterResult: result,
-                stabilityConfig
+                stabilityConfig,
+                collapseSummary: collapseConsequence?.collapseSummary
             });
             const assessment = transaction.assessment || {};
             const criticalRescue = Boolean(
@@ -871,7 +941,8 @@ class BotManager {
                 criticalSave: Boolean(transaction.criticalSave),
                 criticalRescue,
                 riskIncrease: Number(assessment.riskIncrease || 0),
-                collapsed: Boolean(transaction.collapse || result.stability <= 0)
+                collapseConsequence,
+                collapsed: Boolean(transaction.collapse || predictedCollapse)
             });
         }
 
@@ -1017,8 +1088,34 @@ class BotManager {
 
     rankCriticalLastResort(candidates) {
         return candidates.slice().sort((left, right) => {
-            if (right.points !== left.points) {
-                return right.points - left.points;
+            const leftConsequence = left.collapseConsequence || {};
+            const rightConsequence = right.collapseConsequence || {};
+            const leftFallen = Number(leftConsequence.fallenEntryCount) || 0;
+            const rightFallen = Number(rightConsequence.fallenEntryCount) || 0;
+
+            if (leftFallen !== rightFallen) {
+                return leftFallen - rightFallen;
+            }
+
+            const leftRemainingHeight = Number(leftConsequence.remainingHeight) || 0;
+            const rightRemainingHeight = Number(rightConsequence.remainingHeight) || 0;
+
+            if (rightRemainingHeight !== leftRemainingHeight) {
+                return rightRemainingHeight - leftRemainingHeight;
+            }
+
+            const leftComponents = Number(leftConsequence.collapsedComponentCount) || 0;
+            const rightComponents = Number(rightConsequence.collapsedComponentCount) || 0;
+
+            if (leftComponents !== rightComponents) {
+                return leftComponents - rightComponents;
+            }
+
+            const leftIterations = Number(leftConsequence.collapseIterations) || 0;
+            const rightIterations = Number(rightConsequence.collapseIterations) || 0;
+
+            if (leftIterations !== rightIterations) {
+                return leftIterations - rightIterations;
             }
 
             if (right.stability !== left.stability) {
