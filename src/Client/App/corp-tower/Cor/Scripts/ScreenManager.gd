@@ -708,8 +708,16 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 		return
 
 	if provider_link_stage == "eligibility":
-		if provider_link_pending_provider == "facebook":
-			provider_link_stage = "facebook_credential"
+		var facebook_route := AuthManager.facebook_link_route()
+		var next_stage := _provider_link_stage_after_eligibility(
+			provider_link_pending_provider, facebook_route
+		)
+		if next_stage == "":
+			_finish_provider_link_error(AuthManager.REASON_PROVIDER_UNAVAILABLE)
+			return
+
+		provider_link_stage = next_stage
+		if next_stage == "facebook_credential":
 			var facebook_reason := AuthManager.begin_facebook_link_preflight()
 			if facebook_reason != AuthManager.REASON_NONE:
 				_finish_provider_link_error(
@@ -718,7 +726,6 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 				)
 			return
 
-		provider_link_stage = "launch"
 		var launch_reason := await AuthManager.link_with_provider(provider_link_pending_provider)
 		if launch_reason != AuthManager.REASON_NONE:
 			_finish_provider_link_error(
@@ -730,6 +737,18 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 	if provider_link_stage == "facebook_subject":
 		provider_link_stage = "commit"
 		_continue_provider_link_over_profile_connection()
+
+func _provider_link_stage_after_eligibility(provider: String, facebook_route: String) -> String:
+	if provider != "facebook":
+		return "launch"
+
+	if facebook_route == AuthManager.FACEBOOK_LINK_ROUTE_BROWSER:
+		return "launch"
+
+	if facebook_route == AuthManager.FACEBOOK_LINK_ROUTE_NATIVE:
+		return "facebook_credential"
+
+	return ""
 
 func _on_facebook_link_credential_ready(access_token: String) -> void:
 	if provider_link_pending_provider != "facebook" or provider_link_stage != "facebook_credential":

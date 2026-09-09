@@ -85,6 +85,21 @@ func test_link_authorize_path_uses_the_authenticated_identity_link_endpoint_and_
 	assert_true(path.contains("state=link-state"))
 	assert_true(path.contains("skip_http_redirect=true"))
 
+func test_web_facebook_uses_the_same_authenticated_manual_linking_path() -> void:
+	var path: String = auth._build_link_authorize_path(
+		"facebook",
+		"https://play.example.com/auth-callback",
+		"facebook-challenge",
+		"facebook-link-state"
+	)
+
+	assert_true(path.begins_with("/auth/v1/user/identities/authorize?"))
+	assert_true(path.contains("provider=facebook"))
+	assert_true(path.contains("redirect_to=https%3A%2F%2Fplay.example.com%2Fauth-callback"))
+	assert_true(path.contains("code_challenge_method=s256"))
+	assert_true(path.contains("state=facebook-link-state"))
+	assert_true(path.contains("skip_http_redirect=true"))
+
 func test_callback_query_extracts_the_code() -> void:
 	var parsed: Dictionary = auth._parse_callback_query("?code=abc123&state=xyz")
 

@@ -439,6 +439,85 @@ func test_web_link_callback_failure_returns_to_account_without_startup_or_onboar
 	assert_eq(screen_manager.current_overlay.error_label.text, "Account linking cancelled.")
 	assert_true(screen_manager.current_overlay.error_label.visible)
 
+func test_facebook_eligibility_routes_web_to_browser_and_android_to_native() -> void:
+	assert_eq(
+		screen_manager._provider_link_stage_after_eligibility(
+			"facebook", AuthManager.FACEBOOK_LINK_ROUTE_BROWSER
+		),
+		"launch"
+	)
+	assert_eq(
+		screen_manager._provider_link_stage_after_eligibility(
+			"facebook", AuthManager.FACEBOOK_LINK_ROUTE_NATIVE
+		),
+		"facebook_credential"
+	)
+	assert_eq(
+		screen_manager._provider_link_stage_after_eligibility("facebook", ""),
+		""
+	)
+	assert_eq(
+		screen_manager._provider_link_stage_after_eligibility(
+			"google", AuthManager.FACEBOOK_LINK_ROUTE_NATIVE
+		),
+		"launch"
+	)
+
+func test_resumed_web_facebook_callback_uses_supabase_commit_and_finalizer() -> void:
+	AuthManager._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	assert_eq(AuthManager._stage_link_session({
+		"access_token": "linked-facebook-access",
+		"refresh_token": "linked-facebook-refresh",
+		"expires_in": 3600,
+		"user": {
+			"id": "guest-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "facebook"}
+		}
+	}, {
+		"purpose": AuthManager.FLOW_LINK,
+		"provider": "facebook",
+		"pre_link_user_id": "guest-user",
+		"state": "facebook-link-state"
+	}), AuthManager.REASON_NONE)
+	AuthManager.last_provider_link_provider = "facebook"
+	AuthManager.last_provider_link_reason = AuthManager.REASON_NONE
+	AuthManager.provider_link_result_pending = true
+	_acknowledge_account_profile_readiness()
+	var socket = NetworkManager.ws
+
+	screen_manager._resume_provider_link_callback()
+
+	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
+	assert_eq(screen_manager.provider_link_stage, "commit")
+	assert_true(screen_manager.provider_link_waiting_for_server_result)
+	assert_eq(socket.sent_messages.size(), 1)
+	assert_eq(socket.sent_messages[0], {
+		"type": "provider_link_commit",
+		"provider": "facebook",
+		"accessToken": "linked-facebook-access"
+	})
+	assert_false(socket.sent_messages[0].has("providerCredential"))
+	assert_eq(AuthManager.access_token_value, "guest-access")
+	assert_true(AuthManager.is_anonymous)
+
+	screen_manager._on_provider_link_commit_result({
+		"provider": "facebook", "result": "accepted"
+	})
+
+	assert_eq(AuthManager.user_id, "guest-user")
+	assert_false(AuthManager.is_anonymous)
+	assert_eq(AuthManager.current_provider, "facebook")
+	assert_eq(AuthManager.access_token_value, "linked-facebook-access")
+	assert_eq(AuthManager.facebook_access_token_value, "")
+	assert_false(AuthManager.has_pending_provider_link())
+	AuthManager.sign_out()
+
 func test_facebook_link_stage_diagnostics_keep_conflicts_and_transport_semantics_distinct() -> void:
 	screen_manager.show_account_screen()
 	await get_tree().process_frame

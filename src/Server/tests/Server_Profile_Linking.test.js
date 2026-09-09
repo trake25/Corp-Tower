@@ -97,6 +97,48 @@ test("profile link commit binds only the same verified Supabase user and returns
     assert.equal(JSON.stringify(ws.sent).includes(credential), false);
 });
 
+test("Web Facebook commit reuses the verified Supabase provider-link boundary", async () => {
+    const ws = profileSocket();
+    const credential = "linked-web-facebook-session";
+    let received = null;
+
+    await handleProfileMessage(ws, {
+        userId: "durable-account-a",
+        supabaseUserId: "guest-user-a"
+    }, JSON.stringify({
+        type: "provider_link_commit",
+        provider: "facebook",
+        accessToken: credential
+    }), {
+        authVerifier: {
+            verifyAccessToken: async value => ({
+                kind: "supabase",
+                supabaseUserId: "guest-user-a",
+                accessToken: value,
+                provider: "facebook"
+            })
+        },
+        accountStore: {
+            commitProviderLink: async (...args) => {
+                received = args;
+                return { result: "accepted" };
+            }
+        }
+    });
+
+    assert.equal(received[0], "durable-account-a");
+    assert.equal(received[1], "guest-user-a");
+    assert.equal(received[2].accessToken, credential);
+    assert.equal(received[2].provider, "facebook");
+    assert.equal(received[3], "facebook");
+    assert.deepEqual(ws.sent, [{
+        type: "provider_link_commit_result",
+        provider: "facebook",
+        result: "accepted"
+    }]);
+    assert.equal(JSON.stringify(ws.sent).includes(credential), false);
+});
+
 test("native Facebook commit reverifies the credential and claims only its trusted subject", async () => {
     const ws = profileSocket();
     const credential = "native-facebook-commit-token";

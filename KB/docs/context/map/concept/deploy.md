@@ -219,7 +219,7 @@ Adjacent concepts: `testing.release.gates`
 
 ## deploy.shared.auth-env
 
-Owner: `KB/docs/context/deployment.md:41-58` → **Authentication environment**
+Owner: `KB/docs/context/deployment.md:41-60` → **Authentication environment**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -241,7 +241,7 @@ Adjacent concepts: none
 
 ## deploy.shared.secret-rollout
 
-Owner: `KB/docs/context/deployment.md:67-70` → **Secret rollout**
+Owner: `KB/docs/context/deployment.md:69-72` → **Secret rollout**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

@@ -61,8 +61,8 @@ Owner: `KB/docs/context/ui.md:236-239` → **Debug entry**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` | `toggle` | 19 | `sed -n 7,21p src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 1247 | `sed -n 1235,1267p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `update_debug_button_availability` | 1154 | `sed -n 1142,1174p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 1266 | `sed -n 1254,1286p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `update_debug_button_availability` | 1173 | `sed -n 1161,1193p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `backend.lobby.debug-config`, `network.room.bot-spectator`
 
@@ -127,7 +127,7 @@ Owner: `KB/docs/context/ui.md:116-119` → **Private Server creation**
 | `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_configure_text_input` | 74 | `sed -n 62,94p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_on_password_text_changed` | 93 | `sed -n 81,113p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` | `_refresh_password_presentation` | 122 | `sed -n 110,142p src/Client/App/corp-tower/Cor/Scripts/PrivateServerScreen.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_show_private_entry_loader` | 1113 | `sed -n 1101,1133p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_show_private_entry_loader` | 1132 | `sed -n 1120,1152p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 
 Adjacent concepts: `network.room.private`
 

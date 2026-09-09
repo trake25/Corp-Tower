@@ -279,6 +279,77 @@ func test_link_callback_state_persists_the_provider_and_original_guest_identity(
 	)
 	restored.free()
 
+func test_web_facebook_route_uses_browser_while_android_stays_native() -> void:
+	assert_eq(
+		auth._facebook_link_route_for_runtime(true, "Web"),
+		auth.FACEBOOK_LINK_ROUTE_BROWSER
+	)
+	assert_eq(
+		auth._facebook_link_route_for_runtime(false, "Android"),
+		auth.FACEBOOK_LINK_ROUTE_NATIVE
+	)
+	assert_eq(auth._facebook_link_route_for_runtime(false, "Linux"), "")
+
+func test_web_facebook_link_flow_persists_callback_authority_across_reload() -> void:
+	auth._save_link_flow("facebook", "guest-user", "facebook-link-state")
+	var restored = AuthManagerScript.new()
+	var flow := restored._load_link_flow()
+
+	assert_eq(flow.get("purpose", ""), auth.FLOW_LINK)
+	assert_eq(flow.get("provider", ""), "facebook")
+	assert_eq(flow.get("pre_link_user_id", ""), "guest-user")
+	assert_eq(flow.get("state", ""), "facebook-link-state")
+	restored.free()
+
+func test_web_facebook_link_staging_preserves_the_original_guest() -> void:
+	auth._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	var flow := {
+		"purpose": auth.FLOW_LINK,
+		"provider": "facebook",
+		"pre_link_user_id": "guest-user",
+		"state": "facebook-link-state"
+	}
+
+	assert_eq(auth._stage_link_session({
+		"access_token": "wrong-access",
+		"refresh_token": "wrong-refresh",
+		"user": {
+			"id": "different-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "facebook"}
+		}
+	}, flow), auth.REASON_REJECTED)
+	assert_eq(auth.access_token_value, "guest-access")
+	assert_true(auth.is_anonymous)
+	assert_false(auth.has_pending_provider_link())
+
+	assert_eq(auth._stage_link_session({
+		"access_token": "linked-facebook-access",
+		"refresh_token": "linked-facebook-refresh",
+		"expires_in": 3600,
+		"user": {
+			"id": "guest-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "facebook"}
+		}
+	}, flow), auth.REASON_NONE)
+	assert_eq(auth.pending_link_provider(), "facebook")
+	assert_eq(auth.pending_link_access_token(), "linked-facebook-access")
+	assert_false(auth.has_pending_native_facebook_link())
+	assert_eq(auth.access_token_value, "guest-access")
+	assert_true(auth.is_anonymous)
+	assert_eq(auth.current_provider, "")
+
+	auth.reject_provider_link()
+	assert_eq(auth.access_token_value, "guest-access")
+	assert_true(auth.is_anonymous)
+	assert_false(auth.has_pending_provider_link())
+
 func test_provider_link_result_keeps_only_its_provider_metadata_until_consumed() -> void:
 	auth._save_link_flow("facebook", "guest-user", "callback-state")
 	auth._record_provider_link_result(auth.REASON_REJECTED, false)

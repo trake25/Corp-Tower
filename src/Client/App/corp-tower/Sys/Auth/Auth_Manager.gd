@@ -31,6 +31,8 @@ const NATIVE_CODE_CANCELLED := "cancelled"
 const FLOW_SIGN_IN := "sign_in"
 const FLOW_LINK := "link"
 const FLOW_FACEBOOK_LINK_PREFLIGHT := "facebook_link_preflight"
+const FACEBOOK_LINK_ROUTE_BROWSER := "browser"
+const FACEBOOK_LINK_ROUTE_NATIVE := "native"
 
 signal oauth_completed(reason: String)
 signal provider_link_completed(reason: String)
@@ -532,6 +534,18 @@ func sign_in_with_provider(provider: String) -> String:
 
 	return _sign_in_with_browser(provider)
 
+func facebook_link_route() -> String:
+	return _facebook_link_route_for_runtime(OS.has_feature("web"), OS.get_name())
+
+func _facebook_link_route_for_runtime(is_web: bool, platform_name: String) -> String:
+	if is_web:
+		return FACEBOOK_LINK_ROUTE_BROWSER
+
+	if platform_name == "Android":
+		return FACEBOOK_LINK_ROUTE_NATIVE
+
+	return ""
+
 func _sign_in_with_native_google() -> String:
 	active_flow_purpose = FLOW_SIGN_IN
 	native_signin_in_flight = true
@@ -659,7 +673,7 @@ func link_with_provider(provider: String) -> String:
 	if not can_link_provider(provider):
 		return REASON_REJECTED
 
-	if provider == "facebook":
+	if provider == "facebook" and facebook_link_route() != FACEBOOK_LINK_ROUTE_BROWSER:
 		return REASON_PROVIDER_UNAVAILABLE
 
 	_save_link_flow(provider, user_id, _generate_code_verifier())
