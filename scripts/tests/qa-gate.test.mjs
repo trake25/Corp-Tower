@@ -7,6 +7,7 @@ import test from 'node:test';
 import {
   AUTOMATION_PROTOCOL_TESTS,
   CONCEPT_KB_TESTS,
+  EKS_DESTROY_VERIFIER_TEST,
   TUTORIAL_PARITY_TEST,
   classifyQaFailure,
   selectContractQa,
@@ -116,6 +117,20 @@ test('unrelated product paths do not select tutorial defaults parity', () => {
   ]);
 
   assert.deepEqual(contracts.tests, []);
+});
+
+test('EKS destroy verifier changes select only its focused regression test', () => {
+  const paths = [
+    '.github/actions/verify-eks-destroy/action.yml',
+    '.github/actions/verify-eks-destroy/verify.sh',
+    EKS_DESTROY_VERIFIER_TEST,
+  ];
+
+  for (const path of paths) {
+    assert.deepEqual(selectContractQa([path]).tests, [EKS_DESTROY_VERIFIER_TEST]);
+    assert.deepEqual(selectQa([path]).contract_tests, [EKS_DESTROY_VERIFIER_TEST]);
+  }
+  assert.deepEqual(selectContractQa(['.github/actions/aws-terraform-setup/action.yml']).tests, []);
 });
 
 test('protocol test paths do not become automatic task QA', () => {

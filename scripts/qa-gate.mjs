@@ -70,11 +70,14 @@ const conceptKbRules = [
 ];
 
 export const TUTORIAL_PARITY_TEST = 'scripts/tests/tutorial-defaults-parity.test.mjs';
+export const EKS_DESTROY_VERIFIER_TEST = 'scripts/tests/verify-eks-destroy.test.mjs';
 const contractRules = [
   [/^src\/Server\/app\/Game_Config\.js$/, [TUTORIAL_PARITY_TEST]],
   [/^src\/Client\/App\/corp-tower\/Cor\/Scripts\/GameUi\/Tutorial\/TutorialLessons\.gd$/, [TUTORIAL_PARITY_TEST]],
   [/^scripts\/lib\/tutorial-defaults-parity\.mjs$/, [TUTORIAL_PARITY_TEST]],
   [/^scripts\/tests\/tutorial-defaults-parity\.test\.mjs$/, [TUTORIAL_PARITY_TEST]],
+  [/^\.github\/actions\/verify-eks-destroy\/(?:action\.yml|verify\.sh)$/, [EKS_DESTROY_VERIFIER_TEST]],
+  [/^scripts\/tests\/verify-eks-destroy\.test\.mjs$/, [EKS_DESTROY_VERIFIER_TEST]],
 ];
 
 function addMatches(path, rules, destination) {
