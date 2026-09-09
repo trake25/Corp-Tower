@@ -120,7 +120,7 @@ func _ready() -> void:
 
 	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers, tutorial, accessibility)
 	top_bar.setup(match_state)
-	debug_panel.setup(tuning, NetworkManager, request_tutorial, accessibility)
+	debug_panel.setup(tuning, NetworkManager, request_tutorial)
 	latency_indicator.setup(NetworkManager)
 	score_popups.setup(players_ctx, match_state, tuning)
 	summary.setup(players_ctx, match_state, tuning)
@@ -172,17 +172,11 @@ func apply_accessibility() -> void:
 	var parallel_placement_enabled := (
 		controls_mode == UiPreferencesScript.CONTROL_MODE_TAP_TO_PLACE
 	)
-	if (
-		accessibility.has_override(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
-		and accessibility.is_enabled(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
-	):
-		parallel_placement_enabled = true
 
 	inventory.set_parallel_placement(parallel_placement_enabled)
 	inventory.set_tap_to_drag(
 		!parallel_placement_enabled and controls_mode == UiPreferencesScript.CONTROL_MODE_TAP_TO_DRAG
 	)
-	debug_panel.refresh_accessibility_row()
 
 func apply_controls_preference() -> void:
 	ui_preferences.reload()

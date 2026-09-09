@@ -1,7 +1,6 @@
 extends Node
 
 const UiTuningScript = preload("res://Cor/Scripts/GameUi/UiTuning.gd")
-const AccessibilitySettingsScript = preload("res://Cor/Scripts/GameUi/AccessibilitySettings.gd")
 const DebugPanelCatalogScript = preload("res://Cor/Scripts/GameUi/DebugPanelCatalog.gd")
 const BOT_STRATEGY_COOPERATIVE := DebugPanelCatalogScript.BOT_STRATEGY_COOPERATIVE
 const BOT_STRATEGY_MVP_GREEDY := DebugPanelCatalogScript.BOT_STRATEGY_MVP_GREEDY
@@ -106,7 +105,6 @@ var power_replenish_share_label: Control
 var power_replenish_share_slider: HSlider
 var power_last_chance_toggle: CheckButton
 var tutorial_launch_button: Button
-var parallel_placement_button: Button
 var impact_beat_toggle: CheckButton
 var screen_shake_toggle: CheckButton
 var latency_indicator_toggle: CheckButton
@@ -118,7 +116,6 @@ var impact_beat_hold_label: Control
 var impact_beat_hold_slider: HSlider
 var screen_shake_duration_label: Control
 var screen_shake_duration_slider: HSlider
-var accessibility
 var on_tutorial_requested: Callable = Callable()
 var debug_context := DebugPanelCatalogScript.DEBUG_CONTEXT_PLAY
 
@@ -178,7 +175,6 @@ func bind_nodes(binder) -> void:
 	level_summary_delay_label = binder.optional_node("LevelSummaryDelayLabel") as Label
 	level_summary_delay_slider = binder.optional_node("LevelSummaryDelaySlider") as HSlider
 	tutorial_launch_button = binder.optional_node("TutorialLaunchButton") as Button
-	parallel_placement_button = binder.optional_node("ParallelPlacementButton") as Button
 	target_multiplier_label = binder.optional_node("TargetMultiplierLabel") as Label
 	target_multiplier_slider = binder.optional_node("TargetMultiplierSlider") as HSlider
 	level_supply_min_label = bind_tooltip_row(binder, "LevelSupplyMinLabel")
@@ -240,13 +236,11 @@ func bind_nodes(binder) -> void:
 func setup(
 	tuning_ref,
 	network_ref,
-	on_tutorial_requested_ref: Callable = Callable(),
-	accessibility_ref = null
+	on_tutorial_requested_ref: Callable = Callable()
 ) -> void:
 	tuning = tuning_ref
 	network = network_ref
 	on_tutorial_requested = on_tutorial_requested_ref
-	accessibility = accessibility_ref
 
 	if debug_overlay != null:
 		set_open(false)
@@ -256,11 +250,6 @@ func setup(
 
 	if tutorial_launch_button != null:
 		tutorial_launch_button.pressed.connect(_on_tutorial_launch_pressed)
-
-	if parallel_placement_button != null:
-		parallel_placement_button.pressed.connect(_on_parallel_placement_pressed)
-
-	refresh_accessibility_row()
 
 	if reset_debug_button != null:
 		reset_debug_button.pressed.connect(on_reset_debug_pressed)
@@ -554,23 +543,6 @@ func _on_tutorial_launch_pressed() -> void:
 	set_open(false)
 	if on_tutorial_requested.is_valid():
 		on_tutorial_requested.call()
-
-func _on_parallel_placement_pressed() -> void:
-	if accessibility == null:
-		return
-
-	accessibility.toggle(AccessibilitySettingsScript.PARALLEL_PLACEMENT)
-
-func refresh_accessibility_row() -> void:
-	if parallel_placement_button == null or accessibility == null:
-		return
-
-	var enabled: bool = accessibility.is_enabled(
-		AccessibilitySettingsScript.PARALLEL_PLACEMENT
-	)
-	parallel_placement_button.text = (
-		"Parallel Placement: ON" if enabled else "Parallel Placement: OFF"
-	)
 
 func on_bot_strategy_selected(index: int) -> void:
 	if is_syncing_debug_config:

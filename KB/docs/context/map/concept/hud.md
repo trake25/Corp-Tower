@@ -20,7 +20,7 @@ Owner: `KB/docs/context/ui-hud.md:27-37` → **Controller architecture**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_ready` | 73 | `sed -n 61,93p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `bind_ui_nodes` | 224 | `sed -n 212,244p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `bind_ui_nodes` | 218 | `sed -n 206,238p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` | `require_node` | 9 | `sed -n 1,22p src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` |
 
 Adjacent concepts: `hud.controller.state-application`
@@ -41,7 +41,7 @@ Owner: `KB/docs/context/ui-hud.md:13-16` → **State application**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 398 | `sed -n 386,418p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 392 | `sed -n 380,412p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 
 Adjacent concepts: `network.state.snapshot`, `hud.controller.architecture`
 
@@ -183,8 +183,8 @@ Owner: `KB/docs/context/ui-hud.md:61-64` → **Spectator presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 529 | `sed -n 517,549p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 550 | `sed -n 538,570p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 523 | `sed -n 511,543p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 544 | `sed -n 532,564p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `set_spectator_mode` | 459 | `sed -n 447,479p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 268 | `sed -n 256,288p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
 

@@ -23,7 +23,12 @@ func _load() -> void:
 		return
 
 	for key in config.get_section_keys(SECTION):
+		if key == PARALLEL_PLACEMENT:
+			continue
 		overrides[key] = bool(config.get_value(SECTION, key, false))
+
+	if config.has_section_key(SECTION, PARALLEL_PLACEMENT):
+		_save()
 
 func apply_server_defaults(defaults: Dictionary) -> void:
 	if defaults == server_defaults:
@@ -42,6 +47,9 @@ func has_override(key: String) -> bool:
 	return overrides.has(key)
 
 func set_override(key: String, value: bool) -> void:
+	if key == PARALLEL_PLACEMENT:
+		return
+
 	overrides[key] = value
 	_save()
 	changed.emit()
@@ -55,6 +63,9 @@ func clear_override(key: String) -> void:
 	changed.emit()
 
 func toggle(key: String) -> bool:
+	if key == PARALLEL_PLACEMENT:
+		return false
+
 	var value: bool = !is_enabled(key)
 	set_override(key, value)
 

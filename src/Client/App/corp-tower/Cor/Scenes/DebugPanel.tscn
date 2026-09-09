@@ -253,12 +253,6 @@ layout_mode = 2
 theme_type_variation = &"ActionButton"
 text = "How to Play"
 
-[node name="ParallelPlacementButton" type="Button" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows" unique_id=950000102]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"ActionButton"
-text = "Parallel Placement: OFF"
-
 [node name="LatencyIndicatorToggle" type="CheckButton" parent="DebugOverlay/DebugPanel/DebugMargin/DebugOuterRows/DebugCategoryPanels/UI/UIRows"]
 unique_name_in_owner = true
 layout_mode = 2
