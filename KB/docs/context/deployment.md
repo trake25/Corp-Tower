@@ -72,33 +72,32 @@ alias: identity secret
 source: .github/workflows/EKS-Deploy-Game-Server.yml#Sync Supabase service role secret
 source: scripts/backup/backup-server-up.sh#AUTH_ARGS
 source: scripts/verify-supabase-environment.sh#verify_supabase_environment() {
+source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_recover_existing_google_link
+source: src/Server/app/Server.js#handleProfileMessage
 adjacent: backend.identity.auth
 adjacent: build.endpoint-auth.injection
 -->
 ## Authentication environment
 
-Server verification uses public Supabase project information plus runtime authentication policy. The
-hosted Supabase Auth project enables anonymous sign-in, Google, Facebook, and Manual Linking; these
-capability facts are intentionally public KB context so agents can reason about supported authentication
-flows. Top or Drop accepts at most one external provider per durable account and treats its backend
-account state as authoritative for that product rule. Provider linking upgrades the currently authenticated
-Guest in place and preserves the durable Top or Drop account and Profile. Google linking and Web Facebook
-linking use the Supabase identity-link path; Web Facebook performs the provider OAuth round trip in the
-browser, returns to the configured Top or Drop Web deployment, stages only a session for the original Guest
-Supabase user, and still requires the normal Top or Drop backend provider-link commit before acceptance.
-Android Facebook linking keeps the ordinary native Facebook access-token flow: the server verifies the token
-with Facebook, confirms ownership against the authenticated Guest account, and atomically claims the Facebook
-subject in Top or Drop's account store. The Android Facebook-link path does not require attaching Facebook as
-a Supabase Auth identity or opening browser OAuth; the existing anonymous Supabase binding remains associated
-with the durable account. Every shipping deployment supplies an explicit Production or Development marker,
-project ref, canonical project URL, and environment-scoped credentials. A non-mutating pre-deploy guard rejects
-the Seoul migration source, cross-environment values, missing durable Data API surfaces, and incomplete server
-HMAC configuration. Until the request transports are migrated away from placing project API keys in bearer
-headers, deployments use the project's legacy JWT-form `anon` and `service_role` keys; the guard rejects opaque
-`sb_publishable_` and `sb_secret_` keys that those transports cannot safely use. Public project/client capability information may be injected into builds, but
-repository prose records capabilities rather than deployed credential values. Service-role keys, provider
-client secrets, signing secrets, player-identity HMAC secrets, access/refresh tokens, and other credentials
-remain private and must never be written to KB prose, logs, generated plans, or client configuration.
+Server verification uses public Supabase project information plus runtime authentication policy. The hosted
+Supabase Auth project enables anonymous sign-in, Google, Facebook, and Manual Linking; these capability facts
+are intentionally public KB context so agents can reason about supported authentication flows. Top or Drop
+accepts at most one external provider per durable account and treats its backend account state as authoritative
+for that product rule. Provider linking upgrades the currently authenticated Guest in place and preserves the
+durable Top or Drop account and Profile. Web Google uses the selected environment's Supabase PKCE and manual
+identity-link path; callback recovery may complete only when that same project's original Guest is proven to
+already own its sole Google identity. Web Facebook obtains an SDK browser credential and the selected
+environment's game server re-verifies and atomically claims its Facebook subject. Android Facebook keeps its
+ordinary native access-token flow, separately from the Web SDK path. Every shipping deployment supplies an
+explicit Production or Development marker, project ref, canonical project URL, and environment-scoped
+credentials. A non-mutating pre-deploy guard rejects the Seoul migration source, cross-environment values,
+missing durable Data API surfaces, and incomplete server HMAC configuration. Until the request transports are
+migrated away from placing project API keys in bearer headers, deployments use the project's legacy JWT-form
+`anon` and `service_role` keys; the guard rejects opaque `sb_publishable_` and `sb_secret_` keys that those
+transports cannot safely use. Public project/client capability information may be injected into builds, but
+repository prose records capabilities rather than deployed credential values. Service-role keys, provider client
+secrets, signing secrets, player-identity HMAC secrets, access/refresh tokens, and other credentials remain
+private and must never be written to KB prose, logs, generated plans, or client configuration.
 
 <!-- kb
 id: deploy.shared.secret-rollout

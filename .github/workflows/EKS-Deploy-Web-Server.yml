@@ -115,6 +115,7 @@ jobs:
           # deployed domain and must be in Supabase's allow list.
           CORP_TOWER_AUTH_OAUTH: ${{ vars.CORP_TOWER_AUTH_OAUTH || 'false' }}
           CORP_TOWER_AUTH_REDIRECT_WEB: https://${{ needs.resolve-target.outputs.domain }}/
+          TOD_FACEBOOK_APP_ID: ${{ vars.TOD_FACEBOOK_APP_ID || '' }}
         run: scripts/write-endpoint-config.sh
 
       - name: Build web export

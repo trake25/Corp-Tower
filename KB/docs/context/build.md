@@ -87,12 +87,20 @@ alias: write endpoint config
 alias: auth injection
 source: scripts/write-endpoint-config.sh#CONFIG_FILE
 source: .github/workflows/Android-Deploy-wstodplay.yml#Resolve WebSocket target
+source: .github/workflows/EKS-Deploy-Web-Server.yml#Write client endpoint config
+source: .github/workflows/Backup-Deploy-Web-Server.yml#Write client endpoint config
 adjacent: ui.auth.presentation
 adjacent: network.session.identity
 -->
 ## Endpoint and auth injection
 
-Build-time endpoint generation selects one WebSocket target plus debug/demo flags and public auth/provider capabilities. Shipping workflows must also supply the expected Production or Development marker, exact Supabase project ref, matching canonical URL, and client key; missing, Seoul-source, or cross-environment values fail before export. Local non-shipping generation may still omit optional Auth. Android maps WebSocket target to data environment and has no independent database selector. Shipping workflows use generated configuration rather than runtime hostname guesses.
+Build-time endpoint generation selects one WebSocket target plus debug/demo flags and public auth/provider
+capabilities. Shipping workflows must also supply the expected Production or Development marker, exact Supabase
+project ref, matching canonical URL, and client key; missing, Seoul-source, or cross-environment values fail
+before export. Web builds inject only the selected GitHub environment's public Facebook App ID for browser SDK
+login; they never inject a Facebook client token, App Secret, or other server material. Local non-shipping
+generation may still omit optional Auth. Android maps WebSocket target to data environment and has no independent
+database selector. Shipping workflows use generated configuration rather than runtime hostname guesses.
 
 <!-- kb
 id: build.auth.native-providers

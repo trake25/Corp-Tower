@@ -1,6 +1,7 @@
 extends Node
 
 const AuthRequestTransportScript = preload("res://Sys/Auth/Auth_Request_Transport.gd")
+const WebFacebookAuthScript = preload("res://Sys/Auth/Web_Facebook_Auth.gd")
 const SESSION_FILE := "user://corp_tower_auth_session.save"
 const VERIFIER_FILE := "user://corp_tower_auth_verifier.save"
 const LINK_FLOW_FILE := "user://corp_tower_auth_link_flow.save"
@@ -31,7 +32,7 @@ const NATIVE_CODE_CANCELLED := "cancelled"
 const FLOW_SIGN_IN := "sign_in"
 const FLOW_LINK := "link"
 const FLOW_FACEBOOK_LINK_PREFLIGHT := "facebook_link_preflight"
-const FACEBOOK_LINK_ROUTE_BROWSER := "browser"
+const FACEBOOK_LINK_ROUTE_WEB_SDK := "web_sdk"
 const FACEBOOK_LINK_ROUTE_NATIVE := "native"
 
 signal oauth_completed(reason: String)
@@ -68,6 +69,9 @@ var native_signin_in_flight := false
 var native_google_enabled := true
 var native_facebook_enabled := true
 var auth_transport
+var web_facebook_auth = null
+var web_facebook_login_in_flight := false
+var web_facebook_login_purpose := FLOW_SIGN_IN
 
 func _ready() -> void:
 	auth_transport = AuthRequestTransportScript.new()
@@ -87,6 +91,7 @@ func _ready() -> void:
 	_setup_deeplink()
 	_setup_native_google()
 	_setup_native_facebook()
+	_setup_web_facebook()
 
 func _setup_deeplink() -> void:
 	if not is_oauth_enabled() or OS.get_name() != "Android":
@@ -168,6 +173,16 @@ func _setup_native_facebook() -> void:
 
 func _native_facebook_ready() -> bool:
 	return facebook_signin_node != null and facebook_signin_node.is_available()
+
+func _setup_web_facebook() -> void:
+	if not OS.has_feature("web") or not is_oauth_enabled():
+		return
+
+	if EndpointConfig.AUTH_FACEBOOK_APP_ID == "":
+		return
+
+	web_facebook_auth = WebFacebookAuthScript.new()
+	web_facebook_auth.initialize(EndpointConfig.AUTH_FACEBOOK_APP_ID)
 
 func redirect_android_scheme() -> String:
 	return REDIRECT_ANDROID.split("://", true, 1)[0]
@@ -404,12 +419,11 @@ func _clear_verifier() -> void:
 	if FileAccess.file_exists(VERIFIER_FILE):
 		DirAccess.remove_absolute(VERIFIER_FILE)
 
-func _save_link_flow(provider: String, pre_link_user_id: String, state: String) -> void:
+func _save_link_flow(provider: String, pre_link_user_id: String) -> void:
 	var payload := JSON.stringify({
 		"purpose": FLOW_LINK,
 		"provider": provider,
-		"pre_link_user_id": pre_link_user_id,
-		"state": state
+		"pre_link_user_id": pre_link_user_id
 	})
 
 	if OS.has_feature("web"):
@@ -461,7 +475,6 @@ func _has_active_link_flow() -> bool:
 		str(flow.get("purpose", "")) == FLOW_LINK
 		and PROVIDERS.has(str(flow.get("provider", "")))
 		and str(flow.get("pre_link_user_id", "")) != ""
-		and str(flow.get("state", "")) != ""
 	)
 
 func _clear_pending_link_state() -> void:
@@ -537,6 +550,9 @@ func sign_in_with_provider(provider: String) -> String:
 	if provider == "facebook" and native_facebook_enabled and _native_facebook_ready():
 		return _sign_in_with_native_facebook()
 
+	if provider == "facebook" and OS.has_feature("web"):
+		return _sign_in_with_web_facebook()
+
 	return _sign_in_with_browser(provider)
 
 func facebook_link_route() -> String:
@@ -544,12 +560,73 @@ func facebook_link_route() -> String:
 
 func _facebook_link_route_for_runtime(is_web: bool, platform_name: String) -> String:
 	if is_web:
-		return FACEBOOK_LINK_ROUTE_BROWSER
+		return FACEBOOK_LINK_ROUTE_WEB_SDK
 
 	if platform_name == "Android":
 		return FACEBOOK_LINK_ROUTE_NATIVE
 
 	return ""
+
+func _sign_in_with_web_facebook() -> String:
+	active_flow_purpose = FLOW_SIGN_IN
+	return _begin_web_facebook_login(FLOW_SIGN_IN)
+
+func _begin_web_facebook_login(purpose: String) -> String:
+	if not OS.has_feature("web") or EndpointConfig.AUTH_FACEBOOK_APP_ID == "":
+		return REASON_PROVIDER_UNAVAILABLE
+
+	if web_facebook_auth == null:
+		web_facebook_auth = WebFacebookAuthScript.new()
+		web_facebook_auth.initialize(EndpointConfig.AUTH_FACEBOOK_APP_ID)
+
+	if str(web_facebook_auth.begin_login()) != WebFacebookAuthScript.STATUS_STARTED:
+		return REASON_BROWSER
+
+	web_facebook_login_purpose = purpose
+	web_facebook_login_in_flight = true
+	return REASON_NONE
+
+func _process(_delta: float) -> void:
+	if not web_facebook_login_in_flight or web_facebook_auth == null:
+		return
+
+	var result: Dictionary = web_facebook_auth.take_login_result()
+	if result.is_empty():
+		return
+
+	web_facebook_login_in_flight = false
+	var purpose := web_facebook_login_purpose
+	web_facebook_login_purpose = FLOW_SIGN_IN
+	var access_token := str(result.get("access_token", ""))
+	var expires_in := int(result.get("expires_in", 0))
+	var reason := str(result.get("reason", ""))
+
+	if access_token == "" or expires_in <= 0:
+		_complete_web_facebook_login(
+			purpose, REASON_CANCELLED if reason == REASON_CANCELLED else REASON_REJECTED
+		)
+		return
+
+	var expires_at := int(Time.get_unix_time_from_system()) + expires_in
+	if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
+		active_flow_purpose = FLOW_SIGN_IN
+		if not _stage_native_facebook_link_credential(access_token, expires_at):
+			facebook_link_preflight_failed.emit(REASON_REJECTED)
+			return
+		facebook_link_credential_ready.emit(pending_native_facebook_access_token_value)
+		return
+
+	_complete_web_facebook_login(
+		purpose, REASON_NONE if _store_facebook_session(access_token, expires_at) else REASON_REJECTED
+	)
+
+func _complete_web_facebook_login(purpose: String, reason: String) -> void:
+	active_flow_purpose = FLOW_SIGN_IN
+	if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
+		facebook_link_preflight_failed.emit(reason)
+		return
+
+	oauth_completed.emit(reason)
 
 func _sign_in_with_native_google() -> String:
 	active_flow_purpose = FLOW_SIGN_IN
@@ -684,10 +761,13 @@ func link_with_provider(provider: String) -> String:
 	if not can_link_provider(provider):
 		return REASON_REJECTED
 
-	if provider == "facebook" and facebook_link_route() != FACEBOOK_LINK_ROUTE_BROWSER:
+	# Web Facebook linking uses the browser SDK credential flow and Android uses
+	# the native credential flow. Neither path may fall back to Supabase identity
+	# redirect OAuth.
+	if provider == "facebook":
 		return REASON_PROVIDER_UNAVAILABLE
 
-	_save_link_flow(provider, user_id, _generate_code_verifier())
+	_save_link_flow(provider, user_id)
 	active_flow_purpose = FLOW_LINK
 
 	if provider == "google" and native_google_enabled and _native_google_ready():
@@ -703,6 +783,14 @@ func link_with_provider(provider: String) -> String:
 func begin_facebook_link_preflight() -> String:
 	if not can_link_provider("facebook"):
 		return REASON_REJECTED
+
+	if OS.has_feature("web"):
+		_clear_pending_link_state()
+		active_flow_purpose = FLOW_FACEBOOK_LINK_PREFLIGHT
+		var web_reason := _begin_web_facebook_login(FLOW_FACEBOOK_LINK_PREFLIGHT)
+		if web_reason != REASON_NONE:
+			active_flow_purpose = FLOW_SIGN_IN
+		return web_reason
 
 	if not native_facebook_enabled or not _native_facebook_ready():
 		return REASON_PROVIDER_UNAVAILABLE
@@ -720,14 +808,12 @@ func begin_facebook_link_preflight() -> String:
 	return REASON_NONE
 
 func complete_facebook_link_after_preflight() -> String:
-	if not can_link_provider("facebook"):
-		return REASON_REJECTED
-
-	_save_link_flow("facebook", user_id, _generate_code_verifier())
-	active_flow_purpose = FLOW_LINK
-	return await _begin_browser_link("facebook")
+	return REASON_PROVIDER_UNAVAILABLE
 
 func _begin_browser_link(provider: String) -> String:
+	if provider == "facebook":
+		return REASON_PROVIDER_UNAVAILABLE
+
 	var flow := _load_link_flow()
 	var expected_provider := str(flow.get("provider", ""))
 
@@ -741,7 +827,6 @@ func _begin_browser_link(provider: String) -> String:
 		provider,
 		redirect_uri(),
 		_code_challenge(verifier),
-		str(flow.get("state", "")),
 		OS.has_feature("web")
 	)
 	var response := await _get_auth_authenticated(path, access_token())
@@ -795,8 +880,8 @@ func _mark_web_oauth_navigation_started(provider: String, purpose: String) -> vo
 func _web_oauth_navigation_script(url: String) -> String:
 	return "window.location.replace(%s)" % JSON.stringify(url)
 
-func _web_oauth_presentation_query(provider: String, is_web: bool) -> String:
-	return "&display=popup" if is_web and provider == "facebook" else ""
+func _provider_account_selection_query(provider: String) -> String:
+	return "&prompt=select_account" if provider == "google" else ""
 
 func _build_authorize_url(
 	provider: String,
@@ -809,22 +894,20 @@ func _build_authorize_url(
 		provider.uri_encode(),
 		redirect_to.uri_encode(),
 		challenge.uri_encode(),
-		_web_oauth_presentation_query(provider, is_web)
+		_provider_account_selection_query(provider)
 	]
 
 func _build_link_authorize_path(
 	provider: String,
 	redirect_to: String,
 	challenge: String,
-	state: String,
 	is_web: bool = false
 ) -> String:
-	return "/auth/v1/user/identities/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=s256&state=%s&skip_http_redirect=true%s" % [
+	return "/auth/v1/user/identities/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=s256&skip_http_redirect=true%s" % [
 		provider.uri_encode(),
 		redirect_to.uri_encode(),
 		challenge.uri_encode(),
-		state.uri_encode(),
-		_web_oauth_presentation_query(provider, is_web)
+		_provider_account_selection_query(provider)
 	]
 
 func _generate_code_verifier() -> String:
@@ -840,7 +923,7 @@ func _base64url(bytes: PackedByteArray) -> String:
 	return Marshalls.raw_to_base64(bytes).replace("+", "-").replace("/", "_").rstrip("=")
 
 func _parse_callback_query(query: String) -> Dictionary:
-	var result := {"code": "", "error": "", "state": ""}
+	var result := {"code": "", "error": "", "error_code": "", "state": ""}
 
 	for pair in query.trim_prefix("?").split("&", false):
 		var parts := pair.split("=", true, 1)
@@ -853,6 +936,8 @@ func _parse_callback_query(query: String) -> Dictionary:
 				result["code"] = parts[1].uri_decode()
 			"error":
 				result["error"] = parts[1].uri_decode()
+			"error_code":
+				result["error_code"] = parts[1].uri_decode()
 			"state":
 				result["state"] = parts[1].uri_decode()
 
@@ -884,13 +969,46 @@ func _consume_link_callback(callback: Dictionary) -> String:
 	if not _has_active_link_flow():
 		return REASON_REJECTED
 
-	if str(callback.get("state", "")) != str(flow.get("state", "")):
-		return REASON_REJECTED
-
 	if str(callback.get("code", "")) == "":
+		if (
+			str(flow.get("provider", "")) == "google"
+			and str(callback.get("error_code", "")).strip_edges().to_lower()
+				== AuthRequestTransportScript.ERROR_IDENTITY_ALREADY_EXISTS
+		):
+			return await _recover_existing_google_link(flow)
 		return REASON_CANCELLED if str(callback.get("error", "")) != "" else REASON_REJECTED
 
 	return await _exchange_link_code(str(callback["code"]), flow)
+
+func _recover_existing_google_link(flow: Dictionary) -> String:
+	if (
+		str(flow.get("provider", "")) != "google"
+		or str(flow.get("pre_link_user_id", "")) == ""
+	):
+		return REASON_IDENTITY_CONFLICT
+
+	var response := await _get_auth_authenticated("/auth/v1/user", access_token())
+	if str(response.get("reason", REASON_REJECTED)) != REASON_NONE:
+		return str(response.get("reason", REASON_REJECTED))
+
+	var user = response.get("data", {})
+	if typeof(user) != TYPE_DICTIONARY or not _is_recoverable_google_link_user(user, flow):
+		return REASON_IDENTITY_CONFLICT
+
+	return _stage_link_session({
+		"access_token": access_token_value,
+		"refresh_token": refresh_token_value,
+		"expires_at": expires_at_unix,
+		"user": user
+	}, flow)
+
+func _is_recoverable_google_link_user(user: Dictionary, flow: Dictionary) -> bool:
+	return (
+		str(flow.get("provider", "")) == "google"
+		and str(flow.get("pre_link_user_id", "")) != ""
+		and str(user.get("id", "")) == str(flow.get("pre_link_user_id", ""))
+		and _supported_providers_from_user(user) == ["google"]
+	)
 
 func _exchange_link_code(code: String, flow: Dictionary) -> String:
 	var verifier := _load_verifier()
@@ -1031,6 +1149,8 @@ func sign_out() -> void:
 	_reset_native_provider_sessions()
 	native_signin_in_flight = false
 	oauth_in_flight = false
+	web_facebook_login_in_flight = false
+	web_facebook_login_purpose = FLOW_SIGN_IN
 	access_token_value = ""
 	refresh_token_value = ""
 	expires_at_unix = 0
@@ -1202,6 +1322,17 @@ func _apply_link_presentation_metadata(user: Dictionary, provider: String) -> vo
 	google_email = _google_email_from_user(user) if provider == "google" else ""
 
 func _provider_from_user(user: Dictionary) -> String:
+	var providers := _supported_providers_from_user(user)
+
+	if providers.size() == 1:
+		return str(providers[0])
+
+	if providers.has(current_provider):
+		return current_provider
+
+	return ""
+
+func _supported_providers_from_user(user: Dictionary) -> Array:
 	var providers: Array = []
 	var app_metadata = user.get("app_metadata", {})
 
@@ -1224,13 +1355,7 @@ func _provider_from_user(user: Dictionary) -> String:
 				if PROVIDERS.has(identity_provider) and not providers.has(identity_provider):
 					providers.append(identity_provider)
 
-	if providers.size() == 1:
-		return str(providers[0])
-
-	if providers.has(current_provider):
-		return current_provider
-
-	return ""
+	return providers
 
 func _display_name_from_user(user: Dictionary) -> String:
 	var user_metadata = user.get("user_metadata", {})

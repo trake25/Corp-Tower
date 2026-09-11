@@ -637,6 +637,23 @@ func _on_provider_link_requested(provider: String) -> void:
 
 	if not _queue_provider_link_request(provider):
 		return
+
+	# FB.login() must be invoked in the original button gesture. The Web flow
+	# therefore starts before any provider preflight round trip; the credential is
+	# still subject to the existing server-side subject preflight and final claim.
+	if (
+		provider == "facebook"
+		and AuthManager.facebook_link_route() == AuthManager.FACEBOOK_LINK_ROUTE_WEB_SDK
+	):
+		provider_link_stage = "facebook_credential"
+		var facebook_reason := AuthManager.begin_facebook_link_preflight()
+		if facebook_reason != AuthManager.REASON_NONE:
+			_finish_provider_link_error(
+				facebook_reason,
+				_facebook_rejection_diagnostic("facebook", facebook_reason, "F1")
+			)
+		return
+
 	_ensure_provider_link_profile_connection()
 
 func _queue_provider_link_request(provider: String) -> bool:
@@ -757,9 +774,6 @@ func _on_web_oauth_navigation_started(provider: String, purpose: String) -> void
 
 func _provider_link_stage_after_eligibility(provider: String, facebook_route: String) -> String:
 	if provider != "facebook":
-		return "launch"
-
-	if facebook_route == AuthManager.FACEBOOK_LINK_ROUTE_BROWSER:
 		return "launch"
 
 	if facebook_route == AuthManager.FACEBOOK_LINK_ROUTE_NATIVE:

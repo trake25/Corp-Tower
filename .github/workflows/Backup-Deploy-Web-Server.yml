@@ -106,6 +106,7 @@ jobs:
           CORP_TOWER_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           CORP_TOWER_AUTH_OAUTH: ${{ vars.CORP_TOWER_AUTH_OAUTH || 'false' }}
           CORP_TOWER_AUTH_REDIRECT_WEB: https://${{ needs.resolve-target.outputs.domain }}/
+          TOD_FACEBOOK_APP_ID: ${{ vars.TOD_FACEBOOK_APP_ID || '' }}
         run: scripts/write-endpoint-config.sh
 
       - name: Build web export

@@ -5,6 +5,7 @@ const REASON_NONE := ""
 const REASON_UNREACHABLE := "unreachable"
 const REASON_REJECTED := "rejected"
 const ERROR_IDENTITY_CONFLICT := "identity_conflict"
+const ERROR_IDENTITY_ALREADY_EXISTS := "identity_already_exists"
 
 var request_host: Node = null
 var base_url := ""
@@ -86,7 +87,9 @@ func _sanitized_error_code(payload: Variant) -> String:
 
 	for candidate in candidates:
 		var normalized: String = str(candidate).strip_edges().to_lower()
-		if ["identity_already_exists", "identity_already_linked", ERROR_IDENTITY_CONFLICT].has(normalized):
+		if normalized == ERROR_IDENTITY_ALREADY_EXISTS:
+			return ERROR_IDENTITY_ALREADY_EXISTS
+		if ["identity_already_linked", ERROR_IDENTITY_CONFLICT].has(normalized):
 			return ERROR_IDENTITY_CONFLICT
 
 	return ""

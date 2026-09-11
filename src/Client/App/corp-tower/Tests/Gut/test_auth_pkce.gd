@@ -70,9 +70,12 @@ func test_google_web_authorize_url_encodes_the_redirect_and_pins_s256() -> void:
 		url.contains("challenge+value/here"),
 		"The challenge must be encoded, not interpolated raw."
 	)
-	assert_false(url.contains("display="), "Google must not receive Facebook presentation hints.")
+	assert_true(
+		url.contains("prompt=select_account"),
+		"Google Web sign-in must request provider-supported account selection."
+	)
 
-func test_facebook_web_authorize_url_requests_popup_presentation() -> void:
+func test_facebook_authorize_url_has_no_web_popup_or_account_selection_hint() -> void:
 	var url: String = auth._build_authorize_url(
 		"facebook", "https://play.example.com/", "facebook-challenge", true
 	)
@@ -81,7 +84,8 @@ func test_facebook_web_authorize_url_requests_popup_presentation() -> void:
 	assert_true(url.contains("provider=facebook"))
 	assert_true(url.contains("code_challenge=facebook-challenge"))
 	assert_true(url.contains("code_challenge_method=s256"))
-	assert_true(url.contains("display=popup"))
+	assert_false(url.contains("display="))
+	assert_false(url.contains("prompt=select_account"))
 
 func test_android_facebook_authorize_url_has_no_web_presentation_hint() -> void:
 	var url: String = auth._build_authorize_url(
@@ -99,38 +103,28 @@ func test_web_oauth_navigation_script_replaces_the_current_tab() -> void:
 	assert_true(script.contains("auth.example.com/authorize"))
 	assert_false(script.contains("window.open"))
 
-func test_link_authorize_path_uses_the_authenticated_identity_link_endpoint_and_state() -> void:
+func test_google_link_authorize_path_uses_supabase_owned_callback_state() -> void:
 	var path: String = auth._build_link_authorize_path(
 		"google",
 		"https://play.example.com/",
 		"challenge-value",
-		"link-state",
 		true
 	)
 
 	assert_true(path.begins_with("/auth/v1/user/identities/authorize?"))
 	assert_true(path.contains("provider=google"))
 	assert_true(path.contains("code_challenge_method=s256"))
-	assert_true(path.contains("state=link-state"))
 	assert_true(path.contains("skip_http_redirect=true"))
+	assert_true(path.contains("prompt=select_account"))
+	assert_false(path.contains("state="))
 	assert_false(path.contains("display="))
 
-func test_web_facebook_uses_the_same_authenticated_manual_linking_path() -> void:
-	var path: String = auth._build_link_authorize_path(
-		"facebook",
-		"https://play.example.com/auth-callback",
-		"facebook-challenge",
-		"facebook-link-state",
-		true
+func test_web_facebook_selects_sdk_rather_than_supabase_redirect_linking() -> void:
+	assert_eq(
+		auth._facebook_link_route_for_runtime(true, "Web"),
+		auth.FACEBOOK_LINK_ROUTE_WEB_SDK
 	)
-
-	assert_true(path.begins_with("/auth/v1/user/identities/authorize?"))
-	assert_true(path.contains("provider=facebook"))
-	assert_true(path.contains("redirect_to=https%3A%2F%2Fplay.example.com%2Fauth-callback"))
-	assert_true(path.contains("code_challenge_method=s256"))
-	assert_true(path.contains("state=facebook-link-state"))
-	assert_true(path.contains("skip_http_redirect=true"))
-	assert_true(path.contains("display=popup"))
+	assert_eq(await auth._begin_browser_link("facebook"), auth.REASON_PROVIDER_UNAVAILABLE)
 
 func test_callback_query_extracts_the_code() -> void:
 	var parsed: Dictionary = auth._parse_callback_query("?code=abc123&state=xyz")
@@ -158,6 +152,10 @@ func test_callback_query_reports_a_denied_consent() -> void:
 
 	assert_eq(parsed["code"], "", "A denial must never yield a code.")
 	assert_eq(parsed["error"], "access_denied")
+	assert_eq(
+		auth._parse_callback_query("?error=server_error&error_code=identity_already_exists")["error_code"],
+		"identity_already_exists"
+	)
 
 func test_android_redirect_parts_split_correctly() -> void:
 	assert_eq(auth.redirect_android_scheme(), "com.galaxxigames.tod")

@@ -219,13 +219,15 @@ Adjacent concepts: `testing.release.gates`
 
 ## deploy.shared.auth-env
 
-Owner: `KB/docs/context/deployment.md:78-102` → **Authentication environment**
+Owner: `KB/docs/context/deployment.md:80-101` → **Authentication environment**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 291 | `sed -n 279,311p .github/workflows/EKS-Deploy-Game-Server.yml` |
 | `scripts/backup/backup-server-up.sh` | `AUTH_ARGS` | 50 | `sed -n 38,70p scripts/backup/backup-server-up.sh` |
 | `scripts/verify-supabase-environment.sh` | `verify_supabase_environment() {` | 44 | `sed -n 32,64p scripts/verify-supabase-environment.sh` |
+| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 983 | `sed -n 971,1003p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
+| `src/Server/app/Server.js` | `handleProfileMessage` | 52 | `sed -n 40,72p src/Server/app/Server.js` |
 
 Adjacent concepts: `backend.identity.auth`, `build.endpoint-auth.injection`
 
@@ -254,7 +256,7 @@ Adjacent concepts: `deploy.shared.environments`, `deploy.shared.auth-env`
 
 ## deploy.shared.secret-rollout
 
-Owner: `KB/docs/context/deployment.md:111-114` → **Secret rollout**
+Owner: `KB/docs/context/deployment.md:110-113` → **Secret rollout**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

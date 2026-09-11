@@ -56,7 +56,7 @@ Adjacent concepts: none
 
 ## build.auth.native-providers
 
-Owner: `KB/docs/context/build.md:103-106` → **Native provider build inputs**
+Owner: `KB/docs/context/build.md:111-114` → **Native provider build inputs**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -66,12 +66,14 @@ Adjacent concepts: none
 
 ## build.endpoint-auth.injection
 
-Owner: `KB/docs/context/build.md:93-96` → **Endpoint and auth injection**
+Owner: `KB/docs/context/build.md:95-104` → **Endpoint and auth injection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/write-endpoint-config.sh` | `CONFIG_FILE` | 5 | `sed -n 1,25p scripts/write-endpoint-config.sh` |
 | `.github/workflows/Android-Deploy-wstodplay.yml` | `Resolve WebSocket target` | 48 | `sed -n 36,68p .github/workflows/Android-Deploy-wstodplay.yml` |
+| `.github/workflows/EKS-Deploy-Web-Server.yml` | `Write client endpoint config` | 105 | `sed -n 93,125p .github/workflows/EKS-Deploy-Web-Server.yml` |
+| `.github/workflows/Backup-Deploy-Web-Server.yml` | `Write client endpoint config` | 97 | `sed -n 85,117p .github/workflows/Backup-Deploy-Web-Server.yml` |
 
 Adjacent concepts: `ui.auth.presentation`, `network.session.identity`
 
@@ -87,7 +89,7 @@ Adjacent concepts: none
 
 ## build.server.image
 
-Owner: `KB/docs/context/build.md:115-118` → **Server image**
+Owner: `KB/docs/context/build.md:123-126` → **Server image**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -103,7 +105,7 @@ Owner: `KB/docs/context/build.md:35-38` → **Web pipeline**
 |---|---|---:|---|
 | `.github/godot/export_presets.web.ci.cfg` | `preset.0.options` | 24 | `sed -n 12,38p .github/godot/export_presets.web.ci.cfg` |
 | `.github/actions/build-godot-web/action.yml` | `Create CI Web export preset` | 64 | `sed -n 52,84p .github/actions/build-godot-web/action.yml` |
-| `.github/workflows/EKS-Deploy-Web-Server.yml` | `Build web export` | 120 | `sed -n 108,140p .github/workflows/EKS-Deploy-Web-Server.yml` |
-| `.github/workflows/Backup-Deploy-Web-Server.yml` | `Build web export` | 111 | `sed -n 99,131p .github/workflows/Backup-Deploy-Web-Server.yml` |
+| `.github/workflows/EKS-Deploy-Web-Server.yml` | `Build web export` | 121 | `sed -n 109,141p .github/workflows/EKS-Deploy-Web-Server.yml` |
+| `.github/workflows/Backup-Deploy-Web-Server.yml` | `Build web export` | 112 | `sed -n 100,132p .github/workflows/Backup-Deploy-Web-Server.yml` |
 
 Adjacent concepts: none

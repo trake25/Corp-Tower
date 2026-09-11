@@ -1,6 +1,7 @@
 extends GutTest
 
 const AuthManagerScript := preload("res://Sys/Auth/Auth_Manager.gd")
+const WebFacebookAuthScript := preload("res://Sys/Auth/Web_Facebook_Auth.gd")
 
 class FakeGoogleProviderSession extends Node:
 	var reset_calls := 0
@@ -25,6 +26,19 @@ class FakeFacebookProviderSession extends Node:
 	func sign_in_fresh() -> bool:
 		fresh_selection_calls += 1
 		return true
+
+class RecoveryAuthManager extends AuthManagerScript:
+	func access_token() -> String:
+		return access_token_value
+
+class FakeCurrentProjectTransport extends RefCounted:
+	var requests: Array = []
+	var response: Dictionary = {}
+
+	func get_request(path: String, bearer_token: String) -> Dictionary:
+		requests.append({"path": path, "bearer_token": bearer_token})
+		await Engine.get_main_loop().process_frame
+		return response
 
 var auth
 
@@ -236,8 +250,7 @@ func test_link_session_staging_requires_the_original_guest_user() -> void:
 	var flow := {
 		"purpose": auth.FLOW_LINK,
 		"provider": "google",
-		"pre_link_user_id": "guest-user",
-		"state": "state-value"
+		"pre_link_user_id": "guest-user"
 	}
 
 	assert_eq(auth._stage_link_session({
@@ -260,24 +273,75 @@ func test_link_session_staging_requires_the_original_guest_user() -> void:
 	assert_true(auth.has_pending_provider_link())
 	assert_eq(auth.pending_link_provider(), "google")
 
-func test_link_callback_state_persists_the_provider_and_original_guest_identity() -> void:
-	auth._save_link_flow("google", "guest-user", "callback-state")
+func test_link_intent_persists_only_the_provider_and_original_guest_identity() -> void:
+	auth._save_link_flow("google", "guest-user")
 	var restored = AuthManagerScript.new()
 	var flow := restored._load_link_flow()
 
 	assert_eq(flow.get("purpose", ""), auth.FLOW_LINK)
 	assert_eq(flow.get("provider", ""), "google")
 	assert_eq(flow.get("pre_link_user_id", ""), "guest-user")
-	assert_eq(flow.get("state", ""), "callback-state")
+	assert_false(flow.has("state"), "Supabase owns callback state for manual linking.")
 	assert_eq(
 		await restored._consume_link_callback({
 			"code": "",
-			"error": "access_denied",
-			"state": "callback-state"
+			"error": "access_denied"
 		}),
 		auth.REASON_CANCELLED
 	)
 	restored.free()
+
+func test_partial_google_link_recovery_requires_current_guest_and_only_google() -> void:
+	var flow := {
+		"purpose": auth.FLOW_LINK,
+		"provider": "google",
+		"pre_link_user_id": "guest-user"
+	}
+
+	assert_true(auth._is_recoverable_google_link_user({
+		"id": "guest-user",
+		"identities": [{"provider": "google"}]
+	}, flow))
+	assert_false(auth._is_recoverable_google_link_user({
+		"id": "other-user",
+		"identities": [{"provider": "google"}]
+	}, flow))
+	assert_false(auth._is_recoverable_google_link_user({
+		"id": "guest-user",
+		"identities": [{"provider": "google"}, {"provider": "facebook"}]
+	}, flow))
+
+func test_partial_google_link_recovery_uses_only_the_current_auth_transport() -> void:
+	var recovery = RecoveryAuthManager.new()
+	var transport = FakeCurrentProjectTransport.new()
+	transport.response = {
+		"reason": recovery.REASON_NONE,
+		"data": {
+			"id": "guest-user",
+			"is_anonymous": false,
+			"identities": [{"provider": "google"}]
+		}
+	}
+	recovery.auth_transport = transport
+	recovery._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+
+	assert_eq(await recovery._recover_existing_google_link({
+		"purpose": recovery.FLOW_LINK,
+		"provider": "google",
+		"pre_link_user_id": "guest-user"
+	}), recovery.REASON_NONE)
+	assert_eq(transport.requests, [{
+		"path": "/auth/v1/user", "bearer_token": "guest-access"
+	}])
+	assert_true(recovery.has_pending_provider_link())
+	assert_eq(recovery.pending_link_provider(), "google")
+	assert_true(recovery.is_anonymous, "Recovery must stage rather than finalize the Guest locally.")
+	recovery.free()
 
 func test_web_oauth_navigation_marks_sign_in_and_link_attempts_in_flight() -> void:
 	var starts: Array = []
@@ -290,11 +354,11 @@ func test_web_oauth_navigation_marks_sign_in_and_link_attempts_in_flight() -> vo
 	assert_eq(starts, [["google", auth.FLOW_SIGN_IN]])
 
 	auth.oauth_in_flight = false
-	auth._mark_web_oauth_navigation_started("facebook", auth.FLOW_LINK)
+	auth._mark_web_oauth_navigation_started("google", auth.FLOW_LINK)
 	assert_true(auth.oauth_in_flight)
 	assert_eq(starts, [
 		["google", auth.FLOW_SIGN_IN],
-		["facebook", auth.FLOW_LINK]
+		["google", auth.FLOW_LINK]
 	])
 
 func test_interrupted_web_sign_in_is_a_browser_failure_and_clears_pkce_state() -> void:
@@ -318,7 +382,7 @@ func test_interrupted_web_link_preserves_guest_and_clears_callback_authority() -
 		"expires_in": 3600,
 		"user": {"id": "guest-user", "is_anonymous": true}
 	})
-	auth._save_link_flow("facebook", "guest-user", "facebook-link-state")
+	auth._save_link_flow("google", "guest-user")
 	auth._save_verifier("web-link-verifier")
 	auth.oauth_in_flight = true
 
@@ -344,10 +408,10 @@ func test_android_oauth_resume_keeps_existing_cancel_semantics() -> void:
 	assert_eq(completions, [auth.REASON_CANCELLED])
 	assert_eq(auth._load_verifier(), "")
 
-func test_web_facebook_route_uses_browser_while_android_stays_native() -> void:
+func test_web_facebook_route_uses_sdk_while_android_stays_native() -> void:
 	assert_eq(
 		auth._facebook_link_route_for_runtime(true, "Web"),
-		auth.FACEBOOK_LINK_ROUTE_BROWSER
+		auth.FACEBOOK_LINK_ROUTE_WEB_SDK
 	)
 	assert_eq(
 		auth._facebook_link_route_for_runtime(false, "Android"),
@@ -355,72 +419,26 @@ func test_web_facebook_route_uses_browser_while_android_stays_native() -> void:
 	)
 	assert_eq(auth._facebook_link_route_for_runtime(false, "Linux"), "")
 
-func test_web_facebook_link_flow_persists_callback_authority_across_reload() -> void:
-	auth._save_link_flow("facebook", "guest-user", "facebook-link-state")
-	var restored = AuthManagerScript.new()
-	var flow := restored._load_link_flow()
+func test_web_facebook_sdk_uses_browser_credentials_without_redirect_oauth() -> void:
+	var web_facebook = WebFacebookAuthScript.new()
+	var bootstrap := web_facebook._initialize_script("test-app-id")
+	var login := web_facebook._begin_login_script()
 
-	assert_eq(flow.get("purpose", ""), auth.FLOW_LINK)
-	assert_eq(flow.get("provider", ""), "facebook")
-	assert_eq(flow.get("pre_link_user_id", ""), "guest-user")
-	assert_eq(flow.get("state", ""), "facebook-link-state")
-	restored.free()
-
-func test_web_facebook_link_staging_preserves_the_original_guest() -> void:
-	auth._apply_session({
-		"access_token": "guest-access",
-		"refresh_token": "guest-refresh",
-		"expires_in": 3600,
-		"user": {"id": "guest-user", "is_anonymous": true}
-	})
-	var flow := {
-		"purpose": auth.FLOW_LINK,
-		"provider": "facebook",
-		"pre_link_user_id": "guest-user",
-		"state": "facebook-link-state"
-	}
-
-	assert_eq(auth._stage_link_session({
-		"access_token": "wrong-access",
-		"refresh_token": "wrong-refresh",
-		"user": {
-			"id": "different-user",
-			"is_anonymous": false,
-			"app_metadata": {"provider": "facebook"}
-		}
-	}, flow), auth.REASON_REJECTED)
-	assert_eq(auth.access_token_value, "guest-access")
-	assert_true(auth.is_anonymous)
-	assert_false(auth.has_pending_provider_link())
-
-	assert_eq(auth._stage_link_session({
-		"access_token": "linked-facebook-access",
-		"refresh_token": "linked-facebook-refresh",
-		"expires_in": 3600,
-		"user": {
-			"id": "guest-user",
-			"is_anonymous": false,
-			"app_metadata": {"provider": "facebook"}
-		}
-	}, flow), auth.REASON_NONE)
-	assert_eq(auth.pending_link_provider(), "facebook")
-	assert_eq(auth.pending_link_access_token(), "linked-facebook-access")
-	assert_false(auth.has_pending_native_facebook_link())
-	assert_eq(auth.access_token_value, "guest-access")
-	assert_true(auth.is_anonymous)
-	assert_eq(auth.current_provider, "")
-
-	auth.reject_provider_link()
-	assert_eq(auth.access_token_value, "guest-access")
-	assert_true(auth.is_anonymous)
-	assert_false(auth.has_pending_provider_link())
+	assert_true(bootstrap.contains("window.FB.init"))
+	assert_true(bootstrap.contains("test-app-id"))
+	assert_true(login.contains("window.FB.login"))
+	assert_true(login.contains("authResponse"))
+	assert_true(login.contains("expiresIn"))
+	assert_true(login.contains("reauthenticate"))
+	assert_false(login.contains("window.location"))
+	assert_false(login.contains("supabase"))
 
 func test_provider_link_result_keeps_only_its_provider_metadata_until_consumed() -> void:
-	auth._save_link_flow("facebook", "guest-user", "callback-state")
+	auth._save_link_flow("google", "guest-user")
 	auth._record_provider_link_result(auth.REASON_REJECTED, false)
 
 	assert_true(auth.has_provider_link_result())
-	assert_eq(auth.provider_link_result_provider(), "facebook")
+	assert_eq(auth.provider_link_result_provider(), "google")
 	assert_eq(auth.take_provider_link_result(), auth.REASON_REJECTED)
 	assert_eq(auth.provider_link_result_provider(), "")
 
@@ -434,8 +452,7 @@ func test_finishing_or_rejecting_a_link_preserves_the_guest_until_accepted() -> 
 	var flow := {
 		"purpose": auth.FLOW_LINK,
 		"provider": "google",
-		"pre_link_user_id": "guest-user",
-		"state": "state-value"
+		"pre_link_user_id": "guest-user"
 	}
 	auth._stage_link_session({
 		"access_token": "linked-access",

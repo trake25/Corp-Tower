@@ -467,14 +467,14 @@ func test_web_link_navigation_retires_the_account_profile_connection() -> void:
 	assert_true(account.google_button.disabled)
 	assert_false(account.error_label.visible)
 
-func test_interrupted_web_link_returns_a_browser_error_without_l2() -> void:
+func test_interrupted_google_web_link_returns_a_browser_error_without_l2() -> void:
 	_show_unlinked_account()
 	await get_tree().process_frame
 	_acknowledge_account_profile_readiness()
-	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_pending_provider = "google"
 	screen_manager.provider_link_stage = "launch"
-	screen_manager._on_web_oauth_navigation_started("facebook", AuthManager.FLOW_LINK)
-	AuthManager.last_provider_link_provider = "facebook"
+	screen_manager._on_web_oauth_navigation_started("google", AuthManager.FLOW_LINK)
+	AuthManager.last_provider_link_provider = "google"
 	AuthManager.last_provider_link_reason = AuthManager.REASON_BROWSER
 	AuthManager.provider_link_result_pending = true
 
@@ -500,12 +500,12 @@ func test_web_link_callback_failure_returns_to_account_without_startup_or_onboar
 	assert_eq(screen_manager.current_overlay.error_label.text, "Account linking cancelled.")
 	assert_true(screen_manager.current_overlay.error_label.visible)
 
-func test_facebook_eligibility_routes_web_to_browser_and_android_to_native() -> void:
+func test_facebook_eligibility_keeps_web_sdk_out_of_the_redirect_path() -> void:
 	assert_eq(
 		screen_manager._provider_link_stage_after_eligibility(
-			"facebook", AuthManager.FACEBOOK_LINK_ROUTE_BROWSER
+			"facebook", AuthManager.FACEBOOK_LINK_ROUTE_WEB_SDK
 		),
-		"launch"
+		""
 	)
 	assert_eq(
 		screen_manager._provider_link_stage_after_eligibility(
@@ -524,52 +524,44 @@ func test_facebook_eligibility_routes_web_to_browser_and_android_to_native() -> 
 		"launch"
 	)
 
-func test_resumed_web_facebook_callback_uses_supabase_commit_and_finalizer() -> void:
+func test_web_facebook_credential_uses_subject_preflight_and_credential_commit() -> void:
 	AuthManager._apply_session({
 		"access_token": "guest-access",
 		"refresh_token": "guest-refresh",
 		"expires_in": 3600,
 		"user": {"id": "guest-user", "is_anonymous": true}
 	})
-	assert_eq(AuthManager._stage_link_session({
-		"access_token": "linked-facebook-access",
-		"refresh_token": "linked-facebook-refresh",
-		"expires_in": 3600,
-		"user": {
-			"id": "guest-user",
-			"is_anonymous": false,
-			"app_metadata": {"provider": "facebook"}
-		}
-	}, {
-		"purpose": AuthManager.FLOW_LINK,
-		"provider": "facebook",
-		"pre_link_user_id": "guest-user",
-		"state": "facebook-link-state"
-	}), AuthManager.REASON_NONE)
-	AuthManager.last_provider_link_provider = "facebook"
-	AuthManager.last_provider_link_reason = AuthManager.REASON_NONE
-	AuthManager.provider_link_result_pending = true
-	screen_manager._resume_provider_link_callback()
-
-	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
-	assert_eq(screen_manager.provider_link_stage, "commit")
-	assert_false(screen_manager.provider_link_waiting_for_server_result)
-	assert_true(screen_manager.account_link_readiness_pending)
-	assert_true(NetworkManager.is_connecting)
-
 	_acknowledge_account_profile_readiness()
+	screen_manager.show_account_screen()
+	await get_tree().process_frame
 	var socket = NetworkManager.ws
+	var expires_at := int(Time.get_unix_time_from_system()) + 3600
+	assert_true(AuthManager._stage_native_facebook_link_credential("web-facebook-token", expires_at))
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "facebook_credential"
+
+	screen_manager._on_facebook_link_credential_ready("web-facebook-token")
 
 	assert_true(screen_manager.provider_link_waiting_for_server_result)
 	assert_eq(socket.sent_messages.size(), 1)
 	assert_eq(socket.sent_messages[0], {
-		"type": "provider_link_commit",
+		"type": "provider_link_preflight",
 		"provider": "facebook",
-		"accessToken": "linked-facebook-access"
+		"providerCredential": "web-facebook-token"
 	})
-	assert_false(socket.sent_messages[0].has("providerCredential"))
+	assert_false(socket.sent_messages[0].has("accessToken"))
 	assert_eq(AuthManager.access_token_value, "guest-access")
 	assert_true(AuthManager.is_anonymous)
+
+	screen_manager._on_provider_link_preflight_result({
+		"provider": "facebook", "result": "allowed"
+	})
+	assert_eq(socket.sent_messages.size(), 2)
+	assert_eq(socket.sent_messages[1], {
+		"type": "provider_link_commit",
+		"provider": "facebook",
+		"providerCredential": "web-facebook-token"
+	})
 
 	screen_manager._on_provider_link_commit_result({
 		"provider": "facebook", "result": "accepted"
@@ -578,8 +570,8 @@ func test_resumed_web_facebook_callback_uses_supabase_commit_and_finalizer() -> 
 	assert_eq(AuthManager.user_id, "guest-user")
 	assert_false(AuthManager.is_anonymous)
 	assert_eq(AuthManager.current_provider, "facebook")
-	assert_eq(AuthManager.access_token_value, "linked-facebook-access")
-	assert_eq(AuthManager.facebook_access_token_value, "")
+	assert_eq(AuthManager.access_token_value, "")
+	assert_eq(AuthManager.facebook_access_token_value, "web-facebook-token")
 	assert_false(AuthManager.has_pending_provider_link())
 	AuthManager.sign_out()
 
@@ -613,18 +605,6 @@ func test_facebook_link_stage_diagnostics_keep_conflicts_and_transport_semantics
 		)
 	)
 	assert_eq(account.error_label.text, "Could not link your account. [F3]")
-
-	AuthManager.last_provider_link_provider = "facebook"
-	AuthManager.last_provider_link_reason = AuthManager.REASON_REJECTED
-	AuthManager.provider_link_result_pending = true
-	screen_manager._on_provider_link_completed(AuthManager.REASON_REJECTED)
-	assert_eq(account.error_label.text, "Could not link your account. [F4]")
-
-	AuthManager.last_provider_link_provider = "facebook"
-	AuthManager.last_provider_link_reason = AuthManager.REASON_NONE
-	AuthManager.provider_link_result_pending = true
-	screen_manager._on_provider_link_completed(AuthManager.REASON_NONE)
-	assert_eq(account.error_label.text, "Could not link your account. [F5]")
 
 	screen_manager.provider_link_pending_provider = "facebook"
 	screen_manager.provider_link_stage = "commit"
