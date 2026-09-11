@@ -123,7 +123,7 @@ func _update_briefing(level: int, target_height: int, raw_side_quest: Variant) -
 	if quest_label != null:
 		quest_label.visible = quest_text != ""
 		quest_label.text = "QUEST · " + quest_text if quest_text != "" else ""
-		_fit_briefing_card_height()
+		call_deferred("_fit_briefing_card_height")
 
 func _fit_briefing_card_height() -> void:
 	if briefing_card == null:

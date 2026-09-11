@@ -25,7 +25,7 @@ func before_each() -> void:
 	network_stub = NetworkStub.new()
 	harness.main.inventory.network = network_stub
 
-func _state(state: String, state_remaining_ms: int = 4500) -> Dictionary:
+func _state(state: String, state_remaining_ms: int = 4500, side_quest_label: String = "Reach the top") -> Dictionary:
 	return {
 		"state": state,
 		"stateRemainingMs": state_remaining_ms,
@@ -36,14 +36,14 @@ func _state(state: String, state_remaining_ms: int = 4500) -> Dictionary:
 		"level": 2,
 		"impactLevel": 2,
 		"impactInterval": 3,
-		"sideQuest": {"label": "Reach the top"},
+		"sideQuest": {"label": side_quest_label},
 		"players": [],
 		"towerBlocks": [],
 		"scoreEvents": []
 	}
 
-func _apply_ready(state_remaining_ms: int = 4500) -> void:
-	harness.main.update_game_state(_state("starting", state_remaining_ms))
+func _apply_ready(state_remaining_ms: int = 4500, side_quest_label: String = "Reach the top") -> void:
+	harness.main.update_game_state(_state("starting", state_remaining_ms, side_quest_label))
 	harness.main.inventory.update_inventory_ui([SHAPE_BLOCK_FIXTURE], 3)
 
 func _apply_playing() -> void:
@@ -69,6 +69,25 @@ func test_ready_briefing_keeps_the_full_round_clock_and_overlay_passive() -> voi
 	var briefing_rect := (harness.find("ReadyBriefingCard") as Control).get_global_rect()
 	assert_gte(briefing_rect.position.x, 0.0)
 	assert_lte(briefing_rect.end.x, 320.0, "The compact briefing stays inside a narrow mobile viewport.")
+
+func test_long_quest_does_not_widen_the_ready_briefing_card() -> void:
+	_apply_ready()
+	await get_tree().process_frame
+	var briefing_card := harness.find("ReadyBriefingCard") as Control
+	var quest_label := harness.find("ReadyQuestLabel") as Label
+	var countdown_label := harness.find("StartCountdownLabel") as Label
+	var compact_width := briefing_card.size.x
+	var compact_height := briefing_card.size.y
+	var countdown_position := countdown_label.global_position
+	assert_eq(quest_label.get_visible_line_count(), 1)
+
+	_apply_ready(4500, "Build a perfectly balanced tower all the way to the sky while protecting every teammate from each incoming impact wave.")
+	await get_tree().process_frame
+
+	assert_eq(briefing_card.size.x, compact_width, "Long quest copy must not widen the fixed READY briefing card.")
+	assert_lte(quest_label.get_visible_line_count(), 2)
+	assert_gte(briefing_card.size.y, compact_height)
+	assert_eq(countdown_label.global_position, countdown_position)
 
 func test_countdown_uses_the_current_authoritative_interval_without_local_unlock() -> void:
 	_apply_ready(3000)
