@@ -3,9 +3,9 @@ set -euo pipefail
 
 readonly SEOUL_SOURCE_PROJECT_REF="lfvbxkidatmfhjbmcgyq"
 readonly SINGAPORE_PRODUCTION_PROJECT_REF="kweqwprbahlfoznyzlvf"
-# Populated after Singapore Development is provisioned. Leaving this empty
-# deliberately blocks every Development deployment until its exact ref exists.
-readonly SINGAPORE_DEVELOPMENT_PROJECT_REF=""
+# Singapore Development is independent from Production and Seoul. Development
+# deployments may use only this provisioned Singapore project.
+readonly SINGAPORE_DEVELOPMENT_PROJECT_REF="mlanmibqvffbshuxkfff"
 
 die() {
   echo "error: $*" >&2

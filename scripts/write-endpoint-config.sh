@@ -5,8 +5,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_FILE="$REPO_ROOT/src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd"
 readonly SEOUL_SOURCE_PROJECT_REF="lfvbxkidatmfhjbmcgyq"
 readonly SINGAPORE_PRODUCTION_PROJECT_REF="kweqwprbahlfoznyzlvf"
-# Populated together with the deployment guard after Development is provisioned.
-readonly SINGAPORE_DEVELOPMENT_PROJECT_REF=""
+# Keep client builds on the same independently provisioned Singapore
+# Development project required by the server deployment guard.
+readonly SINGAPORE_DEVELOPMENT_PROJECT_REF="mlanmibqvffbshuxkfff"
 
 : "${CORP_TOWER_WS_PRIMARY:?CORP_TOWER_WS_PRIMARY must be set (e.g. wss://wsplaytod.galaxxigames.com)}"
 CORP_TOWER_DEBUG_UI="${CORP_TOWER_DEBUG_UI:-true}"

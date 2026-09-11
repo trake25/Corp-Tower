@@ -10,6 +10,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const GUARD = join(ROOT, 'scripts/verify-supabase-environment.sh');
 const PRODUCTION_REF = 'kweqwprbahlfoznyzlvf';
 const SEOUL_REF = 'lfvbxkidatmfhjbmcgyq';
+const DEVELOPMENT_REF = 'mlanmibqvffbshuxkfff';
 const SECRET_SENTINEL = 'legacy.super-secret-do-not-log.key';
 
 const REQUIRED_PATHS = [
@@ -108,6 +109,21 @@ function productionEnvironment(overrides = {}) {
   };
 }
 
+function developmentEnvironment(overrides = {}) {
+  return {
+    TOD_DATA_ENVIRONMENT: 'development',
+    SUPABASE_PROJECT_REF: DEVELOPMENT_REF,
+    SUPABASE_URL: `https://${DEVELOPMENT_REF}.supabase.co`,
+    SUPABASE_SERVICE_ROLE_KEY: SECRET_SENTINEL,
+    SUPABASE_ANON_KEY: 'legacy.development-client.key',
+    SUPABASE_AUTH_REQUIRED: 'true',
+    PLAYER_IDENTITY_HMAC_SECRET: 'test-development-hmac',
+    PLAYER_IDENTITY_HMAC_KEY_VERSION: '1',
+    PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION: '0',
+    ...overrides,
+  };
+}
+
 function runGuard(harness, args, overrides = {}) {
   return spawnSync(GUARD, args, {
     cwd: ROOT,
@@ -115,6 +131,17 @@ function runGuard(harness, args, overrides = {}) {
     env: {
       ...harness.env,
       ...productionEnvironment(overrides),
+    },
+  });
+}
+
+function runDevelopmentGuard(harness, args, overrides = {}) {
+  return spawnSync(GUARD, args, {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: {
+      ...harness.env,
+      ...developmentEnvironment(overrides),
     },
   });
 }
@@ -141,7 +168,16 @@ test('the guard reports a missing durable API surface without exposing credentia
   assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /super-secret-do-not-log/);
 });
 
-test('the guard rejects cross-environment, source, unprovisioned, and incompatible-key inputs', async t => {
+test('the guard accepts only the provisioned Singapore Development environment', t => {
+  const harness = createHarness(t);
+  const result = runDevelopmentGuard(harness, ['development', '--require-client-key', '--require-hmac']);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, new RegExp(`Verified Supabase development environment \\(${DEVELOPMENT_REF}\\)`));
+  assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /super-secret-do-not-log/);
+});
+
+test('the guard rejects cross-environment, Seoul, mismatched Development, and incompatible-key inputs', async t => {
   const cases = [
     {
       name: 'wrong environment marker',
@@ -159,14 +195,36 @@ test('the guard rejects cross-environment, source, unprovisioned, and incompatib
       message: /Seoul migration source cannot be used/,
     },
     {
-      name: 'unprovisioned Development',
+      name: 'Production project used for Development',
       args: ['development'],
       env: {
         TOD_DATA_ENVIRONMENT: 'development',
-        SUPABASE_PROJECT_REF: 'abcdefghijklmnopqrst',
-        SUPABASE_URL: 'https://abcdefghijklmnopqrst.supabase.co',
+        SUPABASE_PROJECT_REF: PRODUCTION_REF,
+        SUPABASE_URL: `https://${PRODUCTION_REF}.supabase.co`,
       },
-      message: /Singapore Development is not provisioned/,
+      message: new RegExp(`development must use Supabase project ref '${DEVELOPMENT_REF}'`),
+      development: true,
+    },
+    {
+      name: 'Seoul project used for Development',
+      args: ['development'],
+      env: {
+        TOD_DATA_ENVIRONMENT: 'development',
+        SUPABASE_PROJECT_REF: SEOUL_REF,
+        SUPABASE_URL: `https://${SEOUL_REF}.supabase.co`,
+      },
+      message: /Seoul migration source cannot be used/,
+      development: true,
+    },
+    {
+      name: 'Development URL/ref mismatch',
+      args: ['development'],
+      env: {
+        TOD_DATA_ENVIRONMENT: 'development',
+        SUPABASE_URL: `https://${PRODUCTION_REF}.supabase.co`,
+      },
+      message: /SUPABASE_URL does not match SUPABASE_PROJECT_REF/,
+      development: true,
     },
     {
       name: 'opaque server key',
@@ -185,7 +243,9 @@ test('the guard rejects cross-environment, source, unprovisioned, and incompatib
   for (const scenario of cases) {
     await t.test(scenario.name, subtest => {
       const harness = createHarness(subtest);
-      const result = runGuard(harness, scenario.args, scenario.env);
+      const result = scenario.development
+        ? runDevelopmentGuard(harness, scenario.args, scenario.env)
+        : runGuard(harness, scenario.args, scenario.env);
       assert.equal(result.status, 1);
       assert.match(result.stderr, scenario.message);
       assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /super-secret-do-not-log/);
