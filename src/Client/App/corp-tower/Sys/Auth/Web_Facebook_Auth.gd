@@ -88,15 +88,21 @@ func _begin_login_script() -> String:
   try {
     window.FB.login(function (response) {
       bridge.loginPending = false;
+      const resolve = function (result) {
+        bridge.result = result;
+        try {
+          window.focus();
+        } catch (_) {}
+      };
       const auth = response && response.authResponse;
       if (!auth || response.status !== "connected") {
-        bridge.result = { reason: response && response.status === "unknown" ? "cancelled" : "rejected" };
+        resolve({ reason: response && response.status === "unknown" ? "cancelled" : "rejected" });
         return;
       }
-      bridge.result = {
+      resolve({
         access_token: String(auth.accessToken || ""),
         expires_in: Number(auth.expiresIn || 0)
-      };
+      });
     }, { scope: "public_profile", auth_type: "reauthenticate" });
     return JSON.stringify({ status: "started" });
   } catch (_) {

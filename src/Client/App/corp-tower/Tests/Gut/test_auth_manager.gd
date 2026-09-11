@@ -461,7 +461,13 @@ func test_web_facebook_sdk_uses_browser_credentials_without_redirect_oauth() -> 
 	assert_true(login.contains("authResponse"))
 	assert_true(login.contains("expiresIn"))
 	assert_true(login.contains("reauthenticate"))
+	assert_true(login.contains("bridge.result = result"))
+	assert_true(login.contains("window.focus()"))
+	assert_lt(login.find("bridge.result = result"), login.find("window.focus()"))
+	assert_eq(login.count("resolve({"), 2)
 	assert_false(login.contains("window.location"))
+	assert_false(login.contains("window.open"))
+	assert_false(login.contains("window.close"))
 	assert_false(login.contains("supabase"))
 
 func test_web_facebook_link_preflight_starts_sdk_without_native_fallthrough() -> void:
