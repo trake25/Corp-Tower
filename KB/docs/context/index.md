@@ -186,6 +186,7 @@ implicitly widen KB adjacency.
 | `hud.players.impact-bars` | [ui-hud.md#impact-bars](./ui-hud.md#impact-bars) | Impact progress, contribution bar |
 | `hud.players.latency` | [ui-hud.md#latency-presentation](./ui-hud.md#latency-presentation) | latency indicator |
 | `hud.players.presence` | [ui-hud.md#player-presence](./ui-hud.md#player-presence) | disconnected player UI, LEFT player |
+| `hud.round-start.ready` | [ui-hud.md#round-start-ready](./ui-hud.md#round-start-ready) | Round Start Overlay, READY briefing, Start Countdown |
 | `hud.spectator.presentation` | [ui-hud.md#spectator-presentation](./ui-hud.md#spectator-presentation) | spectator HUD, Bot Insight |
 | `hud.tower.collapse.presentation` | [ui-hud.md#collapse-presentation](./ui-hud.md#collapse-presentation) | tower collapse UI, collapse framing |
 | `hud.tower.collapse.recovery` | [ui-hud.md#collapse-recovery](./ui-hud.md#collapse-recovery) | collapse camera recovery, pan after collapse |

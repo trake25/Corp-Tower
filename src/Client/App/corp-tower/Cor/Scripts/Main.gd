@@ -19,6 +19,7 @@ const QuickChatControllerScript = preload("res://Cor/Scripts/GameUi/QuickChatCon
 const PowerControllerScript = preload("res://Cor/Scripts/GameUi/PowerController.gd")
 const InventoryControllerScript = preload("res://Cor/Scripts/GameUi/InventoryController.gd")
 const TopBarControllerScript = preload("res://Cor/Scripts/GameUi/TopBarController.gd")
+const RoundStartOverlayControllerScript = preload("res://Cor/Scripts/GameUi/RoundStartOverlayController.gd")
 const TowerNavigationControllerScript = preload("res://Cor/Scripts/GameUi/TowerNavigationController.gd")
 const PresentationVisibilityScript = preload("res://Cor/Scripts/GameUi/PresentationVisibility.gd")
 const VisualHooksScript = preload("res://Cor/Scripts/GameUi/VisualHooks.gd")
@@ -52,6 +53,7 @@ var chat
 var power
 var inventory
 var top_bar
+var round_start_overlay
 var tower_navigation
 var presentation_visibility
 var visual_hooks
@@ -98,6 +100,8 @@ func _ready() -> void:
 	add_child(inventory)
 	top_bar = TopBarControllerScript.new()
 	add_child(top_bar)
+	round_start_overlay = RoundStartOverlayControllerScript.new()
+	add_child(round_start_overlay)
 	tower_navigation = TowerNavigationControllerScript.new()
 	add_child(tower_navigation)
 	presentation_visibility = PresentationVisibilityScript.new()
@@ -119,6 +123,11 @@ func _ready() -> void:
 	demo_mode_label.visible = EndpointConfig.DEMO_MODE_ENABLED
 
 	inventory.setup(players_ctx, match_state, tuning, NetworkManager, popovers, tutorial, accessibility)
+	inventory.set_ready_presentation_handlers(
+		round_start_overlay.update_ready_locks,
+		round_start_overlay.reject_placement_attempt,
+		round_start_overlay.clear_ready_rejection_feedback
+	)
 	top_bar.setup(match_state)
 	debug_panel.setup(tuning, NetworkManager, request_tutorial)
 	latency_indicator.setup(NetworkManager)
@@ -227,6 +236,7 @@ func bind_ui_nodes() -> void:
 	bot_insight_button = binder.optional_node("BotInsightButton") as Button
 
 	top_bar.bind_nodes(binder)
+	round_start_overlay.bind_nodes(binder)
 	tower_navigation.bind_nodes(binder)
 	presentation_visibility.bind_nodes(binder)
 	inventory.bind_nodes(binder)
@@ -246,8 +256,8 @@ func reset_ui() -> void:
 	_apply_spectator_mode(false)
 	top_bar.reset_indicators()
 	match_state.current_match_state = ""
-	inventory.last_placement_sent_at_ms = 0
-	inventory.cancel_block_drag()
+	inventory.clear_for_new_round()
+	round_start_overlay.reset()
 	roster.update_impact_status_ui({})
 	top_bar.set_top_indicator_progress(0, 0)
 	tower_stack.clear_tower()
@@ -258,8 +268,6 @@ func reset_ui() -> void:
 	score_popups.reset_presence_tracking()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
-	quest.reset_freeze_quest_popover()
-	inventory.cancel_block_drag()
 	score_popups.seen_score_event_ids.clear()
 	summary.last_level_summary_key = ""
 	match_state.current_level = 0
@@ -318,7 +326,7 @@ func _on_room_joined(data) -> void:
 func update_room(data) -> void:
 	_apply_spectator_mode(bool(data.get("spectator", NetworkManager.spectator_active)))
 	players_ctx.roster = data.get("roster", [])
-	top_bar.update_top_bar_display(int(data.get("level", 0)), int(data.get("level", 0)), "starting", 0)
+	top_bar.reset_indicators()
 	match_state.current_level = int(data.get("level", 0))
 	score_popups.seen_score_event_ids.clear()
 	score_popups.reset_presence_tracking()
@@ -327,7 +335,7 @@ func update_room(data) -> void:
 	visual_fx.reset()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
-	quest.reset_freeze_quest_popover()
+	round_start_overlay.reset()
 	top_bar.set_top_indicator_progress(0, int(data.get("targetHeight", 0)))
 	tower_stack.clear_tower()
 	tower_navigation.reset()
@@ -351,8 +359,8 @@ func update_room_closed(_data) -> void:
 	_apply_spectator_mode(false)
 	match_state.current_match_state = ""
 	players_ctx.roster = []
-	inventory.last_placement_sent_at_ms = 0
-	inventory.cancel_block_drag()
+	inventory.clear_for_new_round()
+	round_start_overlay.reset()
 	top_bar.reset_indicators()
 	roster.update_impact_status_ui({})
 	top_bar.set_top_indicator_progress(0, 0)
@@ -366,7 +374,6 @@ func update_room_closed(_data) -> void:
 	visual_fx.reset()
 	summary.cancel_pending_level_summary()
 	summary.hide_level_summary()
-	quest.reset_freeze_quest_popover()
 	score_popups.seen_score_event_ids.clear()
 	summary.last_level_summary_key = ""
 	match_state.current_level = 0
@@ -409,6 +416,8 @@ func update_game_state(data) -> void:
 		inventory.cancel_block_drag()
 
 	var seconds_remaining: int = int(data.get("secondsRemaining", 0))
+	var state_remaining_ms: int = int(data.get("stateRemainingMs", seconds_remaining * 1000))
+	var level_duration_ms: int = int(data.get("levelDurationMs", 0))
 	var current_height: int = int(data.get("currentHeight", 0))
 	var target_height: int = int(data.get("targetHeight", 0))
 	var incoming_level: int = int(data.get("level", 0))
@@ -442,11 +451,17 @@ func update_game_state(data) -> void:
 	players_ctx.update_from_players(players)
 	score_popups.process_player_presence(players, bool(data.get("snapshot", false)))
 	quest.update_quest_chip(data.get("sideQuest", {}))
-	quest.update_freeze_quest_popover(state, data.get("sideQuest", {}))
 	if tower_stack.has_method("set_player_color_map"):
 		tower_stack.call("set_player_color_map", players_ctx.color_map)
 
-	top_bar.update_top_bar_display(incoming_level, impact_level, state, seconds_remaining)
+	top_bar.update_top_bar_display(
+		incoming_level,
+		impact_level,
+		state,
+		seconds_remaining,
+		state_remaining_ms,
+		level_duration_ms
+	)
 	top_bar.set_top_indicator_progress(current_height, target_height)
 	var stability_warning_threshold: int = int(data.get("towerStabilityWarningThreshold", 75))
 	var stability_critical_threshold: int = int(data.get("towerStabilityCriticalThreshold", 30))
@@ -501,6 +516,19 @@ func update_game_state(data) -> void:
 	inventory.update_inventory_ui(
 		my_blocks,
 		int(data.get("activeInventorySlots", InventoryControllerScript.MAX_INVENTORY_SLOTS))
+	)
+	round_start_overlay.apply_state(
+		state,
+		incoming_level,
+		target_height,
+		data.get("sideQuest", {}),
+		state_remaining_ms,
+		level_duration_ms
+	)
+	inventory.apply_authoritative_state(
+		state,
+		incoming_level,
+		bool(data.get("snapshot", false))
 	)
 	power.last_power_inventory = my_power
 	chat.quick_chat_templates = data.get("quickChatTemplates", chat.quick_chat_templates)

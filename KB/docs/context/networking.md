@@ -199,7 +199,8 @@ adjacent: hud.controller.state-application
 -->
 ## Snapshot contract
 
-`game_state` is complete enough to redraw or resume the authoritative room without local gameplay reconstruction. It carries lifecycle/deadlines, grid and site, inventory/supply, tower lifecycle and support presentation, component summaries/pose, roster/scores, synchronized visual hooks, transient event arrays, side quest, summaries, and canonical Impact status. Observer delivery marks the spectator view and may add one transient bot insight; authoritative Level Summary may include compact bot behavior totals.
+`game_state` is complete enough to redraw or resume the authoritative room without local gameplay reconstruction. It carries lifecycle/deadlines, grid and site, inventory/supply, tower lifecycle and support presentation, component summaries/pose, roster/scores, synchronized visual hooks, transient event arrays, side quest, summaries, and canonical Impact status.
+Observer delivery marks the spectator view and may add one transient bot insight; authoritative Level Summary may include compact bot behavior totals. Lifecycle timing carries both `stateRemainingMs` for the active lifecycle deadline and `levelDurationMs` for the authoritative full round duration, so READY countdown presentation and the paused round clock do not overload the same value.
 
 <!-- kb
 id: network.state.grid-site

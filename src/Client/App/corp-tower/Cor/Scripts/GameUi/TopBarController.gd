@@ -5,8 +5,6 @@ const LevelBadgeSafeTexture = preload("res://Cor/Art/9-Play/play-safe-badge.png"
 const RoundTimeNormalTexture = preload("res://Cor/Art/9-Play/play-timer-round.png")
 const RoundTimeFreezeTexture = preload("res://Cor/Art/9-Play/play-timer-freeze.png")
 const TopIndicatorFillOverTexture = preload("res://Cor/Themes/TopIndicatorFillOver.tres")
-const FREEZE_BLINK_HALF_SECONDS := 0.35
-const FREEZE_BLINK_COLOR := Color(0.82, 0.12, 0.12, 1.0)
 const STABILITY_GREEN := Color("#166534")
 const STABILITY_YELLOW := Color("#B45309")
 const STABILITY_RED := Color("#B91C1C")
@@ -23,8 +21,8 @@ var top_indicator_label: Label
 var tower_stability_label: Label
 var timer_deadline_ms: int = 0
 var timer_shown_seconds: int = -1
-var freeze_blink_tween: Tween
-var freeze_blink_base_color: Color = Color.BLACK
+var known_round_duration_seconds: int = -1
+var known_round_duration_level: int = -1
 var stability_feedback_mode := "warnings_only"
 var stability_warning_threshold := 75
 var stability_critical_threshold := 30
@@ -52,36 +50,10 @@ func reset_indicators() -> void:
 		level_badge_texture.texture = LevelBadgeNormalTexture
 	if round_time_texture != null:
 		round_time_texture.texture = RoundTimeNormalTexture
-	stop_freeze_blink()
-
-func start_freeze_blink() -> void:
-	if timer_label == null:
-		return
-
-	if freeze_blink_tween != null and is_instance_valid(freeze_blink_tween) and freeze_blink_tween.is_running():
-		return
-
-	stop_freeze_blink()
-	freeze_blink_base_color = timer_label.get_theme_color("font_color")
-	freeze_blink_tween = create_tween()
-	freeze_blink_tween.set_loops()
-	freeze_blink_tween.tween_property(
-		timer_label, "theme_override_colors/font_color", FREEZE_BLINK_COLOR, FREEZE_BLINK_HALF_SECONDS
-	)
-	freeze_blink_tween.tween_property(
-		timer_label, "theme_override_colors/font_color", freeze_blink_base_color, FREEZE_BLINK_HALF_SECONDS
-	)
-
-func stop_freeze_blink() -> void:
-	var was_active: bool = freeze_blink_tween != null and is_instance_valid(freeze_blink_tween)
-
-	if was_active:
-		freeze_blink_tween.kill()
-
-	freeze_blink_tween = null
-
-	if was_active and timer_label != null:
-		timer_label.add_theme_color_override("font_color", freeze_blink_base_color)
+	timer_deadline_ms = 0
+	timer_shown_seconds = -1
+	known_round_duration_seconds = -1
+	known_round_duration_level = -1
 
 func tick_round_timer() -> void:
 	if timer_label == null or timer_deadline_ms <= 0:
@@ -132,26 +104,43 @@ func set_top_indicator_progress(current_height: int, target_height: int) -> void
 		else:
 			top_indicator_label.text = "TOP (%d/%d)" % [current_height, target_height]
 
-func update_top_bar_display(level: int, impact_level: int, state: String, seconds_remaining: int) -> void:
+func update_top_bar_display(
+	level: int,
+	impact_level: int,
+	state: String,
+	seconds_remaining: int,
+	state_remaining_ms: int = -1,
+	level_duration_ms: int = 0
+) -> void:
 	var is_impact_level: bool = level > 1 and (level - 1) % match_state.impact_interval == 0
-	var is_frozen: bool = state != "playing"
+	var lifecycle_remaining_ms: int = state_remaining_ms
+	if lifecycle_remaining_ms < 0:
+		lifecycle_remaining_ms = maxi(0, seconds_remaining) * 1000
+	var lifecycle_seconds: int = int(ceil(float(lifecycle_remaining_ms) / 1000.0))
+	if level_duration_ms > 0:
+		known_round_duration_seconds = int(ceil(float(level_duration_ms) / 1000.0))
+		known_round_duration_level = level
 
 	level_label.text = str(level) if level > 0 else "-"
-
-	timer_deadline_ms = Time.get_ticks_msec() + seconds_remaining * 1000
-	timer_shown_seconds = seconds_remaining
-	timer_label.text = format_clock(seconds_remaining)
 
 	if level_badge_texture != null:
 		level_badge_texture.texture = LevelBadgeSafeTexture if is_impact_level else LevelBadgeNormalTexture
 
+	if state == "starting":
+		var paused_seconds := known_round_duration_seconds if known_round_duration_level == level else -1
+		timer_deadline_ms = 0
+		timer_shown_seconds = paused_seconds
+		timer_label.text = format_clock(paused_seconds) if paused_seconds >= 0 else "—"
+		if round_time_texture != null:
+			round_time_texture.texture = RoundTimeNormalTexture
+		return
+
+	timer_deadline_ms = Time.get_ticks_msec() + lifecycle_remaining_ms
+	timer_shown_seconds = lifecycle_seconds
+	timer_label.text = format_clock(lifecycle_seconds)
+	var is_frozen: bool = state != "playing"
 	if round_time_texture != null:
 		round_time_texture.texture = RoundTimeFreezeTexture if is_frozen else RoundTimeNormalTexture
-
-	if state == "starting":
-		start_freeze_blink()
-	else:
-		stop_freeze_blink()
 
 func update_tower_stability_ui(stability: int, diagnostics: Variant, components: Variant = []) -> void:
 	var displayed_stability: int = stability

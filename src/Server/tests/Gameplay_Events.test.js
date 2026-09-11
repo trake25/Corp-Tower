@@ -944,3 +944,30 @@ test("hydrated Game Over restores only its terminal close timer", () => {
     assert.ok(resumed.nextLevelTimer);
     resumed.clearTimers();
 });
+
+test("game state separates lifecycle remainder from the full round duration", () => {
+    const { engine } = createPlayingEngine(2, 12);
+    const levelDurationMs = 90000;
+
+    engine.room.state = "starting";
+    engine.room.startsAt = Date.now() + 3200;
+    engine.room.levelDurationMs = levelDurationMs;
+    engine.room.endsAt = engine.room.startsAt + levelDurationMs;
+
+    const starting = engine.buildGameState();
+
+    assert.equal(starting.state, "starting");
+    assert.equal(starting.levelDurationMs, levelDurationMs);
+    assert.ok(starting.stateRemainingMs > 0 && starting.stateRemainingMs <= 3200);
+    assert.equal(starting.secondsRemaining, Math.ceil(starting.stateRemainingMs / 1000));
+
+    engine.room.state = "playing";
+    engine.room.endsAt = Date.now() + 41000;
+
+    const playing = engine.buildGameState();
+
+    assert.equal(playing.state, "playing");
+    assert.equal(playing.levelDurationMs, levelDurationMs);
+    assert.ok(playing.stateRemainingMs > 0 && playing.stateRemainingMs <= 41000);
+    assert.equal(playing.secondsRemaining, Math.ceil(playing.stateRemainingMs / 1000));
+});

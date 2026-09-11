@@ -14,6 +14,7 @@
 [ext_resource type="Texture2D" path="res://Cor/Art/9-Play/ic-power.png" id="22_power"]
 [ext_resource type="Script" path="res://Cor/Scripts/PressTintButton.gd" id="23_press_tint"]
 [ext_resource type="Texture2D" path="res://Cor/Art/9-Play/ic-red-arrows.png" id="24_weak_support_arrows"]
+[ext_resource type="Script" path="res://Cor/Scripts/GameUi/ReadyLockOverlay.gd" id="25_ready_lock"]
 
 [sub_resource type="Gradient" id="Gradient_TopBarFill"]
 colors = PackedColorArray(0.192, 0.725, 0.271, 1, 0.714, 0.992, 0.29, 1)
@@ -413,6 +414,117 @@ text = "TOP"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="RoundStartOverlay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 30
+
+[node name="ReadyBriefingCard" type="PanelContainer" parent="RoundStartOverlay"]
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -144.0
+offset_top = 178.0
+offset_right = 144.0
+offset_bottom = 266.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"GlassPanel"
+
+[node name="ReadyBriefingMargin" type="MarginContainer" parent="RoundStartOverlay/ReadyBriefingCard"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 9
+
+[node name="ReadyBriefingRows" type="VBoxContainer" parent="RoundStartOverlay/ReadyBriefingCard/ReadyBriefingMargin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 1
+
+[node name="ReadyHeadingLabel" type="Label" parent="RoundStartOverlay/ReadyBriefingCard/ReadyBriefingMargin/ReadyBriefingRows"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.025, 0.47, 0.68, 1)
+theme_override_font_sizes/font_size = 21
+text = "READY"
+horizontal_alignment = 1
+
+[node name="ReadyLevelTargetLabel" type="Label" parent="RoundStartOverlay/ReadyBriefingCard/ReadyBriefingMargin/ReadyBriefingRows"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.06, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+text = "LEVEL 1 · TARGET 0"
+horizontal_alignment = 1
+
+[node name="ReadyQuestLabel" type="Label" parent="RoundStartOverlay/ReadyBriefingCard/ReadyBriefingMargin/ReadyBriefingRows"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.08, 0.12, 0.15, 1)
+theme_override_font_sizes/font_size = 11
+text = "QUEST ·"
+horizontal_alignment = 1
+text_overrun_behavior = 3
+
+[node name="StartCountdownLabel" type="Label" parent="RoundStartOverlay"]
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -140.0
+offset_top = 392.0
+offset_right = 140.0
+offset_bottom = 482.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.78, 0.96, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.08, 0.12, 0.82)
+theme_override_constants/outline_size = 7
+theme_override_font_sizes/font_size = 68
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WaitForBuildLabel" type="Label" parent="RoundStartOverlay"]
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -139.0
+offset_right = 160.0
+offset_bottom = -111.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_type_variation = &"BoldLabel"
+theme_override_colors/font_color = Color(0.06, 0.11, 0.14, 1)
+theme_override_colors/font_outline_color = Color(0.92, 0.99, 1, 0.96)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 15
+text = "WAIT FOR BUILD!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="TowerStabilityLabel" type="Label" parent="." unique_id=1117939618]
 unique_name_in_owner = true
 visible = false
@@ -635,6 +747,18 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
+[node name="ReadyLockOverlay1" type="Control" parent="ActionRow/PlaceBlockButton1"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 10
+script = ExtResource("25_ready_lock")
+
 [node name="CardRows" type="VBoxContainer" parent="ActionRow/PlaceBlockButton1/CardMargin" unique_id=1195819121]
 layout_mode = 2
 mouse_filter = 2
@@ -677,6 +801,18 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
+[node name="ReadyLockOverlay2" type="Control" parent="ActionRow/PlaceBlockButton2"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 10
+script = ExtResource("25_ready_lock")
+
 [node name="CardRows" type="VBoxContainer" parent="ActionRow/PlaceBlockButton2/CardMargin" unique_id=1121205579]
 layout_mode = 2
 mouse_filter = 2
@@ -718,6 +854,18 @@ theme_override_constants/margin_left = 6
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
+
+[node name="ReadyLockOverlay3" type="Control" parent="ActionRow/PlaceBlockButton3"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 10
+script = ExtResource("25_ready_lock")
 
 [node name="CardRows" type="VBoxContainer" parent="ActionRow/PlaceBlockButton3/CardMargin" unique_id=1646897227]
 layout_mode = 2

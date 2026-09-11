@@ -10,8 +10,6 @@ var popover_blocked: Callable = Callable()
 var quest_chip: TextureButton
 var quest_popover: Control
 var last_side_quest: Dictionary = {}
-var freeze_popover_active: bool = false
-var freeze_popover_prev_auto_close: float = -1.0
 
 const REWARD_LABELS := {
 	"replenish": "Replenish",
@@ -70,44 +68,6 @@ func get_quest_summary_text(raw_side_quest: Variant) -> String:
 		lines.append("Unclaimed | Reward: " + get_reward_label(str(side_quest.get("rewardId", ""))))
 
 	return "\n".join(lines)
-
-func update_freeze_quest_popover(state: String, raw_side_quest: Variant) -> void:
-	var side_quest: Dictionary = raw_side_quest if typeof(raw_side_quest) == TYPE_DICTIONARY else {}
-	var label: String = str(side_quest.get("label", ""))
-	var should_be_active: bool = state == "starting" and label != ""
-
-	if should_be_active == freeze_popover_active:
-		return
-
-	freeze_popover_active = should_be_active
-
-	if should_be_active:
-		open_freeze_quest_popover()
-	else:
-		close_freeze_quest_popover()
-
-func reset_freeze_quest_popover() -> void:
-	freeze_popover_active = false
-	close_freeze_quest_popover()
-
-func open_freeze_quest_popover() -> void:
-	if quest_popover == null or popovers == null:
-		return
-
-	freeze_popover_prev_auto_close = float(quest_popover.get("auto_close_seconds"))
-	quest_popover.set("auto_close_seconds", 0.0)
-	open_quest_popover()
-
-func close_freeze_quest_popover() -> void:
-	if quest_popover == null:
-		return
-
-	if freeze_popover_prev_auto_close >= 0.0:
-		quest_popover.set("auto_close_seconds", freeze_popover_prev_auto_close)
-		freeze_popover_prev_auto_close = -1.0
-
-	if popovers != null and popovers.is_open(quest_popover):
-		popovers.close_active()
 
 func on_quest_chip_pressed() -> void:
 	if popover_blocked.is_valid() and bool(popover_blocked.call()):

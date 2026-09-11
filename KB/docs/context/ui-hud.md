@@ -125,7 +125,7 @@ source: src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd#open
 -->
 ## Shared popovers
 
-Chat, Power, and Quest use one anchored glass-popover behavior. Each positions from its trigger's live global rectangle; only one is open at a time. Trigger toggle, outside tap, and timer close the active card without pausing play. Quest can remain through starting freeze before normal auto-close resumes.
+Chat, Power, and Quest use one anchored glass-popover behavior. Each positions from its trigger's live global rectangle; only one is open at a time. Trigger toggle, outside tap, and timer close the active card without pausing play. READY/start uses the separate Round Start Overlay and never force-opens the Quest popover.
 
 <!-- kb
 id: hud.tower.pose
@@ -287,3 +287,19 @@ adjacent: testing.client.rendered
 ## Rendered verification
 
 Tower Stack drag/collapse framing, parallax continuity, and overlay ordering require rendered verification. Headless structural tests cannot establish the final player-visible frame.
+
+<!-- kb
+id: hud.round-start.ready
+alias: Round Start Overlay
+alias: READY briefing
+alias: Start Countdown
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd#apply_state
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd#_on_inventory_card_gui_input
+adjacent: gameplay.progression.timing
+adjacent: backend.engine.timers
+-->
+## Round start READY
+
+During authoritative `starting`, Play remains visible with the assigned opening hand, target, and current quest. The normal round timer is paused at the authoritative full level duration; the lifecycle start-delay countdown is a separate centered `3 → 2 → 1` presentation. Placement cards remain readable but explicitly READY-locked, and attempted placement gives restrained local lock feedback without arming, dragging, placing, or using cooldown visuals.
+
+Only authoritative `playing` removes the READY lock and permits placement. `BUILD!` is the transition cue for that same unlock and may finish its visual punch after input is already live. READY never uses danger-red freeze treatment, never enables manual tower inspection, and never force-opens the Quest popover.

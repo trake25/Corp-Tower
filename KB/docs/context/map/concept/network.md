@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## network.adapters.boundaries
 
-Owner: `KB/docs/context/networking.md:260-263` → **Adapter boundaries**
+Owner: `KB/docs/context/networking.md:261-264` → **Adapter boundaries**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -17,7 +17,7 @@ Adjacent concepts: `backend.authority.server`
 
 ## network.compatibility.deploy-together
 
-Owner: `KB/docs/context/networking.md:271-274` → **Compatibility boundary**
+Owner: `KB/docs/context/networking.md:272-275` → **Compatibility boundary**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -179,7 +179,7 @@ Adjacent concepts: `backend.lobby.connection`
 
 ## network.state.grid-site
 
-Owner: `KB/docs/context/networking.md:212-215` → **Grid and site state**
+Owner: `KB/docs/context/networking.md:213-216` → **Grid and site state**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -189,7 +189,7 @@ Adjacent concepts: `gameplay.tower.site`, `hud.placement.snapping`
 
 ## network.state.impact-status
 
-Owner: `KB/docs/context/networking.md:223-226` → **Impact status state**
+Owner: `KB/docs/context/networking.md:224-227` → **Impact status state**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -199,7 +199,7 @@ Adjacent concepts: `gameplay.impact.eligible`, `hud.players.impact-bars`
 
 ## network.state.revision
 
-Owner: `KB/docs/context/networking.md:247-250` → **State revision and resync**
+Owner: `KB/docs/context/networking.md:248-251` → **State revision and resync**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -210,7 +210,7 @@ Adjacent concepts: `network.session.recovery`
 
 ## network.state.snapshot
 
-Owner: `KB/docs/context/networking.md:200-203` → **Snapshot contract**
+Owner: `KB/docs/context/networking.md:200-204` → **Snapshot contract**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -220,7 +220,7 @@ Adjacent concepts: `backend.engine.lifecycle`, `hud.controller.state-application
 
 ## network.state.transient-events
 
-Owner: `KB/docs/context/networking.md:235-238` → **Transient events**
+Owner: `KB/docs/context/networking.md:236-239` → **Transient events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

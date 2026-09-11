@@ -19,8 +19,8 @@ Owner: `KB/docs/context/ui-hud.md:27-37` → **Controller architecture**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_ready` | 73 | `sed -n 61,93p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `bind_ui_nodes` | 218 | `sed -n 206,238p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_ready` | 75 | `sed -n 63,95p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `bind_ui_nodes` | 227 | `sed -n 215,247p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` | `require_node` | 9 | `sed -n 1,22p src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` |
 
 Adjacent concepts: `hud.controller.state-application`
@@ -31,7 +31,7 @@ Owner: `KB/docs/context/ui-hud.md:45-48` → **Parallel placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_aim_or_place` | 606 | `sed -n 594,626p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_aim_or_place` | 666 | `sed -n 654,686p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `hud.placement.armed`
 
@@ -41,7 +41,7 @@ Owner: `KB/docs/context/ui-hud.md:13-16` → **State application**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 392 | `sed -n 380,412p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 399 | `sed -n 387,419p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 
 Adjacent concepts: `network.state.snapshot`, `hud.controller.architecture`
 
@@ -112,7 +112,7 @@ Owner: `KB/docs/context/ui-hud.md:254-257` → **Armed placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `revalidate_armed_placement` | 641 | `sed -n 629,661p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `revalidate_armed_placement` | 701 | `sed -n 689,721p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `hud.controller.parallel-placement`
 
@@ -177,15 +177,26 @@ Owner: `KB/docs/context/ui-hud.md:72-75` → **Player presence**
 
 Adjacent concepts: `network.room.active-leave`
 
+## hud.round-start.ready
+
+Owner: `KB/docs/context/ui-hud.md:301-306` → **Round start READY**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd` | `apply_state` | 67 | `sed -n 55,87p src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_on_inventory_card_gui_input` | 214 | `sed -n 202,234p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+
+Adjacent concepts: `gameplay.progression.timing`, `backend.engine.timers`
+
 ## hud.spectator.presentation
 
 Owner: `KB/docs/context/ui-hud.md:61-64` → **Spectator presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 523 | `sed -n 511,543p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 546 | `sed -n 534,566p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `set_spectator_mode` | 459 | `sed -n 447,479p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 551 | `sed -n 539,571p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 574 | `sed -n 562,594p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `set_spectator_mode` | 510 | `sed -n 498,530p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 268 | `sed -n 256,288p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
 
 Adjacent concepts: `network.room.bot-spectator`, `hud.navigation.drop-top`, `hud.overlays.summary`

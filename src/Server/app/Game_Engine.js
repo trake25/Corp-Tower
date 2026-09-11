@@ -48,7 +48,7 @@ class GameEngine {
             return null;
         }
 
-        const placeableColumns = this.getPlaceableColumnRange();
+        const placeableColumns = this.getPlaceableColumnRange(); const stateRemainingMs = this.getRemainingMs();
         const gameState = {
             type: "game_state",
             stateRevision: Math.max(0, Number(this.room.stateRevision) || 0),
@@ -78,7 +78,7 @@ class GameEngine {
             sideQuest: this.room.sideQuest || null,
             powerEvents: options.powerEvents || [],
             towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,
-            secondsRemaining: Math.ceil(this.getRemainingMs() / 1000),
+            stateRemainingMs, levelDurationMs: Math.max(0, Number(this.room.levelDurationMs) || 0), secondsRemaining: Math.ceil(stateRemainingMs / 1000),
             lastLevelSummary: this.room.lastLevelSummary,
             scoreEvents: options.scoreEvents || [],
             quickChatEvents: options.quickChatEvents || [],

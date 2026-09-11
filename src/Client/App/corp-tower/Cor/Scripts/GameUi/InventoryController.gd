@@ -61,6 +61,12 @@ var is_armed: bool = false
 var last_tap_ms: int = 0
 var selected_card_style: StyleBoxFlat = null
 var spectator_mode := false
+var ready_locked := false
+var authoritative_state := ""
+var authoritative_level := -1
+var ready_lock_presentation: Callable = Callable()
+var ready_rejection_feedback: Callable = Callable()
+var clear_ready_rejection_feedback: Callable = Callable()
 
 func bind_nodes(binder) -> void:
 	draw_pile_name_label = binder.require_node("DrawPileNameLabel") as Label
@@ -121,6 +127,41 @@ func setup(
 				BlockPreviewScript.PreviewMode.FLOATING_DRAG
 			)
 
+func set_ready_presentation_handlers(
+	lock_presentation: Callable,
+	rejection_feedback: Callable,
+	clear_feedback: Callable
+) -> void:
+	ready_lock_presentation = lock_presentation
+	ready_rejection_feedback = rejection_feedback
+	clear_ready_rejection_feedback = clear_feedback
+	_sync_ready_lock_presentation()
+
+func apply_authoritative_state(state: String, level: int, force_round_cleanup: bool = false) -> void:
+	var is_new_ready_round := state == "starting" and (
+		force_round_cleanup
+		or authoritative_state != "starting"
+		or authoritative_level != level
+	)
+	if is_new_ready_round:
+		clear_for_new_round()
+
+	var was_ready_locked := ready_locked
+	ready_locked = state == "starting"
+	authoritative_state = state
+	authoritative_level = level
+	if was_ready_locked and !ready_locked and clear_ready_rejection_feedback.is_valid():
+		clear_ready_rejection_feedback.call()
+	_apply_selection_visuals()
+	_sync_ready_lock_presentation()
+
+func clear_for_new_round() -> void:
+	cancel_block_drag()
+	last_placement_sent_at_ms = 0
+	last_tap_ms = 0
+	if clear_ready_rejection_feedback.is_valid():
+		clear_ready_rejection_feedback.call()
+
 func _tower_brick_unit_size() -> float:
 	if tower_stack_fallback == null:
 		return 0.0
@@ -156,6 +197,9 @@ func tick() -> void:
 	_tick_selection_pulse()
 
 func on_block_pressed(index: int, column: int = -1, origin_y: int = -1) -> void:
+	if _is_ready_locked_card(index):
+		_reject_ready_placement(index)
+		return
 	if !can_place_block(index):
 		return
 
@@ -168,6 +212,11 @@ func on_block_pressed(index: int, column: int = -1, origin_y: int = -1) -> void:
 	network.place_block(index, column, origin_y)
 
 func _on_inventory_card_gui_input(event: InputEvent, index: int) -> void:
+	if _is_ready_locked_card(index) and _is_primary_press(event):
+		_reject_ready_placement(index)
+		get_viewport().set_input_as_handled()
+		return
+
 	if parallel_placement:
 		_handle_card_tap(event, index)
 		return
@@ -264,6 +313,8 @@ func can_place_block(index: int) -> bool:
 
 func is_placement_input_allowed() -> bool:
 	if spectator_mode:
+		return false
+	if ready_locked:
 		return false
 
 	if (
@@ -476,6 +527,9 @@ func set_spectator_mode(enabled: bool) -> void:
 		)
 
 func _handle_card_tap(event: InputEvent, index: int) -> void:
+	if _is_ready_locked_card(index) and _is_primary_press(event):
+		_reject_ready_placement(index)
+		return
 	if !_is_primary_press(event) or !_accept_tap():
 		return
 
@@ -488,6 +542,9 @@ func _handle_card_tap(event: InputEvent, index: int) -> void:
 	select_block(index)
 
 func select_block(index: int) -> void:
+	if _is_ready_locked_card(index):
+		_reject_ready_placement(index)
+		return
 	if !can_place_block(index):
 		return
 
@@ -518,13 +575,12 @@ func deselect_block() -> void:
 		tower_stack_fallback.call("end_snap_drag")
 
 func _clear_selection_state() -> void:
-	if selected_slot_index < 0:
-		return
-
+	var had_selection := selected_slot_index >= 0 or is_armed or !armed_snap.is_empty()
 	selected_slot_index = -1
 	is_armed = false
 	armed_snap = {}
-	_apply_selection_visuals()
+	if had_selection:
+		_apply_selection_visuals()
 
 	if drag_preview != null:
 		drag_preview.visible = false
@@ -591,6 +647,10 @@ func _show_site_overlay() -> void:
 		tower_stack_fallback.call("set_snap_state", SITE_ONLY_SNAP.duplicate())
 
 func _on_tower_drop_zone_gui_input(event: InputEvent) -> void:
+	if ready_locked:
+		if selected_slot_index >= 0 and _is_primary_press(event):
+			_reject_ready_placement(selected_slot_index)
+		return
 	if selected_slot_index < 0 or !_is_primary_press(event) or !_accept_tap():
 		return
 
@@ -698,6 +758,17 @@ func _apply_selection_visuals() -> void:
 
 	for i in range(inventory_buttons.size()):
 		var button: Button = inventory_buttons[i]
+		button.remove_theme_stylebox_override("normal")
+		button.remove_theme_stylebox_override("hover")
+		button.remove_theme_stylebox_override("pressed")
+
+		if _is_ready_locked_card(i):
+			var normal_style: StyleBox = button.get_theme_stylebox("normal", "WhiteCardButton")
+			if normal_style != null:
+				button.add_theme_stylebox_override("hover", normal_style)
+				button.add_theme_stylebox_override("pressed", normal_style)
+			button.modulate = Color.WHITE
+			continue
 
 		if i == selected_slot_index and selected_card_style != null:
 			button.add_theme_stylebox_override("normal", selected_card_style)
@@ -706,9 +777,6 @@ func _apply_selection_visuals() -> void:
 			button.modulate = Color.WHITE
 			continue
 
-		button.remove_theme_stylebox_override("normal")
-		button.remove_theme_stylebox_override("hover")
-		button.remove_theme_stylebox_override("pressed")
 		button.modulate = (
 			Color(1.0, 1.0, 1.0, UNSELECTED_CARD_ALPHA)
 			if selected_slot_index >= 0
@@ -786,6 +854,32 @@ func update_inventory_ui(blocks: Array, active_slots: int = MAX_INVENTORY_SLOTS)
 
 	if selected_slot_index >= 0 and _selected_block_id() != selected_block_id:
 		deselect_block()
+	_apply_selection_visuals()
+	_sync_ready_lock_presentation()
+
+func _is_ready_locked_card(index: int) -> bool:
+	if !ready_locked or index < 0 or index >= active_inventory_slots:
+		return false
+	if index >= inventory_slot_blocks.size() or index >= inventory_buttons.size():
+		return false
+	if inventory_buttons[index].disabled:
+		return false
+	if typeof(inventory_slot_blocks[index]) != TYPE_DICTIONARY:
+		return false
+	return !inventory_slot_blocks[index].is_empty()
+
+func _reject_ready_placement(index: int) -> void:
+	_clear_selection_state()
+	if ready_rejection_feedback.is_valid():
+		ready_rejection_feedback.call(index)
+
+func _sync_ready_lock_presentation() -> void:
+	if !ready_lock_presentation.is_valid():
+		return
+	var filled_ready_slots: Array = []
+	for i in range(inventory_buttons.size()):
+		filled_ready_slots.append(_is_ready_locked_card(i))
+	ready_lock_presentation.call(filled_ready_slots)
 
 func _selected_block_id() -> String:
 	if selected_slot_index < 0 or selected_slot_index >= inventory_slot_blocks.size():
