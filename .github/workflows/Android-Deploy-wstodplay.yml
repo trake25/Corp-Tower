@@ -38,21 +38,66 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  resolve-target:
+    name: Resolve WebSocket And Data Environment
+    runs-on: ubuntu-24.04
+    outputs:
+      ws_primary: ${{ steps.resolve.outputs.ws_primary }}
+      data_environment: ${{ steps.resolve.outputs.data_environment }}
+    steps:
+      - name: Resolve WebSocket target
+        id: resolve
+        run: |
+          set -euo pipefail
+          case "${{ inputs.websocket_target }}" in
+            wstodplay)
+              echo "ws_primary=wss://wstodplay.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "data_environment=production" >> "$GITHUB_OUTPUT"
+              ;;
+            devwstod1)
+              echo "ws_primary=wss://devwstod1.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "data_environment=development" >> "$GITHUB_OUTPUT"
+              ;;
+            devwstod2)
+              echo "ws_primary=wss://devwstod2.galaxxigames.com" >> "$GITHUB_OUTPUT"
+              echo "data_environment=development" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Unknown WebSocket target '${{ inputs.websocket_target }}'."
+              exit 1
+              ;;
+          esac
+
   build-android:
     name: Build Signed Android AAB
+    needs: resolve-target
     runs-on: ubuntu-24.04
+    environment:
+      name: ${{ needs.resolve-target.outputs.data_environment }}
     env:
       GODOT_VERSION: "4.7.2"
       GODOT_STATUS: "stable"
       GODOT_PROJECT_PATH: "src/Client/App/corp-tower"
       PACKAGE_NAME: "com.galaxxigames.tod"
       AAB_PATH: ${{ github.workspace }}/build/CorpTower.aab
+      CORP_TOWER_WS_PRIMARY: ${{ needs.resolve-target.outputs.ws_primary }}
+      TOD_EXPECTED_DATA_ENVIRONMENT: ${{ needs.resolve-target.outputs.data_environment }}
+      ANDROID_WEBSOCKET_TARGET: ${{ inputs.websocket_target }}
       GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_RELEASE_KEYSTORE_ALIAS }}
       GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Verify selected Supabase environment
+        env:
+          TOD_DATA_ENVIRONMENT: ${{ vars.TOD_DATA_ENVIRONMENT }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: scripts/verify-supabase-environment.sh "$TOD_EXPECTED_DATA_ENVIRONMENT" --require-client-key
 
       - name: Verify tutorial defaults match server authority
         run: node --test scripts/tests/tutorial-defaults-parity.test.mjs
@@ -68,32 +113,14 @@ jobs:
           secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           version-override: ${{ inputs.art_version_override }}
 
-      - name: Resolve WebSocket target
-        run: |
-          set -euo pipefail
-          case "${{ inputs.websocket_target }}" in
-            wstodplay)
-              echo "CORP_TOWER_WS_PRIMARY=wss://wstodplay.galaxxigames.com" >> "$GITHUB_ENV"
-              ;;
-            devwstod1)
-              echo "CORP_TOWER_WS_PRIMARY=wss://devwstod1.galaxxigames.com" >> "$GITHUB_ENV"
-              ;;
-            devwstod2)
-              echo "CORP_TOWER_WS_PRIMARY=wss://devwstod2.galaxxigames.com" >> "$GITHUB_ENV"
-              ;;
-            *)
-              echo "::error::Unknown WebSocket target '${{ inputs.websocket_target }}'."
-              exit 1
-              ;;
-          esac
-          echo "ANDROID_WEBSOCKET_TARGET=${{ inputs.websocket_target }}" >> "$GITHUB_ENV"
-
       - name: Write client endpoint config
         env:
           CORP_TOWER_DEBUG_UI: ${{ inputs.debug_ui }}
+          CORP_TOWER_EXPECTED_DATA_ENVIRONMENT: ${{ needs.resolve-target.outputs.data_environment }}
+          TOD_DATA_ENVIRONMENT: ${{ vars.TOD_DATA_ENVIRONMENT }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
           # The anon key is public by design — it ships inside the binary — but
           # it comes from a secret so it never lands in the committed config.
-          # Both unset means the build has no sign-in and uses a local profile id.
           CORP_TOWER_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           CORP_TOWER_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           # Android's redirect is the custom scheme in addons/DeeplinkPlugin/export.cfg,

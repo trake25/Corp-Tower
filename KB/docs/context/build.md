@@ -46,7 +46,7 @@ adjacent: build.android.aab-validation
 -->
 ## Android pipeline
 
-The Android workflow assembles private art, generated endpoint/auth capabilities, the pinned Godot/Android toolchain, native sign-in plugins, and signing material into one tested release build. Smoke and GUT run before export, then the produced AAB is independently validated before optional Play publication; workflow success before that artifact gate is not release proof.
+The Android workflow derives its data environment solely from its selected WebSocket target before any environment-scoped secrets are loaded: `wstodplay` selects Production, while `devwstod1` and `devwstod2` select Development. It assembles private art, generated endpoint/auth capabilities, the pinned Godot/Android toolchain, native sign-in plugins, and signing material into one tested release build. Smoke and GUT run before export, then the produced AAB is independently validated before optional Play publication; workflow success before that artifact gate is not release proof.
 
 <!-- kb
 id: build.android.version-code
@@ -86,12 +86,13 @@ id: build.endpoint-auth.injection
 alias: write endpoint config
 alias: auth injection
 source: scripts/write-endpoint-config.sh#CONFIG_FILE
+source: .github/workflows/Android-Deploy-wstodplay.yml#Resolve WebSocket target
 adjacent: ui.auth.presentation
 adjacent: network.session.identity
 -->
 ## Endpoint and auth injection
 
-Build-time endpoint generation selects one WebSocket target plus debug/demo flags and public auth/provider capabilities. Empty optional values disable their feature; incomplete required combinations fail the build. Shipping workflows use generated configuration rather than runtime hostname guesses.
+Build-time endpoint generation selects one WebSocket target plus debug/demo flags and public auth/provider capabilities. Shipping workflows must also supply the expected Production or Development marker, exact Supabase project ref, matching canonical URL, and client key; missing, Seoul-source, or cross-environment values fail before export. Local non-shipping generation may still omit optional Auth. Android maps WebSocket target to data environment and has no independent database selector. Shipping workflows use generated configuration rather than runtime hostname guesses.
 
 <!-- kb
 id: build.auth.native-providers

@@ -17,6 +17,7 @@ jobs:
     name: Deploy Corp Tower Server To Backup Machine
     runs-on: [self-hosted, backup]
     timeout-minutes: 15
+    environment: development
 
     steps:
       - name: Checkout repository
@@ -39,12 +40,14 @@ jobs:
         run: "scripts/backup/backup-server-up.sh $INSTANCE"
         env:
           CORP_TOWER_REPO_ROOT: ${{ github.workspace }}
+          TOD_DATA_ENVIRONMENT: ${{ vars.TOD_DATA_ENVIRONMENT }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_AUTH_REQUIRED: ${{ vars.SUPABASE_AUTH_REQUIRED || 'false' }}
+          SUPABASE_AUTH_REQUIRED: ${{ vars.SUPABASE_AUTH_REQUIRED }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           FACEBOOK_APP_ID: ${{ vars.TOD_FACEBOOK_APP_ID || '' }}
           FACEBOOK_APP_SECRET: ${{ secrets.TOD_FACEBOOK_APP_SECRET }}
           PLAYER_IDENTITY_HMAC_SECRET: ${{ secrets.PLAYER_IDENTITY_HMAC_SECRET }}
-          PLAYER_IDENTITY_HMAC_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_KEY_VERSION || '1' }}
+          PLAYER_IDENTITY_HMAC_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_KEY_VERSION }}
           PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET: ${{ secrets.PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET }}
-          PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION || '0' }}
+          PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION }}

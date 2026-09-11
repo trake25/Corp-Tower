@@ -26,6 +26,8 @@ IMAGE_TAG="corp-tower-server:dev${INSTANCE}"
 
 [ -d "$REPO_ROOT/src/Server" ] || die "repo not found at $REPO_ROOT (set CORP_TOWER_REPO_ROOT if it lives elsewhere)"
 
+"$REPO_ROOT/scripts/verify-supabase-environment.sh" development --require-hmac
+
 current_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 if [ -n "$EXPECTED_SHA" ] && [ "$current_sha" != "$EXPECTED_SHA" ]; then
   info "Checked-out commit ($current_sha) differs from ${TAG_VAR} in .env.backup ($EXPECTED_SHA)."
@@ -43,20 +45,20 @@ docker build -t "$IMAGE_TAG" -f "$REPO_ROOT/src/Server/Dockerfile" "$REPO_ROOT/s
 docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 BOTS_ARGS=()
 REDIS_ARGS=()
-# Export SUPABASE_URL before running this script to turn token verification on;
-# left unset the server stays on the client-supplied profile id path.
+# Development deployments require their environment-scoped Supabase and HMAC
+# configuration. The guard above rejects missing or cross-environment values.
 AUTH_ARGS=(
-  -e "SUPABASE_URL=${SUPABASE_URL:-}"
-  -e "SUPABASE_AUTH_REQUIRED=${SUPABASE_AUTH_REQUIRED:-false}"
+  -e "SUPABASE_URL=${SUPABASE_URL}"
+  -e "SUPABASE_AUTH_REQUIRED=${SUPABASE_AUTH_REQUIRED}"
   # SAFETY EXCEPTION: this is the service_role key, which bypasses row-level
   # security. Export it only on a box you control, and never echo it.
-  -e "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}"
+  -e "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
   -e "FACEBOOK_APP_ID=${FACEBOOK_APP_ID:-}"
   -e "FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET:-}"
-  -e "PLAYER_IDENTITY_HMAC_SECRET=${PLAYER_IDENTITY_HMAC_SECRET:-}"
-  -e "PLAYER_IDENTITY_HMAC_KEY_VERSION=${PLAYER_IDENTITY_HMAC_KEY_VERSION:-1}"
+  -e "PLAYER_IDENTITY_HMAC_SECRET=${PLAYER_IDENTITY_HMAC_SECRET}"
+  -e "PLAYER_IDENTITY_HMAC_KEY_VERSION=${PLAYER_IDENTITY_HMAC_KEY_VERSION}"
   -e "PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET=${PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET:-}"
-  -e "PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION=${PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION:-0}"
+  -e "PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION=${PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION}"
 )
 if [ "$INSTANCE" = "3" ]; then
   BOTS_ARGS=(

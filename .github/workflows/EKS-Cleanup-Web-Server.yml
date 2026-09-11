@@ -31,7 +31,7 @@ jobs:
     name: Set Corp Tower Web Server To Maintenance
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    environment: staging
+    environment: production
 
     steps:
       - name: Checkout repository

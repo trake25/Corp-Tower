@@ -13,14 +13,14 @@ Owner: `KB/docs/context/testing.md:149-166` → **Automation protocol coverage**
 | `scripts/tests/task-ownership.test.mjs` | `lightweight task ownership acquires explicit scope, rejects active overlap, and releases independently` | 27 | `sed -n 15,47p scripts/tests/task-ownership.test.mjs` |
 | `scripts/tests/plan-archive.test.mjs` | `standalone plan archival is collision-safe and idempotent without task-close` | 9 | `sed -n 1,29p scripts/tests/plan-archive.test.mjs` |
 | `scripts/tests/orchestration-scope.test.mjs` | `parallel worker ownership rejects overlapping write claims` | 94 | `sed -n 82,114p scripts/tests/orchestration-scope.test.mjs` |
-| `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 60 | `sed -n 48,80p scripts/tests/concept-kb.test.mjs` |
+| `scripts/tests/concept-kb.test.mjs` | `the repository concept registry is complete, deterministic, and source-grounded` | 61 | `sed -n 49,81p scripts/tests/concept-kb.test.mjs` |
 | `scripts/benchmark-rag.mjs` | `runConceptBenchmark` | 63 | `sed -n 51,83p scripts/benchmark-rag.mjs` |
 | `scripts/lib/kb-calibration.mjs` | `measureKbCalibration` | 180 | `sed -n 168,200p scripts/lib/kb-calibration.mjs` |
 | `scripts/export-kb-calibration-report.mjs` | `exportKbCalibrationReport` | 158 | `sed -n 146,178p scripts/export-kb-calibration-report.mjs` |
 | `scripts/tests/codex-observability-hook.test.mjs` | `production hook smoke keeps observability fail-open and private` | 66 | `sed -n 54,86p scripts/tests/codex-observability-hook.test.mjs` |
 | `scripts/tests/codex-task-run.test.mjs` | `telemetry-enabled launcher establishes an opt-in binding that settles without task-close` | 37 | `sed -n 25,57p scripts/tests/codex-task-run.test.mjs` |
 | `scripts/tests/task-receipt.test.mjs` | `standalone receipt writes only explicit sanitized scope and states skipped QA` | 16 | `sed -n 4,36p scripts/tests/task-receipt.test.mjs` |
-| `scripts/qa-gate.mjs` | `selectToolingQa` | 89 | `sed -n 77,109p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectToolingQa` | 96 | `sed -n 84,116p scripts/qa-gate.mjs` |
 | `scripts/fixtures/agent-observability/provider-events.json` | `events` | 25 | `sed -n 13,45p scripts/fixtures/agent-observability/provider-events.json` |
 
 Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifecycle`, `automation.orchestration.ownership`
@@ -46,7 +46,7 @@ Owner: `KB/docs/context/testing.md:46-54` → **Godot coverage**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_application_scripts` | 41 | `sed -n 29,61p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 48 | `sed -n 36,68p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
-| `scripts/qa-gate.mjs` | `main` | 264 | `sed -n 252,284p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `main` | 271 | `sed -n 259,291p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
@@ -88,7 +88,7 @@ Owner: `KB/docs/context/testing.md:186-199` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/Android-Deploy-wstodplay.yml` | `build-android` | 41 | `sed -n 29,61p .github/workflows/Android-Deploy-wstodplay.yml` |
+| `.github/workflows/Android-Deploy-wstodplay.yml` | `build-android` | 71 | `sed -n 59,91p .github/workflows/Android-Deploy-wstodplay.yml` |
 | `.github/workflows/EKS-Deploy-Game-Server.yml` | `test-server` | 24 | `sed -n 12,44p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: `build.android.pipeline`, `deploy.eks.workflows`
@@ -99,7 +99,7 @@ Owner: `KB/docs/context/testing.md:11-17` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/qa-gate.mjs` | `selectQa` | 117 | `sed -n 105,137p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectQa` | 124 | `sed -n 112,144p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 

@@ -20,7 +20,7 @@ jobs:
     name: Plan EKS Infrastructure
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    environment: staging
+    environment: production
 
     steps:
       - name: Checkout repository

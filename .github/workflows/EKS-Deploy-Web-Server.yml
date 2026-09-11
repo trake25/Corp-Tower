@@ -54,7 +54,7 @@ jobs:
     name: Verify Infra Matches Last Apply
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    environment: staging
+    environment: production
 
     steps:
       - name: Checkout repository
@@ -77,10 +77,20 @@ jobs:
     needs: [resolve-target, verify-infra]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    environment: production
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Verify Supabase production environment
+        env:
+          TOD_DATA_ENVIRONMENT: ${{ vars.TOD_DATA_ENVIRONMENT }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: scripts/verify-supabase-environment.sh production --require-client-key
 
       - name: Fetch private art assets
         uses: ./.github/actions/fetch-private-assets
@@ -96,7 +106,9 @@ jobs:
         env:
           CORP_TOWER_WS_PRIMARY: ${{ needs.resolve-target.outputs.ws_primary }}
           CORP_TOWER_DEBUG_UI: "false"
-          # Both unset means the build has no sign-in and uses a local profile id.
+          CORP_TOWER_EXPECTED_DATA_ENVIRONMENT: production
+          TOD_DATA_ENVIRONMENT: ${{ vars.TOD_DATA_ENVIRONMENT }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
           CORP_TOWER_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           CORP_TOWER_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           # The web build returns through its own origin, so the redirect is the
@@ -130,7 +142,7 @@ jobs:
     needs: [resolve-target, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    environment: staging
+    environment: production
 
     steps:
       - name: Checkout repository
@@ -168,7 +180,7 @@ jobs:
     needs: [resolve-target, push]
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    environment: staging
+    environment: production
     env:
       NAMESPACE: ${{ needs.resolve-target.outputs.namespace }}
       OVERLAY: ${{ needs.resolve-target.outputs.overlay }}
@@ -207,7 +219,7 @@ jobs:
           set -euo pipefail
 
           if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ZONE_ID:-}" ]; then
-            echo "::error::Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ZONE_ID staging environment secret."
+            echo "::error::Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ZONE_ID production environment secret."
             exit 1
           fi
 

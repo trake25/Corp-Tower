@@ -7,10 +7,43 @@ id: deploy.shared.environments
 alias: deployment environments
 source: .github/workflows/Backup-Deploy-All.yml#resolve
 source: .github/workflows/EKS-Deploy-All.yml#deploy-game
+source: scripts/verify-supabase-environment.sh#readonly SINGAPORE_PRODUCTION_PROJECT_REF=
 -->
 ## Environment model
 
-AWS EKS is the production-grade on-demand target. The physical machine is the development environment and always-on public demo host. These environments share application artifacts but have different runtime topology and operational constraints.
+AWS EKS is the production-grade on-demand target and binds to the GitHub `production`
+environment and the Singapore Production Supabase project. The physical machine is the
+development environment and always-on public demo host; those targets bind to GitHub
+`development` and the separate Singapore Development Supabase project. Production and
+Development share application artifacts but never a runtime Supabase project, Auth
+namespace, API-key set, or player-identity HMAC lifecycle.
+
+The former Seoul project is migration rollback/history only, not a runtime target. Copying
+Production player data into Development is prohibited during normal operation; the one-time
+environment bootstrap clone is valid only when Development is proven as the target and
+cloned Auth/player state is scrubbed before any Development deployment.
+
+<!-- kb
+id: deploy.shared.production-preflight
+alias: production environment preflight
+alias: write-freeze preflight
+source: .github/workflows/Production-Environment-Preflight.yml#preflight
+source: scripts/verify-production-environment.mjs#export async function verifyProductionEnvironment
+adjacent: deploy.shared.environments
+adjacent: deploy.shared.auth-env
+-->
+## Production environment preflight
+
+The Production write-freeze cannot be requested until an environment-scoped GitHub Actions preflight
+has validated every value consumed by Production workflows. Each value receives its own missing,
+format, ownership, environment, authentication, permission, and cross-field checks as applicable;
+failures name that input without disclosing its value. Supabase project ref, canonical URL, anon key,
+and service-role key must all independently resolve to the Singapore Production project, while the
+player-identity HMAC material must match the current Production Kubernetes Secret and deployment.
+The preflight also exercises the bounded provider, infrastructure, private-asset, signing, and
+store permissions needed by current Production jobs. It is non-deploying, reports Production ready only
+after the complete set passes, and never substitutes a local or partial result for an actual run inside
+the GitHub `production` environment.
 
 <!-- kb
 id: deploy.shared.terraform-roots
@@ -35,6 +68,7 @@ alias: Supabase env
 alias: identity secret
 source: .github/workflows/EKS-Deploy-Game-Server.yml#Sync Supabase service role secret
 source: scripts/backup/backup-server-up.sh#AUTH_ARGS
+source: scripts/verify-supabase-environment.sh#verify_supabase_environment() {
 adjacent: backend.identity.auth
 adjacent: build.endpoint-auth.injection
 -->
@@ -53,7 +87,12 @@ Android Facebook linking keeps the ordinary native Facebook access-token flow: t
 with Facebook, confirms ownership against the authenticated Guest account, and atomically claims the Facebook
 subject in Top or Drop's account store. The Android Facebook-link path does not require attaching Facebook as
 a Supabase Auth identity or opening browser OAuth; the existing anonymous Supabase binding remains associated
-with the durable account. Public project/client capability information may be injected into builds, but
+with the durable account. Every shipping deployment supplies an explicit Production or Development marker,
+project ref, canonical project URL, and environment-scoped credentials. A non-mutating pre-deploy guard rejects
+the Seoul migration source, cross-environment values, missing durable Data API surfaces, and incomplete server
+HMAC configuration. Until the request transports are migrated away from placing project API keys in bearer
+headers, deployments use the project's legacy JWT-form `anon` and `service_role` keys; the guard rejects opaque
+`sb_publishable_` and `sb_secret_` keys that those transports cannot safely use. Public project/client capability information may be injected into builds, but
 repository prose records capabilities rather than deployed credential values. Service-role keys, provider
 client secrets, signing secrets, player-identity HMAC secrets, access/refresh tokens, and other credentials
 remain private and must never be written to KB prose, logs, generated plans, or client configuration.

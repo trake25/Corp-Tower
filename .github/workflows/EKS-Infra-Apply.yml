@@ -24,7 +24,7 @@ jobs:
     name: Apply EKS Infrastructure
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    environment: staging
+    environment: production
     defaults:
       run:
         working-directory: infra/eks/terraform

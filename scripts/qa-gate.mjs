@@ -71,6 +71,8 @@ const conceptKbRules = [
 
 export const TUTORIAL_PARITY_TEST = 'scripts/tests/tutorial-defaults-parity.test.mjs';
 export const EKS_DESTROY_VERIFIER_TEST = 'scripts/tests/verify-eks-destroy.test.mjs';
+export const SUPABASE_ENVIRONMENT_GUARD_TEST = 'scripts/tests/verify-supabase-environment.test.mjs';
+export const PRODUCTION_ENVIRONMENT_PREFLIGHT_TEST = 'scripts/tests/verify-production-environment.test.mjs';
 const contractRules = [
   [/^src\/Server\/app\/Game_Config\.js$/, [TUTORIAL_PARITY_TEST]],
   [/^src\/Client\/App\/corp-tower\/Cor\/Scripts\/GameUi\/Tutorial\/TutorialLessons\.gd$/, [TUTORIAL_PARITY_TEST]],
@@ -78,6 +80,8 @@ const contractRules = [
   [/^scripts\/tests\/tutorial-defaults-parity\.test\.mjs$/, [TUTORIAL_PARITY_TEST]],
   [/^\.github\/actions\/verify-eks-destroy\/(?:action\.yml|verify\.sh)$/, [EKS_DESTROY_VERIFIER_TEST]],
   [/^scripts\/tests\/verify-eks-destroy\.test\.mjs$/, [EKS_DESTROY_VERIFIER_TEST]],
+  [/^scripts\/(?:verify-supabase-environment\.sh|tests\/verify-supabase-environment\.test\.mjs)$/, [SUPABASE_ENVIRONMENT_GUARD_TEST]],
+  [/^(?:\.github\/workflows\/Production-Environment-Preflight\.yml|scripts\/(?:verify-production-environment\.mjs|tests\/verify-production-environment\.test\.mjs))$/, [PRODUCTION_ENVIRONMENT_PREFLIGHT_TEST]],
 ];
 
 function addMatches(path, rules, destination) {

@@ -9,7 +9,7 @@ Owner: `KB/docs/context/deployment-backup.md:80-83` → **Auto-deploy guard**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/Backup-Deploy-All.yml` | `resolve` | 56 | `sed -n 44,76p .github/workflows/Backup-Deploy-All.yml` |
+| `.github/workflows/Backup-Deploy-All.yml` | `resolve` | 57 | `sed -n 45,77p .github/workflows/Backup-Deploy-All.yml` |
 
 Adjacent concepts: none
 
@@ -59,7 +59,7 @@ Owner: `KB/docs/context/deployment-backup.md:70-73` → **Demo differences**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/backup/backup-server-up.sh` | `CORP_TOWER_BOTS_ENABLED` | 63 | `sed -n 51,83p scripts/backup/backup-server-up.sh` |
+| `scripts/backup/backup-server-up.sh` | `CORP_TOWER_BOTS_ENABLED` | 65 | `sed -n 53,85p scripts/backup/backup-server-up.sh` |
 
 Adjacent concepts: none
 
@@ -89,7 +89,7 @@ Owner: `KB/docs/context/deployment-backup.md:89-92` → **Offline runner behavio
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/Backup-Deploy-All.yml` | `check-devwstod1-status` | 139 | `sed -n 127,159p .github/workflows/Backup-Deploy-All.yml` |
+| `.github/workflows/Backup-Deploy-All.yml` | `check-devwstod1-status` | 140 | `sed -n 128,160p .github/workflows/Backup-Deploy-All.yml` |
 
 Adjacent concepts: none
 
@@ -129,7 +129,7 @@ Owner: `KB/docs/context/deployment-backup.md:98-101` → **Skipped-job dependenc
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/Backup-Deploy-All.yml` | `deploy-devwstod1` | 179 | `sed -n 167,199p .github/workflows/Backup-Deploy-All.yml` |
+| `.github/workflows/Backup-Deploy-All.yml` | `deploy-devwstod1` | 180 | `sed -n 168,200p .github/workflows/Backup-Deploy-All.yml` |
 
 Adjacent concepts: none
 
@@ -160,7 +160,7 @@ Owner: `KB/docs/context/deployment-eks.md:77-80` → **DNS update**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Update Cloudflare CNAME content` | 177 | `sed -n 165,197p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Update Cloudflare CNAME content` | 190 | `sed -n 178,210p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: none
 
@@ -219,40 +219,53 @@ Adjacent concepts: `testing.release.gates`
 
 ## deploy.shared.auth-env
 
-Owner: `KB/docs/context/deployment.md:41-60` → **Authentication environment**
+Owner: `KB/docs/context/deployment.md:75-99` → **Authentication environment**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 278 | `sed -n 266,298p .github/workflows/EKS-Deploy-Game-Server.yml` |
-| `scripts/backup/backup-server-up.sh` | `AUTH_ARGS` | 48 | `sed -n 36,68p scripts/backup/backup-server-up.sh` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 291 | `sed -n 279,311p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `scripts/backup/backup-server-up.sh` | `AUTH_ARGS` | 50 | `sed -n 38,70p scripts/backup/backup-server-up.sh` |
+| `scripts/verify-supabase-environment.sh` | `verify_supabase_environment() {` | 44 | `sed -n 32,64p scripts/verify-supabase-environment.sh` |
 
 Adjacent concepts: `backend.identity.auth`, `build.endpoint-auth.injection`
 
 ## deploy.shared.environments
 
-Owner: `KB/docs/context/deployment.md:11-14` → **Environment model**
+Owner: `KB/docs/context/deployment.md:12-25` → **Environment model**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/Backup-Deploy-All.yml` | `resolve` | 56 | `sed -n 44,76p .github/workflows/Backup-Deploy-All.yml` |
+| `.github/workflows/Backup-Deploy-All.yml` | `resolve` | 57 | `sed -n 45,77p .github/workflows/Backup-Deploy-All.yml` |
 | `.github/workflows/EKS-Deploy-All.yml` | `deploy-game` | 21 | `sed -n 9,36p .github/workflows/EKS-Deploy-All.yml` |
+| `scripts/verify-supabase-environment.sh` | `readonly SINGAPORE_PRODUCTION_PROJECT_REF=` | 5 | `sed -n 1,25p scripts/verify-supabase-environment.sh` |
 
 Adjacent concepts: none
 
-## deploy.shared.secret-rollout
+## deploy.shared.production-preflight
 
-Owner: `KB/docs/context/deployment.md:69-72` → **Secret rollout**
+Owner: `KB/docs/context/deployment.md:35-47` → **Production environment preflight**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 278 | `sed -n 266,298p .github/workflows/EKS-Deploy-Game-Server.yml` |
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Apply Corp Tower Kustomize overlay` | 336 | `sed -n 324,356p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/Production-Environment-Preflight.yml` | `preflight` | 17 | `sed -n 5,37p .github/workflows/Production-Environment-Preflight.yml` |
+| `scripts/verify-production-environment.mjs` | `export async function verifyProductionEnvironment` | 1349 | `sed -n 1337,1369p scripts/verify-production-environment.mjs` |
+
+Adjacent concepts: `deploy.shared.environments`, `deploy.shared.auth-env`
+
+## deploy.shared.secret-rollout
+
+Owner: `KB/docs/context/deployment.md:108-111` → **Secret rollout**
+
+| Source | Anchor | Line | Bounded read |
+|---|---|---:|---|
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 291 | `sed -n 279,311p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Apply Corp Tower Kustomize overlay` | 347 | `sed -n 335,367p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: `deploy.eks.workflows`
 
 ## deploy.shared.terraform-roots
 
-Owner: `KB/docs/context/deployment.md:24-31` → **Terraform roots**
+Owner: `KB/docs/context/deployment.md:57-64` → **Terraform roots**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

@@ -63,6 +63,7 @@ jobs:
   build:
     needs: resolve-target
     runs-on: ubuntu-24.04
+    environment: development
 
     env:
       GODOT_VERSION: "4.7.2"
@@ -72,6 +73,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Verify Supabase development environment
+        env:
+          TOD_DATA_ENVIRONMENT: ${{ vars.TOD_DATA_ENVIRONMENT }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: scripts/verify-supabase-environment.sh development --require-client-key
 
       - name: Fetch private art assets
         uses: ./.github/actions/fetch-private-assets
@@ -89,6 +99,9 @@ jobs:
           CORP_TOWER_WS_PRIMARY: ${{ needs.resolve-target.outputs.ws_primary }}
           CORP_TOWER_DEBUG_UI: ${{ needs.resolve-target.outputs.debug_ui }}
           CORP_TOWER_DEMO_MODE: ${{ needs.resolve-target.outputs.demo_mode }}
+          CORP_TOWER_EXPECTED_DATA_ENVIRONMENT: development
+          TOD_DATA_ENVIRONMENT: ${{ vars.TOD_DATA_ENVIRONMENT }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
           CORP_TOWER_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           CORP_TOWER_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           CORP_TOWER_AUTH_OAUTH: ${{ vars.CORP_TOWER_AUTH_OAUTH || 'false' }}
@@ -119,6 +132,7 @@ jobs:
     needs: [resolve-target, build]
     runs-on: [self-hosted, backup]
     timeout-minutes: 15
+    environment: development
 
     steps:
       - name: Checkout repository

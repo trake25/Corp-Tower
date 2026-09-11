@@ -127,6 +127,7 @@ implicitly widen KB adjacency.
 | `deploy.eks.workflows` | [deployment-eks.md#deployment-workflows](./deployment-eks.md#deployment-workflows) | EKS deploy |
 | `deploy.shared.auth-env` | [deployment.md#authentication-environment](./deployment.md#authentication-environment) | Supabase env, identity secret |
 | `deploy.shared.environments` | [deployment.md#environment-model](./deployment.md#environment-model) | deployment environments |
+| `deploy.shared.production-preflight` | [deployment.md#production-environment-preflight](./deployment.md#production-environment-preflight) | production environment preflight, write-freeze preflight |
 | `deploy.shared.secret-rollout` | [deployment.md#secret-rollout](./deployment.md#secret-rollout) | kubernetes secret restart, GITHUB_ENV |
 | `deploy.shared.terraform-roots` | [deployment.md#terraform-roots](./deployment.md#terraform-roots) | Terraform roots, shared infra |
 

@@ -54,7 +54,7 @@ jobs:
     name: Verify Infra Matches Last Apply
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    environment: staging
+    environment: production
 
     steps:
       - name: Checkout repository
@@ -78,7 +78,7 @@ jobs:
     needs: [test-server, verify-infra]
     if: ${{ needs.test-server.result == 'success' && needs.verify-infra.result == 'success' }}
     timeout-minutes: 15
-    environment: staging
+    environment: production
 
     steps:
       - name: Checkout repository
@@ -124,7 +124,7 @@ jobs:
     needs: build-and-push
     if: ${{ needs.build-and-push.result == 'success' }}
     timeout-minutes: 30
-    environment: staging
+    environment: production
 
     steps:
       - name: Checkout repository
@@ -144,6 +144,19 @@ jobs:
               exit 1
               ;;
           esac
+
+      - name: Verify Supabase production environment
+        env:
+          TOD_DATA_ENVIRONMENT: ${{ vars.TOD_DATA_ENVIRONMENT }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_AUTH_REQUIRED: ${{ vars.SUPABASE_AUTH_REQUIRED }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PLAYER_IDENTITY_HMAC_SECRET: ${{ secrets.PLAYER_IDENTITY_HMAC_SECRET }}
+          PLAYER_IDENTITY_HMAC_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_KEY_VERSION }}
+          PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET: ${{ secrets.PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET }}
+          PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION }}
+        run: scripts/verify-supabase-environment.sh production --require-hmac
 
       - name: Setup AWS credentials and Terraform
         uses: ./.github/actions/aws-terraform-setup
@@ -182,7 +195,7 @@ jobs:
           set -euo pipefail
 
           if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ZONE_ID:-}" ]; then
-            echo "::error::Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ZONE_ID staging environment secret."
+            echo "::error::Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ZONE_ID production environment secret."
             exit 1
           fi
 
@@ -284,9 +297,8 @@ jobs:
           # Piped through apply so the value never reaches the workflow log,
           # same as the ecr-pull secret above.
           if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
-            echo "No SUPABASE_SERVICE_ROLE_KEY set - profile persistence stays off."
-            kubectl -n "$NAMESPACE" delete secret corp-tower-supabase --ignore-not-found
-            exit 0
+            echo "::error::Missing SUPABASE_SERVICE_ROLE_KEY production environment secret."
+            exit 1
           fi
 
           kubectl -n "$NAMESPACE" create secret generic corp-tower-supabase \
@@ -319,9 +331,8 @@ jobs:
           set -euo pipefail
 
           if [ -z "${PLAYER_IDENTITY_HMAC_SECRET:-}" ]; then
-            echo "Player identity persistence is disabled."
-            kubectl -n "$NAMESPACE" delete secret corp-tower-identity --ignore-not-found
-            exit 0
+            echo "::error::Missing PLAYER_IDENTITY_HMAC_SECRET production environment secret."
+            exit 1
           fi
 
           identity_secret_args=(--from-literal=hmac-secret="$PLAYER_IDENTITY_HMAC_SECRET")
@@ -336,12 +347,12 @@ jobs:
       - name: Apply Corp Tower Kustomize overlay
         env:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          # Unset secrets resolve to empty, which leaves token verification off
-          # and the server on the pre-Supabase profile id path.
+          TOD_DATA_ENVIRONMENT: ${{ vars.TOD_DATA_ENVIRONMENT }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_AUTH_REQUIRED: ${{ vars.SUPABASE_AUTH_REQUIRED || 'false' }}
-          PLAYER_IDENTITY_HMAC_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_KEY_VERSION || '1' }}
-          PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION || '0' }}
+          SUPABASE_AUTH_REQUIRED: ${{ vars.SUPABASE_AUTH_REQUIRED }}
+          PLAYER_IDENTITY_HMAC_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_KEY_VERSION }}
+          PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION: ${{ vars.PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION }}
         run: |
           set -euo pipefail
 
@@ -371,6 +382,10 @@ jobs:
                           env:
                             - name: REDIS_URL
                               value: ${REDIS_URL}
+                            - name: TOD_DATA_ENVIRONMENT
+                              value: "${TOD_DATA_ENVIRONMENT}"
+                            - name: SUPABASE_PROJECT_REF
+                              value: "${SUPABASE_PROJECT_REF}"
                             - name: SUPABASE_URL
                               value: "${SUPABASE_URL}"
                             - name: SUPABASE_AUTH_REQUIRED
@@ -406,6 +421,13 @@ jobs:
         run: |
           set -euo pipefail
           kubectl -n "$NAMESPACE" exec deploy/corp-tower-server -- printenv REDIS_URL | grep -q '^rediss://'
+
+      - name: Assert Supabase production wiring reached the pod
+        run: |
+          set -euo pipefail
+          test "$(kubectl -n "$NAMESPACE" exec deploy/corp-tower-server -- printenv TOD_DATA_ENVIRONMENT)" = "production"
+          test "$(kubectl -n "$NAMESPACE" exec deploy/corp-tower-server -- printenv SUPABASE_PROJECT_REF)" = "kweqwprbahlfoznyzlvf"
+          test "$(kubectl -n "$NAMESPACE" exec deploy/corp-tower-server -- printenv SUPABASE_URL)" = "https://kweqwprbahlfoznyzlvf.supabase.co"
 
       - name: Assert ElastiCache sees connections
         env:

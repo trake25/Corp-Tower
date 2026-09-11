@@ -10,6 +10,7 @@ import {
   CONCEPT_INDEX_BEGIN,
   CONCEPT_INDEX_END,
   CONCEPT_MAP_MARKER,
+  CONCEPT_MAX_LINE_CHARS,
   CONCEPT_PROSE_CAPACITY,
   CONCEPT_SECTION_HARD_BYTES,
   DEFAULT_CONCEPT_BYTES,
@@ -389,9 +390,10 @@ test('the validator detects stale generated output and the KB Tree line ceiling'
     writeFileSync(mapPath, `${readFileSync(mapPath, 'utf8')}stale\n`);
     assert.ok(validateConceptKb({ root }).errors.some(error => error.status === 'map-stale'));
 
-    writeFileSync(join(root, 'KB/docs/context/testing.md'), TWO_CONCEPTS.replace('Only the first concept prose belongs here.', 'x'.repeat(401)));
+    const overLimit = CONCEPT_MAX_LINE_CHARS + 1;
+    writeFileSync(join(root, 'KB/docs/context/testing.md'), TWO_CONCEPTS.replace('Only the first concept prose belongs here.', 'x'.repeat(overLimit)));
     buildConceptMaps({ root });
-    assert.ok(validateConceptKb({ root }).errors.some(error => error.status === 'budget-exceeded' && /401 chars > 400/.test(error.message)));
+    assert.ok(validateConceptKb({ root }).errors.some(error => error.status === 'budget-exceeded' && error.message.includes(`${overLimit} chars > ${CONCEPT_MAX_LINE_CHARS}`)));
     assert.ok(existsSync(mapPath));
   } finally {
     clean(root);

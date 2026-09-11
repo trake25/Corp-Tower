@@ -8,6 +8,7 @@ import {
   AUTOMATION_PROTOCOL_TESTS,
   CONCEPT_KB_TESTS,
   EKS_DESTROY_VERIFIER_TEST,
+  PRODUCTION_ENVIRONMENT_PREFLIGHT_TEST,
   TUTORIAL_PARITY_TEST,
   classifyQaFailure,
   selectContractQa,
@@ -133,6 +134,21 @@ test('EKS destroy verifier changes select only its focused regression test', () 
   assert.deepEqual(selectContractQa(['.github/actions/aws-terraform-setup/action.yml']).tests, []);
 });
 
+test('Production preflight changes select the strict environment regression test', () => {
+  const paths = [
+    '.github/workflows/Production-Environment-Preflight.yml',
+    'scripts/verify-production-environment.mjs',
+    PRODUCTION_ENVIRONMENT_PREFLIGHT_TEST,
+  ];
+
+  for (const path of paths) {
+    assert.deepEqual(
+      selectContractQa([path]).tests,
+      [PRODUCTION_ENVIRONMENT_PREFLIGHT_TEST],
+    );
+  }
+});
+
 test('protocol test paths do not become automatic task QA', () => {
   const { result, root } = toolingFixture(`
     import test from 'node:test';
@@ -179,7 +195,7 @@ test('manual tooling failure is bounded and retains complete child output', () =
   try {
     assert.equal(result.status, 1);
     assert.match(result.stderr, /FAILURE_CLASSIFICATION: implementation/);
-    assert.match(result.stderr, /FAIL — tooling test scripts\/tests\/context-query\.test\.mjs — not ok 1 - bounded child failure headline/);
+    assert.match(result.stderr, /FAIL — explicit tooling test scripts\/tests\/context-query\.test\.mjs — not ok 1 - bounded child failure headline/);
     assert.ok(Buffer.byteLength(result.stderr) < 1024);
     assert.doesNotMatch(result.stderr, /complete child (?:stdout|stderr|assertion) sentinel/);
     assert.ok(logMatch, result.stderr);

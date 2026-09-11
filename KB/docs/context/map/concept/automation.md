@@ -52,7 +52,7 @@ Owner: `KB/docs/context/automation.md:148-163` → **Provider-visible I/O discip
 |---|---|---:|---|
 | `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
 | `scripts/task-close.mjs` | `compactOutput` | 936 | `sed -n 924,956p scripts/task-close.mjs` |
-| `scripts/qa-gate.mjs` | `fail` | 190 | `sed -n 178,210p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `fail` | 197 | `sed -n 185,217p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `automation.observability.usage`
 

@@ -3,17 +3,24 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_FILE="$REPO_ROOT/src/Client/App/corp-tower/Sys/NetMan/Endpoint_Config.gd"
+readonly SEOUL_SOURCE_PROJECT_REF="lfvbxkidatmfhjbmcgyq"
+readonly SINGAPORE_PRODUCTION_PROJECT_REF="kweqwprbahlfoznyzlvf"
+# Populated together with the deployment guard after Development is provisioned.
+readonly SINGAPORE_DEVELOPMENT_PROJECT_REF=""
 
 : "${CORP_TOWER_WS_PRIMARY:?CORP_TOWER_WS_PRIMARY must be set (e.g. wss://wsplaytod.galaxxigames.com)}"
 CORP_TOWER_DEBUG_UI="${CORP_TOWER_DEBUG_UI:-true}"
 CORP_TOWER_DEMO_MODE="${CORP_TOWER_DEMO_MODE:-false}"
 
-# Auth is opt-in: an empty URL or key leaves AuthManager disabled and the client
-# falls back to its locally generated profile id, which is the pre-Supabase
-# behaviour. Both must be set for sign-in to engage.
+# Local, non-shipping calls may still omit Auth. Shipping workflows set an
+# expected data environment below, which makes the project marker, ref, URL,
+# and client key mandatory.
 CORP_TOWER_SUPABASE_URL="${CORP_TOWER_SUPABASE_URL:-}"
 CORP_TOWER_SUPABASE_ANON_KEY="${CORP_TOWER_SUPABASE_ANON_KEY:-}"
 CORP_TOWER_SUPABASE_URL="${CORP_TOWER_SUPABASE_URL%/}"
+CORP_TOWER_EXPECTED_DATA_ENVIRONMENT="${CORP_TOWER_EXPECTED_DATA_ENVIRONMENT:-}"
+TOD_DATA_ENVIRONMENT="${TOD_DATA_ENVIRONMENT:-}"
+SUPABASE_PROJECT_REF="${SUPABASE_PROJECT_REF:-}"
 
 # OAuth rides on top of that: it needs a redirect target the platform can receive.
 # Android uses the custom scheme baked into addons/DeeplinkPlugin/export.cfg, so
@@ -54,6 +61,74 @@ if [ -z "$CORP_TOWER_SUPABASE_URL" ] && [ -n "$CORP_TOWER_SUPABASE_ANON_KEY" ]; 
   exit 1
 fi
 
+if [ -n "$CORP_TOWER_EXPECTED_DATA_ENVIRONMENT" ]; then
+  case "$CORP_TOWER_EXPECTED_DATA_ENVIRONMENT" in
+    production|development) ;;
+    *)
+      echo "error: CORP_TOWER_EXPECTED_DATA_ENVIRONMENT must be 'production' or 'development'" >&2
+      exit 1
+      ;;
+  esac
+
+  [ -n "$TOD_DATA_ENVIRONMENT" ] || {
+    echo "error: TOD_DATA_ENVIRONMENT must be set for a shipping build" >&2
+    exit 1
+  }
+  [ "$TOD_DATA_ENVIRONMENT" = "$CORP_TOWER_EXPECTED_DATA_ENVIRONMENT" ] || {
+    echo "error: expected data environment '$CORP_TOWER_EXPECTED_DATA_ENVIRONMENT', got '$TOD_DATA_ENVIRONMENT'" >&2
+    exit 1
+  }
+  [[ "$SUPABASE_PROJECT_REF" =~ ^[a-z]{20}$ ]] || {
+    echo "error: SUPABASE_PROJECT_REF must be a 20-letter Supabase project ref" >&2
+    exit 1
+  }
+  [ "$SUPABASE_PROJECT_REF" != "$SEOUL_SOURCE_PROJECT_REF" ] || {
+    echo "error: the Seoul migration source cannot be embedded in a shipping build" >&2
+    exit 1
+  }
+  [ -n "$CORP_TOWER_SUPABASE_URL" ] || {
+    echo "error: CORP_TOWER_SUPABASE_URL must be set for a shipping build" >&2
+    exit 1
+  }
+  [ -n "$CORP_TOWER_SUPABASE_ANON_KEY" ] || {
+    echo "error: CORP_TOWER_SUPABASE_ANON_KEY must be set for a shipping build" >&2
+    exit 1
+  }
+  case "$CORP_TOWER_SUPABASE_ANON_KEY" in
+    sb_publishable_*)
+      echo "error: shipping clients currently require the legacy anon JWT key; sb_publishable keys cannot be sent as bearer tokens" >&2
+      exit 1
+      ;;
+    sb_secret_*)
+      echo "error: CORP_TOWER_SUPABASE_ANON_KEY contains a server secret key" >&2
+      exit 1
+      ;;
+  esac
+  [ "$CORP_TOWER_SUPABASE_URL" = "https://${SUPABASE_PROJECT_REF}.supabase.co" ] || {
+    echo "error: CORP_TOWER_SUPABASE_URL does not match SUPABASE_PROJECT_REF" >&2
+    exit 1
+  }
+
+  case "$CORP_TOWER_EXPECTED_DATA_ENVIRONMENT" in
+    production)
+      [ "$SUPABASE_PROJECT_REF" = "$SINGAPORE_PRODUCTION_PROJECT_REF" ] || {
+        echo "error: production must use the Singapore Production Supabase project" >&2
+        exit 1
+      }
+      ;;
+    development)
+      [ -n "$SINGAPORE_DEVELOPMENT_PROJECT_REF" ] || {
+        echo "error: Singapore Development is not provisioned; Development builds remain blocked" >&2
+        exit 1
+      }
+      [ "$SUPABASE_PROJECT_REF" = "$SINGAPORE_DEVELOPMENT_PROJECT_REF" ] || {
+        echo "error: development must use the Singapore Development Supabase project" >&2
+        exit 1
+      }
+      ;;
+  esac
+fi
+
 if [ "$CORP_TOWER_AUTH_OAUTH" = "true" ] && [ -z "$CORP_TOWER_SUPABASE_URL" ]; then
   echo "error: CORP_TOWER_AUTH_OAUTH is true but no Supabase project is configured" >&2
   exit 1
@@ -83,6 +158,10 @@ echo "  PRIMARY=${CORP_TOWER_WS_PRIMARY}"
 echo "  DEBUG_UI_ENABLED=${CORP_TOWER_DEBUG_UI}"
 echo "  DEMO_MODE_ENABLED=${CORP_TOWER_DEMO_MODE}"
 echo "  SUPABASE_URL=${CORP_TOWER_SUPABASE_URL:-<none>}"
+if [ -n "$CORP_TOWER_EXPECTED_DATA_ENVIRONMENT" ]; then
+  echo "  DATA_ENVIRONMENT=${TOD_DATA_ENVIRONMENT}"
+  echo "  SUPABASE_PROJECT_REF=${SUPABASE_PROJECT_REF}"
+fi
 # Never echo the key itself, only whether the build carries one.
 echo "  SUPABASE_ANON_KEY=$([ -n "$CORP_TOWER_SUPABASE_ANON_KEY" ] && echo "<set>" || echo "<none>")"
 echo "  AUTH_OAUTH_ENABLED=${CORP_TOWER_AUTH_OAUTH}"
