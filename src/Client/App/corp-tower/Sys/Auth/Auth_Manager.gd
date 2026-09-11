@@ -784,7 +784,7 @@ func begin_facebook_link_preflight() -> String:
 	if not can_link_provider("facebook"):
 		return REASON_REJECTED
 
-	if OS.has_feature("web"):
+	if facebook_link_route() == FACEBOOK_LINK_ROUTE_WEB_SDK:
 		_clear_pending_link_state()
 		active_flow_purpose = FLOW_FACEBOOK_LINK_PREFLIGHT
 		var web_reason := _begin_web_facebook_login(FLOW_FACEBOOK_LINK_PREFLIGHT)

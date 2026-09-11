@@ -27,6 +27,37 @@ class FakeFacebookProviderSession extends Node:
 		fresh_selection_calls += 1
 		return true
 
+class FakeWebFacebookAuth extends WebFacebookAuthScript:
+	var login_result: Dictionary = {}
+
+	func take_login_result() -> Dictionary:
+		return login_result
+
+class WebFacebookLinkPreflightAuthManager extends AuthManagerScript:
+	var web_launch_reason := REASON_NONE
+	var native_readiness_calls := 0
+	var native_selection_calls := 0
+
+	func can_link_provider(provider: String) -> bool:
+		return provider == "facebook"
+
+	func facebook_link_route() -> String:
+		return FACEBOOK_LINK_ROUTE_WEB_SDK
+
+	func _begin_web_facebook_login(purpose: String) -> String:
+		if web_launch_reason == REASON_NONE:
+			web_facebook_login_purpose = purpose
+			web_facebook_login_in_flight = true
+		return web_launch_reason
+
+	func _native_facebook_ready() -> bool:
+		native_readiness_calls += 1
+		return true
+
+	func _begin_native_facebook_link_selection() -> bool:
+		native_selection_calls += 1
+		return true
+
 class RecoveryAuthManager extends AuthManagerScript:
 	func access_token() -> String:
 		return access_token_value
@@ -432,6 +463,64 @@ func test_web_facebook_sdk_uses_browser_credentials_without_redirect_oauth() -> 
 	assert_true(login.contains("reauthenticate"))
 	assert_false(login.contains("window.location"))
 	assert_false(login.contains("supabase"))
+
+func test_web_facebook_link_preflight_starts_sdk_without_native_fallthrough() -> void:
+	var web_auth = WebFacebookLinkPreflightAuthManager.new()
+
+	assert_eq(web_auth.begin_facebook_link_preflight(), web_auth.REASON_NONE)
+	assert_eq(web_auth.active_flow_purpose, web_auth.FLOW_FACEBOOK_LINK_PREFLIGHT)
+	assert_true(web_auth.web_facebook_login_in_flight)
+	assert_eq(web_auth.web_facebook_login_purpose, web_auth.FLOW_FACEBOOK_LINK_PREFLIGHT)
+	assert_eq(web_auth.native_readiness_calls, 0)
+	assert_eq(web_auth.native_selection_calls, 0)
+
+	web_auth.free()
+
+func test_web_facebook_link_preflight_start_failure_is_retryable_and_restores_flow() -> void:
+	var web_auth = WebFacebookLinkPreflightAuthManager.new()
+	web_auth.web_launch_reason = web_auth.REASON_BROWSER
+	web_auth.active_flow_purpose = web_auth.FLOW_LINK
+
+	assert_eq(web_auth.begin_facebook_link_preflight(), web_auth.REASON_BROWSER)
+	assert_eq(web_auth.active_flow_purpose, web_auth.FLOW_SIGN_IN)
+	assert_false(web_auth.web_facebook_login_in_flight)
+	assert_eq(web_auth.native_readiness_calls, 0)
+	assert_eq(web_auth.native_selection_calls, 0)
+
+	web_auth.free()
+
+func test_web_facebook_link_credential_stages_without_mutating_guest() -> void:
+	var ready_credentials: Array[String] = []
+	var web_facebook = FakeWebFacebookAuth.new()
+	auth.facebook_link_credential_ready.connect(
+		func(credential: String): ready_credentials.append(credential)
+	)
+	auth._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	auth.web_facebook_auth = web_facebook
+	auth.active_flow_purpose = auth.FLOW_FACEBOOK_LINK_PREFLIGHT
+	auth.web_facebook_login_purpose = auth.FLOW_FACEBOOK_LINK_PREFLIGHT
+	auth.web_facebook_login_in_flight = true
+	web_facebook.login_result = {
+		"access_token": "web-facebook-token",
+		"expires_in": 3600
+	}
+
+	auth._process(0.0)
+
+	assert_eq(ready_credentials, ["web-facebook-token"])
+	assert_true(auth.has_pending_native_facebook_link())
+	assert_eq(auth.pending_native_facebook_credential(), "web-facebook-token")
+	assert_eq(auth.access_token_value, "guest-access")
+	assert_eq(auth.refresh_token_value, "guest-refresh")
+	assert_eq(auth.user_id, "guest-user")
+	assert_true(auth.is_anonymous)
+	assert_eq(auth.current_provider, "")
+	assert_eq(auth.facebook_access_token_value, "")
 
 func test_provider_link_result_keeps_only_its_provider_metadata_until_consumed() -> void:
 	auth._save_link_flow("google", "guest-user")
