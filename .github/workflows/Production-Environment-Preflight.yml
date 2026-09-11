@@ -1,6 +1,6 @@
 name: Production Environment Preflight
 
-run-name: Production environment preflight by @${{ github.actor }}
+run-name: Production environment preflight
 
 on:
   workflow_dispatch:
