@@ -125,7 +125,7 @@ func _update_starting_presentation() -> void:
 	if presentation_deadline_ms <= 0:
 		return
 	var remaining_ms := maxi(0, presentation_deadline_ms - Time.get_ticks_msec())
-	var countdown_active := remaining_ms > 0 and remaining_ms <= COUNTDOWN_WINDOW_MS
+	var countdown_active := remaining_ms <= COUNTDOWN_WINDOW_MS
 	if briefing_card != null:
 		briefing_card.visible = remaining_ms > 0
 		if countdown_active:

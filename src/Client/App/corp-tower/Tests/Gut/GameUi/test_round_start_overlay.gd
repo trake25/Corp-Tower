@@ -87,7 +87,8 @@ func test_countdown_uses_the_current_authoritative_interval_without_local_unlock
 
 	overlay.presentation_deadline_ms = Time.get_ticks_msec() - 1
 	overlay.update_presentation()
-	assert_false((harness.find("StartCountdownLabel") as Label).visible)
+	assert_true((harness.find("StartCountdownLabel") as Label).visible)
+	assert_eq((harness.find("StartCountdownLabel") as Label).text, "1")
 	assert_true(overlay.ready_active, "Local presentation time cannot become gameplay authority.")
 	assert_false(harness.main.inventory.can_place_block(0))
 
