@@ -126,16 +126,22 @@ async function successfulFetch(url, options = {}) {
   if (target.endsWith('/user/tokens/verify')) {
     return jsonResponse({ success: true, result: { status: 'active' } });
   }
+  if (target.endsWith('/zones/0123456789abcdef0123456789abcdef')) {
+    return jsonResponse({
+      success: true,
+      result: {
+        id: '0123456789abcdef0123456789abcdef',
+        name: 'galaxxigames.com',
+      },
+    });
+  }
   if (target.includes('/dns_records/00000000000000000000000000000000')) {
     return jsonResponse({ success: false, errors: [{ code: 81044 }] }, 404);
   }
   if (target.includes('/dns_records?per_page=1')) {
     return jsonResponse({
       success: true,
-      result: [{
-        zone_id: '0123456789abcdef0123456789abcdef',
-        zone_name: 'galaxxigames.com',
-      }],
+      result: [],
     });
   }
   if (target.endsWith('/edits') && options.method === 'POST') return jsonResponse({ id: 'temporary-edit' });
@@ -380,6 +386,43 @@ test('hosted OAuth client IDs must match the Singapore Production provider redir
   assert.equal(result.ok, false);
   assert.equal(
     result.lines.some(line => line.includes('ERROR GOOGLE_OAUTH_WEB_CLIENT_ID: wrong project:')),
+    true,
+  );
+});
+
+test('Cloudflare ownership comes from zone details and does not depend on DNS-record metadata', async () => {
+  const result = await run(completeEnvironment(), {
+    fetchImpl: async (url, options) => {
+      if (String(url).includes('/dns_records?per_page=1')) {
+        return jsonResponse({
+          success: true,
+          result: [{ id: 'record-without-zone-metadata', name: 'www.galaxxigames.com' }],
+        });
+      }
+      return await successfulFetch(url, options);
+    },
+  });
+  assert.equal(result.ok, true);
+});
+
+test('AWS authentication failure marks EKS-dependent values unverified rather than mismatched', async () => {
+  const environment = completeEnvironment();
+  environment.AWS_AUTH_OUTCOME = 'failure';
+  const result = await run(environment);
+  assert.equal(result.ok, false);
+  for (const name of [
+    'PLAYER_IDENTITY_HMAC_SECRET',
+    'PLAYER_IDENTITY_HMAC_KEY_VERSION',
+    'PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET',
+    'PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION',
+  ]) {
+    assert.equal(
+      result.lines.some(line => line === `ERROR ${name}: dependency failure: value could not be compared with Production EKS because AWS_ROLE_ARN OIDC authentication failed`),
+      true,
+    );
+  }
+  assert.equal(
+    result.lines.some(line => line === 'ERROR AWS_ROLE_ARN: authentication failure: GitHub OIDC could not assume the configured role'),
     true,
   );
 });

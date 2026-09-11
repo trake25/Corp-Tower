@@ -615,7 +615,7 @@ async function verifyHmacLineage(runCommand, environment, report, values, option
   if (environment.AWS_AUTH_OUTCOME !== 'success') {
     for (const name of names) {
       if (!report.failed(name)) {
-        report.fail(name, 'wrong environment proof unavailable: GitHub OIDC could not authenticate to the current Production cluster');
+        report.fail(name, 'dependency failure: value could not be compared with Production EKS because AWS_ROLE_ARN OIDC authentication failed');
       }
     }
     return;
@@ -944,22 +944,37 @@ async function verifyCloudflare(fetchImpl, report, values) {
     return;
   }
 
+  const zone = await requestJson(
+    fetchImpl,
+    `https://api.cloudflare.com/client/v4/zones/${values.CLOUDFLARE_ZONE_ID}`,
+    { headers },
+  );
+  if (!zone.reachable) {
+    report.fail('CLOUDFLARE_ZONE_ID', 'zone details endpoint was unreachable');
+    return;
+  }
+  if (!zone.ok || zone.data?.success !== true || !zone.data?.result) {
+    report.fail('CLOUDFLARE_API_TOKEN', 'permission scope mismatch: token cannot read the configured zone');
+    report.fail('CLOUDFLARE_ZONE_ID', 'zone is missing, belongs to another account, or is outside the token scope');
+    return;
+  }
+  if (
+    zone.data.result.id !== values.CLOUDFLARE_ZONE_ID
+    || String(zone.data.result.name ?? '').toLowerCase() !== PRODUCTION_DNS_ZONE
+  ) {
+    report.fail('CLOUDFLARE_ZONE_ID', `wrong environment: configured zone is not ${PRODUCTION_DNS_ZONE}`);
+    return;
+  }
+
   const records = await requestJson(
     fetchImpl,
     `https://api.cloudflare.com/client/v4/zones/${values.CLOUDFLARE_ZONE_ID}/dns_records?per_page=1`,
     { headers },
   );
   if (!records.reachable) {
-    report.fail('CLOUDFLARE_ZONE_ID', 'DNS zone endpoint was unreachable');
+    report.fail('CLOUDFLARE_API_TOKEN', 'DNS access could not be proven because the record endpoint was unreachable');
   } else if (!records.ok || records.data?.success !== true || !Array.isArray(records.data?.result)) {
     report.fail('CLOUDFLARE_API_TOKEN', 'token lacks DNS access to the configured zone');
-    report.fail('CLOUDFLARE_ZONE_ID', 'zone is missing, belongs to another account, or is outside the token scope');
-  } else if (
-    records.data.result.length === 0
-    || records.data.result[0]?.zone_id !== values.CLOUDFLARE_ZONE_ID
-    || records.data.result[0]?.zone_name !== PRODUCTION_DNS_ZONE
-  ) {
-    report.fail('CLOUDFLARE_ZONE_ID', `wrong environment: zone could not be proven as ${PRODUCTION_DNS_ZONE}`);
   }
 
   if (report.failed('CLOUDFLARE_API_TOKEN') || report.failed('CLOUDFLARE_ZONE_ID')) return;

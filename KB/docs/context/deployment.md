@@ -43,7 +43,10 @@ player-identity HMAC material must match the current Production Kubernetes Secre
 The preflight also exercises the bounded provider, infrastructure, private-asset, signing, and
 store permissions needed by current Production jobs. It is non-deploying, reports Production ready only
 after the complete set passes, and never substitutes a local or partial result for an actual run inside
-the GitHub `production` environment.
+the GitHub `production` environment. The AWS role must trust that environment's GitHub OIDC subject;
+when role authentication fails, EKS, ECR, and HMAC results remain explicitly unverified rather than being
+reported as value mismatches. Cloudflare zone ownership comes from the zone-details resource, while the
+DNS endpoints independently prove record access and write permission.
 
 <!-- kb
 id: deploy.shared.terraform-roots

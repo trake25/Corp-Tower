@@ -219,7 +219,7 @@ Adjacent concepts: `testing.release.gates`
 
 ## deploy.shared.auth-env
 
-Owner: `KB/docs/context/deployment.md:75-99` → **Authentication environment**
+Owner: `KB/docs/context/deployment.md:78-102` → **Authentication environment**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -243,18 +243,18 @@ Adjacent concepts: none
 
 ## deploy.shared.production-preflight
 
-Owner: `KB/docs/context/deployment.md:35-47` → **Production environment preflight**
+Owner: `KB/docs/context/deployment.md:35-50` → **Production environment preflight**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `.github/workflows/Production-Environment-Preflight.yml` | `preflight` | 17 | `sed -n 5,37p .github/workflows/Production-Environment-Preflight.yml` |
-| `scripts/verify-production-environment.mjs` | `export async function verifyProductionEnvironment` | 1349 | `sed -n 1337,1369p scripts/verify-production-environment.mjs` |
+| `scripts/verify-production-environment.mjs` | `export async function verifyProductionEnvironment` | 1364 | `sed -n 1352,1384p scripts/verify-production-environment.mjs` |
 
 Adjacent concepts: `deploy.shared.environments`, `deploy.shared.auth-env`
 
 ## deploy.shared.secret-rollout
 
-Owner: `KB/docs/context/deployment.md:108-111` → **Secret rollout**
+Owner: `KB/docs/context/deployment.md:111-114` → **Secret rollout**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -265,7 +265,7 @@ Adjacent concepts: `deploy.eks.workflows`
 
 ## deploy.shared.terraform-roots
 
-Owner: `KB/docs/context/deployment.md:57-64` → **Terraform roots**
+Owner: `KB/docs/context/deployment.md:60-67` → **Terraform roots**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
