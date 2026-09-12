@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## automation.docs.maps
 
-Owner: `KB/docs/context/automation.md:384-389` → **Map regeneration**
+Owner: `KB/docs/context/automation.md:387-392` → **Map regeneration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,7 +15,7 @@ Adjacent concepts: `automation.docs.validation`
 
 ## automation.docs.retrieval-repair
 
-Owner: `KB/docs/context/automation.md:426-431` → **Retrieval repair**
+Owner: `KB/docs/context/automation.md:429-434` → **Retrieval repair**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: `automation.retrieval.fallback`
 
 ## automation.docs.scope
 
-Owner: `KB/docs/context/automation.md:414-419` → **Docs scoping**
+Owner: `KB/docs/context/automation.md:417-422` → **Docs scoping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: none
 
 ## automation.docs.validation
 
-Owner: `KB/docs/context/automation.md:396-407` → **KB validation**
+Owner: `KB/docs/context/automation.md:399-410` → **KB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -58,7 +58,7 @@ Adjacent concepts: `automation.observability.usage`
 
 ## automation.git.publish
 
-Owner: `KB/docs/context/automation.md:501-549` → **Authorized Git publication**
+Owner: `KB/docs/context/automation.md:504-554` → **Authorized Git publication**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -70,7 +70,7 @@ Adjacent concepts: none
 
 ## automation.observability.binding
 
-Owner: `KB/docs/context/automation.md:441-452` → **Observability binding**
+Owner: `KB/docs/context/automation.md:444-455` → **Observability binding**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -83,7 +83,7 @@ Adjacent concepts: none
 
 ## automation.observability.flags
 
-Owner: `KB/docs/context/automation.md:483-492` → **Workflow inefficiency flags**
+Owner: `KB/docs/context/automation.md:486-495` → **Workflow inefficiency flags**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -96,7 +96,7 @@ Adjacent concepts: none
 
 ## automation.observability.usage
 
-Owner: `KB/docs/context/automation.md:465-473` → **Observability usage**
+Owner: `KB/docs/context/automation.md:468-476` → **Observability usage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -117,7 +117,7 @@ Owner: `KB/docs/context/automation.md:197-212` → **Orchestrated execution**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `policy/PLANNER.md` | `Execution-shape planning` | 89 | `sed -n 77,109p policy/PLANNER.md` |
-| `policy/CODEX.md` | `Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.` | 119 | `sed -n 107,130p policy/CODEX.md` |
+| `policy/CODEX.md` | `Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.` | 123 | `sed -n 111,134p policy/CODEX.md` |
 | `policy/REVIEWER.md` | `For orchestrated work, the approved parent plan is the implementation contract.` | 25 | `sed -n 13,45p policy/REVIEWER.md` |
 
 Adjacent concepts: `automation.planning.phase2`, `automation.orchestration.ownership`, `automation.task-close.lifecycle`
@@ -128,7 +128,7 @@ Owner: `KB/docs/context/automation.md:224-235` → **Orchestration coordination*
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/CODEX.md` | `Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.` | 119 | `sed -n 107,130p policy/CODEX.md` |
+| `policy/CODEX.md` | `Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.` | 123 | `sed -n 111,134p policy/CODEX.md` |
 | `scripts/lib/orchestration-scope.mjs` | `claimWorkerScope` | 173 | `sed -n 161,193p scripts/lib/orchestration-scope.mjs` |
 | `scripts/lib/orchestration-scope.mjs` | `finalizeOrchestrationScope` | 213 | `sed -n 201,224p scripts/lib/orchestration-scope.mjs` |
 | `scripts/lib/task-ownership.mjs` | `resolveTaskOwnership` | 216 | `sed -n 204,236p scripts/lib/task-ownership.mjs` |
@@ -228,7 +228,7 @@ Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt
 
 ## automation.task-close.plan-archive
 
-Owner: `KB/docs/context/automation.md:357-377` → **Plan archival**
+Owner: `KB/docs/context/automation.md:359-380` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -253,7 +253,7 @@ Adjacent concepts: `automation.planning.phase2`, `automation.task-close.lifecycl
 
 ## automation.task-close.receipt
 
-Owner: `KB/docs/context/automation.md:339-348` → **Public receipt**
+Owner: `KB/docs/context/automation.md:341-350` → **Public receipt**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -276,7 +276,7 @@ Adjacent concepts: `automation.orchestration.ownership`
 
 ## automation.task-close.verification
 
-Owner: `KB/docs/context/automation.md:322-331` → **Task-close verification**
+Owner: `KB/docs/context/automation.md:322-333` → **Task-close verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

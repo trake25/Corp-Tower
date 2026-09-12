@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:149-166` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:122-139` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -27,7 +27,7 @@ Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifec
 
 ## testing.balance.tools
 
-Owner: `KB/docs/context/testing.md:124-127` → **Balance tools**
+Owner: `KB/docs/context/testing.md:97-100` → **Balance tools**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -40,7 +40,7 @@ Adjacent concepts: `gameplay.bots.calibration`
 
 ## testing.client.coverage
 
-Owner: `KB/docs/context/testing.md:46-54` → **Godot coverage**
+Owner: `KB/docs/context/testing.md:48-53` → **Godot coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -52,7 +52,7 @@ Adjacent concepts: none
 
 ## testing.client.rendered
 
-Owner: `KB/docs/context/testing.md:64-99` → **Rendered client verification**
+Owner: `KB/docs/context/testing.md:63-74` → **Rendered client verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -63,7 +63,7 @@ Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.render
 
 ## testing.client.snapgrid-isolation
 
-Owner: `KB/docs/context/testing.md:107-112` → **SnapGrid shared-state isolation**
+Owner: `KB/docs/context/testing.md:82-85` → **SnapGrid shared-state isolation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -74,7 +74,7 @@ Adjacent concepts: none
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:173-176` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:146-149` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -84,7 +84,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:186-199` → **Release gates**
+Owner: `KB/docs/context/testing.md:159-172` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -95,7 +95,7 @@ Adjacent concepts: `build.android.pipeline`, `deploy.eks.workflows`
 
 ## testing.selection.local
 
-Owner: `KB/docs/context/testing.md:11-17` → **Local QA selection**
+Owner: `KB/docs/context/testing.md:11-19` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -105,7 +105,7 @@ Adjacent concepts: none
 
 ## testing.server.coverage
 
-Owner: `KB/docs/context/testing.md:24-27` → **Server coverage**
+Owner: `KB/docs/context/testing.md:26-29` → **Server coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -115,7 +115,7 @@ Adjacent concepts: none
 
 ## testing.server.reconnect
 
-Owner: `KB/docs/context/testing.md:34-37` → **Reconnect coverage**
+Owner: `KB/docs/context/testing.md:36-39` → **Reconnect coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

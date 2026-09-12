@@ -138,6 +138,8 @@ Provide ordered required outcomes, material interfaces/invariants, compatibility
 
 Specify only minimum task-required verification plus consistency/generated mechanics required by actual changed scope or selected task policy.
 
+For Godot/client work, select headless smoke/GUT when needed to prove implementation correctness. Rendered/visual verification is optional and must be selected explicitly only when visual judgment materially helps prove the approved behavior. If selected verification later cannot run because of tooling/environment limitations, the implementor reports that limitation; Planner does not pre-disable the required check or change archival/publication defaults.
+
 ### `## 7. Done Criteria`
 
 State observable task completion conditions only. Do not repeat universal archival or publication mechanics from `AGENTS.md`.

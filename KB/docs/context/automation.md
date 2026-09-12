@@ -326,8 +326,10 @@ and its bounded protected generated outputs, plus any verification policy select
 
 When task-close is not selected, required correctness checks run directly from the plan and actual
 changed scope. BARE does not create a close lifecycle merely to host verification. Known
-task-caused failures remain open until repaired; unrelated approved maintenance remains outside the
-task.
+task-caused implementation/test failures remain open until repaired. A check blocked solely by a
+tooling/environment limitation is reported as `maintenance-blocked` and remains a verification
+limitation rather than an implementation failure; it does not require a second approval before the
+enabled archival/publication closeout runs.
 
 <!-- kb
 id: automation.task-close.receipt
@@ -356,8 +358,9 @@ source: AGENTS.md#Codex universal policy
 -->
 ## Plan archival
 
-Plan archival defaults ON and is independent from publication and task-close. After successful
-implementation and required verification, archive the active plan with:
+Plan archival defaults ON and is independent from publication and task-close. After implementation
+is complete and required verification has either passed or is blocked solely by a tooling/environment
+limitation, archive the active plan with:
 
 `node scripts/plan-archive.mjs --plan plan/<active-phase-2-plan.md>`
 
@@ -500,9 +503,11 @@ source: AGENTS.md#Codex universal policy
 -->
 ## Authorized Git publication
 
-Publication defaults ON and is independent from plan archival. After successful implementation and
-required verification, publish the completed task unless the Phase 2 plan contains
-`publication=OFF`; when archival is enabled, archival runs first.
+Publication defaults ON and is independent from plan archival. After implementation is complete and
+required verification has either passed or is blocked solely by a tooling/environment limitation,
+publish the completed task unless the Phase 2 plan contains `publication=OFF`; when archival is
+enabled, archival runs first. A task-caused implementation/test failure still blocks publication
+until repaired.
 
 The approved Phase 2 task supplies the authorization represented by `--approve`; do not ask for a
 second approval before bounded completion publication. That authorization applies only to the

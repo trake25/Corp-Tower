@@ -86,7 +86,11 @@ Use only bounded current-task telemetry/evidence for candidate/flag processing. 
 
 Compile only when executable QA is ON.
 
-Run only the task-selected executable verification using compact repository tooling where available. Successful detailed child output remains private; expand only actionable failure diagnostics. Executable QA does not automatically authorize permanent coverage.
+Run only the task-selected executable verification using compact repository tooling where available. Selected headless/client verification is required when the Phase 2 plan includes it. Rendered/visual verification is not implicit; run it only when the Phase 2 plan explicitly selects it.
+
+A tooling/environment-only inability to run selected verification is reported as `maintenance-blocked`, not as a pass. It does not suppress default plan archival/publication and does not require a second user approval. Any task-caused implementation, assertion, or behavioral failure still blocks closeout until repaired.
+
+Successful detailed child output remains private; expand only actionable failure diagnostics. Executable QA does not automatically authorize permanent coverage.
 
 #QA-COVERAGE#
 

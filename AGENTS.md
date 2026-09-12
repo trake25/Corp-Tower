@@ -12,13 +12,15 @@ Prefer the smallest bounded reads and compact tool outputs that preserve correct
 
 If implementation changes a durable repository contract, update its owning authored KB concept. Follow `KB/docs/context/CONCEPT-SCHEMA.md` before editing KB prose. Never hand-edit generated KB routers or concept maps; use their deterministic generator.
 
-Run the verification required by the approved plan. Repair known task-caused failures before successful completion and never weaken a valid check merely to make the task pass. Existing `SAFETY EXCEPTION` comments must not be removed, weakened, or rewritten unless the approved task explicitly retires the underlying safety condition.
+Run the verification required by the approved plan. Repair known task-caused failures before completion and never weaken a valid check merely to make the task pass. If a required check cannot run solely because of a tooling/environment limitation, report it as `maintenance-blocked`; do not treat it as a pass and do not require a second user approval for closeout. Existing `SAFETY EXCEPTION` comments must not be removed, weakened, or rewritten unless the approved task explicitly retires the underlying safety condition.
 
 If current repository evidence materially conflicts with the approved behavior, makes the requested outcome ambiguous, or proves that a new product/workflow decision is required, stop and report the conflict rather than inventing a resolution.
 
-After successful implementation and required verification:
+After implementation is complete and required verification has either passed or is blocked solely by a tooling/environment limitation:
 - unless `plan_archival=OFF`, archive with `node scripts/plan-archive.mjs --plan <plan/...md>`;
 - unless `publication=OFF`, publish through `node scripts/git-sync-commit-push.mjs` using `KB/docs/context/automation.md#Authorized Git publication`. The approved Phase 2 task is the authorization represented by `--approve`; do not ask for a second approval.
+
+A task-caused implementation/test failure still blocks closeout until repaired.
 
 Do not substitute raw `git add`, `git commit`, `git pull`, or `git push` for task publication. If either enabled completion tool rejects the task, stop and report the bounded failure rather than bypassing it. Outside this bounded closeout, externally consequential or destructive actions require explicit user authorization.
 

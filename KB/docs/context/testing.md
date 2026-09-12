@@ -15,6 +15,8 @@ Server checks include syntax plus mapped Node tests, client checks include host-
 
 When executable QA is disabled, ordinary completion does not run those selected regression suites solely for closure. Required patch integrity and task-triggered KB/generated consistency remain separate from optional executable QA; valid legacy task-close manifests retain their explicitly selected QA behavior.
 
+A selected verification remains required even if its runner is unavailable. A tooling/environment-only inability to execute it is reported as `maintenance-blocked`, not converted into a pass or silently skipped. That limitation does not by itself block the default archival/publication closeout; task-caused test or implementation failures still do.
+
 <!-- kb
 id: testing.server.coverage
 alias: Node tests
@@ -45,12 +47,9 @@ source: scripts/qa-gate.mjs#main
 -->
 ## Godot coverage
 
-The deterministic QA path selects the repository/host-matching Godot executable.
-Client smoke is the application/script correctness gate: it loads runtime
-scripts, main scene, autoloads, and required gameplay bindings rather than
-treating a single-file check as equivalent. GUT protects placement mirrors,
-inventory/block behavior, deterministic collapse/pose logic, authentication,
-tutorial progression, gameplay rendering, and meaningful UI structure.
+Planner selects headless Godot smoke/GUT when those checks are needed to prove client correctness, and the implementor must attempt every selected check. Client smoke is the application/script correctness gate: it loads runtime scripts, main scene, autoloads, and required gameplay bindings rather than treating a single-file check as equivalent. GUT protects placement mirrors, inventory/block behavior, deterministic collapse/pose logic, authentication, tutorial progression, gameplay rendering, and meaningful UI structure.
+
+The deterministic QA path uses the available repository/host-matching Godot executable. If the selected headless verification cannot run solely because the Godot runner or required host capability is unavailable, report a tooling/environment verification limitation as `maintenance-blocked`. Do not treat the check as passed and no approval needed before enabled archival/publication proceeds.
 
 <!-- kb
 id: testing.client.rendered
@@ -63,39 +62,15 @@ adjacent: ui.constraint.rendered-verification
 -->
 ## Rendered client verification
 
-Headless tests establish structure and deterministic behavior but cannot prove
-final visual fidelity, touch pairing, Tower Stack frame behavior, responsive
-layout, native-provider presentation, or other device-specific appearance. Use
-rendered verification only when the approved task selects it and visual judgment
-materially helps prove the requested behavior.
+Headless tests establish structure and deterministic behavior but cannot prove final visual fidelity, touch pairing, Tower Stack frame behavior, responsive layout, native-provider presentation, or other device-specific appearance. Rendered/visual verification is optional by default and runs only when the approved Phase 2 plan explicitly selects it because visual judgment materially helps prove the requested behavior.
 
-An approved Phase 2 task that explicitly selects rendered verification authorizes
-the agent to launch the Top or Drop Godot client, create a task-owned virtual
-display when needed, capture task-scoped screenshots, and terminate only the
-processes or display resources it created for that check. No additional repository
-authorization is required for those bounded actions, although the runtime may still
-require a host or sandbox permission approval.
+When rendered verification is selected, the implementor must attempt it. The approved Phase 2 task authorizes the agent to launch the Top or Drop Godot client, create a task-owned virtual display when needed, capture task-scoped screenshots, and terminate only the processes or display resources it created for that check. No additional repository authorization is required for those bounded actions, although the runtime may still require a host or sandbox permission approval.
 
-Use the available Godot executable from the repository root with the client project
-at `src/Client/App/corp-tower`. For a screen-specific check, the agent may launch a
-client `.tscn` directly when doing so avoids authentication, navigation, or other
-prerequisites irrelevant to the presentation being reviewed. The standard client
-viewport is 412×917; preserve that viewport when practical for the visual proof.
+Use the available Godot executable with the client project at `src/Client/App/corp-tower`. For a screen-specific check, the agent may launch a client `.tscn` directly when doing so avoids authentication, navigation, or other prerequisites irrelevant to the presentation being reviewed. The standard client viewport is 412×917; preserve that viewport when practical for the visual proof.
 
-In a tty or otherwise headless environment, prefer a private `xvfb-run` session
-owned by the task. That isolated virtual display is the capture boundary: because
-it exists only for the task, the agent may capture the virtual display or the
-relevant task window without inspecting unrelated host desktop content. The agent
-should choose the smallest available command sequence for the environment rather
-than depend on a repository wrapper; a lightweight window manager or capture tool
-may be used only when the actual check needs it.
+In a tty or otherwise headless environment, prefer a private `xvfb-run` session owned by the task. That isolated virtual display is the capture boundary: because it exists only for the task, the agent may capture the virtual display or the relevant task window without inspecting unrelated host desktop content. The agent should choose the smallest available command sequence for the environment rather than depend on a repository wrapper; a lightweight window manager or capture tool may be used only when the actual check needs it.
 
-Never use `xhost`, weaken host display security, inspect unrelated host windows,
-or broadly terminate processes. Clean up only the Godot, Xvfb, window-manager, or
-capture processes and temporary resources created for the visual check. If bounded
-rendered proof cannot be obtained with the available environment or permissions,
-report that verification limitation instead of weakening the host security model.
-Visual judgment remains with the agent or reviewer.
+Never use `xhost`, weaken host display security, inspect unrelated host windows, or broadly terminate processes. Clean up only the Godot, Xvfb, window-manager, or capture processes and temporary resources created for the visual check. If selected rendered proof cannot be obtained solely because of the available tooling, environment, or permissions, report it as a tooling/environment verification limitation (`maintenance-blocked`) rather than weakening the host security model. Visual judgment remains with the agent or reviewer.
 
 <!-- kb
 id: testing.client.snapgrid-isolation
@@ -106,9 +81,7 @@ source: src/Client/App/corp-tower/Tests/Gut/GameUi/test_snap_grid.gd#before_each
 -->
 ## SnapGrid shared-state isolation
 
-SnapGrid's placeable range is shared mutable state. A test that changes it must
-restore or reset it so later tests start from the default range rather than
-inheriting another test's level-specific span.
+SnapGrid's placeable range is shared mutable state. A test that changes it must restore or reset it so later tests start from the default range rather than inheriting another test's level-specific span.
 
 <!-- kb
 id: testing.balance.tools
