@@ -39,3 +39,16 @@ test('Backup Web injects only the development public Facebook App ID after its S
     'development',
   );
 });
+
+test('game-server deployments bind Facebook code exchange to their paired Web origin', () => {
+  const backup = workflow('scripts/backup/backup-server-up.sh');
+  const eks = workflow('.github/workflows/EKS-Deploy-Game-Server.yml');
+
+  assert.match(backup, /1\) FACEBOOK_WEB_ORIGIN="https:\/\/devtod1\.galaxxigames\.com"/);
+  assert.match(backup, /2\) FACEBOOK_WEB_ORIGIN="https:\/\/devtod2\.galaxxigames\.com"/);
+  assert.match(backup, /3\) FACEBOOK_WEB_ORIGIN="https:\/\/toddemo\.galaxxigames\.com"/);
+  assert.match(backup, /-e "FACEBOOK_WEB_ORIGIN=\$\{FACEBOOK_WEB_ORIGIN\}"/);
+  assert.match(eks, /FACEBOOK_WEB_ORIGIN=https:\/\/todplay\.galaxxigames\.com/);
+  assert.match(eks, /name: FACEBOOK_WEB_ORIGIN/);
+  assert.match(eks, /printenv FACEBOOK_WEB_ORIGIN/);
+});

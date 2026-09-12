@@ -1,7 +1,6 @@
 extends GutTest
 
 const AuthManagerScript := preload("res://Sys/Auth/Auth_Manager.gd")
-const WebFacebookAuthScript := preload("res://Sys/Auth/Web_Facebook_Auth.gd")
 
 class FakeGoogleProviderSession extends Node:
 	var reset_calls := 0
@@ -27,14 +26,9 @@ class FakeFacebookProviderSession extends Node:
 		fresh_selection_calls += 1
 		return true
 
-class FakeWebFacebookAuth extends WebFacebookAuthScript:
-	var login_result: Dictionary = {}
-
-	func take_login_result() -> Dictionary:
-		return login_result
-
 class WebFacebookLinkPreflightAuthManager extends AuthManagerScript:
 	var web_launch_reason := REASON_NONE
+	var web_launch_purpose := ""
 	var native_readiness_calls := 0
 	var native_selection_calls := 0
 
@@ -42,12 +36,10 @@ class WebFacebookLinkPreflightAuthManager extends AuthManagerScript:
 		return provider == "facebook"
 
 	func facebook_link_route() -> String:
-		return FACEBOOK_LINK_ROUTE_WEB_SDK
+		return FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
 
 	func _begin_web_facebook_login(purpose: String) -> String:
-		if web_launch_reason == REASON_NONE:
-			web_facebook_login_purpose = purpose
-			web_facebook_login_in_flight = true
+		web_launch_purpose = purpose
 		return web_launch_reason
 
 	func _native_facebook_ready() -> bool:
@@ -56,6 +48,10 @@ class WebFacebookLinkPreflightAuthManager extends AuthManagerScript:
 
 	func _begin_native_facebook_link_selection() -> bool:
 		native_selection_calls += 1
+		return true
+
+class DedicatedAuthTabResumeAuthManager extends AuthManagerScript:
+	func _has_active_web_facebook_auth_tab_flow() -> bool:
 		return true
 
 class RecoveryAuthManager extends AuthManagerScript:
@@ -439,10 +435,41 @@ func test_android_oauth_resume_keeps_existing_cancel_semantics() -> void:
 	assert_eq(completions, [auth.REASON_CANCELLED])
 	assert_eq(auth._load_verifier(), "")
 
-func test_web_facebook_route_uses_sdk_while_android_stays_native() -> void:
+func test_dedicated_auth_tab_is_not_cancelled_by_the_generic_web_resume_grace() -> void:
+	var tab_auth = DedicatedAuthTabResumeAuthManager.new()
+	var completions: Array[String] = []
+	tab_auth.oauth_completed.connect(func(reason: String): completions.append(reason))
+	tab_auth.oauth_in_flight = true
+
+	assert_eq(tab_auth._reject_unresolved_oauth_after_resume(true), tab_auth.REASON_NONE)
+	assert_true(tab_auth.oauth_in_flight)
+	assert_eq(completions, [])
+	tab_auth.free()
+
+	# The flow record is deliberately consumed before the server exchange starts,
+	# so the in-flight result guard also protects that bounded exchange window.
+	auth.oauth_in_flight = true
+	auth.web_facebook_auth_tab_result_in_flight = true
+	assert_eq(auth._reject_unresolved_oauth_after_resume(true), auth.REASON_NONE)
+	assert_true(auth.oauth_in_flight)
+	auth.web_facebook_auth_tab_result_in_flight = false
+
+	# Let the auth-tab poller resolve an expired or malformed transaction so a
+	# link receives its normal retryable provider result instead of a generic
+	# focus-resume completion.
+	auth.web_facebook_auth_tab_in_flight = true
+	assert_eq(auth._reject_unresolved_oauth_after_resume(true), auth.REASON_NONE)
+	assert_true(auth.oauth_in_flight)
+	auth.web_facebook_auth_tab_in_flight = false
+
+func test_web_facebook_routes_mobile_to_an_auth_tab_and_keeps_pc_and_android_paths() -> void:
 	assert_eq(
-		auth._facebook_link_route_for_runtime(true, "Web"),
-		auth.FACEBOOK_LINK_ROUTE_WEB_SDK
+		auth._facebook_link_route_for_runtime(true, "Web", false),
+		auth.FACEBOOK_LINK_ROUTE_WEB_PC
+	)
+	assert_eq(
+		auth._facebook_link_route_for_runtime(true, "Web", true),
+		auth.FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
 	)
 	assert_eq(
 		auth._facebook_link_route_for_runtime(false, "Android"),
@@ -450,33 +477,26 @@ func test_web_facebook_route_uses_sdk_while_android_stays_native() -> void:
 	)
 	assert_eq(auth._facebook_link_route_for_runtime(false, "Linux"), "")
 
-func test_web_facebook_sdk_uses_browser_credentials_without_redirect_oauth() -> void:
-	var web_facebook = WebFacebookAuthScript.new()
-	var bootstrap := web_facebook._initialize_script("test-app-id")
-	var login := web_facebook._begin_login_script()
+func test_mobile_web_detection_covers_common_mobile_and_desktop_user_agents() -> void:
+	assert_true(auth._is_mobile_web_for_user_agent(
+		"Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Mobile Safari/537.36"
+	))
+	assert_true(auth._is_mobile_web_for_user_agent(
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15"
+	))
+	assert_true(auth._is_mobile_web_for_user_agent(
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", false, "MacIntel", 5
+	))
+	assert_false(auth._is_mobile_web_for_user_agent(
+		"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0"
+	))
 
-	assert_true(bootstrap.contains("window.FB.init"))
-	assert_true(bootstrap.contains("test-app-id"))
-	assert_true(login.contains("window.FB.login"))
-	assert_true(login.contains("authResponse"))
-	assert_true(login.contains("expiresIn"))
-	assert_true(login.contains("reauthenticate"))
-	assert_true(login.contains("bridge.result = result"))
-	assert_true(login.contains("window.focus()"))
-	assert_lt(login.find("bridge.result = result"), login.find("window.focus()"))
-	assert_eq(login.count("resolve({"), 2)
-	assert_false(login.contains("window.location"))
-	assert_false(login.contains("window.open"))
-	assert_false(login.contains("window.close"))
-	assert_false(login.contains("supabase"))
-
-func test_web_facebook_link_preflight_starts_sdk_without_native_fallthrough() -> void:
+func test_web_facebook_link_preflight_starts_oauth_without_native_fallthrough() -> void:
 	var web_auth = WebFacebookLinkPreflightAuthManager.new()
 
 	assert_eq(web_auth.begin_facebook_link_preflight(), web_auth.REASON_NONE)
 	assert_eq(web_auth.active_flow_purpose, web_auth.FLOW_FACEBOOK_LINK_PREFLIGHT)
-	assert_true(web_auth.web_facebook_login_in_flight)
-	assert_eq(web_auth.web_facebook_login_purpose, web_auth.FLOW_FACEBOOK_LINK_PREFLIGHT)
+	assert_eq(web_auth.web_launch_purpose, web_auth.FLOW_FACEBOOK_LINK_PREFLIGHT)
 	assert_eq(web_auth.native_readiness_calls, 0)
 	assert_eq(web_auth.native_selection_calls, 0)
 
@@ -489,44 +509,16 @@ func test_web_facebook_link_preflight_start_failure_is_retryable_and_restores_fl
 
 	assert_eq(web_auth.begin_facebook_link_preflight(), web_auth.REASON_BROWSER)
 	assert_eq(web_auth.active_flow_purpose, web_auth.FLOW_SIGN_IN)
-	assert_false(web_auth.web_facebook_login_in_flight)
+	assert_eq(web_auth.web_launch_purpose, web_auth.FLOW_FACEBOOK_LINK_PREFLIGHT)
 	assert_eq(web_auth.native_readiness_calls, 0)
 	assert_eq(web_auth.native_selection_calls, 0)
 
 	web_auth.free()
 
-func test_web_facebook_link_credential_stages_without_mutating_guest() -> void:
-	var ready_credentials: Array[String] = []
-	var web_facebook = FakeWebFacebookAuth.new()
-	auth.facebook_link_credential_ready.connect(
-		func(credential: String): ready_credentials.append(credential)
-	)
-	auth._apply_session({
-		"access_token": "guest-access",
-		"refresh_token": "guest-refresh",
-		"expires_in": 3600,
-		"user": {"id": "guest-user", "is_anonymous": true}
-	})
-	auth.web_facebook_auth = web_facebook
-	auth.active_flow_purpose = auth.FLOW_FACEBOOK_LINK_PREFLIGHT
-	auth.web_facebook_login_purpose = auth.FLOW_FACEBOOK_LINK_PREFLIGHT
-	auth.web_facebook_login_in_flight = true
-	web_facebook.login_result = {
-		"access_token": "web-facebook-token",
-		"expires_in": 3600
-	}
-
-	auth._process(0.0)
-
-	assert_eq(ready_credentials, ["web-facebook-token"])
-	assert_true(auth.has_pending_native_facebook_link())
-	assert_eq(auth.pending_native_facebook_credential(), "web-facebook-token")
-	assert_eq(auth.access_token_value, "guest-access")
-	assert_eq(auth.refresh_token_value, "guest-refresh")
-	assert_eq(auth.user_id, "guest-user")
-	assert_true(auth.is_anonymous)
-	assert_eq(auth.current_provider, "")
-	assert_eq(auth.facebook_access_token_value, "")
+func test_web_facebook_flow_expiry_is_one_time_and_time_bounded() -> void:
+	var now := int(Time.get_unix_time_from_system())
+	assert_true(auth._web_facebook_flow_expired({"expires_at_unix": now}))
+	assert_false(auth._web_facebook_flow_expired({"expires_at_unix": now + 60}))
 
 func test_provider_link_result_keeps_only_its_provider_metadata_until_consumed() -> void:
 	auth._save_link_flow("google", "guest-user")

@@ -29,12 +29,13 @@ alias: Web export pipeline
 alias: Web virtual keyboard
 source: .github/godot/export_presets.web.ci.cfg#preset.0.options
 source: .github/actions/build-godot-web/action.yml#Create CI Web export preset
+source: .github/actions/build-godot-web/action.yml#Export HTML5
 source: .github/workflows/EKS-Deploy-Web-Server.yml#Build web export
 source: .github/workflows/Backup-Deploy-Web-Server.yml#Build web export
 -->
 ## Web pipeline
 
-Both shipping Web workflows provide one shared preset to the Web build action before import and export. That preset owns browser canvas/input export settings, including the virtual-keyboard capability required for touch-browser text entry; the action remains the sole preset-copy/export boundary.
+Both shipping Web workflows provide one shared preset to the Web build action before import and export. That preset owns browser canvas/input export settings, including the virtual-keyboard capability required for touch-browser text entry; the action remains the sole preset-copy/export boundary. The action also copies the lightweight Facebook callback relay to the export root, so every Web artifact serves the same-origin auth-tab handoff without starting a second Godot instance.
 
 <!-- kb
 id: build.android.pipeline
@@ -97,10 +98,12 @@ adjacent: network.session.identity
 Build-time endpoint generation selects one WebSocket target plus debug/demo flags and public auth/provider
 capabilities. Shipping workflows must also supply the expected Production or Development marker, exact Supabase
 project ref, matching canonical URL, and client key; missing, Seoul-source, or cross-environment values fail
-before export. Web builds inject only the selected GitHub environment's public Facebook App ID for browser SDK
-login; they never inject a Facebook client token, App Secret, or other server material. Local non-shipping
-generation may still omit optional Auth. Android maps WebSocket target to data environment and has no independent
-database selector. Shipping workflows use generated configuration rather than runtime hostname guesses.
+before export. Web builds inject only the selected GitHub environment's public Facebook App ID for manual
+authorization-code login; the mobile relay derives its callback from the current origin only when it matches the
+generated Web redirect origin. Builds never inject a Facebook client token, App Secret, or other server material.
+Local non-shipping generation may still omit optional Auth. Android maps WebSocket target to data environment and
+has no independent database selector. Shipping workflows use generated configuration rather than runtime hostname
+guesses.
 
 <!-- kb
 id: build.auth.native-providers

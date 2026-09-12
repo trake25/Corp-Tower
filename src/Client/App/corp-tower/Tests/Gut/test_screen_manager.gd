@@ -490,6 +490,48 @@ func test_interrupted_google_web_link_returns_a_browser_error_without_l2() -> vo
 	assert_false("servers unavailable" in account.error_label.text.to_lower())
 	assert_false("[L2]" in account.error_label.text)
 
+func test_mobile_web_facebook_auth_tab_keeps_the_account_connection_and_avoids_l2() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	_acknowledge_account_profile_readiness()
+	var retained_socket = NetworkManager.ws
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "web_facebook_oauth"
+
+	screen_manager._handle_web_oauth_navigation(
+		"facebook",
+		AuthManager.FLOW_LINK,
+		AuthManager.FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
+	)
+
+	assert_false(screen_manager.provider_link_browser_round_trip_active)
+	assert_true(screen_manager.account_link_readiness_active)
+	assert_true(screen_manager.account_link_ready)
+	assert_true(NetworkManager.is_profile_connected())
+	assert_eq(retained_socket.ready_state, WebSocketPeer.STATE_OPEN)
+	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
+	assert_eq(screen_manager.provider_link_stage, "web_facebook_oauth")
+	assert_false(screen_manager.current_overlay.error_label.visible)
+
+func test_pc_web_facebook_keeps_the_established_same_tab_round_trip_lifecycle() -> void:
+	_show_unlinked_account()
+	await get_tree().process_frame
+	_acknowledge_account_profile_readiness()
+	var retiring_socket = NetworkManager.ws
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "web_facebook_oauth"
+
+	screen_manager._handle_web_oauth_navigation(
+		"facebook",
+		AuthManager.FLOW_LINK,
+		AuthManager.FACEBOOK_LINK_ROUTE_WEB_PC
+	)
+
+	assert_true(screen_manager.provider_link_browser_round_trip_active)
+	assert_false(screen_manager.account_link_readiness_active)
+	assert_false(NetworkManager.is_profile_connected())
+	assert_eq(retiring_socket.ready_state, WebSocketPeer.STATE_CLOSING)
+
 func test_web_link_callback_failure_returns_to_account_without_startup_or_onboarding() -> void:
 	AuthManager.last_provider_link_reason = AuthManager.REASON_CANCELLED
 	AuthManager.provider_link_result_pending = true
@@ -500,18 +542,24 @@ func test_web_link_callback_failure_returns_to_account_without_startup_or_onboar
 	assert_eq(screen_manager.current_overlay.error_label.text, "Account linking cancelled.")
 	assert_true(screen_manager.current_overlay.error_label.visible)
 
-func test_facebook_eligibility_keeps_web_sdk_out_of_the_redirect_path() -> void:
+func test_facebook_eligibility_uses_explicit_web_and_native_lifecycle_stages() -> void:
 	assert_eq(
 		screen_manager._provider_link_stage_after_eligibility(
-			"facebook", AuthManager.FACEBOOK_LINK_ROUTE_WEB_SDK
+			"facebook", AuthManager.FACEBOOK_LINK_ROUTE_WEB_PC
 		),
-		""
+		"web_facebook_oauth"
+	)
+	assert_eq(
+		screen_manager._provider_link_stage_after_eligibility(
+			"facebook", AuthManager.FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
+		),
+		"web_facebook_oauth"
 	)
 	assert_eq(
 		screen_manager._provider_link_stage_after_eligibility(
 			"facebook", AuthManager.FACEBOOK_LINK_ROUTE_NATIVE
 		),
-		"facebook_credential"
+		"facebook_native_credential"
 	)
 	assert_eq(
 		screen_manager._provider_link_stage_after_eligibility("facebook", ""),
@@ -524,7 +572,7 @@ func test_facebook_eligibility_keeps_web_sdk_out_of_the_redirect_path() -> void:
 		"launch"
 	)
 
-func test_web_facebook_credential_uses_subject_preflight_and_credential_commit() -> void:
+func test_native_facebook_credential_uses_subject_preflight_and_credential_commit() -> void:
 	AuthManager._apply_session({
 		"access_token": "guest-access",
 		"refresh_token": "guest-refresh",
@@ -536,18 +584,18 @@ func test_web_facebook_credential_uses_subject_preflight_and_credential_commit()
 	await get_tree().process_frame
 	var socket = NetworkManager.ws
 	var expires_at := int(Time.get_unix_time_from_system()) + 3600
-	assert_true(AuthManager._stage_native_facebook_link_credential("web-facebook-token", expires_at))
+	assert_true(AuthManager._stage_native_facebook_link_credential("native-facebook-token", expires_at))
 	screen_manager.provider_link_pending_provider = "facebook"
-	screen_manager.provider_link_stage = "facebook_credential"
+	screen_manager.provider_link_stage = "facebook_native_credential"
 
-	screen_manager._on_facebook_link_credential_ready("web-facebook-token")
+	screen_manager._on_facebook_link_credential_ready("native-facebook-token")
 
 	assert_true(screen_manager.provider_link_waiting_for_server_result)
 	assert_eq(socket.sent_messages.size(), 1)
 	assert_eq(socket.sent_messages[0], {
 		"type": "provider_link_preflight",
 		"provider": "facebook",
-		"providerCredential": "web-facebook-token"
+		"providerCredential": "native-facebook-token"
 	})
 	assert_false(socket.sent_messages[0].has("accessToken"))
 	assert_eq(AuthManager.access_token_value, "guest-access")
@@ -560,7 +608,7 @@ func test_web_facebook_credential_uses_subject_preflight_and_credential_commit()
 	assert_eq(socket.sent_messages[1], {
 		"type": "provider_link_commit",
 		"provider": "facebook",
-		"providerCredential": "web-facebook-token"
+		"providerCredential": "native-facebook-token"
 	})
 
 	screen_manager._on_provider_link_commit_result({
@@ -571,8 +619,38 @@ func test_web_facebook_credential_uses_subject_preflight_and_credential_commit()
 	assert_false(AuthManager.is_anonymous)
 	assert_eq(AuthManager.current_provider, "facebook")
 	assert_eq(AuthManager.access_token_value, "")
-	assert_eq(AuthManager.facebook_access_token_value, "web-facebook-token")
+	assert_eq(AuthManager.facebook_access_token_value, "native-facebook-token")
 	assert_false(AuthManager.has_pending_provider_link())
+	AuthManager.sign_out()
+
+func test_web_facebook_callback_result_commits_the_existing_guest_without_subject_preflight() -> void:
+	AuthManager._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	_acknowledge_account_profile_readiness()
+	screen_manager.show_account_screen()
+	await get_tree().process_frame
+	var socket = NetworkManager.ws
+	var expires_at := int(Time.get_unix_time_from_system()) + 3600
+	assert_true(AuthManager._stage_native_facebook_link_credential("web-facebook-token", expires_at))
+	AuthManager._record_web_facebook_link_result(AuthManager.REASON_NONE, false)
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "web_facebook_oauth"
+
+	screen_manager._on_provider_link_completed(AuthManager.REASON_NONE)
+
+	assert_eq(screen_manager.provider_link_stage, "commit")
+	assert_true(screen_manager.provider_link_waiting_for_server_result)
+	assert_eq(socket.sent_messages, [{
+		"type": "provider_link_commit",
+		"provider": "facebook",
+		"providerCredential": "web-facebook-token"
+	}])
+	assert_true(AuthManager.is_anonymous)
+	assert_eq(AuthManager.user_id, "guest-user")
 	AuthManager.sign_out()
 
 func test_facebook_link_stage_diagnostics_keep_conflicts_and_transport_semantics_distinct() -> void:
@@ -581,7 +659,7 @@ func test_facebook_link_stage_diagnostics_keep_conflicts_and_transport_semantics
 	var account = screen_manager.current_overlay
 
 	screen_manager.provider_link_pending_provider = "facebook"
-	screen_manager.provider_link_stage = "facebook_credential"
+	screen_manager.provider_link_stage = "facebook_native_credential"
 	screen_manager._on_facebook_link_preflight_failed(AuthManager.REASON_REJECTED)
 	assert_eq(account.error_label.text, "Could not link your account. [F1]")
 

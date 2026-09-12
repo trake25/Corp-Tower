@@ -93,6 +93,12 @@ runs:
           || { echo "::error::Web export produced no .wasm file"; exit 1; }
         find "$OUTPUT_DIR" -maxdepth 1 -name '*.pck' -print -quit | grep -q . \
           || { echo "::error::Web export produced no .pck file"; exit 1; }
+        RELAY_SOURCE="$PROJECT_PATH/Web/facebook-oauth-callback.html"
+        test -f "$RELAY_SOURCE" \
+          || { echo "::error::Facebook OAuth relay source is missing"; exit 1; }
+        cp "$RELAY_SOURCE" "$OUTPUT_DIR/facebook-oauth-callback.html"
+        test -f "$OUTPUT_DIR/facebook-oauth-callback.html" \
+          || { echo "::error::Facebook OAuth relay was not copied into the Web export"; exit 1; }
 
     - name: Report export file sizes
       id: size-report

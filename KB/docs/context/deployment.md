@@ -74,6 +74,7 @@ source: scripts/backup/backup-server-up.sh#AUTH_ARGS
 source: scripts/verify-supabase-environment.sh#verify_supabase_environment() {
 source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_recover_existing_google_link
 source: src/Server/app/Server.js#handleProfileMessage
+source: src/Server/app/Server.js#redirectOriginMatchesRequest
 adjacent: backend.identity.auth
 adjacent: build.endpoint-auth.injection
 -->
@@ -86,9 +87,11 @@ accepts at most one external provider per durable account and treats its backend
 for that product rule. Provider linking upgrades the currently authenticated Guest in place and preserves the
 durable Top or Drop account and Profile. Web Google uses the selected environment's Supabase PKCE and manual
 identity-link path; callback recovery may complete only when that same project's original Guest is proven to
-already own its sole Google identity. Web Facebook obtains an SDK browser credential and the selected
-environment's game server re-verifies and atomically claims its Facebook subject. Android Facebook keeps its
-ordinary native access-token flow, separately from the Web SDK path. Every shipping deployment supplies an
+already own its sole Google identity. Web Facebook returns an authorization code to its selected Web origin,
+and the game server accepts the exchange only when both request `Origin` and redirect URI match that
+deployment's explicit `FACEBOOK_WEB_ORIGIN`; backup and EKS deployment wiring map that non-secret value to
+the paired Web environment. The selected game server re-verifies and atomically claims the Facebook subject.
+Android Facebook keeps its ordinary native access-token flow separately. Every shipping deployment supplies an
 explicit Production or Development marker, project ref, canonical project URL, and environment-scoped
 credentials. A non-mutating pre-deploy guard rejects the Seoul migration source, cross-environment values,
 missing durable Data API surfaces, and incomplete server HMAC configuration. Until the request transports are

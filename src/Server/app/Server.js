@@ -12,6 +12,7 @@ const accountStore = new AccountStore();
 const port = Number(process.env.PORT) || 3000;
 const FACEBOOK_EXCHANGE_PATH = "/api/auth/facebook/exchange";
 const FACEBOOK_EXCHANGE_BODY_LIMIT = 16 * 1024;
+const FACEBOOK_WEB_ORIGIN = normalizedWebOrigin(process.env.FACEBOOK_WEB_ORIGIN);
 
 function safeJson(message) {
     try {
@@ -234,24 +235,44 @@ function readJsonRequest(req, limit = FACEBOOK_EXCHANGE_BODY_LIMIT) {
     });
 }
 
-function redirectOriginMatchesRequest(req, redirectUri) {
-    const requestOrigin = String(req.headers.origin || "").trim();
-    if (requestOrigin === "") {
-        return { allowed: true, origin: "" };
-    }
-
+function normalizedWebOrigin(value) {
     try {
-        const redirect = new URL(redirectUri);
-        return {
-            allowed: redirect.origin === requestOrigin,
-            origin: redirect.origin === requestOrigin ? requestOrigin : ""
-        };
+        const url = new URL(String(value || "").trim());
+        if (url.protocol !== "https:") {
+            return "";
+        }
+        return url.origin;
     } catch (_error) {
-        return { allowed: false, origin: "" };
+        return "";
     }
 }
 
-async function handleFacebookOauthExchange(req, res, verifier = authVerifier) {
+function requestOriginMatchesExpected(req, expectedWebOrigin = FACEBOOK_WEB_ORIGIN) {
+    const expectedOrigin = normalizedWebOrigin(expectedWebOrigin);
+    const requestOrigin = normalizedWebOrigin(req.headers.origin);
+    return {
+        allowed: expectedOrigin !== "" && requestOrigin === expectedOrigin,
+        origin: expectedOrigin
+    };
+}
+
+function redirectOriginMatchesRequest(req, redirectUri, expectedWebOrigin = FACEBOOK_WEB_ORIGIN) {
+    const requestCheck = requestOriginMatchesExpected(req, expectedWebOrigin);
+    const redirectOrigin = normalizedWebOrigin(redirectUri);
+    return {
+        allowed: requestCheck.allowed && redirectOrigin === requestCheck.origin,
+        origin: requestCheck.allowed && redirectOrigin === requestCheck.origin
+            ? requestCheck.origin
+            : ""
+    };
+}
+
+async function handleFacebookOauthExchange(
+    req,
+    res,
+    verifier = authVerifier,
+    expectedWebOrigin = FACEBOOK_WEB_ORIGIN
+) {
     let body;
     try {
         body = await readJsonRequest(req);
@@ -262,7 +283,7 @@ async function handleFacebookOauthExchange(req, res, verifier = authVerifier) {
 
     const code = String(body.code || "");
     const redirectUri = String(body.redirectUri || "");
-    const originCheck = redirectOriginMatchesRequest(req, redirectUri);
+    const originCheck = redirectOriginMatchesRequest(req, redirectUri, expectedWebOrigin);
 
     if (!originCheck.allowed) {
         writeNoStoreJson(res, 403, { error: "origin_mismatch" });
@@ -285,12 +306,18 @@ function requestListener(req, res) {
     const requestUrl = new URL(req.url, "http://localhost");
 
     if (requestUrl.pathname === FACEBOOK_EXCHANGE_PATH && req.method === "OPTIONS") {
+        const originCheck = requestOriginMatchesExpected(req);
+        if (!originCheck.allowed) {
+            writeNoStoreJson(res, 403, { error: "origin_mismatch" });
+            return;
+        }
         res.writeHead(204, {
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": originCheck.origin,
             "Access-Control-Allow-Methods": "POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type",
             "Access-Control-Max-Age": "600",
-            "Cache-Control": "no-store"
+            "Cache-Control": "no-store",
+            Vary: "Origin"
         });
         res.end();
         return;
@@ -543,5 +570,6 @@ module.exports = {
     handleProfileMessage,
     profileSnapshot,
     redirectOriginMatchesRequest,
+    requestOriginMatchesExpected,
     requestListener
 };

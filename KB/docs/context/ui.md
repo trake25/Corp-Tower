@@ -61,17 +61,19 @@ alias: sign in screen
 alias: oauth UI
 source: src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn#SignInScreen
 source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#sign_in_with_provider
+source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_begin_web_facebook_login
 adjacent: network.session.identity
 adjacent: build.endpoint-auth.injection
 -->
 ## Authentication screen
 
 Authentication shows only configured providers. Web Google uses Supabase PKCE in the initiating tab and
-requests provider account selection. Web Facebook acquires a browser SDK access token from the initiating
-browser instead of taking a Supabase Facebook redirect; success is accepted only when the SDK reports an
-authenticated token and expiry. Android's native Google and Facebook provider behavior remains separate.
-Empty committed auth values disable sign-in capability, and cancellation or browser/provider failure leaves
-the screen retryable rather than presenting a server-availability failure.
+requests provider account selection. PC Web Facebook retains its manual authorization-code redirect in that
+tab. Mobile Web Facebook opens a same-origin relay tab during the player gesture, keeps the game tab loaded,
+and returns only a bound code/state/error result to that original tab; the game server exchanges and verifies
+the code. Android's native Google and Facebook provider behavior remains separate. Empty committed auth
+values disable sign-in capability, and cancellation, blocked/closed auth tabs, or browser/provider failure
+leaves the screen retryable rather than presenting a server-availability failure.
 
 <!-- kb
 id: ui.startup.restoration
@@ -155,6 +157,7 @@ id: ui.settings.presentation
 alias: settings screen
 source: src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn#SettingsScreen
 source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_on_provider_link_requested
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_handle_web_oauth_navigation
 -->
 ## Settings
 
@@ -164,9 +167,11 @@ player may link exactly one configured external provider—Google or Facebook—
 presentation conventions as Sign In. Linking upgrades the current guest in place: success refreshes
 linked account presentation and hides all provider-link controls, while cancellation, rejection, or
 provider conflict leaves the existing player identity intact. Web Google manual linking retains the
-original Guest identity across its Supabase PKCE callback; Web Facebook starts the browser SDK from the
-player gesture, then uses the current environment's server subject preflight and credential commit.
-Neither flow auto-merges an identity owned by another Top or Drop account. Google account recognition may
+original Guest identity across its Supabase PKCE callback. Mobile Web Facebook opens its same-origin auth
+tab from the player gesture and keeps the Account screen, Guest, and profile connection loaded until the
+original tab receives a valid callback result; PC Web keeps its same-tab interruption lifecycle. The game
+server re-verifies Facebook before the atomic credential commit, while Android retains its native credential
+preflight/commit lifecycle. Neither flow auto-merges an identity owned by another Top or Drop account. Google account recognition may
 show the provider display name plus a masked account email that reveals no more than the first four
 local-part characters; Facebook uses a generic Facebook-account fallback until provider-ID retrieval is
 implemented. An identity already owned by another Top or Drop account is never auto-merged. Sign-out

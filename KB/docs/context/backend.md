@@ -125,11 +125,13 @@ alias: authentication
 alias: Supabase auth
 alias: Facebook auth
 source: src/Server/app/Auth_Verifier.js#verifyAccessToken
+source: src/Server/app/Auth_Verifier.js#exchangeFacebookAuthorizationCode
+source: src/Server/app/Server.js#handleFacebookOauthExchange
 adjacent: network.session.identity
 -->
 ## Identity verification
 
-Auth Verifier validates configured Supabase JWTs and native Facebook access tokens without turning provider claims into game authority. Verified identity overrides claimed wire profile identity when authentication is available.
+Auth Verifier validates configured Supabase JWTs and Facebook access tokens without turning provider claims into game authority. For Web Facebook, the game server exchanges an authorization code with its server-held App Secret, verifies that the resulting token belongs to the configured Facebook application, and returns only the bounded credential needed by the original client flow. Verified identity overrides claimed wire profile identity when authentication is available.
 
 <!-- kb
 id: backend.identity.profile
@@ -151,7 +153,7 @@ one logical external provider. Facebook HMAC-key rotation may create multiple st
 same logical Facebook identity, so raw identity-row count is not the provider-count invariant. Provider
 claiming is atomic and same-provider resolution may be idempotent, but a different provider or a
 provider identity already owned by another durable account is a conflict, never a merge. Provider
-linking must not reparent or overwrite the durable Profile. Profile Store owns durable profile
+linking consumes only a server-verified provider credential and must not reparent or overwrite the durable Profile. Profile Store owns durable profile
 presentation and the one-time player-name lifecycle. First-login naming exposure is durable account
 state, permanent-name consumption is durable profile state, and permanent names are database-enforced
 case-insensitive unique values. Provider presentation metadata never overwrites a successfully chosen

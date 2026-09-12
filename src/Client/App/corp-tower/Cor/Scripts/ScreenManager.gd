@@ -638,14 +638,11 @@ func _on_provider_link_requested(provider: String) -> void:
 	if not _queue_provider_link_request(provider):
 		return
 
-	# FB.login() must be invoked in the original button gesture. The Web flow
-	# therefore starts before any provider preflight round trip; the credential is
-	# still subject to the existing server-side subject preflight and final claim.
-	if (
-		provider == "facebook"
-		and AuthManager.facebook_link_route() == AuthManager.FACEBOOK_LINK_ROUTE_WEB_SDK
-	):
-		provider_link_stage = "facebook_credential"
+	# Mobile Web must open its same-origin auth tab while this button gesture is
+	# active. PC Web keeps its existing same-tab browser route. In both cases the
+	# server remains the authority for code exchange and the final provider claim.
+	if provider == "facebook" and AuthManager.is_web_facebook_link_route(AuthManager.facebook_link_route()):
+		provider_link_stage = "web_facebook_oauth"
 		var facebook_reason := AuthManager.begin_facebook_link_preflight()
 		if facebook_reason != AuthManager.REASON_NONE:
 			_finish_provider_link_error(
@@ -739,7 +736,10 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 			return
 
 		provider_link_stage = next_stage
-		if next_stage == "facebook_credential":
+		if (
+			next_stage == "facebook_native_credential"
+			or next_stage == "web_facebook_oauth"
+		):
 			var facebook_reason := AuthManager.begin_facebook_link_preflight()
 			if facebook_reason != AuthManager.REASON_NONE:
 				_finish_provider_link_error(
@@ -761,28 +761,63 @@ func _on_provider_link_preflight_result(data: Dictionary) -> void:
 		_continue_provider_link_over_profile_connection()
 
 func _on_web_oauth_navigation_started(provider: String, purpose: String) -> void:
-	if (
-		purpose != AuthManager.FLOW_LINK
-		or provider != provider_link_pending_provider
-		or provider_link_stage != "launch"
-	):
+	_handle_web_oauth_navigation(provider, purpose, AuthManager.facebook_link_route())
+
+func _handle_web_oauth_navigation(
+	provider: String,
+	purpose: String,
+	facebook_route: String
+) -> void:
+	if purpose != AuthManager.FLOW_LINK or provider != provider_link_pending_provider:
+		return
+
+	if provider == "facebook" and provider_link_stage == "web_facebook_oauth":
+		# The dedicated mobile auth tab leaves this Account screen and its profile
+		# connection alive. PC Web still performs its established same-tab round trip.
+		if _keeps_account_link_connection_for_web_oauth(provider, provider_link_stage, facebook_route):
+			_set_account_link_busy(true)
+			return
+
+		provider_link_browser_round_trip_active = true
+		_clear_account_link_readiness()
+		_set_account_link_busy(true)
+		return
+
+	if provider_link_stage != "launch":
 		return
 
 	provider_link_browser_round_trip_active = true
 	_clear_account_link_readiness()
 	_set_account_link_busy(true)
 
+func _keeps_account_link_connection_for_web_oauth(
+	provider: String,
+	stage: String,
+	facebook_route: String
+) -> bool:
+	return (
+		provider == "facebook"
+		and stage == "web_facebook_oauth"
+		and facebook_route == AuthManager.FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
+	)
+
 func _provider_link_stage_after_eligibility(provider: String, facebook_route: String) -> String:
 	if provider != "facebook":
 		return "launch"
 
 	if facebook_route == AuthManager.FACEBOOK_LINK_ROUTE_NATIVE:
-		return "facebook_credential"
+		return "facebook_native_credential"
+
+	if AuthManager.is_web_facebook_link_route(facebook_route):
+		return "web_facebook_oauth"
 
 	return ""
 
 func _on_facebook_link_credential_ready(access_token: String) -> void:
-	if provider_link_pending_provider != "facebook" or provider_link_stage != "facebook_credential":
+	if (
+		provider_link_pending_provider != "facebook"
+		or provider_link_stage != "facebook_native_credential"
+	):
 		return
 
 	provider_link_stage = "facebook_subject"
@@ -792,7 +827,10 @@ func _on_facebook_link_credential_ready(access_token: String) -> void:
 		provider_link_waiting_for_server_result = true
 
 func _on_facebook_link_preflight_failed(reason: String) -> void:
-	if provider_link_pending_provider == "facebook" and provider_link_stage == "facebook_credential":
+	if (
+		provider_link_pending_provider == "facebook"
+		and provider_link_stage == "facebook_native_credential"
+	):
 		_finish_provider_link_error(
 			reason,
 			_facebook_rejection_diagnostic("facebook", reason, "F1")

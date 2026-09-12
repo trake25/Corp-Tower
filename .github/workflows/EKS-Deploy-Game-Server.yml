@@ -138,6 +138,7 @@ jobs:
               echo "NAMESPACE=corp-tower-prod" >> "$GITHUB_ENV"
               echo "OVERLAY=eks-prod/game" >> "$GITHUB_ENV"
               echo "GAME_DOMAIN=wstodplay.galaxxigames.com" >> "$GITHUB_ENV"
+              echo "FACEBOOK_WEB_ORIGIN=https://todplay.galaxxigames.com" >> "$GITHUB_ENV"
               ;;
             *)
               echo "::error::Unknown target '${{ inputs.target }}'. Only wstodplay is deployed (eks-test overlays are committed, not deployed)."
@@ -390,6 +391,8 @@ jobs:
                               value: "${SUPABASE_URL}"
                             - name: SUPABASE_AUTH_REQUIRED
                               value: "${SUPABASE_AUTH_REQUIRED}"
+                            - name: FACEBOOK_WEB_ORIGIN
+                              value: "${FACEBOOK_WEB_ORIGIN}"
                             - name: PLAYER_IDENTITY_HMAC_KEY_VERSION
                               value: "${PLAYER_IDENTITY_HMAC_KEY_VERSION}"
                             - name: PLAYER_IDENTITY_HMAC_PREVIOUS_KEY_VERSION
@@ -428,6 +431,7 @@ jobs:
           test "$(kubectl -n "$NAMESPACE" exec deploy/corp-tower-server -- printenv TOD_DATA_ENVIRONMENT)" = "production"
           test "$(kubectl -n "$NAMESPACE" exec deploy/corp-tower-server -- printenv SUPABASE_PROJECT_REF)" = "kweqwprbahlfoznyzlvf"
           test "$(kubectl -n "$NAMESPACE" exec deploy/corp-tower-server -- printenv SUPABASE_URL)" = "https://kweqwprbahlfoznyzlvf.supabase.co"
+          test "$(kubectl -n "$NAMESPACE" exec deploy/corp-tower-server -- printenv FACEBOOK_WEB_ORIGIN)" = "https://todplay.galaxxigames.com"
 
       - name: Assert ElastiCache sees connections
         env:

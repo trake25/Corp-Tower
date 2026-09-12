@@ -31,7 +31,7 @@ Owner: `KB/docs/context/ui-hud.md:45-48` → **Parallel placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_aim_or_place` | 666 | `sed -n 654,686p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_aim_or_place` | 667 | `sed -n 655,687p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `hud.placement.armed`
 
@@ -112,7 +112,7 @@ Owner: `KB/docs/context/ui-hud.md:258-261` → **Armed placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `revalidate_armed_placement` | 701 | `sed -n 689,721p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `revalidate_armed_placement` | 702 | `sed -n 690,722p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `hud.controller.parallel-placement`
 

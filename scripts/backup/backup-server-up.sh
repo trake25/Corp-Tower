@@ -21,6 +21,15 @@ DOMAIN="${!DOMAIN_VAR}"
 PORT="${!PORT_VAR}"
 EXPECTED_SHA="${!TAG_VAR:-}"
 
+# The Facebook authorization-code endpoint accepts only the Web origin paired
+# with this development server. Keep this explicit rather than deriving it from
+# a caller-controlled request or the WebSocket hostname.
+case "$INSTANCE" in
+  1) FACEBOOK_WEB_ORIGIN="https://devtod1.galaxxigames.com" ;;
+  2) FACEBOOK_WEB_ORIGIN="https://devtod2.galaxxigames.com" ;;
+  3) FACEBOOK_WEB_ORIGIN="https://toddemo.galaxxigames.com" ;;
+esac
+
 CONTAINER_NAME="corp-tower-server-${INSTANCE}"
 IMAGE_TAG="corp-tower-server:dev${INSTANCE}"
 
@@ -55,6 +64,7 @@ AUTH_ARGS=(
   -e "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
   -e "FACEBOOK_APP_ID=${FACEBOOK_APP_ID:-}"
   -e "FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET:-}"
+  -e "FACEBOOK_WEB_ORIGIN=${FACEBOOK_WEB_ORIGIN}"
   -e "PLAYER_IDENTITY_HMAC_SECRET=${PLAYER_IDENTITY_HMAC_SECRET}"
   -e "PLAYER_IDENTITY_HMAC_KEY_VERSION=${PLAYER_IDENTITY_HMAC_KEY_VERSION}"
   -e "PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET=${PLAYER_IDENTITY_HMAC_PREVIOUS_SECRET:-}"

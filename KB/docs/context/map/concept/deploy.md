@@ -59,7 +59,7 @@ Owner: `KB/docs/context/deployment-backup.md:70-73` → **Demo differences**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/backup/backup-server-up.sh` | `CORP_TOWER_BOTS_ENABLED` | 65 | `sed -n 53,85p scripts/backup/backup-server-up.sh` |
+| `scripts/backup/backup-server-up.sh` | `CORP_TOWER_BOTS_ENABLED` | 75 | `sed -n 63,95p scripts/backup/backup-server-up.sh` |
 
 Adjacent concepts: none
 
@@ -160,7 +160,7 @@ Owner: `KB/docs/context/deployment-eks.md:77-80` → **DNS update**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Update Cloudflare CNAME content` | 190 | `sed -n 178,210p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Update Cloudflare CNAME content` | 191 | `sed -n 179,211p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: none
 
@@ -219,15 +219,16 @@ Adjacent concepts: `testing.release.gates`
 
 ## deploy.shared.auth-env
 
-Owner: `KB/docs/context/deployment.md:80-101` → **Authentication environment**
+Owner: `KB/docs/context/deployment.md:81-104` → **Authentication environment**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 291 | `sed -n 279,311p .github/workflows/EKS-Deploy-Game-Server.yml` |
-| `scripts/backup/backup-server-up.sh` | `AUTH_ARGS` | 50 | `sed -n 38,70p scripts/backup/backup-server-up.sh` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 292 | `sed -n 280,312p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `scripts/backup/backup-server-up.sh` | `AUTH_ARGS` | 59 | `sed -n 47,79p scripts/backup/backup-server-up.sh` |
 | `scripts/verify-supabase-environment.sh` | `verify_supabase_environment() {` | 44 | `sed -n 32,64p scripts/verify-supabase-environment.sh` |
-| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 1232 | `sed -n 1220,1252p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
-| `src/Server/app/Server.js` | `handleProfileMessage` | 54 | `sed -n 42,74p src/Server/app/Server.js` |
+| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 1600 | `sed -n 1588,1620p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
+| `src/Server/app/Server.js` | `handleProfileMessage` | 55 | `sed -n 43,75p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `redirectOriginMatchesRequest` | 259 | `sed -n 247,279p src/Server/app/Server.js` |
 
 Adjacent concepts: `backend.identity.auth`, `build.endpoint-auth.injection`
 
@@ -256,12 +257,12 @@ Adjacent concepts: `deploy.shared.environments`, `deploy.shared.auth-env`
 
 ## deploy.shared.secret-rollout
 
-Owner: `KB/docs/context/deployment.md:110-113` → **Secret rollout**
+Owner: `KB/docs/context/deployment.md:113-116` → **Secret rollout**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 291 | `sed -n 279,311p .github/workflows/EKS-Deploy-Game-Server.yml` |
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Apply Corp Tower Kustomize overlay` | 347 | `sed -n 335,367p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 292 | `sed -n 280,312p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Apply Corp Tower Kustomize overlay` | 348 | `sed -n 336,368p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: `deploy.eks.workflows`
 

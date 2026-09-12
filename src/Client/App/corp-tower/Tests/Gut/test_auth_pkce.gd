@@ -119,10 +119,14 @@ func test_google_link_authorize_path_uses_supabase_owned_callback_state() -> voi
 	assert_false(path.contains("state="))
 	assert_false(path.contains("display="))
 
-func test_web_facebook_selects_sdk_rather_than_supabase_redirect_linking() -> void:
+func test_web_facebook_selects_its_manual_oauth_routes_rather_than_supabase_linking() -> void:
 	assert_eq(
-		auth._facebook_link_route_for_runtime(true, "Web"),
-		auth.FACEBOOK_LINK_ROUTE_WEB_SDK
+		auth._facebook_link_route_for_runtime(true, "Web", false),
+		auth.FACEBOOK_LINK_ROUTE_WEB_PC
+	)
+	assert_eq(
+		auth._facebook_link_route_for_runtime(true, "Web", true),
+		auth.FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
 	)
 	assert_eq(await auth._begin_browser_link("facebook"), auth.REASON_PROVIDER_UNAVAILABLE)
 
