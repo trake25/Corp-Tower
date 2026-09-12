@@ -631,7 +631,7 @@ func apply_config(config) -> void:
 	))
 	tuning.finish_score_popup_duration_ms = int(config.get(
 		"finishScorePopupDurationMs",
-		UiTuningScript.SCORE_POPUP_DEFAULT_DURATION_MS
+		UiTuningScript.FINISH_SCORE_POPUP_DEFAULT_DURATION_MS
 	))
 	tuning.level_summary_delay_ms = int(config.get("levelSummaryDelayMs", UiTuningScript.LEVEL_SUMMARY_DEFAULT_DELAY_MS))
 	set_slider_no_signal(
@@ -640,7 +640,7 @@ func apply_config(config) -> void:
 	)
 	set_slider_no_signal(
 		finish_popup_duration_slider,
-		float(config.get("finishScorePopupDurationMs", UiTuningScript.SCORE_POPUP_DEFAULT_DURATION_MS))
+		float(config.get("finishScorePopupDurationMs", UiTuningScript.FINISH_SCORE_POPUP_DEFAULT_DURATION_MS))
 	)
 	set_slider_no_signal(level_summary_delay_slider, float(config.get("levelSummaryDelayMs", UiTuningScript.LEVEL_SUMMARY_DEFAULT_DELAY_MS)))
 	set_slider_no_signal(target_multiplier_slider, float(config.get("targetHeightMultiplier", 3)))
@@ -762,7 +762,7 @@ func update_debug_labels() -> void:
 		finish_popup_duration_label,
 		"MVP / Perfect / Team Popups: " + str(int(get_slider_value(
 			finish_popup_duration_slider,
-			UiTuningScript.SCORE_POPUP_DEFAULT_DURATION_MS
+			UiTuningScript.FINISH_SCORE_POPUP_DEFAULT_DURATION_MS
 		))) + " ms"
 	)
 	set_debug_label_text(

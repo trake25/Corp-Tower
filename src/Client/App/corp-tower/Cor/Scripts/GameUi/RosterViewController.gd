@@ -29,6 +29,17 @@ func rail_entry(player_id: String) -> Control:
 func rail_box() -> Control:
 	return player_rail_box
 
+func reward_rail_landing_target(player_id: String) -> Vector2:
+	var entry := rail_entry(player_id)
+	if entry == null or !is_instance_valid(entry) or !entry.has_method("score_confirmation_target"):
+		return Vector2(-1.0, -1.0)
+	return entry.call("score_confirmation_target")
+
+func confirm_reward_rail_landing(player_id: String, accent_color: Color) -> void:
+	var entry := rail_entry(player_id)
+	if entry != null and is_instance_valid(entry) and entry.has_method("confirm_score_impact"):
+		entry.call("confirm_score_impact", accent_color)
+
 func update_score_lines(players: Array) -> void:
 	if player_rail_box == null:
 		return

@@ -1,9 +1,10 @@
 extends RefCounted
 
-const SCORE_POPUP_DEFAULT_DURATION_MS := 3000
+const SCORE_POPUP_DEFAULT_DURATION_MS := 1000
+const FINISH_SCORE_POPUP_DEFAULT_DURATION_MS := 1550
 const LEVEL_SUMMARY_DEFAULT_DELAY_MS := 4000
 
 var placement_cooldown_ms: int = 2000
 var placement_score_popup_duration_ms: int = SCORE_POPUP_DEFAULT_DURATION_MS
-var finish_score_popup_duration_ms: int = SCORE_POPUP_DEFAULT_DURATION_MS
+var finish_score_popup_duration_ms: int = FINISH_SCORE_POPUP_DEFAULT_DURATION_MS
 var level_summary_delay_ms: int = LEVEL_SUMMARY_DEFAULT_DELAY_MS

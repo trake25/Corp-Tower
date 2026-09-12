@@ -25,6 +25,9 @@ const AVATAR_TEXTURE_PATHS := {
 @onready var name_label: Label = %NameLabel
 @onready var score_label: Label = %ScoreLabel
 
+var current_presence := "connected"
+var score_confirmation_tween: Tween
+
 func set_entry(
 	display_name: String,
 	score: int,
@@ -42,6 +45,10 @@ func set_entry(
 	avatar_texture.texture = load_avatar_texture(avatar_id)
 
 func _apply_presence(display_name: String, score: int, presence: String) -> void:
+	current_presence = presence
+	if presence != "connected":
+		_cancel_score_confirmation()
+
 	match presence:
 		"disconnected":
 			name_label.text = _strikethrough(display_name)
@@ -58,6 +65,43 @@ func _apply_presence(display_name: String, score: int, presence: String) -> void
 			name_label.remove_theme_color_override("font_color")
 			avatar_texture.modulate = Color.WHITE
 			score_label.text = format_score(score)
+
+func score_confirmation_target() -> Vector2:
+	if score_label == null or !score_label.is_visible_in_tree() or current_presence != "connected":
+		return Vector2(-1.0, -1.0)
+	return score_label.get_global_rect().get_center()
+
+func confirm_score_impact(accent_color: Color) -> void:
+	if score_label == null or current_presence != "connected":
+		return
+	_cancel_score_confirmation()
+	score_label.pivot_offset = score_label.size * 0.5
+	score_label.add_theme_color_override("font_color", accent_color)
+	score_label.modulate = Color(1.0, 1.0, 1.0, 0.86)
+	score_label.scale = Vector2(0.90, 0.90)
+	score_confirmation_tween = create_tween()
+	score_confirmation_tween.set_parallel(true)
+	score_confirmation_tween.tween_property(score_label, "modulate", Color.WHITE, 0.12)
+	score_confirmation_tween.tween_property(score_label, "scale", Vector2(1.10, 1.10), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	score_confirmation_tween.set_parallel(false)
+	score_confirmation_tween.tween_property(score_label, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	score_confirmation_tween.tween_callback(_finish_score_confirmation)
+
+func _cancel_score_confirmation() -> void:
+	if score_confirmation_tween != null and is_instance_valid(score_confirmation_tween):
+		score_confirmation_tween.kill()
+	if score_label != null:
+		score_label.modulate = Color.WHITE
+		score_label.scale = Vector2.ONE
+		score_label.remove_theme_color_override("font_color")
+
+func _finish_score_confirmation() -> void:
+	if current_presence != "connected":
+		return
+	if score_label != null:
+		score_label.modulate = Color.WHITE
+		score_label.scale = Vector2.ONE
+		score_label.remove_theme_color_override("font_color")
 
 func _strikethrough(value: String) -> String:
 	var result := ""

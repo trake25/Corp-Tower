@@ -210,6 +210,13 @@ func ready_feedback_count(index: int) -> int:
 		return 0
 	return int(feedback_count[index])
 
+func blocks_score_feedback() -> bool:
+	return ready_active or (
+		countdown_label != null
+		and countdown_label.visible
+		and countdown_label.text == "BUILD!"
+	)
+
 func clear_ready_rejection_feedback() -> void:
 	_clear_ready_rejection_feedback()
 

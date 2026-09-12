@@ -113,7 +113,11 @@ adjacent: network.state.transient-events
 -->
 ## Score popups
 
-Score popups consume and de-duplicate authoritative in-level placement, reinforcement, Critical Save, and tower-stability warning events. Aggregate/end-of-level events do not create duplicate popups.
+Score feedback consumes and de-duplicates authoritative in-level placement, reinforcement, Critical Save, and tower-stability warning events. Aggregate/end-of-level events do not create duplicate feedback.
+
+Placement, Reinforce, and Critical Save use player-associated transient reward feedback with increasing visual emphasis while preserving immediate gameplay control. Rapid rewards yield to newer feedback instead of building a delayed queue. Reward presentation may visually land at the matching player rail, but the rail total remains immediately authoritative and is never delayed, predicted, or client-owned for animation.
+
+Tower-stability warning and critical events use separate global danger presentation rather than reward-style floating motion. Score/danger feedback remains presentation-only; authoritative scoring, classification, player totals, event identity, and round-start gameplay state remain server-owned.
 
 <!-- kb
 id: hud.overlays.popovers

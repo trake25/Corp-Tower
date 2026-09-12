@@ -134,6 +134,10 @@ func _ready() -> void:
 	score_popups.setup(players_ctx, match_state, tuning)
 	summary.setup(players_ctx, match_state, tuning)
 	roster.setup(players_ctx, match_state)
+	score_popups.set_reward_rail_presentation(
+		roster.reward_rail_landing_target,
+		roster.confirm_reward_rail_landing
+	)
 	visual_fx.setup(tower_stack, roster, players_ctx, visual_hooks, platform_parallax)
 
 	if tower_stack.has_method("set_visual_hooks"):
@@ -431,7 +435,7 @@ func update_game_state(data) -> void:
 	))
 	tuning.finish_score_popup_duration_ms = int(data.get(
 		"finishScorePopupDurationMs",
-		fallback_popup_duration_ms
+		int(data.get("scorePopupDurationMs", UiTuningScript.FINISH_SCORE_POPUP_DEFAULT_DURATION_MS))
 	))
 	tuning.level_summary_delay_ms = int(data.get("levelSummaryDelayMs", tuning.level_summary_delay_ms))
 
@@ -525,6 +529,7 @@ func update_game_state(data) -> void:
 		state_remaining_ms,
 		level_duration_ms
 	)
+	score_popups.set_score_feedback_suppressed(round_start_overlay.blocks_score_feedback())
 	inventory.apply_authoritative_state(
 		state,
 		incoming_level,
