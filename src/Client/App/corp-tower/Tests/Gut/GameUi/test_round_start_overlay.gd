@@ -79,12 +79,16 @@ func test_long_quest_does_not_widen_the_ready_briefing_card() -> void:
 	var compact_width := briefing_card.size.x
 	var compact_height := briefing_card.size.y
 	var countdown_position := countdown_label.global_position
+	assert_true(quest_label.visible)
+	assert_true(quest_label.text.contains("QUEST · Reach the top"))
+	assert_gt(quest_label.size.y, 0.0)
 	assert_eq(quest_label.get_visible_line_count(), 1)
 
 	_apply_ready(4500, "Build a perfectly balanced tower all the way to the sky while protecting every teammate from each incoming impact wave.")
 	await get_tree().process_frame
 
 	assert_eq(briefing_card.size.x, compact_width, "Long quest copy must not widen the fixed READY briefing card.")
+	assert_gt(quest_label.size.y, 0.0)
 	assert_lte(quest_label.get_visible_line_count(), 2)
 	assert_gte(briefing_card.size.y, compact_height)
 	assert_eq(countdown_label.global_position, countdown_position)

@@ -128,7 +128,7 @@ func _update_briefing(level: int, target_height: int, raw_side_quest: Variant) -
 func _fit_briefing_card_height() -> void:
 	if briefing_card == null:
 		return
-	briefing_card.size.y = maxf(READY_BRIEFING_MIN_HEIGHT, briefing_card.get_combined_minimum_size().y)
+	briefing_card.size.y = maxf(READY_BRIEFING_MIN_HEIGHT, briefing_card.get_bound_minimum_size().y)
 
 func _update_starting_presentation() -> void:
 	if presentation_deadline_ms <= 0:
