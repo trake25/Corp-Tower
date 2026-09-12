@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { afterEach, test } = require("node:test");
 
 const LobbyManager = require("../app/Lobby_Manager");
+const BotManager = require("../app/Bot_Manager");
 const { RedisState, stripRuntimeRoom } = require("../app/Redis_State");
 
 const activeLobbies = [];
@@ -519,6 +520,32 @@ test("leave_game is a no-op until the room has started", async () => {
     assert.equal(messagesOfType(sockets[0], "game_left").length, 0);
     assert.equal(room.players.length, 3);
     assert.equal(cluster.shared.sessions.get(players[0].sessionId).roomId, room.id);
+});
+
+test("a spectator leave_game acknowledges the observer and retires its transient room", async () => {
+    const cluster = createSharedFakeCluster();
+    const lobby = new LobbyManager(cluster.makeStore("podA"));
+    activeLobbies.push(lobby);
+    await lobby.start();
+    const observerWs = createFakeWs();
+    const observer = await lobby.createPlayer(observerWs, {
+        entryMode: "bot_spectator",
+        botProfiles: BotManager.getDefaultBotProfiles()
+    });
+    await lobby.addPlayer(observer);
+    const room = observer.room;
+    observerWs.sentMessages = [];
+
+    await lobby.dispatchRoomAction(observer, { type: "leave_game" });
+
+    assert.deepEqual(
+        messagesOfType(observerWs, "game_left"),
+        [{ type: "game_left", destination: "home" }]
+    );
+    assert.equal(observer.room, null);
+    assert.equal(observer.isSpectator, false);
+    assert.equal(lobby.rooms.includes(room), false);
+    assert.equal(cluster.shared.sessions.get(observer.sessionId).roomId, null);
 });
 
 test("only the current connection can intentionally leave a started game", async () => {

@@ -5,8 +5,12 @@ const HarnessScript := preload("res://Tests/Gut/Helpers/GameUiHarness.gd")
 var harness
 
 func before_each() -> void:
+	NetworkManager.spectator_active = false
 	harness = HarnessScript.new()
 	await harness.mount(self, Vector2(412, 917))
+
+func after_each() -> void:
+	NetworkManager.spectator_active = false
 
 func stability_fixture() -> Array:
 	var blocks: Array = [{
@@ -63,6 +67,9 @@ func pan_touch(tower: Control, relative_y: float, pointer_id: int = 1) -> void:
 
 func dispatch_touch_pan(tower: Control, relative_y: float, pointer_id: int = 1) -> void:
 	var position: Vector2 = tower.global_position + Vector2(tower.size.x * 0.5, 50.0)
+	dispatch_touch_pan_at(relative_y, position, pointer_id)
+
+func dispatch_touch_pan_at(relative_y: float, position: Vector2, pointer_id: int = 1) -> void:
 	var press := InputEventScreenTouch.new()
 	press.index = pointer_id
 	press.position = position
@@ -103,6 +110,30 @@ func dispatch_mouse_pan(tower: Control, relative_y: float) -> void:
 	release.global_position = motion.global_position
 	release.pressed = false
 	harness.main.get_viewport().push_input(release, true)
+
+func dispatch_mouse_wheel(tower: Control, direction: int) -> void:
+	var position: Vector2 = tower.get_global_rect().get_center()
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP if direction > 0 else MOUSE_BUTTON_WHEEL_DOWN
+	wheel.position = position
+	wheel.global_position = position
+	wheel.pressed = true
+	harness.main.get_viewport().push_input(wheel, true)
+
+func dispatch_keyboard_pan(keycode: Key) -> void:
+	var press := InputEventKey.new()
+	press.keycode = keycode
+	press.pressed = true
+	harness.main.get_viewport().push_input(press, true)
+
+	var release := InputEventKey.new()
+	release.keycode = keycode
+	release.pressed = false
+	harness.main.get_viewport().push_input(release, true)
+
+func enable_spectator_mode() -> void:
+	NetworkManager.spectator_active = true
+	harness.main._apply_spectator_mode(true)
 
 func test_playing_offscreen_critical_support_exposes_deliberate_navigation() -> void:
 	var tower: Control = prepare_playing_tower()
@@ -184,6 +215,58 @@ func test_tower_drop_zone_gui_dispatch_routes_touch_and_mouse_pan_without_unhand
 	assert_gt(received_events.filter(func(event): return event is InputEventMouseButton).size(), 0)
 	assert_gt(received_events.filter(func(event): return event is InputEventMouseMotion).size(), 0)
 	assert_almost_eq(tower.scroll_state.displayed_offset_units, normal_target - 2.0, 0.001)
+
+func test_spectator_playing_uses_the_shared_touch_mouse_wheel_and_keyboard_navigation_paths() -> void:
+	var tower: Control = prepare_playing_tower()
+	enable_spectator_mode()
+	var normal_target: float = tower.scroll_state.normal_target_units
+
+	assert_eq((harness.find("TowerDropZone") as Control).mouse_filter, Control.MOUSE_FILTER_PASS)
+	dispatch_touch_pan(tower, -tower.brick_unit_size)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, normal_target - 1.0, 0.001)
+
+	dispatch_mouse_pan(tower, -tower.brick_unit_size)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, normal_target - 2.0, 0.001)
+
+	dispatch_mouse_wheel(tower, -1)
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, normal_target - 3.0, 0.001)
+
+	dispatch_keyboard_pan(KEY_S)
+	assert_almost_eq(
+		tower.scroll_state.displayed_offset_units,
+		normal_target - 3.0 - harness.main.tower_navigation.KEYBOARD_TAP_PAN_UNITS,
+		0.001
+	)
+
+func test_spectator_navigation_stays_locked_during_starting() -> void:
+	var tower: Control = prepare_playing_tower()
+	enable_spectator_mode()
+	harness.main.match_state.current_match_state = "starting"
+	var original_offset: float = tower.scroll_state.displayed_offset_units
+
+	dispatch_touch_pan(tower, -tower.brick_unit_size)
+	dispatch_mouse_pan(tower, -tower.brick_unit_size)
+	dispatch_mouse_wheel(tower, -1)
+	dispatch_keyboard_pan(KEY_S)
+
+	assert_almost_eq(tower.scroll_state.displayed_offset_units, original_offset, 0.001)
+
+func test_spectator_debug_labels_pass_tower_navigation_without_disabling_debug_controls() -> void:
+	var tower: Control = prepare_playing_tower()
+	enable_spectator_mode()
+	harness.main.debug_panel.set_open(true)
+	var panel := harness.find("DebugPanel") as PanelContainer
+	panel.global_position = tower.get_global_rect().position
+	await get_tree().process_frame
+	var title := harness.find("DebugTitle") as Label
+	var slider := harness.find("BotCountSlider") as HSlider
+	var original_offset: float = tower.scroll_state.displayed_offset_units
+
+	assert_eq(title.mouse_filter, Control.MOUSE_FILTER_IGNORE)
+	assert_eq(slider.mouse_filter, Control.MOUSE_FILTER_STOP)
+	assert_true(tower.get_global_rect().has_point(title.get_global_rect().get_center()))
+	dispatch_touch_pan_at(-tower.brick_unit_size, title.get_global_rect().get_center())
+	assert_lt(tower.scroll_state.displayed_offset_units, original_offset)
 
 func test_manual_pan_respects_placement_overlay_and_presentation_blockers() -> void:
 	var tower: Control = prepare_playing_tower()

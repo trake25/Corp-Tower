@@ -866,3 +866,31 @@ func test_leave_game_confirms_once_and_waits_for_authoritative_acknowledgement()
 
 	assert_null(screen_manager.play_instance)
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
+
+func test_spectator_leave_sends_one_request_and_waits_for_game_left() -> void:
+	var socket := AccountProfileSocket.new()
+	socket.ready_state = WebSocketPeer.STATE_OPEN
+	NetworkManager.ws = socket
+	NetworkManager.connection_purpose = "gameplay"
+	NetworkManager.is_conn_estab = true
+	NetworkManager.is_connecting = false
+	NetworkManager.spectator_active = true
+	screen_manager._enter_play_instance()
+	await get_tree().process_frame
+	screen_manager._on_play_instance_menu_requested()
+	var menu = screen_manager.current_overlay
+
+	menu.leave_button.pressed.emit()
+	menu.confirm_modal.continue_button.pressed.emit()
+	menu._on_leave_confirmed()
+
+	assert_eq(socket.sent_messages, [{"type": "leave_game"}])
+	assert_true(menu.leave_pending)
+	assert_eq(screen_manager.current_overlay, menu)
+	assert_not_null(screen_manager.play_instance)
+
+	NetworkManager.accept_game_left({"type": "game_left", "destination": "home"})
+	await get_tree().process_frame
+
+	assert_null(screen_manager.play_instance)
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))

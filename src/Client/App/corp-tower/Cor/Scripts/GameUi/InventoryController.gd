@@ -522,8 +522,7 @@ func set_spectator_mode(enabled: bool) -> void:
 
 	if tower_drop_zone != null:
 		tower_drop_zone.mouse_filter = (
-			Control.MOUSE_FILTER_IGNORE if spectator_mode
-			else (Control.MOUSE_FILTER_STOP if parallel_placement else Control.MOUSE_FILTER_PASS)
+			Control.MOUSE_FILTER_STOP if parallel_placement else Control.MOUSE_FILTER_PASS
 		)
 
 func _handle_card_tap(event: InputEvent, index: int) -> void:
@@ -647,6 +646,8 @@ func _show_site_overlay() -> void:
 		tower_stack_fallback.call("set_snap_state", SITE_ONLY_SNAP.duplicate())
 
 func _on_tower_drop_zone_gui_input(event: InputEvent) -> void:
+	if spectator_mode:
+		return
 	if ready_locked:
 		if selected_slot_index >= 0 and _is_primary_press(event):
 			_reject_ready_placement(selected_slot_index)
