@@ -27,7 +27,7 @@ implicitly widen KB adjacency.
 | `automation.docs.maps` | [automation.md#map-regeneration](./automation.md#map-regeneration) | concept map generator |
 | `automation.docs.retrieval-repair` | [automation.md#retrieval-repair](./automation.md#retrieval-repair) | retrieval maintenance |
 | `automation.docs.scope` | [automation.md#docs-scoping](./automation.md#docs-scoping) | source concept ownership, documentation ownership |
-| `automation.docs.validation` | [automation.md#kb-validation](./automation.md#kb-validation) | concept KB validator, KB validator |
+| `automation.docs.validation` | [automation.md#kb-validation](./automation.md#kb-validation) | concept KB validator |
 | `automation.execution.io-discipline` | [automation.md#provider-visible-io-discipline](./automation.md#provider-visible-io-discipline) | provider-visible I/O, Codex I/O discipline |
 | `automation.git.publish` | [automation.md#authorized-git-publication](./automation.md#authorized-git-publication) | targeted push, git sync commit push |
 | `automation.observability.binding` | [automation.md#observability-binding](./automation.md#observability-binding) | agent observability, task binding |

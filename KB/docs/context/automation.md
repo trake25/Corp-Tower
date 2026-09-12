@@ -349,16 +349,28 @@ alias: plan done
 alias: archive plan
 source: scripts/lib/plan-archive.mjs#archivePlan
 source: scripts/plan-archive.mjs#main
+source: AGENTS.md#Codex universal policy
 -->
 ## Plan archival
 
 Plan archival is enabled by default as a deterministic completion mechanic independent from
-task-close. After successful implementation and required verification, the archive operation moves
-the active plan to completed history. It is collision-safe and idempotent.
+task-close. After successful implementation and required verification, archive the active plan with:
 
-Selected task-close may delegate to the same archive primitive. Without task-close, completion uses
-the standalone archive path. When archival is explicitly disabled, the successful task leaves its
-plan active.
+`node scripts/plan-archive.mjs --plan plan/<active-phase-2-plan.md>`
+
+Use this documented interface during normal execution; do not inspect the archive implementation
+script merely to learn how to invoke it. Do not manually move, rename, or rewrite the plan as a
+substitute for the archive tool.
+
+`plan/` is ignored working material. The active plan and its `plan/done/` archive remain local and
+must never be added to Git publication scope.
+
+Selected task-close may delegate to the same archive primitive. If task-close already reports the
+plan archived, do not run a redundant standalone archive. Without task-close, completion uses the
+standalone archive command above. When archival is explicitly disabled, the successful task leaves
+its plan active.
+
+If archival fails, stop and report the bounded failure. Do not bypass the archive tool.
 
 <!-- kb
 id: automation.docs.maps
@@ -375,7 +387,6 @@ evidence, never an authored replacement for concept prose.
 <!-- kb
 id: automation.docs.validation
 alias: concept KB validator
-alias: KB validator
 source: scripts/validate-concept-kb.mjs#validateConceptKb
 source: scripts/lib/concept-kb.mjs#conceptProseCapacity
 -->
@@ -482,14 +493,50 @@ alias: targeted push
 alias: git sync commit push
 source: scripts/git-sync-commit-push.mjs#requireManifest
 source: scripts/git-sync-commit-push.mjs#explicitPathScope
+source: AGENTS.md#Codex universal policy
 -->
 ## Authorized Git publication
 
-`git-sync-commit-push` is opt-in and always requires explicit user authorization. A valid closed
-task-close scope remains eligible when available, but task-close is not a prerequisite. A task may
-instead provide explicit authorized repository-relative publication paths, optionally validated
-against selected ownership state.
+For an approved Phase 2 implementation task, bounded final publication after successful
+implementation, required verification, and plan archival is a standard completion mechanic.
+The approved task supplies the authorization represented by `--approve`; that authorization applies
+only to the current task's explicit publication scope. Outside an approved task completion, Git
+publication still requires explicit user authorization.
 
-Publication scope is never inferred from the dirty working tree. The tool performs only the
-authorized sync/stage/commit/push sequence and rejects invalid branch, scope, staging, receipt, or
-authorization state rather than silently widening publication.
+Normal execution must use this documented interface and must not inspect
+`scripts/git-sync-commit-push.mjs` merely to learn how to invoke it. Read the implementation only
+when the task is specifically repairing or modifying the publication tool, or when a tool failure
+cannot be diagnosed from its compact error.
+
+Without task-close, publish explicit repository-relative task paths:
+
+`node scripts/git-sync-commit-push.mjs --approve --task "<task title>" --path <path> [--path <path> ...]`
+
+With a valid closed task-close manifest, publish its recorded scope:
+
+`node scripts/git-sync-commit-push.mjs --approve --manifest <terminal-closeout.json>`
+
+When a task explicitly requires publication from another selected local branch, use the tool's
+documented branch form rather than raw Git:
+
+`node scripts/git-sync-commit-push.mjs --approve --task "<task title>" --path <path> [--path <path> ...] --branch <branch> --switch`
+
+Use push-only branch publication only when that mode is explicitly required by the task:
+
+`node scripts/git-sync-commit-push.mjs --approve --task "<task title>" --path <path> [--path <path> ...] --branch <local-branch> --push-only [--remote-branch <remote-branch>]`
+
+Publication scope is never inferred from the dirty working tree. Supply only the repository-relative
+paths owned by the completed task. `plan/` is ignored local working material and must never appear in
+publication scope.
+
+The task title provides the publication identity. The shared identity helper selects the first 1–3
+meaningful non-generic keywords, preserves them as the commit label, and automatically appends the
+next `vX.XX` version from repository history. Agents do not manually choose or append the version.
+Prefer a concise task title whose first meaningful words clearly identify the work, for example
+`Spectator Panning`, `Reconnect Network Stability`, or `Facebook Auth Tab`.
+
+The publication tool owns synchronization, staging, commit creation, and push. Agents must not
+substitute raw `git add`, `git commit`, `git pull`, or `git push`. The tool rejects invalid branch,
+scope, staging, receipt, authorization, or synchronization state rather than silently widening
+publication. On rejection, stop and report the bounded failure; do not widen scope or bypass the
+tool.

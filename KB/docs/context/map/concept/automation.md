@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## automation.docs.maps
 
-Owner: `KB/docs/context/automation.md:369-374` → **Map regeneration**
+Owner: `KB/docs/context/automation.md:381-386` → **Map regeneration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,7 +15,7 @@ Adjacent concepts: `automation.docs.validation`
 
 ## automation.docs.retrieval-repair
 
-Owner: `KB/docs/context/automation.md:412-417` → **Retrieval repair**
+Owner: `KB/docs/context/automation.md:423-428` → **Retrieval repair**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: `automation.retrieval.fallback`
 
 ## automation.docs.scope
 
-Owner: `KB/docs/context/automation.md:400-405` → **Docs scoping**
+Owner: `KB/docs/context/automation.md:411-416` → **Docs scoping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: none
 
 ## automation.docs.validation
 
-Owner: `KB/docs/context/automation.md:382-393` → **KB validation**
+Owner: `KB/docs/context/automation.md:393-404` → **KB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -58,18 +58,19 @@ Adjacent concepts: `automation.observability.usage`
 
 ## automation.git.publish
 
-Owner: `KB/docs/context/automation.md:486-496` → **Authorized Git publication**
+Owner: `KB/docs/context/automation.md:498-543` → **Authorized Git publication**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/git-sync-commit-push.mjs` | `requireManifest` | 161 | `sed -n 149,181p scripts/git-sync-commit-push.mjs` |
 | `scripts/git-sync-commit-push.mjs` | `explicitPathScope` | 127 | `sed -n 115,147p scripts/git-sync-commit-push.mjs` |
+| `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
 
 Adjacent concepts: none
 
 ## automation.observability.binding
 
-Owner: `KB/docs/context/automation.md:427-438` → **Observability binding**
+Owner: `KB/docs/context/automation.md:438-449` → **Observability binding**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -82,7 +83,7 @@ Adjacent concepts: none
 
 ## automation.observability.flags
 
-Owner: `KB/docs/context/automation.md:469-478` → **Workflow inefficiency flags**
+Owner: `KB/docs/context/automation.md:480-489` → **Workflow inefficiency flags**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -95,7 +96,7 @@ Adjacent concepts: none
 
 ## automation.observability.usage
 
-Owner: `KB/docs/context/automation.md:451-459` → **Observability usage**
+Owner: `KB/docs/context/automation.md:462-470` → **Observability usage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -227,12 +228,13 @@ Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt
 
 ## automation.task-close.plan-archive
 
-Owner: `KB/docs/context/automation.md:353-362` → **Plan archival**
+Owner: `KB/docs/context/automation.md:354-374` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `scripts/lib/plan-archive.mjs` | `archivePlan` | 109 | `sed -n 97,129p scripts/lib/plan-archive.mjs` |
 | `scripts/plan-archive.mjs` | `main` | 7 | `sed -n 1,27p scripts/plan-archive.mjs` |
+| `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
 
 Adjacent concepts: none
 
