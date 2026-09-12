@@ -135,9 +135,9 @@ func _update_starting_presentation() -> void:
 	var remaining_ms := maxi(0, presentation_deadline_ms - Time.get_ticks_msec())
 	var countdown_active := remaining_ms <= COUNTDOWN_WINDOW_MS
 	if briefing_card != null:
-	briefing_card.visible = true
-	briefing_card.modulate = Color.WHITE
-	briefing_card.scale = Vector2.ONE
+		briefing_card.visible = true
+		briefing_card.modulate = Color.WHITE
+		briefing_card.scale = Vector2.ONE
 	if countdown_label == null:
 		return
 	if !countdown_active:
