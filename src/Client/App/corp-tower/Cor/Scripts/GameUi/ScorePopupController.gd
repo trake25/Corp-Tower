@@ -44,7 +44,7 @@ class ImpactBanner extends Control:
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		visible = false
-		z_index = 20
+		z_index = 0
 		title_label = _make_label(13)
 		value_label = _make_label(25)
 		add_child(title_label)
@@ -184,7 +184,7 @@ class RewardStreak extends Control:
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		visible = false
-		z_index = 19
+		z_index = 0
 
 	func configure(next_origin: Vector2, next_destination: Vector2, next_accent: Color, layer_size: Vector2) -> void:
 		origin = next_origin
@@ -475,6 +475,7 @@ func _show_danger_banner(event_type: String, configured_duration_seconds: float)
 	_stop_tween(danger_banner.effect_animation)
 	var title := "TOWER WOBBLING" if event_type == "tower_warning" else "TOWER CRITICAL"
 	danger_banner.configure(event_type, "", DANGER_CORAL, WHITE_COLOR, "", title, get_score_popup_size(event_type))
+	danger_banner.z_index = 60
 	danger_banner.position = get_score_popup_position({"type": event_type}) - danger_banner.size * 0.5
 	danger_banner.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	danger_banner.scale = Vector2(0.96, 0.96)

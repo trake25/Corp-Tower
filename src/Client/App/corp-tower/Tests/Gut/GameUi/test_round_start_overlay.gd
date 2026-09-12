@@ -13,7 +13,7 @@ class NetworkStub:
 	var is_conn_estab := true
 	var placed: Array = []
 
-	func place_block(index: int, _column: int = -1, _origin_y: int = -1) -> void:
+	func place_block(index: int, _column: int = -1, _origin_y: int = -1, _request_id: String = "") -> void:
 		placed.append(index)
 
 var harness
@@ -167,13 +167,13 @@ func test_ready_rejects_every_card_mode_with_throttled_feedback_and_cleans_stale
 	inventory.is_armed = true
 	inventory.armed_snap = {"column": 4, "origin_y": 0}
 	inventory.drag_snap = {"column": 4, "origin_y": 0}
-	inventory.last_placement_sent_at_ms = Time.get_ticks_msec()
+	inventory._begin_optimistic_cooldown(true)
 	inventory.apply_authoritative_state("starting", 3, true)
 	assert_eq(inventory.selected_slot_index, -1)
 	assert_false(inventory.is_armed)
 	assert_true(inventory.armed_snap.is_empty())
 	assert_true(inventory.drag_snap.is_empty())
-	assert_eq(inventory.last_placement_sent_at_ms, 0)
+	assert_eq(inventory.pending_placement_request_id, "")
 
 	inventory.apply_authoritative_state("playing", 3)
 	harness.main.match_state.current_match_state = "playing"

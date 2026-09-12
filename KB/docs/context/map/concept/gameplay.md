@@ -52,7 +52,7 @@ Owner: `KB/docs/context/gameplay.md:13-18` → **Core loop**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `startLevel` | 651 | `sed -n 639,671p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `startLevel` | 658 | `sed -n 646,678p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.impact.requirement`, `gameplay.progression.failure`
 
@@ -115,7 +115,7 @@ Owner: `KB/docs/context/gameplay.md:73-76` → **Power inventory**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `clonePowerInventory` | 558 | `sed -n 546,578p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `clonePowerInventory` | 565 | `sed -n 553,585p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Impacts.js` | `saveImpactPowers` | 16 | `sed -n 4,36p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.progression.rollback`
@@ -126,7 +126,7 @@ Owner: `KB/docs/context/gameplay.md:85-88` → **Replenish**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `activatePower` | 589 | `sed -n 577,609p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `activatePower` | 596 | `sed -n 584,616p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Block_Supply.js` | `generateReplenishBlocks` | 424 | `sed -n 412,444p src/Server/app/engine/Block_Supply.js` |
 
 Adjacent concepts: `gameplay.supply.reserve`
@@ -137,8 +137,8 @@ Owner: `KB/docs/context/gameplay.md:166-169` → **Failure rules**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `failLevel` | 1054 | `sed -n 1042,1074p src/Server/app/Game_Engine.js` |
-| `src/Server/app/engine/Placement.js` | `checkFailCondition` | 405 | `sed -n 393,425p src/Server/app/engine/Placement.js` |
+| `src/Server/app/Game_Engine.js` | `failLevel` | 1061 | `sed -n 1049,1081p src/Server/app/Game_Engine.js` |
+| `src/Server/app/engine/Placement.js` | `checkFailCondition` | 416 | `sed -n 404,436p src/Server/app/engine/Placement.js` |
 | `src/Server/app/engine/Impacts.js` | `resolveCheckpointFailure` | 400 | `sed -n 388,420p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.supply.reserve`, `gameplay.impact.requirement`
@@ -160,7 +160,7 @@ Owner: `KB/docs/context/gameplay.md:151-154` → **Round timing**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Game_Config.js` | `GameConfig` | 1 | `sed -n 1,21p src/Server/app/Game_Config.js` |
-| `src/Server/app/Game_Engine.js` | `getLevelTimeLimitMs` | 827 | `sed -n 815,847p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `getLevelTimeLimitMs` | 834 | `sed -n 822,854p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `backend.engine.timers`, `network.session.recovery`
 
@@ -262,7 +262,7 @@ Owner: `KB/docs/context/gameplay.md:50-55` → **Shared supply**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/engine/Block_Supply.js` | `generateDrawPileBlocks` | 203 | `sed -n 191,223p src/Server/app/engine/Block_Supply.js` |
-| `src/Server/app/engine/Placement.js` | `anyPlayerCanRescueSupply` | 445 | `sed -n 433,465p src/Server/app/engine/Placement.js` |
+| `src/Server/app/engine/Placement.js` | `anyPlayerCanRescueSupply` | 456 | `sed -n 444,476p src/Server/app/engine/Placement.js` |
 
 Adjacent concepts: `gameplay.power.replenish`, `gameplay.progression.failure`
 

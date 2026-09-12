@@ -83,7 +83,7 @@ cell_size_override = 34.0
 [node name="ScorePopupLayer" type="Control" parent="." unique_id=981608802]
 unique_name_in_owner = true
 visible = false
-z_index = 40
+z_index = 10
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

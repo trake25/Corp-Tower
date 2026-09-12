@@ -3516,7 +3516,8 @@ class LobbyManager {
 
             case "place_block":
                 room.engine.placeBlock(
-                    playerId, action.blockIndex, action.column, action.originY
+                    playerId, action.blockIndex, action.column, action.originY,
+                    action.placementRequestId
                 );
                 return;
 

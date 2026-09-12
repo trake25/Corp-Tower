@@ -530,7 +530,8 @@ async function handleMessage(player, message) {
             type: "place_block",
             blockIndex: data.blockIndex,
             column: data.column,
-            originY: data.originY
+            originY: data.originY,
+            placementRequestId: data.placementRequestId
         });
         return;
     }

@@ -57,7 +57,7 @@ Owner: `KB/docs/context/testing.md:64-99` → **Rendered client verification**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_main_scene_ready` | 126 | `sed -n 114,146p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_begin_collapse` | 894 | `sed -n 882,914p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` | `_begin_collapse` | 902 | `sed -n 890,922p src/Client/App/corp-tower/Cor/Scripts/TowerStack.gd` |
 
 Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.rendered-verification`
 
@@ -109,7 +109,7 @@ Owner: `KB/docs/context/testing.md:24-27` → **Server coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/tests/Gameplay_Events.test.js` | `placement emits one authoritative score transaction and contribution` | 293 | `sed -n 281,313p src/Server/tests/Gameplay_Events.test.js` |
+| `src/Server/tests/Gameplay_Events.test.js` | `placement emits one authoritative score transaction and contribution` | 310 | `sed -n 298,330p src/Server/tests/Gameplay_Events.test.js` |
 
 Adjacent concepts: none
 

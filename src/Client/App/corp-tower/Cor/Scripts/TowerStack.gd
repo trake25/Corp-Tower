@@ -75,6 +75,8 @@ const ARMED_PULSE_SPEED := 5.0
 @export var drag_grip_offset_units: float = 1.4
 @export var emoji_unit_scale: float = 1.1
 
+const PLACEMENT_Z_INDEX := 50
+
 signal scroll_offset_changed(pixels: float)
 signal camera_zoom_changed(zoom: float)
 signal collapse_presentation_started
@@ -419,6 +421,7 @@ func begin_snap_drag(block: Dictionary, color: Color) -> void:
 	drag_color = color
 	active_snap = {}
 	snap_preview_active = false
+	_sync_placement_z_index()
 	queue_redraw()
 
 func resolve_snap(cells: Array, ghost_global_pos: Vector2) -> Dictionary:
@@ -443,6 +446,7 @@ func is_placement_still_legal(cells: Array, column: int, origin_y: int) -> bool:
 func set_snap_state(snap: Dictionary) -> void:
 	active_snap = snap
 	snap_preview_active = bool(snap.get("valid", false))
+	_sync_placement_z_index()
 
 	if !bool(snap.get("armed", false)):
 		_armed_pulse_t = 0.0
@@ -452,7 +456,11 @@ func set_snap_state(snap: Dictionary) -> void:
 func clear_snap_preview() -> void:
 	snap_preview_active = false
 	active_snap = {}
+	_sync_placement_z_index()
 	queue_redraw()
+
+func _sync_placement_z_index() -> void:
+	z_index = PLACEMENT_Z_INDEX if snap_preview_active else 0
 
 func end_snap_drag() -> void:
 	drag_cells = []
@@ -1207,12 +1215,6 @@ func _draw() -> void:
 				entry, cells, origin_x, base_height, unit, base_x, baseline, scroll_offset_units, drop_offset, draw_origin
 			)
 
-		if _has_danger_outline(entry):
-			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-			_draw_danger_outline(entry, drop_offset)
-			if !has_structural_pose and !component_collapse_active:
-				draw_set_transform(pivot, deg_to_rad(displayed_tilt_deg), Vector2.ONE)
-
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	if (
@@ -1229,8 +1231,25 @@ func _draw() -> void:
 		_draw_snap_layer(unit, base_x, baseline, pivot)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+	_draw_active_danger_outlines()
+
 	if current_height > tower_units:
 		_draw_fallback_stack()
+
+func _draw_active_danger_outlines() -> void:
+	for entry_value in tower_blocks:
+		var entry: Dictionary = entry_value
+		var entry_fallen: bool = str(entry.get("towerState", "standing")) == "fallen"
+		if entry_fallen and (
+			_collapse_phase != COLLAPSE_LEAN or !_collapsing_block_ids.has(_entry_block_id(entry))
+		):
+			continue
+		if !_has_danger_outline(entry):
+			continue
+		var drop_offset := 0.0
+		if _drop_anim_id != "" and _entry_block_id(entry) == _drop_anim_id:
+			drop_offset = (1.0 - _drop_ease(_drop_anim_t)) * _drop_fall_units
+		_draw_danger_outline(entry, drop_offset)
 
 func _draw_block_emoji(
 	entry: Dictionary,

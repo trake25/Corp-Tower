@@ -71,7 +71,7 @@ Owner: `KB/docs/context/backend.md:200-203` → **Engine lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `startLevel` | 651 | `sed -n 639,671p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `startLevel` | 658 | `sed -n 646,678p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.snapshot`
 
@@ -81,7 +81,7 @@ Owner: `KB/docs/context/backend.md:223-228` → **Placement authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Placement.js` | `placeBlock` | 172 | `sed -n 160,192p src/Server/app/engine/Placement.js` |
+| `src/Server/app/engine/Placement.js` | `placeBlock` | 179 | `sed -n 167,199p src/Server/app/engine/Placement.js` |
 
 Adjacent concepts: `gameplay.tower.placement`, `network.placement.contract`
 
@@ -91,7 +91,7 @@ Owner: `KB/docs/context/backend.md:246-249` → **Power events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `activatePower` | 589 | `sed -n 577,609p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `activatePower` | 596 | `sed -n 584,616p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.transient-events`
 
@@ -101,7 +101,7 @@ Owner: `KB/docs/context/backend.md:211-214` → **Engine timers**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 318 | `sed -n 306,338p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 325 | `sed -n 313,345p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.progression.timing`
 

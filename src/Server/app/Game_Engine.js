@@ -49,6 +49,8 @@ class GameEngine {
         }
 
         const placeableColumns = this.getPlaceableColumnRange(); const stateRemainingMs = this.getRemainingMs();
+        const placementCooldownMs = Math.max(0, Number(GameConfig.placementCooldown) || 0);
+        const now = Date.now();
         const gameState = {
             type: "game_state",
             stateRevision: Math.max(0, Number(this.room.stateRevision) || 0),
@@ -61,7 +63,7 @@ class GameEngine {
             impactScoreStatus: this.getImpactScoreStatus(),
             activeInventorySlots: this.getBlocksPerPlayer(),
             maxActiveBlocks: GameConfig.maxActiveBlocks,
-            placementCooldownMs: Math.max(0, Number(GameConfig.placementCooldown) || 0),
+            placementCooldownMs,
             drawPileCount: (this.room.drawPile || []).length,
             nextDrawBlock: this.getNextDrawBlock(),
             towerBlocks: this.room.towerBlocks || [],
@@ -101,7 +103,12 @@ class GameEngine {
                 impactContribution: player.impactContribution,
                 contributedHeight: player.contributedHeight,
                 blocks: player.blocks,
-                powerInventory: player.powerInventory || []
+                powerInventory: player.powerInventory || [],
+                placementCooldownRemainingMs: Math.max(
+                    0,
+                    placementCooldownMs - (now - (Number(player.lastPlacementTime) || 0))
+                ),
+                placementCooldownRequestId: String(player.lastPlacementRequestId || "")
             }))
         };
 
@@ -947,7 +954,7 @@ class GameEngine {
     getPlaceableOriginRange(block) { return Placement.getPlaceableOriginRange(this, block); }
     resolveColumnOriginX(block, column) { return Placement.resolveColumnOriginX(this, block, column); }
     resolvePlacementOrigin(block, column, originY) { return Placement.resolvePlacementOrigin(this, block, column, originY); }
-    placeBlock(playerId, blockIndex, column = null, originY = null) { return Placement.placeBlock(this, playerId, blockIndex, column, originY); }
+    placeBlock(playerId, blockIndex, column = null, originY = null, requestId = "") { return Placement.placeBlock(this, playerId, blockIndex, column, originY, requestId); }
     getStabilityPressure(level) { return Placement.getStabilityPressure(this, level); }
     resolveStabilityConfig(level) { return Placement.resolveStabilityConfig(this, level); }
     resolveLastChance(result, advancesRescue = false) { return LastChance.resolve(this, result, advancesRescue); }

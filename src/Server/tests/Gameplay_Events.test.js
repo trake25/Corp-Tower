@@ -19,6 +19,23 @@ const {
 
 afterEach(resetFixtures);
 
+test("placement cooldown state acknowledges accepted and rejected placement requests", () => {
+	const { engine, messages } = createPlayingEngine(1, 10);
+	GameConfig.placementCooldown = 1500;
+	engine.room.players[0].blocks = [createBlock(1, "COOLDOWN")];
+
+	engine.placeBlock("P1", 0, 4, null, "accepted-request");
+	let playerState = latestMessage(messages).players.find(player => player.id === "P1");
+	assert.equal(playerState.placementCooldownRequestId, "accepted-request");
+	assert.ok(playerState.placementCooldownRemainingMs > 0);
+
+	engine.room.state = "playing";
+	engine.placeBlock("P1", 0, 4, null, "rejected-request");
+	playerState = latestMessage(messages).players.find(player => player.id === "P1");
+	assert.equal(playerState.placementCooldownRequestId, "rejected-request");
+	assert.ok(playerState.placementCooldownRemainingMs > 0);
+});
+
 function flatCells(width) {
     return Array.from({ length: width }, (_, x) => [x, 0]);
 }

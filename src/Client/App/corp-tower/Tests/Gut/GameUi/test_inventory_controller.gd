@@ -11,7 +11,7 @@ class NetworkStub:
 	var placed_columns: Array = []
 	var placed_origins: Array = []
 
-	func place_block(index: int, column: int = -1, origin_y: int = -1) -> void:
+	func place_block(index: int, column: int = -1, origin_y: int = -1, _request_id: String = "") -> void:
 		placed.append(index)
 		placed_columns.append(column)
 		placed_origins.append(origin_y)
@@ -52,14 +52,14 @@ func test_can_place_block_rejects_empty_and_locked_slots() -> void:
 func test_can_place_block_respects_cooldown() -> void:
 	enter_playing_state_with_block()
 	assert_true(inventory().can_place_block(0), "A filled slot while playing and off cooldown should place.")
-	inventory().last_placement_sent_at_ms = Time.get_ticks_msec()
+	inventory()._begin_optimistic_cooldown(true)
 	assert_false(inventory().can_place_block(0), "Placement must be blocked during the local cooldown.")
 
 func test_cooldown_covers_only_filled_cards_and_rejects_taps_with_feedback() -> void:
 	harness.main.match_state.current_match_state = "playing"
 	inventory().update_inventory_ui([SHAPE_BLOCK_FIXTURE, SHAPE_BLOCK_FIXTURE], 3)
 	inventory().tuning.placement_cooldown_ms = 1500
-	inventory().last_placement_sent_at_ms = Time.get_ticks_msec()
+	inventory()._begin_optimistic_cooldown(true)
 	inventory().update_placement_cooldown_overlays()
 	assert_true((harness.find("PlaceBlockButton1/CooldownOverlay") as Control).visible)
 	assert_true((harness.find("PlaceBlockButton2/CooldownOverlay") as Control).visible)
@@ -74,7 +74,8 @@ func test_cooldown_covers_only_filled_cards_and_rejects_taps_with_feedback() -> 
 func test_cooldown_completion_restores_input_and_selection_style_stays_stable() -> void:
 	enter_parallel_placement()
 	inventory().tuning.placement_cooldown_ms = 1500
-	inventory().last_placement_sent_at_ms = Time.get_ticks_msec() - 1500
+	inventory()._begin_optimistic_cooldown(false)
+	inventory().reconcile_authoritative_cooldown(0, "")
 	inventory().update_placement_cooldown_overlays()
 	assert_true(inventory().can_place_block(0), "The client unlocks at the same completed cooldown boundary it renders.")
 	tap_card(0)
@@ -82,6 +83,28 @@ func test_cooldown_completion_restores_input_and_selection_style_stays_stable() 
 	assert_eq(selected_style.border_color.a, 1.0, "The selected border settles at a stable player-color alpha.")
 	inventory().tick()
 	assert_eq(selected_style.border_color.a, 1.0, "Selection has no continuous border pulse after its one-shot response.")
+
+func test_pending_cooldown_waits_for_its_matching_authoritative_response() -> void:
+	enter_playing_state_with_block()
+	inventory().tuning.placement_cooldown_ms = 1500
+	var request_id := inventory()._begin_optimistic_cooldown(true)
+	inventory().optimistic_placement_started_at_ms = Time.get_ticks_msec() - 1500
+	inventory().reconcile_authoritative_cooldown(0, "an-unrelated-request")
+	assert_false(inventory().can_place_block(0), "An unrelated zero-cooldown state cannot clear an in-flight placement.")
+	inventory().reconcile_authoritative_cooldown(600, request_id)
+	assert_false(inventory().can_place_block(0), "A matching accepted request re-anchors to the server cooldown.")
+	inventory().reconcile_authoritative_cooldown(0, "")
+	assert_true(inventory().can_place_block(0), "Authoritative zero releases the completed cooldown.")
+
+func test_matching_zero_reconciles_a_rejected_optimistic_attempt_and_snapshot_clears_pending_state() -> void:
+	enter_playing_state_with_block()
+	var rejected_request_id := inventory()._begin_optimistic_cooldown(true)
+	inventory().reconcile_authoritative_cooldown(0, rejected_request_id)
+	assert_true(inventory().can_place_block(0), "A matching zero response clears a rejected optimistic cooldown.")
+	var pending_request_id := inventory()._begin_optimistic_cooldown(true)
+	assert_ne(pending_request_id, "")
+	inventory().reconcile_authoritative_cooldown(0, "", true)
+	assert_eq(inventory().pending_placement_request_id, "", "Recovery snapshots remove stale pending cooldown authority.")
 
 func test_drag_release_inside_drop_zone_places_block() -> void:
 	enter_playing_state_with_block()

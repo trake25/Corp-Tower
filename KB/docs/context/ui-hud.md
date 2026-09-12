@@ -130,7 +130,15 @@ adjacent: hud.round-start.ready
 -->
 ## Inventory cooldown
 
-During authoritative PLAY, the server-provided placement cooldown is one player-global gate: every filled active card cools together, while empty or unavailable slots stay neutral. Cooling uses a translucent cyan/teal card veil and completion rail rather than the READY lock treatment; a cooling interaction gives one throttled local cue and non-blocking Action Row feedback. Input unlocks at the same zero boundary as the rendered cooldown, and any brief ready edge confirmation is strictly presentation after usability returns.
+During authoritative PLAY, the server-provided placement cooldown is one player-global gate:
+every filled active card cools together, while empty or unavailable slots stay neutral. The
+client may start a responsive pending gate, but only the matching server-echoed placement
+request and server-derived remaining time can confirm or clear it; unrelated state cannot
+advertise readiness while a request is unresolved. Cooling uses a translucent cyan/teal card
+veil and completion rail rather than the READY lock treatment; a cooling interaction gives
+one throttled local cue and non-blocking Action Row feedback. Input unlocks at the same
+authoritative zero boundary as the rendered cooldown, and any brief ready edge confirmation
+is strictly presentation after usability returns.
 
 <!-- kb
 id: hud.round-timer.urgency

@@ -541,7 +541,7 @@ func kick_private_player(target_player_id: String) -> void:
 		"targetPlayerId": target_player_id
 	}))
 
-func place_block(block_index, column := -1, origin_y := -1):
+func place_block(block_index, column := -1, origin_y := -1, placement_request_id := ""):
 	if spectator_active or not is_conn_estab or is_recovering():
 		return
 
@@ -553,6 +553,8 @@ func place_block(block_index, column := -1, origin_y := -1):
 
 	if origin_y >= 0:
 		data["originY"] = origin_y
+	if placement_request_id != "":
+		data["placementRequestId"] = placement_request_id
 
 	ws.send_text(JSON.stringify(data))
 

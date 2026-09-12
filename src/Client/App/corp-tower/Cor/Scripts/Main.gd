@@ -508,6 +508,8 @@ func update_game_state(data) -> void:
 
 	var my_blocks: Array = []
 	var my_power: Array = []
+	var my_cooldown_remaining_ms := 0
+	var my_cooldown_request_id := ""
 
 	for i in range(players.size()):
 		var player: Dictionary = players[i]
@@ -515,6 +517,8 @@ func update_game_state(data) -> void:
 		if players_ctx.is_local(player_id):
 			my_blocks = player.get("blocks", [])
 			my_power = player.get("powerInventory", [])
+			my_cooldown_remaining_ms = int(player.get("placementCooldownRemainingMs", 0))
+			my_cooldown_request_id = str(player.get("placementCooldownRequestId", ""))
 
 	roster.update_score_lines(players)
 	roster.update_impact_status_ui(data.get("impactScoreStatus", {}))
@@ -522,6 +526,11 @@ func update_game_state(data) -> void:
 	inventory.update_inventory_ui(
 		my_blocks,
 		int(data.get("activeInventorySlots", InventoryControllerScript.MAX_INVENTORY_SLOTS))
+	)
+	inventory.reconcile_authoritative_cooldown(
+		my_cooldown_remaining_ms,
+		my_cooldown_request_id,
+		bool(data.get("snapshot", false))
 	)
 	round_start_overlay.apply_state(
 		state,

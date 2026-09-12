@@ -49,7 +49,10 @@ var tower_stack_fallback: Control
 var drag_preview: Control
 var inventory_slot_blocks: Array = []
 var active_inventory_slots: int = MAX_INVENTORY_SLOTS
-var last_placement_sent_at_ms: int = 0
+var optimistic_placement_started_at_ms: int = 0
+var authoritative_cooldown_deadline_ms: int = 0
+var pending_placement_request_id := ""
+var placement_request_sequence := 0
 var is_block_dragging: bool = false
 var drag_slot_index: int = -1
 var drag_pointer_id: int = PointerEventsScript.POINTER_MOUSE
@@ -155,6 +158,8 @@ func apply_authoritative_state(state: String, level: int, force_round_cleanup: b
 	)
 	if is_new_ready_round:
 		clear_for_new_round()
+	elif state != "playing":
+		clear_cooldown_reconciliation()
 
 	var was_ready_locked := ready_locked
 	ready_locked = state == "starting"
@@ -167,7 +172,7 @@ func apply_authoritative_state(state: String, level: int, force_round_cleanup: b
 
 func clear_for_new_round() -> void:
 	cancel_block_drag()
-	last_placement_sent_at_ms = 0
+	clear_cooldown_reconciliation()
 	last_tap_ms = 0
 	cooling_feedback_deadline_ms = 0
 	cooling_feedback_last_at_ms = -COOLING_FEEDBACK_THROTTLE_MS
@@ -175,6 +180,11 @@ func clear_for_new_round() -> void:
 		cooling_feedback_label.visible = false
 	if clear_ready_rejection_feedback.is_valid():
 		clear_ready_rejection_feedback.call()
+
+func clear_cooldown_reconciliation() -> void:
+	optimistic_placement_started_at_ms = 0
+	authoritative_cooldown_deadline_ms = 0
+	pending_placement_request_id = ""
 
 func _tower_brick_unit_size() -> float:
 	if tower_stack_fallback == null:
@@ -220,13 +230,13 @@ func on_block_pressed(index: int, column: int = -1, origin_y: int = -1) -> void:
 	if !can_place_block(index):
 		return
 
-	last_placement_sent_at_ms = Time.get_ticks_msec()
-
 	if match_state.tutorial_mode and tutorial != null:
+		_begin_optimistic_cooldown(false)
 		tutorial.on_tutorial_place(index, column, origin_y)
 		return
 
-	network.place_block(index, column, origin_y)
+	var placement_request_id := _begin_optimistic_cooldown(true)
+	network.place_block(index, column, origin_y, placement_request_id)
 
 func _on_inventory_card_gui_input(event: InputEvent, index: int) -> void:
 	if _is_ready_locked_card(index) and _is_primary_press(event):
@@ -358,11 +368,50 @@ func is_placement_input_allowed() -> bool:
 	return get_placement_cooldown_remaining_ms() <= 0
 
 func get_placement_cooldown_remaining_ms() -> int:
-	if last_placement_sent_at_ms <= 0:
-		return 0
+	var now := Time.get_ticks_msec()
+	var remaining := maxi(0, authoritative_cooldown_deadline_ms - now)
+	if optimistic_placement_started_at_ms > 0:
+		remaining = maxi(remaining, tuning.placement_cooldown_ms - (now - optimistic_placement_started_at_ms))
+	if pending_placement_request_id != "":
+		return maxi(1, remaining)
+	return remaining
 
-	var elapsed_ms: int = Time.get_ticks_msec() - last_placement_sent_at_ms
-	return maxi(0, tuning.placement_cooldown_ms - elapsed_ms)
+func _begin_optimistic_cooldown(awaits_authority: bool) -> String:
+	optimistic_placement_started_at_ms = Time.get_ticks_msec()
+	authoritative_cooldown_deadline_ms = 0
+	if !awaits_authority:
+		pending_placement_request_id = ""
+		return ""
+	placement_request_sequence += 1
+	pending_placement_request_id = str(Time.get_ticks_usec()) + ":" + str(placement_request_sequence)
+	return pending_placement_request_id
+
+func reconcile_authoritative_cooldown(
+	remaining_ms: int,
+	request_id: String,
+	is_snapshot: bool = false
+) -> void:
+	if is_snapshot:
+		clear_cooldown_reconciliation()
+	if spectator_mode or match_state.current_match_state != "playing":
+		clear_cooldown_reconciliation()
+		return
+	var safe_remaining := maxi(0, remaining_ms)
+	if pending_placement_request_id != "":
+		if request_id != pending_placement_request_id:
+			return
+		pending_placement_request_id = ""
+		optimistic_placement_started_at_ms = 0
+		authoritative_cooldown_deadline_ms = Time.get_ticks_msec() + safe_remaining if safe_remaining > 0 else 0
+		return
+	if safe_remaining <= 0:
+		authoritative_cooldown_deadline_ms = 0
+		optimistic_placement_started_at_ms = 0
+		return
+	authoritative_cooldown_deadline_ms = maxi(
+		authoritative_cooldown_deadline_ms,
+		Time.get_ticks_msec() + safe_remaining
+	)
 
 func update_placement_cooldown_overlays() -> void:
 	var ratio: float = 0.0
@@ -535,6 +584,8 @@ func set_spectator_mode(enabled: bool) -> void:
 
 	spectator_mode = enabled
 	cancel_block_drag()
+	if enabled:
+		clear_cooldown_reconciliation()
 
 	for button in inventory_buttons:
 		if button != null:

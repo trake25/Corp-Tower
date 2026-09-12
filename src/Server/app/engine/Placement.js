@@ -169,7 +169,14 @@ function collapseComponents(engine, result) {
     return applied;
 }
 
-function placeBlock(engine, playerId, blockIndex, column = null, originY = null) {
+function acknowledgePlacementRequest(engine, player, requestId) {
+    const normalizedRequestId = String(requestId || "");
+    if (!normalizedRequestId) return;
+    player.lastPlacementRequestId = normalizedRequestId;
+    engine.broadcastGameState();
+}
+
+function placeBlock(engine, playerId, blockIndex, column = null, originY = null, requestId = "") {
     if (engine.room.state !== "playing") {
         console.log("Cannot place block, level not active");
         return;
@@ -187,11 +194,13 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
 
     if (timeSinceLastPlacement < GameConfig.placementCooldown) {
         console.log(`${player.id} still on cooldown`);
+        acknowledgePlacementRequest(engine, player, requestId);
         return;
     }
 
     if (!player.blocks || player.blocks.length === 0) {
         console.log(`${player.id} has no blocks`);
+        acknowledgePlacementRequest(engine, player, requestId);
         return;
     }
 
@@ -201,6 +210,7 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
         blockIndex >= player.blocks.length
     ) {
         console.log("Invalid block index");
+        acknowledgePlacementRequest(engine, player, requestId);
         return;
     }
 
@@ -213,6 +223,7 @@ function placeBlock(engine, playerId, blockIndex, column = null, originY = null)
     );
     const placement = engine.resolvePlacementOrigin(block, column, originY);
     player.lastPlacementTime = Date.now();
+    player.lastPlacementRequestId = String(requestId || "");
     engine.room.towerBlocks = engine.room.towerBlocks || [];
     const placedEntry = {
         playerId: player.id,

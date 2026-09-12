@@ -331,12 +331,46 @@ test("game state carries the room's accessibility options", () => {
 });
 
 test("game state carries the authoritative placement cooldown", () => {
-    const { engine, messages } = createPlayingEngine(1, 8);
+	const { engine, messages } = createPlayingEngine(1, 8);
+	GameConfig.placementCooldown = 1500;
+	const player = engine.room.players[0];
 
-    engine.broadcastGameState();
+	engine.broadcastGameState();
 
-    const state = latestMessage(messages);
-    assert.equal(state.placementCooldownMs, GameConfig.placementCooldown);
+	let state = latestMessage(messages);
+	assert.equal(state.placementCooldownMs, GameConfig.placementCooldown);
+	assert.equal(state.players[0].placementCooldownRemainingMs, 0);
+
+	player.lastPlacementTime = Date.now();
+	player.lastPlacementRequestId = "accepted-placement";
+	engine.broadcastGameState();
+	state = latestMessage(messages);
+	assert.ok(state.players[0].placementCooldownRemainingMs > 0);
+	assert.equal(state.players[0].placementCooldownRequestId, "accepted-placement");
+
+	player.lastPlacementTime = Date.now() - GameConfig.placementCooldown;
+	engine.broadcastGameState();
+	state = latestMessage(messages);
+	assert.equal(state.players[0].placementCooldownRemainingMs, 0);
+});
+
+test("room placement actions preserve cooldown request correlation", async () => {
+	const lobbyManager = new LobbyManager();
+	let received = [];
+	const room = {
+		players: [{ id: "P1" }],
+		engine: { placeBlock: (...args) => { received = args; } }
+	};
+
+	await lobbyManager.runRoomAction(room, "P1", {
+		type: "place_block",
+		blockIndex: 1,
+		column: 4,
+		originY: 2,
+		placementRequestId: "placement-request-1"
+	});
+
+	assert.deepEqual(received, ["P1", 1, 4, 2, "placement-request-1"]);
 });
 
 test("game state carries the room's visual hook config", () => {

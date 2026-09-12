@@ -63,6 +63,27 @@ func test_play_timer_urgency_uses_playing_thresholds_and_resets() -> void:
 	top_bar.update_top_bar_display(1, 0, "finished", 5, 5000, 90000)
 	assert_eq((harness.find("TimerLabel") as Label).modulate, Color.WHITE)
 
+func test_placement_feedback_out_ranks_routine_rewards_but_not_danger() -> void:
+	harness.main.update_game_state(GAME_STATE_FIXTURE)
+	var score_layer := harness.find("ScorePopupLayer") as Control
+	var drag_preview := harness.find("DragPreview") as Control
+	var tower := harness.find("TowerStack") as Control
+	assert_lt(score_layer.z_index, drag_preview.z_index, "Routine rewards stay below the floating placement preview.")
+	assert_eq(harness.main.score_popups.reward_banners[0].z_index, 0)
+	tower.set_snap_state({"valid": true, "armed": true})
+	assert_eq(tower.z_index, drag_preview.z_index, "Docked and armed placement receives the same active layer as floating placement.")
+	harness.main.score_popups.process_score_events([{"id": "danger-layer", "type": "tower_warning"}], PLAYERS_FIXTURE)
+	assert_gt(harness.main.score_popups.danger_banner.z_index + score_layer.z_index, tower.z_index, "Structural danger stays above active placement.")
+	tower.clear_snap_preview()
+	assert_eq(tower.z_index, 0, "Tower elevation resets when placement feedback ends.")
+
+func test_cooling_feedback_avoids_actionable_hud_on_the_narrow_baseline() -> void:
+	harness.resize(Vector2(412, 917))
+	await get_tree().process_frame
+	var feedback := harness.find("CoolingFeedbackLabel") as Label
+	for node_name in ["TeamInventoryPanel", "ActionRow", "QuickChatTrigger", "PowerTrigger"]:
+		assert_false(feedback.get_global_rect().intersects((harness.find(node_name) as Control).get_global_rect()), "COOLING… must not overlap " + node_name + ".")
+
 func test_game_state_passes_structural_pose_to_the_tower_stack() -> void:
 	var state: Dictionary = GAME_STATE_FIXTURE.duplicate(true)
 	state["towerBlocks"] = [{
