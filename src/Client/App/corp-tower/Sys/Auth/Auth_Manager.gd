@@ -1269,11 +1269,16 @@ func _consume_link_callback(callback: Dictionary) -> String:
 
 	if str(callback.get("code", "")) == "":
 		var error_code := str(callback.get("error_code", "")).strip_edges().to_lower()
-		if error_code == AuthRequestTransportScript.ERROR_IDENTITY_ALREADY_EXISTS:
-			if str(flow.get("provider", "")) == "google":
-				return await _recover_existing_google_link(flow)
-			return REASON_IDENTITY_CONFLICT
-		if error_code == AuthRequestTransportScript.ERROR_IDENTITY_CONFLICT:
+		var provider := str(flow.get("provider", ""))
+		if provider == "google" and error_code == AuthRequestTransportScript.ERROR_IDENTITY_ALREADY_EXISTS:
+			return await _recover_existing_google_link(flow)
+		if (
+			provider == "facebook"
+			and (
+				error_code == AuthRequestTransportScript.ERROR_IDENTITY_ALREADY_EXISTS
+				or error_code == AuthRequestTransportScript.ERROR_IDENTITY_CONFLICT
+			)
+		):
 			return REASON_IDENTITY_CONFLICT
 		return REASON_CANCELLED if str(callback.get("error", "")) != "" else REASON_REJECTED
 

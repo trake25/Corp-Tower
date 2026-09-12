@@ -351,7 +351,51 @@ func test_mobile_facebook_link_uses_the_authenticated_browser_flow_and_stages_th
 	browser_auth.sign_out()
 	browser_auth.free()
 
-func test_facebook_link_identity_conflict_leaves_the_guest_unchanged() -> void:
+func test_google_identity_already_exists_callback_uses_existing_recovery_path() -> void:
+	var recovery = RecoveryAuthManager.new()
+	var transport = FakeCurrentProjectTransport.new()
+	transport.response = {
+		"reason": recovery.REASON_NONE,
+		"data": {
+			"id": "guest-user",
+			"is_anonymous": false,
+			"identities": [{"provider": "google"}]
+		}
+	}
+	recovery.auth_transport = transport
+	recovery._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	recovery._save_link_flow("google", "guest-user")
+
+	assert_eq(await recovery._consume_link_callback({
+		"code": "",
+		"error": "server_error",
+		"error_code": "identity_already_exists"
+	}), recovery.REASON_NONE)
+	assert_eq(transport.requests, [{
+		"path": "/auth/v1/user", "bearer_token": "guest-access"
+	}])
+	assert_true(recovery.has_pending_provider_link())
+	assert_eq(recovery.pending_link_provider(), "google")
+	assert_true(recovery.is_anonymous)
+	recovery.sign_out()
+	recovery.free()
+
+func test_google_identity_conflict_callback_keeps_existing_cancel_semantics() -> void:
+	auth._save_link_flow("google", "guest-user")
+
+	assert_eq(await auth._consume_link_callback({
+		"code": "",
+		"error": "server_error",
+		"error_code": "identity_conflict"
+	}), auth.REASON_CANCELLED)
+	assert_false(auth.has_pending_provider_link())
+
+func test_facebook_link_identity_already_exists_leaves_the_guest_unchanged() -> void:
 	auth._apply_session({
 		"access_token": "guest-access",
 		"refresh_token": "guest-refresh",
@@ -364,6 +408,26 @@ func test_facebook_link_identity_conflict_leaves_the_guest_unchanged() -> void:
 		"code": "",
 		"error": "server_error",
 		"error_code": "identity_already_exists"
+	}), auth.REASON_IDENTITY_CONFLICT)
+	assert_eq(auth.access_token_value, "guest-access")
+	assert_eq(auth.refresh_token_value, "guest-refresh")
+	assert_eq(auth.user_id, "guest-user")
+	assert_true(auth.is_anonymous)
+	assert_false(auth.has_pending_provider_link())
+
+func test_facebook_link_identity_conflict_leaves_the_guest_unchanged() -> void:
+	auth._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	auth._save_link_flow("facebook", "guest-user")
+
+	assert_eq(await auth._consume_link_callback({
+		"code": "",
+		"error": "server_error",
+		"error_code": "identity_conflict"
 	}), auth.REASON_IDENTITY_CONFLICT)
 	assert_eq(auth.access_token_value, "guest-access")
 	assert_eq(auth.refresh_token_value, "guest-refresh")

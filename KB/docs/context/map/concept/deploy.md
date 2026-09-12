@@ -226,7 +226,7 @@ Owner: `KB/docs/context/deployment.md:82-106` → **Authentication environment**
 | `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 292 | `sed -n 280,312p .github/workflows/EKS-Deploy-Game-Server.yml` |
 | `scripts/backup/backup-server-up.sh` | `AUTH_ARGS` | 59 | `sed -n 47,79p scripts/backup/backup-server-up.sh` |
 | `scripts/verify-supabase-environment.sh` | `verify_supabase_environment() {` | 44 | `sed -n 32,64p scripts/verify-supabase-environment.sh` |
-| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 1282 | `sed -n 1270,1302p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
+| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 1287 | `sed -n 1275,1307p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
 | `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `link_with_provider` | 1054 | `sed -n 1042,1074p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
 | `src/Server/app/Server.js` | `handleProfileMessage` | 55 | `sed -n 43,75p src/Server/app/Server.js` |
 | `src/Server/app/Server.js` | `redirectOriginMatchesRequest` | 259 | `sed -n 247,279p src/Server/app/Server.js` |
