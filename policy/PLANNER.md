@@ -84,9 +84,7 @@ Do not use or route through agent skills.
 
 Normal single-run execution and default process values are implicit.
 
-Follow `policy/CODEX.md` for any non-default process encoding or selected execution shape.
-
-Plan archival remains enabled by repository default unless explicitly disabled.
+Follow `policy/CODEX.md` for any non-default process encoding or selected execution shape. Do not restate universal closeout mechanics from `AGENTS.md`.
 
 ## Execution-shape planning
 
@@ -142,7 +140,7 @@ Specify only minimum task-required verification plus consistency/generated mecha
 
 ### `## 7. Done Criteria`
 
-State observable completion conditions. Include deterministic plan archival when enabled.
+State observable task completion conditions only. Do not repeat universal archival or publication mechanics from `AGENTS.md`.
 
 ### `## Execution Overrides`
 

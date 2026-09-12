@@ -58,8 +58,8 @@ knowledge. Runtime skills are not an authority layer.
 
 Default-OFF agent-supported processes are absent from the plan and Codex runtime context. Planner
 includes an optional process or execution policy only when it is enabled or otherwise materially
-selected for the task. Normal single-run execution is implicit. Plan archival remains enabled by
-default as a deterministic completion mechanic rather than universal process-policy prose.
+selected for the task. Normal single-run execution is implicit. Plan archival and publication remain
+enabled by default as deterministic completion mechanics rather than repeated task-plan prose.
 
 <!-- kb
 id: automation.retrieval.protocol
@@ -259,6 +259,7 @@ id: automation.task-close.process-controls
 alias: process controls
 alias: bare process
 alias: task process
+source: policy/CODEX.md#Agent-supported repository process defaults
 source: scripts/lib/task-process-controls.mjs#resolveTaskProcessControls
 source: scripts/task-close.mjs#createManifest
 source: scripts/codex-task-run.mjs#resolveTelemetryMode
@@ -270,21 +271,23 @@ adjacent: automation.task-close.scope
 
 The current Planner's agent-supported process controls are telemetry, workflow inefficiency
 flagging, executable QA, permanent QA coverage, and public QA receipt, all default OFF; plan
-archival remains ON. Those are task policy rather than universal Codex knowledge. Everything ON
-enables the five agent-supported default-OFF controls.
+archival and publication default ON. These are task policy rather than repeated universal plan prose.
+Everything ON enables the five default-OFF controls while the two default-ON completion controls
+remain implicit.
 
-A default-OFF process is omitted from the Phase 2 plan and Codex runtime context. Planner loads only
-the policy section for an enabled/non-default process. Workflow inefficiency flagging requires
+A process is omitted from the Phase 2 plan when it remains at its repository default. Planner loads
+only the policy section for an enabled/non-default process. Workflow inefficiency flagging requires
 telemetry, and invalid combinations fail closed rather than silently enabling another process.
 
 Retained manual-maintenance task tooling still recognizes `task_ownership` and `task_close` for
-existing compatibility manifests. Within that schema, `task_close=ON` requires
-`task_ownership=ON`; neither control is an agent process or a Planner/Codex execution route.
+existing compatibility manifests. Within that compatibility schema, `task_close=ON` requires
+`task_ownership=ON`; publication is not added as a compatibility-manifest field merely because it is
+a normal Planner/Codex workflow control.
 
 Corp Tower telemetry hooks remain non-auto-discovered and are injected only for telemetry-enabled
-sessions through the deterministic launcher. Optional process selection never grants Git/deployment
-authorization or weakens safety, approved-scope, task-caused repair, or required consistency
-boundaries.
+sessions through the deterministic launcher. Process selection never grants deployment or
+unrelated/destructive Git authority; `publication=ON` governs only the bounded completion
+publication defined below.
 
 <!-- kb
 id: automation.task-close.scope
@@ -353,8 +356,8 @@ source: AGENTS.md#Codex universal policy
 -->
 ## Plan archival
 
-Plan archival is enabled by default as a deterministic completion mechanic independent from
-task-close. After successful implementation and required verification, archive the active plan with:
+Plan archival defaults ON and is independent from publication and task-close. After successful
+implementation and required verification, archive the active plan with:
 
 `node scripts/plan-archive.mjs --plan plan/<active-phase-2-plan.md>`
 
@@ -497,11 +500,14 @@ source: AGENTS.md#Codex universal policy
 -->
 ## Authorized Git publication
 
-For an approved Phase 2 implementation task, bounded final publication after successful
-implementation, required verification, and plan archival is a standard completion mechanic.
-The approved task supplies the authorization represented by `--approve`; that authorization applies
-only to the current task's explicit publication scope. Outside an approved task completion, Git
-publication still requires explicit user authorization.
+Publication defaults ON and is independent from plan archival. After successful implementation and
+required verification, publish the completed task unless the Phase 2 plan contains
+`publication=OFF`; when archival is enabled, archival runs first.
+
+The approved Phase 2 task supplies the authorization represented by `--approve`; do not ask for a
+second approval before bounded completion publication. That authorization applies only to the
+current task's explicit publication scope. Outside approved task completion, Git publication still
+requires explicit user authorization.
 
 Normal execution must use this documented interface and must not inspect
 `scripts/git-sync-commit-push.mjs` merely to learn how to invoke it. Read the implementation only

@@ -22,6 +22,7 @@ Conditional sections:
 - `#QA-COVERAGE#` — only when permanent QA coverage is ON.
 - `#QA-RECEIPT#` — only when public QA receipt is ON.
 - `#PLAN-ARCHIVAL#` — only when plan archival is explicitly OFF.
+- `#PUBLICATION#` — only when publication is explicitly OFF.
 - `#ORCHESTRATION#` — only when ORCHESTRATED execution is selected.
 - `#STRICT-EXECUTION#` — only when strict execution is selected.
 
@@ -36,13 +37,14 @@ Agent-supported repository process defaults:
 - `qa_coverage=OFF`
 - `qa_receipt=OFF`
 - `plan_archival=ON`
+- `publication=ON`
 
 Dependencies:
 - `workflow_inefficiency_flagging=ON` requires `telemetry=ON`.
 
 Invalid combinations fail closed rather than silently enabling another process.
 
-"Everything ON" enables every agent-supported optional process but does not authorize commit, push, pull, deployment, destructive Git operations, or another externally consequential action.
+"Everything ON" enables the five default-OFF processes above. `plan_archival=ON` and `publication=ON` remain implicit because they are already repository defaults. Everything ON never authorizes deployment or unrelated/destructive Git operations.
 
 ## Task-plan process encoding
 
@@ -55,6 +57,7 @@ Every agent-supported process whose effective value differs from its repository 
 Examples:
 - telemetry selected ON → `telemetry=ON`
 - plan archival explicitly disabled → `plan_archival=OFF`
+- publication explicitly disabled → `publication=OFF`
 
 For "Everything ON", emit the five default-OFF agent-supported controls as exact `=ON` assignments:
 - `telemetry=ON`
@@ -62,8 +65,6 @@ For "Everything ON", emit the five default-OFF agent-supported controls as exact
 - `qa=ON`
 - `qa_coverage=ON`
 - `qa_receipt=ON`
-
-`plan_archival=ON` remains implicit because it is already the repository default.
 
 Resolve dependencies before encoding. Never emit duplicate assignments for the same process. After resolving requested controls, read only the exact ON/non-default process sections needed for the task.
 
@@ -73,7 +74,7 @@ Compile only when `telemetry=ON`.
 
 The plan must contain exactly one `telemetry=ON` assignment under `## Execution Overrides`.
 
-Corp Tower observability hooks are not auto-discovered by default. Planner tells the user outside the plan to start the implementation session through `node scripts/codex-task-run.mjs <phase-2-plan-path>`, which injects the repository telemetry hook template only for that session and fails before launch if activation cannot be resolved. Telemetry does not enable QA, coverage, receipt, or Git authorization.
+Corp Tower observability hooks are not auto-discovered by default. Planner tells the user outside the plan to start the implementation session through `node scripts/codex-task-run.mjs <phase-2-plan-path>`, which injects the repository telemetry hook template only for that session and fails before launch if activation cannot be resolved. Telemetry does not alter QA, coverage, receipt, archival, publication, or Git/deployment safety boundaries.
 
 #WORKFLOW-INEFFICIENCY#
 
@@ -103,7 +104,13 @@ Generate only sanitized structured task/verification evidence. Receipt generatio
 
 Read only when plan archival is explicitly OFF.
 
-The plan must contain exactly one `plan_archival=OFF` assignment under `## Execution Overrides`. The successful task leaves its active plan in place. No other process behavior changes.
+Emit exactly one `plan_archival=OFF` assignment under `## Execution Overrides`. The successful task leaves its active plan in place; no other process behavior changes.
+
+#PUBLICATION#
+
+Read only when publication is explicitly OFF.
+
+Emit exactly one `publication=OFF` assignment under `## Execution Overrides`. The successful task does not invoke the local publication tool; implementation changes remain local. No other process behavior changes.
 
 #ORCHESTRATION#
 

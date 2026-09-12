@@ -16,14 +16,10 @@ Run the verification required by the approved plan. Repair known task-caused fai
 
 If current repository evidence materially conflicts with the approved behavior, makes the requested outcome ambiguous, or proves that a new product/workflow decision is required, stop and report the conflict rather than inventing a resolution.
 
-An approved Phase 2 implementation task authorizes its bounded completion publication through the repository's local publication tool after successful implementation and required verification. This standing task authorization applies only to that task's explicit publication scope and does not authorize deployment, apply, destroy, arbitrary branch/worktree operations, or unrelated Git actions.
+After successful implementation and required verification:
+- unless `plan_archival=OFF`, archive with `node scripts/plan-archive.mjs --plan <plan/...md>`;
+- unless `publication=OFF`, publish through `node scripts/git-sync-commit-push.mjs` using `KB/docs/context/automation.md#Authorized Git publication`. The approved Phase 2 task is the authorization represented by `--approve`; do not ask for a second approval.
 
-After successful implementation and required verification, complete repository mechanics in this order:
-
-1. Archive the active plan with `node scripts/plan-archive.mjs --plan <plan/...md>` unless the selected task-close lifecycle already reports the plan archived or plan archival was explicitly disabled. Use the archive tool; do not manually move or rewrite the plan. `plan/` is ignored working material and is never part of Git publication scope.
-2. Explicitly approved to publish the completed task with `node scripts/git-sync-commit-push.mjs` using the compact contract in `KB/docs/context/automation.md#Authorized Git publication`. Use the documented interface without reading the implementation script during normal execution. The publication tool derives the commit identity from 1–3 meaningful task keywords and appends the next `vX.XX` version automatically.
-3. Never substitute raw `git add`, `git commit`, `git pull`, or `git push` for these completion mechanics. If the archive or publication tool rejects the task, stop and report the bounded failure instead of widening scope or bypassing the tool.
-
-Outside that bounded completion publication, do not commit, push, pull, compare remotes, create or switch branches, create or remove worktrees, deploy, apply, destroy, or perform another externally consequential or destructive operation unless the user explicitly authorizes it.
+Do not substitute raw `git add`, `git commit`, `git pull`, or `git push` for task publication. If either enabled completion tool rejects the task, stop and report the bounded failure rather than bypassing it. Outside this bounded closeout, externally consequential or destructive actions require explicit user authorization.
 
 Complete any deterministic repository mechanics explicitly required by the approved plan and keep the final response compact: implementation status, verification status, archive/publication status, and unresolved blockers.
