@@ -42,14 +42,40 @@ class PcWebFacebookLinkPreflightAuthManager extends AuthManagerScript:
 		web_launch_purpose = purpose
 		return web_launch_reason
 
-class BrowserFacebookLinkAuthManager extends AuthManagerScript:
-	var browser_link_provider := ""
+class MobileWebFacebookFreshAuthManager extends AuthManagerScript:
+	var mobile_fresh_sign_in_calls := 0
+	var generic_browser_sign_in_calls := 0
+	var pc_web_sign_in_calls := 0
+
+	func is_oauth_enabled() -> bool:
+		return true
+
+	func _is_mobile_web_facebook_runtime() -> bool:
+		return true
+
+	func _sign_in_with_mobile_web_facebook() -> String:
+		mobile_fresh_sign_in_calls += 1
+		return REASON_NONE
+
+	func _sign_in_with_browser(_provider: String) -> String:
+		generic_browser_sign_in_calls += 1
+		return REASON_NONE
+
+	func _sign_in_with_web_facebook() -> String:
+		pc_web_sign_in_calls += 1
+		return REASON_NONE
+
+class MobileWebFacebookLinkAuthManager extends AuthManagerScript:
+	var mobile_link_calls := 0
 
 	func can_link_provider(provider: String) -> bool:
 		return provider == "facebook"
 
-	func _begin_browser_link(provider: String) -> String:
-		browser_link_provider = provider
+	func _is_mobile_web_facebook_runtime() -> bool:
+		return true
+
+	func _begin_mobile_web_facebook_link() -> String:
+		mobile_link_calls += 1
 		return REASON_NONE
 
 class RecoveryAuthManager extends AuthManagerScript:
@@ -59,11 +85,18 @@ class RecoveryAuthManager extends AuthManagerScript:
 class FakeCurrentProjectTransport extends RefCounted:
 	var requests: Array = []
 	var response: Dictionary = {}
+	var post_requests: Array = []
+	var post_response: Dictionary = {}
 
 	func get_request(path: String, bearer_token: String) -> Dictionary:
 		requests.append({"path": path, "bearer_token": bearer_token})
 		await Engine.get_main_loop().process_frame
 		return response
+
+	func post(path: String, body: Dictionary) -> Dictionary:
+		post_requests.append({"path": path, "body": body})
+		await Engine.get_main_loop().process_frame
+		return post_response
 
 var auth
 
@@ -316,8 +349,49 @@ func test_link_intent_persists_only_the_provider_and_original_guest_identity() -
 	)
 	restored.free()
 
+func test_mobile_web_facebook_fresh_sign_in_uses_backup_route_without_in_flight() -> void:
+	var mobile_auth = MobileWebFacebookFreshAuthManager.new()
+
+	assert_eq(mobile_auth.sign_in_with_provider("facebook"), mobile_auth.REASON_NONE)
+	assert_eq(mobile_auth.mobile_fresh_sign_in_calls, 1)
+	assert_eq(mobile_auth.generic_browser_sign_in_calls, 0)
+	assert_eq(mobile_auth.pc_web_sign_in_calls, 0)
+	assert_false(mobile_auth.oauth_in_flight)
+	mobile_auth.free()
+
+func test_normal_pkce_callback_exchange_stores_the_fresh_supabase_session() -> void:
+	var transport = FakeCurrentProjectTransport.new()
+	transport.post_response = {
+		"reason": auth.REASON_NONE,
+		"data": {
+			"access_token": "facebook-access",
+			"refresh_token": "facebook-refresh",
+			"expires_in": 3600,
+			"user": {
+				"id": "facebook-user",
+				"is_anonymous": false,
+				"app_metadata": {"provider": "facebook"}
+			}
+		}
+	}
+	auth.auth_transport = transport
+	auth._save_verifier("mobile-facebook-verifier")
+
+	assert_eq(await auth._exchange_code("mobile-facebook-code"), auth.REASON_NONE)
+	assert_eq(transport.post_requests, [{
+		"path": "/auth/v1/token?grant_type=pkce",
+		"body": {
+			"auth_code": "mobile-facebook-code",
+			"code_verifier": "mobile-facebook-verifier"
+		}
+	}])
+	assert_eq(auth.access_token_value, "facebook-access")
+	assert_eq(auth.user_id, "facebook-user")
+	assert_false(auth.is_anonymous)
+	assert_eq(auth.current_provider, "facebook")
+
 func test_mobile_facebook_link_uses_the_authenticated_browser_flow_and_stages_the_guest() -> void:
-	var browser_auth = BrowserFacebookLinkAuthManager.new()
+	var browser_auth = MobileWebFacebookLinkAuthManager.new()
 	browser_auth._apply_session({
 		"access_token": "guest-access",
 		"refresh_token": "guest-refresh",
@@ -326,11 +400,12 @@ func test_mobile_facebook_link_uses_the_authenticated_browser_flow_and_stages_th
 	})
 
 	assert_eq(await browser_auth.link_with_provider("facebook"), browser_auth.REASON_NONE)
-	assert_eq(browser_auth.browser_link_provider, "facebook")
+	assert_eq(browser_auth.mobile_link_calls, 1)
 	assert_eq(browser_auth._load_link_flow().get("provider", ""), "facebook")
 	assert_eq(browser_auth._load_link_flow().get("pre_link_user_id", ""), "guest-user")
 	assert_eq(browser_auth.user_id, "guest-user")
 	assert_true(browser_auth.is_anonymous)
+	assert_false(browser_auth.oauth_in_flight)
 
 	assert_eq(browser_auth._stage_link_session({
 		"access_token": "linked-access",

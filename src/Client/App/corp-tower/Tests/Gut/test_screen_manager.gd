@@ -517,6 +517,7 @@ func test_mobile_web_facebook_link_uses_same_tab_supabase_staging_before_commit(
 	assert_eq(retiring_socket.ready_state, WebSocketPeer.STATE_CLOSING)
 	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
 	assert_eq(screen_manager.provider_link_stage, "launch")
+	assert_false(AuthManager.oauth_in_flight)
 	assert_true(AuthManager.is_anonymous)
 	assert_eq(AuthManager.user_id, "guest-user")
 	assert_false(screen_manager.current_overlay.error_label.visible)
@@ -536,7 +537,7 @@ func test_mobile_web_facebook_link_uses_same_tab_supabase_staging_before_commit(
 		"pre_link_user_id": "guest-user"
 	}), AuthManager.REASON_NONE)
 	AuthManager._record_provider_link_result(AuthManager.REASON_NONE, false)
-	screen_manager._on_provider_link_completed(AuthManager.REASON_NONE)
+	screen_manager._resume_provider_link_callback()
 
 	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
 	assert_eq(screen_manager.provider_link_stage, "commit")
@@ -584,6 +585,31 @@ func test_web_link_callback_failure_returns_to_account_without_startup_or_onboar
 	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/AccountScreen.tscn"))
 	assert_eq(screen_manager.current_overlay.error_label.text, "Account linking cancelled.")
 	assert_true(screen_manager.current_overlay.error_label.visible)
+
+func test_mobile_facebook_link_callback_failures_restore_account_and_preserve_guest() -> void:
+	AuthManager.sign_out()
+	AuthManager._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+
+	for reason in [
+		AuthManager.REASON_CANCELLED,
+		AuthManager.REASON_REJECTED,
+		AuthManager.REASON_IDENTITY_CONFLICT
+	]:
+		AuthManager.last_provider_link_provider = "facebook"
+		AuthManager.last_provider_link_reason = reason
+		AuthManager.provider_link_result_pending = true
+		screen_manager._resume_provider_link_callback()
+
+		assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/AccountScreen.tscn"))
+		assert_eq(AuthManager.user_id, "guest-user")
+		assert_true(AuthManager.is_anonymous)
+
+	AuthManager.sign_out()
 
 func test_facebook_eligibility_uses_explicit_web_and_native_lifecycle_stages() -> void:
 	assert_eq(

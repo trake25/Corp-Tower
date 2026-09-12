@@ -697,12 +697,29 @@ func sign_in_with_provider(provider: String) -> String:
 	if provider == "facebook" and native_facebook_enabled and _native_facebook_ready():
 		return _sign_in_with_native_facebook()
 
+	if provider == "facebook" and _is_mobile_web_facebook_runtime():
+		return _sign_in_with_mobile_web_facebook()
+
 	if provider == "facebook" and OS.has_feature("web"):
-		if _is_mobile_web_runtime():
-			return _sign_in_with_browser(provider)
 		return _sign_in_with_web_facebook()
 
 	return _sign_in_with_browser(provider)
+
+func _is_mobile_web_facebook_runtime() -> bool:
+	return OS.has_feature("web") and _is_mobile_web_runtime()
+
+func _sign_in_with_mobile_web_facebook() -> String:
+	var verifier := _generate_code_verifier()
+	_save_verifier(verifier)
+
+	var url := _build_authorize_url(
+		"facebook",
+		redirect_uri(),
+		_code_challenge(verifier),
+		true
+	)
+	JavaScriptBridge.eval(_web_oauth_navigation_script(url), true)
+	return REASON_NONE
 
 func facebook_link_route() -> String:
 	return _facebook_link_route_for_runtime(
@@ -1054,6 +1071,8 @@ func _sign_in_with_browser(provider: String) -> String:
 func link_with_provider(provider: String) -> String:
 	if not can_link_provider(provider):
 		return REASON_REJECTED
+	if provider == "facebook" and not _is_mobile_web_facebook_runtime():
+		return REASON_PROVIDER_UNAVAILABLE
 
 	_save_link_flow(provider, user_id)
 	active_flow_purpose = FLOW_LINK
@@ -1066,7 +1085,13 @@ func link_with_provider(provider: String) -> String:
 			return REASON_REJECTED
 		return REASON_NONE
 
+	if provider == "facebook":
+		return await _begin_mobile_web_facebook_link()
+
 	return await _begin_browser_link(provider)
+
+func _begin_mobile_web_facebook_link() -> String:
+	return await _begin_browser_link("facebook", false)
 
 func begin_facebook_link_preflight() -> String:
 	if not can_link_provider("facebook"):
@@ -1101,7 +1126,7 @@ func begin_facebook_link_preflight() -> String:
 func complete_facebook_link_after_preflight() -> String:
 	return REASON_PROVIDER_UNAVAILABLE
 
-func _begin_browser_link(provider: String) -> String:
+func _begin_browser_link(provider: String, arm_web_oauth_navigation: bool = true) -> String:
 	var flow := _load_link_flow()
 	var expected_provider := str(flow.get("provider", ""))
 
@@ -1131,7 +1156,10 @@ func _begin_browser_link(provider: String) -> String:
 		return REASON_REJECTED
 
 	if OS.has_feature("web"):
-		_mark_web_oauth_navigation_started(provider, FLOW_LINK)
+		if arm_web_oauth_navigation:
+			_mark_web_oauth_navigation_started(provider, FLOW_LINK)
+		else:
+			web_oauth_navigation_started.emit(provider, FLOW_LINK)
 		JavaScriptBridge.eval(_web_oauth_navigation_script(url), true)
 		return REASON_NONE
 

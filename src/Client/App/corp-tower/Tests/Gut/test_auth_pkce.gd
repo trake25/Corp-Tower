@@ -75,7 +75,7 @@ func test_google_web_authorize_url_encodes_the_redirect_and_pins_s256() -> void:
 		"Google Web sign-in must request provider-supported account selection."
 	)
 
-func test_facebook_authorize_url_has_no_web_popup_or_account_selection_hint() -> void:
+func test_mobile_web_facebook_fresh_authorize_url_has_no_popup_or_account_selection_hint() -> void:
 	var url: String = auth._build_authorize_url(
 		"facebook", "https://play.example.com/", "facebook-challenge", true
 	)
@@ -84,6 +84,7 @@ func test_facebook_authorize_url_has_no_web_popup_or_account_selection_hint() ->
 	assert_true(url.contains("provider=facebook"))
 	assert_true(url.contains("code_challenge=facebook-challenge"))
 	assert_true(url.contains("code_challenge_method=s256"))
+	assert_false(url.contains("skip_http_redirect"))
 	assert_false(url.contains("display="))
 	assert_false(url.contains("prompt=select_account"))
 
@@ -135,6 +136,7 @@ func test_web_facebook_selects_direct_pc_and_supabase_mobile_link_routes() -> vo
 	assert_true(path.contains("code_challenge_method=s256"))
 	assert_true(path.contains("skip_http_redirect=true"))
 	assert_false(path.contains("display="))
+	assert_false(path.contains("prompt=select_account"))
 
 func test_callback_query_extracts_the_code() -> void:
 	var parsed: Dictionary = auth._parse_callback_query("?code=abc123&state=xyz")

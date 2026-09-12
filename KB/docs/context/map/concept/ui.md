@@ -11,8 +11,8 @@ Owner: `KB/docs/context/ui.md:69-79` → **Authentication screen**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn` | `SignInScreen` | 12 | `sed -n 1,32p src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn` |
 | `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `sign_in_with_provider` | 687 | `sed -n 675,707p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
-| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_begin_web_facebook_login` | 729 | `sed -n 717,749p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
-| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `link_with_provider` | 1054 | `sed -n 1042,1074p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
+| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_begin_web_facebook_login` | 746 | `sed -n 734,766p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
+| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `link_with_provider` | 1071 | `sed -n 1059,1091p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
 
 Adjacent concepts: `network.session.identity`, `build.endpoint-auth.injection`
 
