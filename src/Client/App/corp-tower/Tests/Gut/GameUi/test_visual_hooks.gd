@@ -210,6 +210,63 @@ func test_debris_duration_does_not_expire_an_unsettled_fall() -> void:
 	assert_not_null(tower._collapse_sim)
 	assert_false(tower._collapse_debris_linger_active)
 
+func test_staggered_debris_waits_for_the_final_piece_before_lingering() -> void:
+	var tower: Control = _mounted_tower()
+	var hooks := VisualHooks.new()
+	hooks.apply({"collapseDebrisLifetimeMs": 100})
+	tower.set_visual_hooks(hooks)
+	var entries: Array = [_tower_entry("P1", 0), _tower_entry("P2", 2)]
+	tower.set_tower(entries, 4, 30, 100, {})
+	for entry_value in entries:
+		entry_value["towerState"] = "fallen"
+	tower.set_tower(entries, 0, 30, 0, {"collapsed": true})
+	tower._collapse_variant = TowerStackScript.COLLAPSE_VARIANT_HOLD_THEN_RECOVER
+	tower._begin_collapse()
+
+	var baseline: float = tower.size.y - tower.bottom_padding
+	tower._collapse_sim.begin([
+		{"pos": Vector2(120.0, baseline), "footprint": Vector2(20.0, 20.0)},
+		{"pos": Vector2(152.0, baseline - 10.0), "footprint": Vector2(20.0, 20.0)}
+	], {
+		"seed": 1,
+		"gravity": 100.0,
+		"air_drag": 1.0,
+		"restitution": 0.0,
+		"floor_friction": 0.0,
+		"bounce_min_speed": 1000.0,
+		"max_bounces": 0,
+		"flatten_seconds": 0.01,
+		"floor_y": baseline,
+		"span_center": tower.size.x * 0.5,
+		"span_half_width": tower.size.x * 0.5,
+		"bucket_width": 20.0,
+		"pile_max_layers": 0,
+		"pile_layer_height": 0.0
+	})
+
+	tower._process(0.02)
+	tower._process(0.02)
+	tower._process(0.11)
+	var early_piece: Dictionary = tower._collapse_sim.pieces[0]
+	var late_piece: Dictionary = tower._collapse_sim.pieces[1]
+	assert_true(bool(early_piece.resting), "The first debris piece has already settled.")
+	assert_false(bool(late_piece.resting), "The second debris piece remains in motion past the linger duration.")
+	assert_false(tower._collapse_sim.is_settled(), "CollapseSim remains unsettled until every piece is final.")
+	assert_false(tower._collapse_debris_linger_active, "An early landing cannot arm the shared linger timer.")
+	assert_eq(tower._collapse_debris_linger_elapsed, 0.0, "Fall time does not consume debris linger.")
+	assert_not_null(tower._collapse_sim, "The complete debris group remains visible while one piece falls.")
+
+	tower._process(1.0)
+	tower._process(0.02)
+	tower._process(0.02)
+	assert_true(tower._collapse_sim.is_settled(), "The group settles only after the final piece finishes flattening.")
+	assert_true(tower._collapse_debris_linger_active, "Final settlement starts the shared linger timer.")
+	assert_eq(tower._collapse_debris_linger_elapsed, 0.0, "Shared linger starts from zero at final settlement.")
+	tower._process(0.099)
+	assert_not_null(tower._collapse_sim, "The whole debris group remains for the full configured linger.")
+	tower._process(0.002)
+	assert_null(tower._collapse_sim, "The group expires only after final settlement plus the configured linger.")
+
 func test_debris_clears_only_after_the_post_completion_linger() -> void:
 	var tower: Control = _mounted_tower()
 	var hooks := VisualHooks.new()
