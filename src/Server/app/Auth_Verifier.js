@@ -3,7 +3,10 @@ const { createRemoteJWKSet, jwtVerify } = require("jose");
 const SIGNING_ALGORITHMS = ["RS256", "RS512", "ES256", "ES512", "EdDSA"];
 const AUDIENCE = "authenticated";
 const DISPLAY_NAME_MAX_LENGTH = 24;
+const FACEBOOK_GRAPH_VERSION = "v22.0";
 const FACEBOOK_GRAPH_URL = "https://graph.facebook.com/debug_token";
+const FACEBOOK_TOKEN_URL = `https://graph.facebook.com/${FACEBOOK_GRAPH_VERSION}/oauth/access_token`;
+const FACEBOOK_REQUEST_TIMEOUT_MS = 4000;
 
 function normalizeUrl(value) {
     return String(value || "").trim().replace(/\/+$/, "");
@@ -119,6 +122,69 @@ class AuthVerifier {
         }
     }
 
+    async exchangeFacebookAuthorizationCode(code, redirectUri) {
+        if (
+            !this.isFacebookEnabled() ||
+            typeof code !== "string" || code.trim() === "" ||
+            typeof redirectUri !== "string" || redirectUri.trim() === ""
+        ) {
+            return null;
+        }
+
+        let parsedRedirect;
+        try {
+            parsedRedirect = new URL(redirectUri);
+        } catch (_error) {
+            return null;
+        }
+
+        if (parsedRedirect.protocol !== "https:" && parsedRedirect.protocol !== "http:") {
+            return null;
+        }
+
+        try {
+            const url = new URL(FACEBOOK_TOKEN_URL);
+            url.searchParams.set("client_id", this.facebookAppId);
+            url.searchParams.set("client_secret", this.facebookAppSecret);
+            url.searchParams.set("redirect_uri", redirectUri);
+            url.searchParams.set("code", code);
+
+            const doFetch = this.fetchImpl || fetch;
+            const response = await doFetch(url, {
+                signal: AbortSignal.timeout(FACEBOOK_REQUEST_TIMEOUT_MS)
+            });
+
+            if (!response.ok) {
+                console.log("Facebook authorization code rejected: exchange request failed");
+                return null;
+            }
+
+            const result = await response.json();
+            const accessToken = String(result && result.access_token || "");
+            const expiresIn = Number(result && result.expires_in || 0);
+
+            if (accessToken === "" || !Number.isFinite(expiresIn) || expiresIn <= 0) {
+                console.log("Facebook authorization code rejected: incomplete exchange response");
+                return null;
+            }
+
+            const identity = await this.verifyFacebookAccessToken(accessToken);
+            if (!identity || identity.kind !== "facebook_native") {
+                console.log("Facebook authorization code rejected: exchanged token failed verification");
+                return null;
+            }
+
+            return {
+                accessToken,
+                expiresIn: Math.floor(expiresIn),
+                identity
+            };
+        } catch (error) {
+            console.log("Facebook authorization code rejected: exchange unavailable");
+            return null;
+        }
+    }
+
     async verifyFacebookAccessToken(token) {
         if (!this.isFacebookEnabled()) {
             return null;
@@ -131,7 +197,9 @@ class AuthVerifier {
                 "access_token", this.facebookAppId + "|" + this.facebookAppSecret
             );
             const doFetch = this.fetchImpl || fetch;
-            const response = await doFetch(url, { signal: AbortSignal.timeout(4000) });
+            const response = await doFetch(url, {
+                signal: AbortSignal.timeout(FACEBOOK_REQUEST_TIMEOUT_MS)
+            });
 
             if (!response.ok) {
                 console.log("Facebook access token rejected: verification request failed");

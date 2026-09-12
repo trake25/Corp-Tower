@@ -1,17 +1,23 @@
 extends Node
 
 const AuthRequestTransportScript = preload("res://Sys/Auth/Auth_Request_Transport.gd")
+# Retained for compatibility with existing tests/tools; the shipping Web flow no longer initializes
+# or invokes the Facebook JavaScript SDK.
 const WebFacebookAuthScript = preload("res://Sys/Auth/Web_Facebook_Auth.gd")
 const SESSION_FILE := "user://corp_tower_auth_session.save"
 const VERIFIER_FILE := "user://corp_tower_auth_verifier.save"
 const LINK_FLOW_FILE := "user://corp_tower_auth_link_flow.save"
 const WEB_VERIFIER_KEY := "corp_tower_auth_verifier"
 const WEB_LINK_FLOW_KEY := "corp_tower_auth_link_flow"
+const WEB_FACEBOOK_FLOW_KEY := "corp_tower_facebook_web_flow"
 const REFRESH_MARGIN_SECONDS := 120
 const REFRESH_CHECK_INTERVAL_SECONDS := 30.0
 const NATIVE_FACEBOOK_TIMEOUT_SECONDS := 30.0
 const VERIFIER_BYTES := 32
+const FACEBOOK_WEB_STATE_BYTES := 32
 const OAUTH_RESUME_GRACE_SECONDS := 2.0
+const FACEBOOK_WEB_AUTH_URL := "https://www.facebook.com/v22.0/dialog/oauth"
+const FACEBOOK_WEB_EXCHANGE_PATH := "/api/auth/facebook/exchange"
 
 const REDIRECT_ANDROID := "com.galaxxigames.tod://auth-callback"
 const DEEPLINK_SCRIPT := "res://addons/DeeplinkPlugin/Deeplink.gd"
@@ -32,6 +38,7 @@ const NATIVE_CODE_CANCELLED := "cancelled"
 const FLOW_SIGN_IN := "sign_in"
 const FLOW_LINK := "link"
 const FLOW_FACEBOOK_LINK_PREFLIGHT := "facebook_link_preflight"
+# Kept as an internal compatibility identifier. The Web route now uses same-tab OAuth, not FB.login().
 const FACEBOOK_LINK_ROUTE_WEB_SDK := "web_sdk"
 const FACEBOOK_LINK_ROUTE_NATIVE := "native"
 
@@ -69,6 +76,7 @@ var native_signin_in_flight := false
 var native_google_enabled := true
 var native_facebook_enabled := true
 var auth_transport
+# Legacy test seam only. Shipping Web auth never initializes this object.
 var web_facebook_auth = null
 var web_facebook_login_in_flight := false
 var web_facebook_login_purpose := FLOW_SIGN_IN
@@ -91,7 +99,6 @@ func _ready() -> void:
 	_setup_deeplink()
 	_setup_native_google()
 	_setup_native_facebook()
-	_setup_web_facebook()
 
 func _setup_deeplink() -> void:
 	if not is_oauth_enabled() or OS.get_name() != "Android":
@@ -174,6 +181,7 @@ func _setup_native_facebook() -> void:
 func _native_facebook_ready() -> bool:
 	return facebook_signin_node != null and facebook_signin_node.is_available()
 
+# Legacy test seam. Do not call this from _ready(); Web Facebook uses same-tab OAuth now.
 func _setup_web_facebook() -> void:
 	if not OS.has_feature("web") or not is_oauth_enabled():
 		return
@@ -270,14 +278,20 @@ func consume_web_callback() -> String:
 
 	var query := str(JavaScriptBridge.eval("window.location.search", true))
 	var callback := _parse_callback_query(query)
+	var facebook_flow_active := _has_active_web_facebook_flow()
 
 	if callback["code"] == "" and callback["error"] == "":
+		if facebook_flow_active:
+			return _finish_abandoned_web_facebook_flow()
 		return REASON_NONE
 
 	oauth_in_flight = false
 	JavaScriptBridge.eval(
 		"window.history.replaceState({}, '', window.location.pathname)", true
 	)
+
+	if facebook_flow_active:
+		return await _consume_web_facebook_callback(callback)
 
 	if _has_active_link_flow():
 		var link_reason := await _consume_link_callback(callback)
@@ -477,6 +491,53 @@ func _has_active_link_flow() -> bool:
 		and str(flow.get("pre_link_user_id", "")) != ""
 	)
 
+func _save_web_facebook_flow(purpose: String, state: String) -> void:
+	if not OS.has_feature("web"):
+		return
+
+	var payload := {
+		"purpose": purpose,
+		"state": state,
+		"redirect_uri": redirect_uri()
+	}
+	if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
+		payload["pre_link_user_id"] = user_id
+
+	JavaScriptBridge.eval(
+		"window.sessionStorage.setItem(%s, %s)" % [
+			JSON.stringify(WEB_FACEBOOK_FLOW_KEY), JSON.stringify(JSON.stringify(payload))
+		], true
+	)
+
+func _load_web_facebook_flow() -> Dictionary:
+	if not OS.has_feature("web"):
+		return {}
+
+	var raw := str(JavaScriptBridge.eval(
+		"window.sessionStorage.getItem(%s) || ''" % JSON.stringify(WEB_FACEBOOK_FLOW_KEY), true
+	))
+	if raw == "":
+		return {}
+
+	var parsed = JSON.parse_string(raw)
+	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
+
+func _clear_web_facebook_flow() -> void:
+	if not OS.has_feature("web"):
+		return
+	JavaScriptBridge.eval(
+		"window.sessionStorage.removeItem(%s)" % JSON.stringify(WEB_FACEBOOK_FLOW_KEY), true
+	)
+
+func _has_active_web_facebook_flow() -> bool:
+	var flow := _load_web_facebook_flow()
+	var purpose := str(flow.get("purpose", ""))
+	return (
+		(purpose == FLOW_SIGN_IN or purpose == FLOW_FACEBOOK_LINK_PREFLIGHT)
+		and str(flow.get("state", "")) != ""
+		and str(flow.get("redirect_uri", "")) != ""
+	)
+
 func _clear_pending_link_state() -> void:
 	pending_link_session = {}
 	pending_link_provider_value = ""
@@ -488,6 +549,7 @@ func _clear_pending_link_state() -> void:
 	active_flow_purpose = FLOW_SIGN_IN
 	_clear_verifier()
 	_clear_link_flow()
+	_clear_web_facebook_flow()
 
 func _record_provider_link_result(reason: String, emit_completion: bool = true) -> void:
 	var result_provider := pending_link_provider_value
@@ -507,6 +569,20 @@ func _record_provider_link_result(reason: String, emit_completion: bool = true) 
 	active_flow_purpose = FLOW_SIGN_IN
 	last_provider_link_reason = reason
 	last_provider_link_provider = result_provider
+	provider_link_result_pending = true
+	if emit_completion:
+		provider_link_completed.emit(reason)
+
+func _record_web_facebook_link_result(reason: String, emit_completion: bool = false) -> void:
+	if reason != REASON_NONE:
+		pending_link_session = {}
+		pending_link_provider_value = ""
+		pending_native_facebook_access_token_value = ""
+		pending_native_facebook_expires_at_unix = 0
+
+	active_flow_purpose = FLOW_SIGN_IN
+	last_provider_link_reason = reason
+	last_provider_link_provider = "facebook"
 	provider_link_result_pending = true
 	if emit_completion:
 		provider_link_completed.emit(reason)
@@ -571,21 +647,184 @@ func _sign_in_with_web_facebook() -> String:
 	active_flow_purpose = FLOW_SIGN_IN
 	return _begin_web_facebook_login(FLOW_SIGN_IN)
 
+# The historical method name is retained for test compatibility; it now starts a
+# manual same-tab Facebook OAuth authorization-code flow instead of FB.login().
 func _begin_web_facebook_login(purpose: String) -> String:
-	if not OS.has_feature("web") or EndpointConfig.AUTH_FACEBOOK_APP_ID == "":
+	if (
+		not OS.has_feature("web")
+		or EndpointConfig.AUTH_FACEBOOK_APP_ID == ""
+		or redirect_uri() == ""
+	):
 		return REASON_PROVIDER_UNAVAILABLE
 
-	if web_facebook_auth == null:
-		web_facebook_auth = WebFacebookAuthScript.new()
-		web_facebook_auth.initialize(EndpointConfig.AUTH_FACEBOOK_APP_ID)
+	if purpose != FLOW_SIGN_IN and purpose != FLOW_FACEBOOK_LINK_PREFLIGHT:
+		return REASON_REJECTED
 
-	if str(web_facebook_auth.begin_login()) != WebFacebookAuthScript.STATUS_STARTED:
-		return REASON_BROWSER
+	var state := _base64url(Crypto.new().generate_random_bytes(FACEBOOK_WEB_STATE_BYTES))
+	if state == "":
+		return REASON_REJECTED
 
-	web_facebook_login_purpose = purpose
-	web_facebook_login_in_flight = true
+	_save_web_facebook_flow(purpose, state)
+	active_flow_purpose = purpose
+	_mark_web_oauth_navigation_started(
+		"facebook",
+		FLOW_LINK if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT else FLOW_SIGN_IN
+	)
+	JavaScriptBridge.eval(
+		_web_oauth_navigation_script(
+			_build_web_facebook_authorize_url(
+				EndpointConfig.AUTH_FACEBOOK_APP_ID,
+				redirect_uri(),
+				state
+			)
+		),
+		true
+	)
 	return REASON_NONE
 
+func _build_web_facebook_authorize_url(app_id: String, redirect_to: String, state: String) -> String:
+	return "%s?client_id=%s&redirect_uri=%s&state=%s&response_type=code&scope=public_profile" % [
+		FACEBOOK_WEB_AUTH_URL,
+		app_id.uri_encode(),
+		redirect_to.uri_encode(),
+		state.uri_encode()
+	]
+
+func _facebook_exchange_url(primary: String = EndpointConfig.PRIMARY) -> String:
+	var base := primary.strip_edges().rstrip("/")
+	if base.begins_with("wss://"):
+		base = "https://" + base.substr(6)
+	elif base.begins_with("ws://"):
+		base = "http://" + base.substr(5)
+	else:
+		return ""
+
+	var scheme_index := base.find("://")
+	var path_index := base.find("/", scheme_index + 3)
+	if path_index >= 0:
+		base = base.left(path_index)
+
+	return base + FACEBOOK_WEB_EXCHANGE_PATH
+
+func _exchange_web_facebook_code(code: String, redirect_to: String) -> Dictionary:
+	if code == "" or redirect_to == "":
+		return {"reason": REASON_REJECTED, "data": {}}
+
+	var exchange_url := _facebook_exchange_url()
+	if exchange_url == "":
+		return {"reason": REASON_UNREACHABLE, "data": {}}
+
+	var http := HTTPRequest.new()
+	http.timeout = 12.0
+	add_child(http)
+	var error := http.request(
+		exchange_url,
+		PackedStringArray(["Content-Type: application/json"]),
+		HTTPClient.METHOD_POST,
+		JSON.stringify({"code": code, "redirectUri": redirect_to})
+	)
+	if error != OK:
+		http.queue_free()
+		return {"reason": REASON_UNREACHABLE, "data": {}}
+
+	var result: Array = await http.request_completed
+	http.queue_free()
+	if int(result[0]) != HTTPRequest.RESULT_SUCCESS:
+		return {"reason": REASON_UNREACHABLE, "data": {}}
+
+	var status := int(result[1])
+	var payload: PackedByteArray = result[3]
+	var parsed = JSON.parse_string(payload.get_string_from_utf8())
+	if status < 200 or status >= 300:
+		return {
+			"reason": REASON_REJECTED if status < 500 else REASON_UNREACHABLE,
+			"data": {}
+		}
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {"reason": REASON_REJECTED, "data": {}}
+
+	var access_token := str(parsed.get("access_token", ""))
+	var expires_in := int(parsed.get("expires_in", 0))
+	if access_token == "" or expires_in <= 0:
+		return {"reason": REASON_REJECTED, "data": {}}
+
+	return {
+		"reason": REASON_NONE,
+		"data": {"access_token": access_token, "expires_in": expires_in}
+	}
+
+func _consume_web_facebook_callback(callback: Dictionary) -> String:
+	var flow := _load_web_facebook_flow()
+	var purpose := str(flow.get("purpose", ""))
+	var expected_state := str(flow.get("state", ""))
+	var callback_state := str(callback.get("state", ""))
+	var redirect_to := str(flow.get("redirect_uri", ""))
+	var pre_link_user_id := str(flow.get("pre_link_user_id", ""))
+	_clear_web_facebook_flow()
+
+	if (
+		expected_state == ""
+		or callback_state == ""
+		or callback_state != expected_state
+		or redirect_to == ""
+	):
+		return _finish_web_facebook_callback(purpose, REASON_REJECTED)
+
+	var code := str(callback.get("code", ""))
+	if code == "":
+		return _finish_web_facebook_callback(
+			purpose,
+			REASON_CANCELLED if str(callback.get("error", "")) != "" else REASON_REJECTED
+		)
+
+	var exchange := await _exchange_web_facebook_code(code, redirect_to)
+	var reason := str(exchange.get("reason", REASON_REJECTED))
+	if reason != REASON_NONE:
+		return _finish_web_facebook_callback(purpose, reason)
+
+	var data = exchange.get("data", {})
+	var access_token := str(data.get("access_token", ""))
+	var expires_in := int(data.get("expires_in", 0))
+	var expires_at := int(Time.get_unix_time_from_system()) + expires_in
+
+	if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
+		if (
+			pre_link_user_id == ""
+			or pre_link_user_id != user_id
+			or not is_anonymous
+			or current_provider != ""
+		):
+			return _finish_web_facebook_callback(purpose, REASON_REJECTED)
+		if not _stage_native_facebook_link_credential(access_token, expires_at):
+			return _finish_web_facebook_callback(purpose, REASON_REJECTED)
+		return _finish_web_facebook_callback(purpose, REASON_NONE)
+
+	if purpose != FLOW_SIGN_IN:
+		return _finish_web_facebook_callback(purpose, REASON_REJECTED)
+
+	return _finish_web_facebook_callback(
+		purpose,
+		REASON_NONE if _store_facebook_session(access_token, expires_at) else REASON_REJECTED
+	)
+
+func _finish_web_facebook_callback(purpose: String, reason: String) -> String:
+	oauth_in_flight = false
+	active_flow_purpose = FLOW_SIGN_IN
+	if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
+		_record_web_facebook_link_result(reason, false)
+		return reason
+
+	last_oauth_reason = reason
+	return reason
+
+func _finish_abandoned_web_facebook_flow() -> String:
+	var flow := _load_web_facebook_flow()
+	var purpose := str(flow.get("purpose", ""))
+	_clear_web_facebook_flow()
+	return _finish_web_facebook_callback(purpose, REASON_BROWSER)
+
+# Legacy JS-SDK result consumer retained only for existing regression tests and old
+# non-shipping callers. The shipping Web path never sets web_facebook_login_in_flight.
 func _process(_delta: float) -> void:
 	if not web_facebook_login_in_flight or web_facebook_auth == null:
 		return
@@ -761,9 +1000,8 @@ func link_with_provider(provider: String) -> String:
 	if not can_link_provider(provider):
 		return REASON_REJECTED
 
-	# Web Facebook linking uses the browser SDK credential flow and Android uses
-	# the native credential flow. Neither path may fall back to Supabase identity
-	# redirect OAuth.
+	# Facebook linking has dedicated credential flows: same-tab OAuth on Web and
+	# native credential acquisition on Android. Neither uses Supabase Facebook linking.
 	if provider == "facebook":
 		return REASON_PROVIDER_UNAVAILABLE
 
@@ -864,6 +1102,17 @@ func _reject_unresolved_oauth_after_resume(is_web: bool) -> String:
 
 	oauth_in_flight = false
 	var reason := REASON_BROWSER if is_web else REASON_CANCELLED
+
+	if _has_active_web_facebook_flow():
+		var flow := _load_web_facebook_flow()
+		var purpose := str(flow.get("purpose", ""))
+		_clear_web_facebook_flow()
+		if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
+			_record_web_facebook_link_result(reason)
+			return reason
+		last_oauth_reason = reason
+		oauth_completed.emit(reason)
+		return reason
 
 	if _has_active_link_flow():
 		_record_provider_link_result(reason)

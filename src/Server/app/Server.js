@@ -10,6 +10,8 @@ const authVerifier = new AuthVerifier();
 const accountStore = new AccountStore();
 
 const port = Number(process.env.PORT) || 3000;
+const FACEBOOK_EXCHANGE_PATH = "/api/auth/facebook/exchange";
+const FACEBOOK_EXCHANGE_BODY_LIMIT = 16 * 1024;
 
 function safeJson(message) {
     try {
@@ -194,8 +196,115 @@ async function handleStatsRequest(req, res) {
     res.end(JSON.stringify(stats));
 }
 
+function writeNoStoreJson(res, status, payload, origin = "") {
+    const headers = {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+    };
+    if (origin !== "") {
+        headers["Access-Control-Allow-Origin"] = origin;
+        headers.Vary = "Origin";
+    }
+    res.writeHead(status, headers);
+    res.end(JSON.stringify(payload));
+}
+
+function readJsonRequest(req, limit = FACEBOOK_EXCHANGE_BODY_LIMIT) {
+    return new Promise((resolve, reject) => {
+        let size = 0;
+        const chunks = [];
+        req.on("data", chunk => {
+            size += chunk.length;
+            if (size > limit) {
+                reject(new Error("request body too large"));
+                req.destroy();
+                return;
+            }
+            chunks.push(chunk);
+        });
+        req.on("end", () => {
+            try {
+                const parsed = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+                resolve(parsed && typeof parsed === "object" ? parsed : {});
+            } catch (_error) {
+                reject(new Error("invalid json"));
+            }
+        });
+        req.on("error", reject);
+    });
+}
+
+function redirectOriginMatchesRequest(req, redirectUri) {
+    const requestOrigin = String(req.headers.origin || "").trim();
+    if (requestOrigin === "") {
+        return { allowed: true, origin: "" };
+    }
+
+    try {
+        const redirect = new URL(redirectUri);
+        return {
+            allowed: redirect.origin === requestOrigin,
+            origin: redirect.origin === requestOrigin ? requestOrigin : ""
+        };
+    } catch (_error) {
+        return { allowed: false, origin: "" };
+    }
+}
+
+async function handleFacebookOauthExchange(req, res, verifier = authVerifier) {
+    let body;
+    try {
+        body = await readJsonRequest(req);
+    } catch (_error) {
+        writeNoStoreJson(res, 400, { error: "invalid_request" });
+        return;
+    }
+
+    const code = String(body.code || "");
+    const redirectUri = String(body.redirectUri || "");
+    const originCheck = redirectOriginMatchesRequest(req, redirectUri);
+
+    if (!originCheck.allowed) {
+        writeNoStoreJson(res, 403, { error: "origin_mismatch" });
+        return;
+    }
+
+    const exchange = await verifier.exchangeFacebookAuthorizationCode(code, redirectUri);
+    if (!exchange) {
+        writeNoStoreJson(res, 400, { error: "facebook_exchange_rejected" }, originCheck.origin);
+        return;
+    }
+
+    writeNoStoreJson(res, 200, {
+        access_token: exchange.accessToken,
+        expires_in: exchange.expiresIn
+    }, originCheck.origin);
+}
+
 function requestListener(req, res) {
-    if (req.method === "GET" && req.url === "/api/stats/demo") {
+    const requestUrl = new URL(req.url, "http://localhost");
+
+    if (requestUrl.pathname === FACEBOOK_EXCHANGE_PATH && req.method === "OPTIONS") {
+        res.writeHead(204, {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Max-Age": "600",
+            "Cache-Control": "no-store"
+        });
+        res.end();
+        return;
+    }
+
+    if (requestUrl.pathname === FACEBOOK_EXCHANGE_PATH && req.method === "POST") {
+        handleFacebookOauthExchange(req, res).catch(error => {
+            console.error("Facebook OAuth exchange failed:", error.message);
+            writeNoStoreJson(res, 500, { error: "exchange_unavailable" });
+        });
+        return;
+    }
+
+    if (req.method === "GET" && requestUrl.pathname === "/api/stats/demo") {
         handleStatsRequest(req, res).catch(error => {
             console.error("Stats request failed:", error.message);
             res.writeHead(500);
@@ -427,4 +536,12 @@ if (require.main === module) {
     });
 }
 
-module.exports = { handleMessage, handleProfileMessage, profileSnapshot };
+module.exports = {
+    FACEBOOK_EXCHANGE_PATH,
+    handleFacebookOauthExchange,
+    handleMessage,
+    handleProfileMessage,
+    profileSnapshot,
+    redirectOriginMatchesRequest,
+    requestListener
+};
