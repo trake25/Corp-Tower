@@ -505,6 +505,7 @@ func test_mobile_web_facebook_auth_tab_keeps_the_account_connection_and_avoids_l
 	)
 
 	assert_false(screen_manager.provider_link_browser_round_trip_active)
+	assert_true(screen_manager.mobile_web_facebook_auth_tab_link_active)
 	assert_true(screen_manager.account_link_readiness_active)
 	assert_true(screen_manager.account_link_ready)
 	assert_true(NetworkManager.is_profile_connected())
@@ -512,6 +513,63 @@ func test_mobile_web_facebook_auth_tab_keeps_the_account_connection_and_avoids_l
 	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
 	assert_eq(screen_manager.provider_link_stage, "web_facebook_oauth")
 	assert_false(screen_manager.current_overlay.error_label.visible)
+
+func test_mobile_web_facebook_auth_tab_background_socket_drop_reconnects_before_commit() -> void:
+	AuthManager.sign_out()
+	AuthManager._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	_show_unlinked_account()
+	await get_tree().process_frame
+	_acknowledge_account_profile_readiness()
+	var dropped_socket = NetworkManager.ws
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "web_facebook_oauth"
+
+	screen_manager._handle_web_oauth_navigation(
+		"facebook",
+		AuthManager.FLOW_LINK,
+		AuthManager.FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
+	)
+	dropped_socket.ready_state = WebSocketPeer.STATE_CLOSED
+	NetworkManager.is_conn_estab = false
+	NetworkManager.is_connecting = false
+	NetworkManager.profile_handshake_pending = false
+	NetworkManager.profile_connection_changed.emit(false)
+
+	assert_true(screen_manager.mobile_web_facebook_auth_tab_link_active)
+	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
+	assert_eq(screen_manager.provider_link_stage, "web_facebook_oauth")
+	assert_true(AuthManager.is_anonymous)
+	assert_eq(AuthManager.user_id, "guest-user")
+	assert_false(screen_manager.current_overlay.error_label.visible)
+
+	var expires_at := int(Time.get_unix_time_from_system()) + 3600
+	assert_true(AuthManager._stage_native_facebook_link_credential("web-facebook-token", expires_at))
+	AuthManager._record_web_facebook_link_result(AuthManager.REASON_NONE, false)
+	screen_manager._on_provider_link_completed(AuthManager.REASON_NONE)
+
+	assert_false(screen_manager.mobile_web_facebook_auth_tab_link_active)
+	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
+	assert_eq(screen_manager.provider_link_stage, "commit")
+	assert_true(NetworkManager.is_connecting)
+	assert_true(AuthManager.is_anonymous)
+	assert_eq(AuthManager.user_id, "guest-user")
+	assert_false(screen_manager.current_overlay.error_label.visible)
+
+	_acknowledge_account_profile_readiness()
+	assert_true(screen_manager.provider_link_waiting_for_server_result)
+	assert_eq(NetworkManager.ws.sent_messages, [{
+		"type": "provider_link_commit",
+		"provider": "facebook",
+		"providerCredential": "web-facebook-token"
+	}])
+	assert_true(AuthManager.is_anonymous)
+	assert_eq(AuthManager.user_id, "guest-user")
+	AuthManager.sign_out()
 
 func test_pc_web_facebook_keeps_the_established_same_tab_round_trip_lifecycle() -> void:
 	_show_unlinked_account()

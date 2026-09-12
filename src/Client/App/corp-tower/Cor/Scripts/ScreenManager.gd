@@ -83,6 +83,7 @@ var provider_link_pending_provider := ""
 var provider_link_stage := ""
 var provider_link_waiting_for_server_result := false
 var provider_link_browser_round_trip_active := false
+var mobile_web_facebook_auth_tab_link_active := false
 var account_link_loader: Node = null
 var account_link_readiness_active := false
 var account_link_readiness_pending := false
@@ -446,6 +447,12 @@ func _on_profile_connection_changed(online: bool) -> void:
 	if provider_link_browser_round_trip_active:
 		return
 
+	# The original Mobile Web tab stays alive while Facebook owns the dedicated
+	# auth tab. Browser suspension can transiently drop this Profile socket, but
+	# that must not terminate the still-authoritative OAuth transaction as L2.
+	if _has_active_mobile_web_facebook_auth_tab_link():
+		return
+
 	if account_link_readiness_active:
 		if online:
 			_complete_account_link_readiness()
@@ -775,9 +782,11 @@ func _handle_web_oauth_navigation(
 		# The dedicated mobile auth tab leaves this Account screen and its profile
 		# connection alive. PC Web still performs its established same-tab round trip.
 		if _keeps_account_link_connection_for_web_oauth(provider, provider_link_stage, facebook_route):
+			mobile_web_facebook_auth_tab_link_active = true
 			_set_account_link_busy(true)
 			return
 
+		mobile_web_facebook_auth_tab_link_active = false
 		provider_link_browser_round_trip_active = true
 		_clear_account_link_readiness()
 		_set_account_link_busy(true)
@@ -799,6 +808,13 @@ func _keeps_account_link_connection_for_web_oauth(
 		provider == "facebook"
 		and stage == "web_facebook_oauth"
 		and facebook_route == AuthManager.FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
+	)
+
+func _has_active_mobile_web_facebook_auth_tab_link() -> bool:
+	return (
+		mobile_web_facebook_auth_tab_link_active
+		and provider_link_pending_provider == "facebook"
+		and provider_link_stage == "web_facebook_oauth"
 	)
 
 func _provider_link_stage_after_eligibility(provider: String, facebook_route: String) -> String:
@@ -840,6 +856,9 @@ func _on_provider_link_completed(reason: String) -> void:
 	if not AuthManager.has_provider_link_result():
 		return
 
+	# The callback result is now in the original tab. A successful result below
+	# reconnects through the regular Profile path before its existing commit.
+	mobile_web_facebook_auth_tab_link_active = false
 	var restore_account_after_interruption := provider_link_browser_round_trip_active
 	provider_link_browser_round_trip_active = false
 	var completion_provider := AuthManager.provider_link_result_provider()
@@ -904,6 +923,7 @@ func _on_provider_link_commit_result(data: Dictionary) -> void:
 	provider_link_stage = ""
 	provider_link_waiting_for_server_result = false
 	provider_link_browser_round_trip_active = false
+	mobile_web_facebook_auth_tab_link_active = false
 	_set_account_link_busy(false)
 	if current_overlay != null and current_overlay.has_method("refresh_account_state"):
 		current_overlay.call("refresh_account_state")
@@ -949,6 +969,7 @@ func _finish_provider_link_error(reason: String, diagnostic_code := "") -> void:
 	provider_link_stage = ""
 	provider_link_waiting_for_server_result = false
 	provider_link_browser_round_trip_active = false
+	mobile_web_facebook_auth_tab_link_active = false
 	if reason == AuthManager.REASON_UNREACHABLE and account_link_readiness_active:
 		_finish_account_link_readiness_error(diagnostic_code if diagnostic_code != "" else "L2")
 		return
