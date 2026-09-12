@@ -330,6 +330,15 @@ test("game state carries the room's accessibility options", () => {
     );
 });
 
+test("game state carries the authoritative placement cooldown", () => {
+    const { engine, messages } = createPlayingEngine(1, 8);
+
+    engine.broadcastGameState();
+
+    const state = latestMessage(messages);
+    assert.equal(state.placementCooldownMs, GameConfig.placementCooldown);
+});
+
 test("game state carries the room's visual hook config", () => {
     const { engine, messages } = createPlayingEngine(1, 8);
 

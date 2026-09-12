@@ -61,6 +61,7 @@ class GameEngine {
             impactScoreStatus: this.getImpactScoreStatus(),
             activeInventorySlots: this.getBlocksPerPlayer(),
             maxActiveBlocks: GameConfig.maxActiveBlocks,
+            placementCooldownMs: Math.max(0, Number(GameConfig.placementCooldown) || 0),
             drawPileCount: (this.room.drawPile || []).length,
             nextDrawBlock: this.getNextDrawBlock(),
             towerBlocks: this.room.towerBlocks || [],

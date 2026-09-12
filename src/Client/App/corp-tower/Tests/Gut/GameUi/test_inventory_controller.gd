@@ -55,6 +55,34 @@ func test_can_place_block_respects_cooldown() -> void:
 	inventory().last_placement_sent_at_ms = Time.get_ticks_msec()
 	assert_false(inventory().can_place_block(0), "Placement must be blocked during the local cooldown.")
 
+func test_cooldown_covers_only_filled_cards_and_rejects_taps_with_feedback() -> void:
+	harness.main.match_state.current_match_state = "playing"
+	inventory().update_inventory_ui([SHAPE_BLOCK_FIXTURE, SHAPE_BLOCK_FIXTURE], 3)
+	inventory().tuning.placement_cooldown_ms = 1500
+	inventory().last_placement_sent_at_ms = Time.get_ticks_msec()
+	inventory().update_placement_cooldown_overlays()
+	assert_true((harness.find("PlaceBlockButton1/CooldownOverlay") as Control).visible)
+	assert_true((harness.find("PlaceBlockButton2/CooldownOverlay") as Control).visible)
+	assert_false((harness.find("PlaceBlockButton3/CooldownOverlay") as Control).visible)
+
+	inventory().set_parallel_placement(true)
+	inventory()._on_inventory_card_gui_input(HarnessScript.touch_press(harness.center_of("PlaceBlockButton1"), 0), 0)
+	assert_true((harness.find("CoolingFeedbackLabel") as Label).visible)
+	assert_eq((harness.find("CoolingFeedbackLabel") as Label).text, "COOLING…")
+	assert_eq(network_stub.placed.size(), 0, "A cooling card must not send a placement request.")
+
+func test_cooldown_completion_restores_input_and_selection_style_stays_stable() -> void:
+	enter_parallel_placement()
+	inventory().tuning.placement_cooldown_ms = 1500
+	inventory().last_placement_sent_at_ms = Time.get_ticks_msec() - 1500
+	inventory().update_placement_cooldown_overlays()
+	assert_true(inventory().can_place_block(0), "The client unlocks at the same completed cooldown boundary it renders.")
+	tap_card(0)
+	var selected_style = inventory().selected_card_style
+	assert_eq(selected_style.border_color.a, 1.0, "The selected border settles at a stable player-color alpha.")
+	inventory().tick()
+	assert_eq(selected_style.border_color.a, 1.0, "Selection has no continuous border pulse after its one-shot response.")
+
 func test_drag_release_inside_drop_zone_places_block() -> void:
 	enter_playing_state_with_block()
 	var card_center: Vector2 = harness.center_of("PlaceBlockButton1")

@@ -173,6 +173,7 @@ implicitly widen KB adjacency.
 | `hud.controller.architecture` | [ui-hud.md#controller-architecture](./ui-hud.md#controller-architecture) | GameUi controller architecture, GameUi modules, HUD controller modules |
 | `hud.controller.parallel-placement` | [ui-hud.md#parallel-placement](./ui-hud.md#parallel-placement) | tap placement, armed placement |
 | `hud.controller.state-application` | [ui-hud.md#state-application](./ui-hud.md#state-application) | Game UI controller, Main.gd |
+| `hud.inventory.cooldown` | [ui-hud.md#inventory-cooldown](./ui-hud.md#inventory-cooldown) | placement card cooldown, cooling cards |
 | `hud.navigation.auto-follow` | [ui-hud.md#automatic-follow](./ui-hud.md#automatic-follow) | auto scroll, tower camera follow |
 | `hud.navigation.drop-top` | [ui-hud.md#drop-and-top](./ui-hud.md#drop-and-top) | Drop UI, Top button, weak support navigation |
 | `hud.navigation.manual-inspection` | [ui-hud.md#manual-inspection](./ui-hud.md#manual-inspection) | manual pan, scroll down tower |
@@ -187,6 +188,7 @@ implicitly widen KB adjacency.
 | `hud.players.latency` | [ui-hud.md#latency-presentation](./ui-hud.md#latency-presentation) | latency indicator |
 | `hud.players.presence` | [ui-hud.md#player-presence](./ui-hud.md#player-presence) | disconnected player UI, LEFT player |
 | `hud.round-start.ready` | [ui-hud.md#round-start-ready](./ui-hud.md#round-start-ready) | Round Start Overlay, READY briefing, Start Countdown |
+| `hud.round-timer.urgency` | [ui-hud.md#play-timer-urgency](./ui-hud.md#play-timer-urgency) | play timer urgency |
 | `hud.spectator.presentation` | [ui-hud.md#spectator-presentation](./ui-hud.md#spectator-presentation) | spectator HUD, Bot Insight |
 | `hud.tower.collapse.presentation` | [ui-hud.md#collapse-presentation](./ui-hud.md#collapse-presentation) | tower collapse UI, collapse framing |
 | `hud.tower.collapse.recovery` | [ui-hud.md#collapse-recovery](./ui-hud.md#collapse-recovery) | collapse camera recovery, pan after collapse |

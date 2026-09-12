@@ -45,7 +45,7 @@ Owner: `KB/docs/context/testing.md:46-54` → **Godot coverage**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_application_scripts` | 41 | `sed -n 29,61p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
-| `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 48 | `sed -n 36,68p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
+| `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 49 | `sed -n 37,69p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
 | `scripts/qa-gate.mjs` | `main` | 271 | `sed -n 259,291p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none

@@ -12,7 +12,7 @@ adjacent: hud.controller.architecture
 -->
 ## State application
 
-The Game UI controller family stores the latest authoritative state and delegates roster, top bar, inventory, quest, popup, Power, summary, debug, and visual-hook presentation. Broadcasts update grid/site, roster and Impact state, redraw tower/inventory, consume transient events, then present overlays. The round clock interpolates from the latest server deadline.
+The Game UI controller family stores the latest authoritative state and delegates roster, top bar, inventory, quest, popup, Power, summary, debug, and visual-hook presentation. Broadcasts update grid/site, roster and Impact state, redraw tower/inventory, consume transient events, then present overlays. The round clock interpolates from the latest server deadline, while `placementCooldownMs` is an ordinary gameplay-state contract that updates client input/presentation tuning before inventory is evaluated.
 
 <!-- kb
 id: hud.controller.architecture
@@ -117,7 +117,31 @@ Score feedback consumes and de-duplicates authoritative in-level placement, rein
 
 Placement, Reinforce, and Critical Save use player-associated transient reward feedback with increasing visual emphasis while preserving immediate gameplay control. Rapid rewards yield to newer feedback instead of building a delayed queue. Reward presentation may visually land at the matching player rail, but the rail total remains immediately authoritative and is never delayed, predicted, or client-owned for animation.
 
-Tower-stability warning and critical events use separate global danger presentation rather than reward-style floating motion. Score/danger feedback remains presentation-only; authoritative scoring, classification, player totals, event identity, and round-start gameplay state remain server-owned.
+Tower-stability warning and critical events use separate global danger presentation rather than reward-style floating motion. Score/danger feedback remains presentation-only; authoritative scoring, classification, player totals, event identity, and round-start gameplay state remain server-owned. A lingering `BUILD!` cue never suppresses a legal authoritative PLAY reward, and active placement preview/contact presentation draws above routine rewards without reducing structural danger prominence.
+
+<!-- kb
+id: hud.inventory.cooldown
+alias: placement card cooldown
+alias: cooling cards
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd#update_placement_cooldown_overlays
+source: src/Client/App/corp-tower/Cor/Scripts/CooldownOverlay.gd#set_remaining_ratio
+adjacent: gameplay.progression.timing
+adjacent: hud.round-start.ready
+-->
+## Inventory cooldown
+
+During authoritative PLAY, the server-provided placement cooldown is one player-global gate: every filled active card cools together, while empty or unavailable slots stay neutral. Cooling uses a translucent cyan/teal card veil and completion rail rather than the READY lock treatment; a cooling interaction gives one throttled local cue and non-blocking Action Row feedback. Input unlocks at the same zero boundary as the rendered cooldown, and any brief ready edge confirmation is strictly presentation after usability returns.
+
+<!-- kb
+id: hud.round-timer.urgency
+alias: play timer urgency
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd#tick_round_timer
+adjacent: gameplay.progression.timing
+adjacent: hud.round-start.ready
+-->
+## Play timer urgency
+
+The round timer is normal above 15 seconds, restrained amber from 15 through 6 seconds, and coral with a slow pulse at 5 seconds and below. Urgency belongs only to authoritative PLAY; READY's paused full-round clock and frozen/outcome states reset to their normal styling.
 
 <!-- kb
 id: hud.overlays.popovers

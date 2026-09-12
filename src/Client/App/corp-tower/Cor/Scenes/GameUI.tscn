@@ -71,7 +71,7 @@ grow_vertical = 2
 [node name="DragPreview" type="Control" parent="." unique_id=1504348550]
 unique_name_in_owner = true
 visible = false
-z_index = 40
+z_index = 50
 custom_minimum_size = Vector2(170, 170)
 anchors_preset = 0
 offset_right = 170.0

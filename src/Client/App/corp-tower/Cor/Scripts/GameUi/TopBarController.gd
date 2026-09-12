@@ -8,6 +8,10 @@ const TopIndicatorFillOverTexture = preload("res://Cor/Themes/TopIndicatorFillOv
 const STABILITY_GREEN := Color("#166534")
 const STABILITY_YELLOW := Color("#B45309")
 const STABILITY_RED := Color("#B91C1C")
+const TIMER_AMBER := Color("#D97706")
+const TIMER_CORAL := Color("#F06A5F")
+const TIMER_URGENCY_SECONDS := 15
+const TIMER_CRITICAL_SECONDS := 5
 
 var match_state
 var level_label: Label
@@ -26,6 +30,7 @@ var known_round_duration_level: int = -1
 var stability_feedback_mode := "warnings_only"
 var stability_warning_threshold := 75
 var stability_critical_threshold := 30
+var timer_is_playing := false
 
 func bind_nodes(binder) -> void:
 	level_label = binder.require_node("LevelLabel") as Label
@@ -54,6 +59,8 @@ func reset_indicators() -> void:
 	timer_shown_seconds = -1
 	known_round_duration_seconds = -1
 	known_round_duration_level = -1
+	timer_is_playing = false
+	_reset_timer_urgency()
 
 func tick_round_timer() -> void:
 	if timer_label == null or timer_deadline_ms <= 0:
@@ -65,10 +72,28 @@ func tick_round_timer() -> void:
 	remaining = maxi(0, remaining)
 
 	if remaining == timer_shown_seconds:
+		_apply_timer_urgency(remaining)
 		return
 
 	timer_shown_seconds = remaining
 	timer_label.text = format_clock(remaining)
+	_apply_timer_urgency(remaining)
+
+func _apply_timer_urgency(remaining_seconds: int) -> void:
+	if timer_label == null:
+		return
+	if !timer_is_playing or remaining_seconds > TIMER_URGENCY_SECONDS:
+		_reset_timer_urgency()
+		return
+	if remaining_seconds > TIMER_CRITICAL_SECONDS:
+		timer_label.modulate = TIMER_AMBER
+		return
+	var pulse := 0.72 + 0.28 * (0.5 + 0.5 * sin(float(Time.get_ticks_msec()) * 0.004))
+	timer_label.modulate = TIMER_CORAL.lerp(Color.WHITE, pulse * 0.35)
+
+func _reset_timer_urgency() -> void:
+	if timer_label != null:
+		timer_label.modulate = Color.WHITE
 
 func format_clock(total_seconds: int) -> String:
 	var safe_seconds: int = maxi(0, total_seconds)
@@ -127,6 +152,8 @@ func update_top_bar_display(
 		level_badge_texture.texture = LevelBadgeSafeTexture if is_impact_level else LevelBadgeNormalTexture
 
 	if state == "starting":
+		timer_is_playing = false
+		_reset_timer_urgency()
 		var paused_seconds := known_round_duration_seconds if known_round_duration_level == level else -1
 		timer_deadline_ms = 0
 		timer_shown_seconds = paused_seconds
@@ -135,12 +162,16 @@ func update_top_bar_display(
 			round_time_texture.texture = RoundTimeNormalTexture
 		return
 
+	timer_is_playing = state == "playing"
+	if !timer_is_playing:
+		_reset_timer_urgency()
 	timer_deadline_ms = Time.get_ticks_msec() + lifecycle_remaining_ms
 	timer_shown_seconds = lifecycle_seconds
 	timer_label.text = format_clock(lifecycle_seconds)
 	var is_frozen: bool = state != "playing"
 	if round_time_texture != null:
 		round_time_texture.texture = RoundTimeFreezeTexture if is_frozen else RoundTimeNormalTexture
+	_apply_timer_urgency(lifecycle_seconds)
 
 func update_tower_stability_ui(stability: int, diagnostics: Variant, components: Variant = []) -> void:
 	var displayed_stability: int = stability

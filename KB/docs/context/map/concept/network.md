@@ -21,7 +21,7 @@ Owner: `KB/docs/context/networking.md:272-275` → **Compatibility boundary**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 118 | `sed -n 106,138p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 119 | `sed -n 107,139p src/Server/app/Game_Engine.js` |
 | `src/Server/app/Redis_State.js` | `stripRuntimeRoom` | 69 | `sed -n 57,89p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: none
@@ -183,7 +183,7 @@ Owner: `KB/docs/context/networking.md:213-216` → **Grid and site state**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 118 | `sed -n 106,138p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 119 | `sed -n 107,139p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.tower.site`, `hud.placement.snapping`
 
@@ -193,7 +193,7 @@ Owner: `KB/docs/context/networking.md:224-227` → **Impact status state**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 118 | `sed -n 106,138p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 119 | `sed -n 107,139p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.impact.eligible`, `hud.players.impact-bars`
 
@@ -203,7 +203,7 @@ Owner: `KB/docs/context/networking.md:248-251` → **State revision and resync**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 118 | `sed -n 106,138p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 119 | `sed -n 107,139p src/Server/app/Game_Engine.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `accept_game_state` | 878 | `sed -n 866,898p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `network.session.recovery`
@@ -214,7 +214,7 @@ Owner: `KB/docs/context/networking.md:200-204` → **Snapshot contract**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 118 | `sed -n 106,138p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 119 | `sed -n 107,139p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `backend.engine.lifecycle`, `hud.controller.state-application`
 
@@ -224,6 +224,6 @@ Owner: `KB/docs/context/networking.md:236-239` → **Transient events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 118 | `sed -n 106,138p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 119 | `sed -n 107,139p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `hud.overlays.score-popups`, `backend.engine.power-events`

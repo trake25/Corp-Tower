@@ -71,7 +71,7 @@ Owner: `KB/docs/context/backend.md:200-203` → **Engine lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `startLevel` | 650 | `sed -n 638,670p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `startLevel` | 651 | `sed -n 639,671p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.snapshot`
 
@@ -91,7 +91,7 @@ Owner: `KB/docs/context/backend.md:246-249` → **Power events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `activatePower` | 588 | `sed -n 576,608p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `activatePower` | 589 | `sed -n 577,609p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.transient-events`
 
@@ -101,7 +101,7 @@ Owner: `KB/docs/context/backend.md:211-214` → **Engine timers**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 317 | `sed -n 305,337p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 318 | `sed -n 306,338p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.progression.timing`
 

@@ -20,10 +20,12 @@ const SITE_ONLY_SNAP := {
 	"show_ghost": false
 }
 const TAP_DEDUPE_MS := 60
-const SELECTION_PULSE_SPEED := 4.5
 const SELECTED_CARD_BORDER_WIDTH := 3
 const SELECTED_CARD_TINT := 0.12
 const UNSELECTED_CARD_ALPHA := 0.72
+const SELECTION_RESPONSE_SECONDS := 0.16
+const COOLING_FEEDBACK_THROTTLE_MS := 420
+const COOLING_FEEDBACK_VISIBLE_MS := 700
 const BlockPreviewScript = preload("res://Cor/Scripts/BlockPreview.gd")
 const BlockDataScript = preload("res://Cor/Scripts/GameUi/BlockData.gd")
 const PointerEventsScript = preload("res://Cor/Scripts/GameUi/PointerEvents.gd")
@@ -41,6 +43,7 @@ var block_previews: Array = []
 var draw_pile_name_label: Label
 var draw_pile_count_label: Label
 var draw_pile_preview: Control
+var cooling_feedback_label: Label
 var tower_drop_zone: Control
 var tower_stack_fallback: Control
 var drag_preview: Control
@@ -67,11 +70,15 @@ var authoritative_level := -1
 var ready_lock_presentation: Callable = Callable()
 var ready_rejection_feedback: Callable = Callable()
 var clear_ready_rejection_feedback: Callable = Callable()
+var cooling_feedback_deadline_ms := 0
+var cooling_feedback_last_at_ms := -COOLING_FEEDBACK_THROTTLE_MS
+var selection_response_tween: Tween
 
 func bind_nodes(binder) -> void:
 	draw_pile_name_label = binder.require_node("DrawPileNameLabel") as Label
 	draw_pile_count_label = binder.require_node("DrawPileCountLabel") as Label
 	draw_pile_preview = binder.require_node("DrawPilePreview") as Control
+	cooling_feedback_label = binder.require_node("CoolingFeedbackLabel") as Label
 	tower_drop_zone = binder.require_node("TowerDropZone") as Control
 	tower_stack_fallback = binder.optional_node("TowerStack") as Control
 	drag_preview = binder.require_node("DragPreview") as Control
@@ -89,6 +96,9 @@ func bind_nodes(binder) -> void:
 	cooldown_overlays = []
 	for button in inventory_buttons:
 		cooldown_overlays.append(button.get_node_or_null("CooldownOverlay") as Control)
+	if cooling_feedback_label != null:
+		cooling_feedback_label.visible = false
+		cooling_feedback_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func setup(
 	players_ref,
@@ -159,6 +169,10 @@ func clear_for_new_round() -> void:
 	cancel_block_drag()
 	last_placement_sent_at_ms = 0
 	last_tap_ms = 0
+	cooling_feedback_deadline_ms = 0
+	cooling_feedback_last_at_ms = -COOLING_FEEDBACK_THROTTLE_MS
+	if cooling_feedback_label != null:
+		cooling_feedback_label.visible = false
 	if clear_ready_rejection_feedback.is_valid():
 		clear_ready_rejection_feedback.call()
 
@@ -194,7 +208,10 @@ func handle_input(event: InputEvent) -> void:
 
 func tick() -> void:
 	update_placement_cooldown_overlays()
-	_tick_selection_pulse()
+	if cooling_feedback_deadline_ms > 0 and Time.get_ticks_msec() >= cooling_feedback_deadline_ms:
+		cooling_feedback_deadline_ms = 0
+		if cooling_feedback_label != null:
+			cooling_feedback_label.visible = false
 
 func on_block_pressed(index: int, column: int = -1, origin_y: int = -1) -> void:
 	if _is_ready_locked_card(index):
@@ -214,6 +231,10 @@ func on_block_pressed(index: int, column: int = -1, origin_y: int = -1) -> void:
 func _on_inventory_card_gui_input(event: InputEvent, index: int) -> void:
 	if _is_ready_locked_card(index) and _is_primary_press(event):
 		_reject_ready_placement(index)
+		get_viewport().set_input_as_handled()
+		return
+	if _is_cooling_card(index) and _is_primary_press(event):
+		_reject_cooling_placement(index)
 		get_viewport().set_input_as_handled()
 		return
 
@@ -345,11 +366,12 @@ func get_placement_cooldown_remaining_ms() -> int:
 
 func update_placement_cooldown_overlays() -> void:
 	var ratio: float = 0.0
-	if tuning.placement_cooldown_ms > 0:
+	if match_state.current_match_state == "playing" and tuning.placement_cooldown_ms > 0:
 		ratio = float(get_placement_cooldown_remaining_ms()) / float(tuning.placement_cooldown_ms)
-	for overlay in cooldown_overlays:
+	for i in range(cooldown_overlays.size()):
+		var overlay = cooldown_overlays[i]
 		if overlay != null and overlay.has_method("set_remaining_ratio"):
-			overlay.call("set_remaining_ratio", ratio)
+			overlay.call("set_remaining_ratio", ratio if _is_filled_active_card(i) else 0.0)
 
 func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
 	if drag_preview == null:
@@ -377,7 +399,7 @@ func begin_block_drag(index: int, global_pos: Vector2, pointer_id: int) -> void:
 
 	drag_preview.set_block(block)
 	drag_preview.visible = true
-	drag_preview.z_index = 40
+	drag_preview.z_index = 50
 
 	if tower_stack_fallback != null and tower_stack_fallback.has_method("begin_snap_drag"):
 		tower_stack_fallback.call("begin_snap_drag", block, local_color)
@@ -557,6 +579,7 @@ func select_block(index: int) -> void:
 	armed_snap = {}
 	drag_snap = {}
 	_apply_selection_visuals()
+	_play_selection_response(index)
 
 	if tower_stack_fallback != null and tower_stack_fallback.has_method("begin_snap_drag"):
 		tower_stack_fallback.call("begin_snap_drag", block, local_color)
@@ -580,6 +603,7 @@ func _clear_selection_state() -> void:
 	armed_snap = {}
 	if had_selection:
 		_apply_selection_visuals()
+	_stop_selection_response()
 
 	if drag_preview != null:
 		drag_preview.visible = false
@@ -605,7 +629,7 @@ func _prepare_cursor_ghost(block: Dictionary, local_color: Color) -> void:
 
 	drag_preview.cell_color = local_color
 	drag_preview.set_block(block)
-	drag_preview.z_index = 40
+	drag_preview.z_index = 50
 	_update_cursor_ghost(drag_preview.get_global_mouse_position())
 
 func _handle_selection_hover(event: InputEvent) -> void:
@@ -800,17 +824,23 @@ func _build_selected_card_style(local_color: Color) -> StyleBoxFlat:
 
 	return style
 
-func _tick_selection_pulse() -> void:
-	if selected_card_style == null:
+func _play_selection_response(index: int) -> void:
+	_stop_selection_response()
+	if index < 0 or index >= inventory_buttons.size():
 		return
+	var button: Button = inventory_buttons[index]
+	button.pivot_offset = button.size * 0.5
+	button.scale = Vector2(0.94, 0.94)
+	selection_response_tween = create_tween()
+	selection_response_tween.tween_property(button, "scale", Vector2.ONE, SELECTION_RESPONSE_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-	var local_color: Color = players_ctx.local_color()
-	var phase: float = float(Time.get_ticks_msec()) * 0.001 * SELECTION_PULSE_SPEED
-	var alpha: float = 0.6 + 0.4 * sin(phase)
-
-	selected_card_style.border_color = Color(
-		local_color.r, local_color.g, local_color.b, alpha
-	)
+func _stop_selection_response() -> void:
+	if selection_response_tween != null and is_instance_valid(selection_response_tween):
+		selection_response_tween.kill()
+	selection_response_tween = null
+	for button in inventory_buttons:
+		if button != null:
+			button.scale = Vector2.ONE
 
 func is_pointer_in_tower_drop_zone(global_pos: Vector2) -> bool:
 	var drop_zone: Control = tower_drop_zone if tower_drop_zone != null else tower_stack_fallback
@@ -868,6 +898,37 @@ func _is_ready_locked_card(index: int) -> bool:
 	if typeof(inventory_slot_blocks[index]) != TYPE_DICTIONARY:
 		return false
 	return !inventory_slot_blocks[index].is_empty()
+
+func _is_filled_active_card(index: int) -> bool:
+	if index < 0 or index >= active_inventory_slots:
+		return false
+	if index >= inventory_slot_blocks.size() or index >= inventory_buttons.size():
+		return false
+	if inventory_buttons[index].disabled:
+		return false
+	if typeof(inventory_slot_blocks[index]) != TYPE_DICTIONARY:
+		return false
+	return !inventory_slot_blocks[index].is_empty()
+
+func _is_cooling_card(index: int) -> bool:
+	return (
+		!ready_locked and
+		match_state.current_match_state == "playing" and
+		_is_filled_active_card(index) and
+		get_placement_cooldown_remaining_ms() > 0
+	)
+
+func _reject_cooling_placement(index: int) -> void:
+	var now := Time.get_ticks_msec()
+	if now - cooling_feedback_last_at_ms < COOLING_FEEDBACK_THROTTLE_MS:
+		return
+	cooling_feedback_last_at_ms = now
+	cooling_feedback_deadline_ms = now + COOLING_FEEDBACK_VISIBLE_MS
+	if index < cooldown_overlays.size() and cooldown_overlays[index] != null and cooldown_overlays[index].has_method("pulse_cooling_attempt"):
+		cooldown_overlays[index].call("pulse_cooling_attempt")
+	if cooling_feedback_label != null:
+		cooling_feedback_label.text = "COOLING…"
+		cooling_feedback_label.visible = true
 
 func _reject_ready_placement(index: int) -> void:
 	_clear_selection_state()

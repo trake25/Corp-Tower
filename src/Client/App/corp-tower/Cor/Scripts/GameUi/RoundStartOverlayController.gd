@@ -80,7 +80,9 @@ func apply_state(
 	var is_starting := state == "starting"
 	var was_same_ready := last_state == "starting" and last_level == level
 	var is_build_transition := state == "playing" and was_same_ready
-	score_feedback_suppressed = is_starting or is_build_transition
+	# BUILD! is presentation only. Authoritative PLAY events must never be consumed
+	# merely because that cue is still completing.
+	score_feedback_suppressed = is_starting
 
 	if is_starting:
 		ready_active = true

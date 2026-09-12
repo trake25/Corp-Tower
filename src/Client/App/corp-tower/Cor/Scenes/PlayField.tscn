@@ -564,6 +564,27 @@ offset_bottom = 907.0
 grow_horizontal = 2
 theme_override_constants/separation = 6
 
+[node name="CoolingFeedbackLabel" type="Label" parent="." unique_id=1790326433]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -72.0
+offset_top = 798.0
+offset_right = 72.0
+offset_bottom = 822.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.18, 0.78, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "COOLING…"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="TeamInventoryPanel" type="PanelContainer" parent="." unique_id=1310221200]
 unique_name_in_owner = true
 layout_mode = 0

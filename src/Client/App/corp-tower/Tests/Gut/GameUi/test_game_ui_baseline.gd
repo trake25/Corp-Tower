@@ -16,6 +16,7 @@ const GAME_STATE_FIXTURE := {
 	"level": 1,
 	"impactLevel": 3,
 	"impactInterval": 3,
+	"placementCooldownMs": 1500,
 	"players": PLAYERS_FIXTURE,
 	"towerBlocks": [],
 	"scoreEvents": [
@@ -50,6 +51,17 @@ func test_game_state_renders_rail_and_top_bar() -> void:
 	assert_eq(harness.main.roster.player_rail_entries.size(), 3, "A three player payload should produce three rail entries.")
 	assert_not_null(harness.main.roster.rail_entry("P1").find_child("ScoreLabel"), "The player rail score label is active HUD, not legacy UI.")
 	assert_false((harness.find("TowerStabilityLabel") as Label).is_visible_in_tree(), "Tower stability should stay hidden outside the debug meter modes.")
+	assert_eq(harness.main.tuning.placement_cooldown_ms, 1500, "Ordinary game_state owns the placement cooldown presented to the player.")
+
+func test_play_timer_urgency_uses_playing_thresholds_and_resets() -> void:
+	var top_bar = harness.main.top_bar
+	top_bar.update_top_bar_display(1, 0, "playing", 15, 15000, 90000)
+	assert_eq((harness.find("TimerLabel") as Label).modulate, Color("#D97706"))
+	top_bar.update_top_bar_display(1, 0, "playing", 5, 5000, 90000)
+	top_bar.tick_round_timer()
+	assert_ne((harness.find("TimerLabel") as Label).modulate, Color.WHITE)
+	top_bar.update_top_bar_display(1, 0, "finished", 5, 5000, 90000)
+	assert_eq((harness.find("TimerLabel") as Label).modulate, Color.WHITE)
 
 func test_game_state_passes_structural_pose_to_the_tower_stack() -> void:
 	var state: Dictionary = GAME_STATE_FIXTURE.duplicate(true)

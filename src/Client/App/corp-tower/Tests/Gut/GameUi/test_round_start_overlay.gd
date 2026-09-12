@@ -178,3 +178,17 @@ func test_ready_rejects_every_card_mode_with_throttled_feedback_and_cleans_stale
 	inventory.apply_authoritative_state("playing", 3)
 	harness.main.match_state.current_match_state = "playing"
 	assert_true(inventory.can_place_block(0), "A new round must not inherit its predecessor's cooldown.")
+
+func test_first_play_score_event_survives_the_lingering_build_cue() -> void:
+	_apply_ready()
+	var playing_state := _state("playing", 90000)
+	playing_state["scoreEvents"] = [{
+		"id": "first-play-placement",
+		"type": "placement",
+		"playerId": "P1",
+		"points": 6,
+		"level": 2
+	}]
+	harness.main.update_game_state(playing_state)
+	assert_true((harness.find("StartCountdownLabel") as Label).visible, "BUILD! may still be visible as presentation.")
+	assert_gt((harness.find("ScorePopupLayer") as Control).get_child_count(), 0, "A legal first PLAY reward must not be suppressed by BUILD!.")

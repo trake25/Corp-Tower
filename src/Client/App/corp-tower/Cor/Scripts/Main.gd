@@ -426,6 +426,8 @@ func update_game_state(data) -> void:
 	var target_height: int = int(data.get("targetHeight", 0))
 	var incoming_level: int = int(data.get("level", 0))
 	var impact_level: int = int(data.get("impactLevel", 0))
+	if data.has("placementCooldownMs"):
+		tuning.placement_cooldown_ms = maxi(0, int(data.get("placementCooldownMs", tuning.placement_cooldown_ms)))
 	match_state.impact_interval = maxi(1, int(data.get("impactInterval", match_state.impact_interval)))
 	var players: Array = data.get("players", [])
 	var fallback_popup_duration_ms: int = int(data.get("scorePopupDurationMs", UiTuningScript.SCORE_POPUP_DEFAULT_DURATION_MS))
