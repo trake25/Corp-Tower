@@ -15,6 +15,7 @@ var wait_for_build_label: Label
 var ready_lock_overlays: Array[Control] = []
 
 var ready_active := false
+var score_feedback_suppressed := false
 var last_state := ""
 var last_level := -1
 var presentation_deadline_ms := 0
@@ -48,6 +49,7 @@ func bind_nodes(binder) -> void:
 
 func reset() -> void:
 	ready_active = false
+	score_feedback_suppressed = false
 	last_state = ""
 	last_level = -1
 	presentation_deadline_ms = 0
@@ -77,6 +79,8 @@ func apply_state(
 	var now := Time.get_ticks_msec()
 	var is_starting := state == "starting"
 	var was_same_ready := last_state == "starting" and last_level == level
+	var is_build_transition := state == "playing" and was_same_ready
+	score_feedback_suppressed = is_starting or is_build_transition
 
 	if is_starting:
 		ready_active = true
@@ -88,7 +92,7 @@ func apply_state(
 			presentation_deadline_ms = incoming_deadline
 		_update_starting_presentation()
 	else:
-		var show_build := state == "playing" and last_state == "starting" and last_level == level
+		var show_build := is_build_transition
 		ready_active = false
 		presentation_deadline_ms = 0
 		_clear_ready_rejection_feedback()
@@ -211,11 +215,7 @@ func ready_feedback_count(index: int) -> int:
 	return int(feedback_count[index])
 
 func blocks_score_feedback() -> bool:
-	return ready_active or (
-		countdown_label != null
-		and countdown_label.visible
-		and countdown_label.text == "BUILD!"
-	)
+	return score_feedback_suppressed
 
 func clear_ready_rejection_feedback() -> void:
 	_clear_ready_rejection_feedback()

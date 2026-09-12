@@ -10,7 +10,7 @@ Owner: `KB/docs/context/ui.md:67-75` → **Authentication screen**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn` | `SignInScreen` | 12 | `sed -n 1,32p src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn` |
-| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `sign_in_with_provider` | 540 | `sed -n 528,560p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
+| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `sign_in_with_provider` | 616 | `sed -n 604,636p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
 
 Adjacent concepts: `network.session.identity`, `build.endpoint-auth.injection`
 

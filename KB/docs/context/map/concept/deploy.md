@@ -226,8 +226,8 @@ Owner: `KB/docs/context/deployment.md:80-101` → **Authentication environment**
 | `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 291 | `sed -n 279,311p .github/workflows/EKS-Deploy-Game-Server.yml` |
 | `scripts/backup/backup-server-up.sh` | `AUTH_ARGS` | 50 | `sed -n 38,70p scripts/backup/backup-server-up.sh` |
 | `scripts/verify-supabase-environment.sh` | `verify_supabase_environment() {` | 44 | `sed -n 32,64p scripts/verify-supabase-environment.sh` |
-| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 983 | `sed -n 971,1003p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
-| `src/Server/app/Server.js` | `handleProfileMessage` | 52 | `sed -n 40,72p src/Server/app/Server.js` |
+| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 1232 | `sed -n 1220,1252p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
+| `src/Server/app/Server.js` | `handleProfileMessage` | 54 | `sed -n 42,74p src/Server/app/Server.js` |
 
 Adjacent concepts: `backend.identity.auth`, `build.endpoint-auth.injection`
 

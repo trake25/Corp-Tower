@@ -183,7 +183,7 @@ Owner: `KB/docs/context/ui-hud.md:305-310` → **Round start READY**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd` | `apply_state` | 69 | `sed -n 57,89p src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd` | `apply_state` | 71 | `sed -n 59,91p src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_on_inventory_card_gui_input` | 214 | `sed -n 202,234p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `gameplay.progression.timing`, `backend.engine.timers`

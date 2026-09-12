@@ -9,7 +9,7 @@ Owner: `KB/docs/context/networking.md:261-264` → **Adapter boundaries**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 308 | `sed -n 296,328p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleMessage` | 417 | `sed -n 405,437p src/Server/app/Server.js` |
 | `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3314 | `sed -n 3302,3334p src/Server/app/Lobby_Manager.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `accept_game_state` | 878 | `sed -n 866,898p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
@@ -32,7 +32,7 @@ Owner: `KB/docs/context/networking.md:159-164` → **Message families**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 308 | `sed -n 296,328p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleMessage` | 417 | `sed -n 405,437p src/Server/app/Server.js` |
 
 Adjacent concepts: none
 
@@ -42,7 +42,7 @@ Owner: `KB/docs/context/networking.md:173-176` → **Latency diagnostics**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 308 | `sed -n 296,328p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleMessage` | 417 | `sed -n 405,437p src/Server/app/Server.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `process_latency_probe` | 1168 | `sed -n 1156,1188p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: none
@@ -53,7 +53,7 @@ Owner: `KB/docs/context/networking.md:186-191` → **Placement contract**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 308 | `sed -n 296,328p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleMessage` | 417 | `sed -n 405,437p src/Server/app/Server.js` |
 | `src/Server/app/engine/Placement.js` | `resolvePlacementOrigin` | 95 | `sed -n 83,115p src/Server/app/engine/Placement.js` |
 
 Adjacent concepts: `gameplay.tower.placement`, `hud.placement.snapping`
@@ -65,7 +65,7 @@ Owner: `KB/docs/context/networking.md:26-37` → **Profile session**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `connect_profile_server` | 181 | `sed -n 169,201p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
-| `src/Server/app/Server.js` | `handleProfileMessage` | 52 | `sed -n 40,72p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleProfileMessage` | 54 | `sed -n 42,74p src/Server/app/Server.js` |
 
 Adjacent concepts: `backend.identity.profile`, `ui.profile.presentation`
 
@@ -86,7 +86,7 @@ Owner: `KB/docs/context/networking.md:114-117` → **Bot spectator launch**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 308 | `sed -n 296,328p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleMessage` | 417 | `sed -n 405,437p src/Server/app/Server.js` |
 | `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2338 | `sed -n 2326,2358p src/Server/app/Lobby_Manager.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `start_bot_spectator_match` | 366 | `sed -n 354,386p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `update_config` | 1147 | `sed -n 1135,1167p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
@@ -140,7 +140,7 @@ Owner: `KB/docs/context/networking.md:13-16` → **Startup identity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 308 | `sed -n 296,328p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleMessage` | 417 | `sed -n 405,437p src/Server/app/Server.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `connect_server` | 97 | `sed -n 85,117p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.identity.auth`

@@ -111,7 +111,7 @@ Owner: `KB/docs/context/backend.md:130-133` → **Identity verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Auth_Verifier.js` | `verifyAccessToken` | 84 | `sed -n 72,104p src/Server/app/Auth_Verifier.js` |
+| `src/Server/app/Auth_Verifier.js` | `verifyAccessToken` | 87 | `sed -n 75,107p src/Server/app/Auth_Verifier.js` |
 
 Adjacent concepts: `network.session.identity`
 
