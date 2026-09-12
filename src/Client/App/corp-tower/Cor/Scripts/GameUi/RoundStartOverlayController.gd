@@ -3,7 +3,6 @@ extends Node
 const READY_FEEDBACK_THROTTLE_MS := 500
 const WAIT_FOR_BUILD_VISIBLE_MS := 750
 const COUNTDOWN_WINDOW_MS := 3000
-const READY_BRIEFING_FADE_MS := 180
 const READY_BRIEFING_MIN_HEIGHT := 88.0
 
 var round_start_overlay: Control
@@ -136,11 +135,9 @@ func _update_starting_presentation() -> void:
 	var remaining_ms := maxi(0, presentation_deadline_ms - Time.get_ticks_msec())
 	var countdown_active := remaining_ms <= COUNTDOWN_WINDOW_MS
 	if briefing_card != null:
-		var countdown_elapsed_ms := COUNTDOWN_WINDOW_MS - remaining_ms
-		var fade_progress := clampf(float(countdown_elapsed_ms) / READY_BRIEFING_FADE_MS, 0.0, 1.0)
-		briefing_card.visible = remaining_ms > 0 and fade_progress < 1.0
-		briefing_card.modulate = Color(1.0, 1.0, 1.0, 1.0 - fade_progress) if briefing_card.visible else Color.WHITE
-		briefing_card.scale = Vector2.ONE
+	briefing_card.visible = true
+	briefing_card.modulate = Color.WHITE
+	briefing_card.scale = Vector2.ONE
 	if countdown_label == null:
 		return
 	if !countdown_active:
