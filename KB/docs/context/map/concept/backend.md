@@ -36,7 +36,7 @@ Adjacent concepts: `network.adapters.boundaries`
 
 ## backend.bots.preview
 
-Owner: `KB/docs/context/backend.md:339-342` → **Bot profiles and preview**
+Owner: `KB/docs/context/backend.md:341-344` → **Bot profiles and preview**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -47,7 +47,7 @@ Adjacent concepts: `gameplay.bots.scoring`, `gameplay.bots.personalities`
 
 ## backend.config.values
 
-Owner: `KB/docs/context/backend.md:349-352` → **Configuration ownership**
+Owner: `KB/docs/context/backend.md:351-354` → **Configuration ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -57,7 +57,7 @@ Adjacent concepts: none
 
 ## backend.engine.last-chance
 
-Owner: `KB/docs/context/backend.md:233-236` → **Last Chance authority**
+Owner: `KB/docs/context/backend.md:235-238` → **Last Chance authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -67,7 +67,7 @@ Adjacent concepts: `gameplay.debug.last-chance`
 
 ## backend.engine.lifecycle
 
-Owner: `KB/docs/context/backend.md:198-201` → **Engine lifecycle**
+Owner: `KB/docs/context/backend.md:200-203` → **Engine lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -77,7 +77,7 @@ Adjacent concepts: `network.state.snapshot`
 
 ## backend.engine.placement
 
-Owner: `KB/docs/context/backend.md:221-226` → **Placement authority**
+Owner: `KB/docs/context/backend.md:223-228` → **Placement authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -87,7 +87,7 @@ Adjacent concepts: `gameplay.tower.placement`, `network.placement.contract`
 
 ## backend.engine.power-events
 
-Owner: `KB/docs/context/backend.md:244-247` → **Power events**
+Owner: `KB/docs/context/backend.md:246-249` → **Power events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -97,7 +97,7 @@ Adjacent concepts: `network.state.transient-events`
 
 ## backend.engine.timers
 
-Owner: `KB/docs/context/backend.md:209-212` → **Engine timers**
+Owner: `KB/docs/context/backend.md:211-214` → **Engine timers**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -119,11 +119,12 @@ Adjacent concepts: `network.session.identity`
 
 ## backend.identity.profile
 
-Owner: `KB/docs/context/backend.md:147-161` → **Durable profiles**
+Owner: `KB/docs/context/backend.md:148-163` → **Durable profiles**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Account_Store.js` | `resolve` | 73 | `sed -n 61,93p src/Server/app/Account_Store.js` |
+| `src/Server/app/Account_Store.js` | `commitProviderLink` | 186 | `sed -n 174,206p src/Server/app/Account_Store.js` |
 | `src/Server/app/Account_Store.js` | `markNameOnboardingSeen` | 135 | `sed -n 123,155p src/Server/app/Account_Store.js` |
 | `src/Server/app/Profile_Store.js` | `getProfile` | 66 | `sed -n 54,86p src/Server/app/Profile_Store.js` |
 | `src/Server/app/Profile_Store.js` | `changeName` | 163 | `sed -n 151,183p src/Server/app/Profile_Store.js` |
@@ -132,7 +133,7 @@ Adjacent concepts: `network.profile.session`, `ui.profile.presentation`
 
 ## backend.impacts.requirement
 
-Owner: `KB/docs/context/backend.md:277-280` → **Impact authority**
+Owner: `KB/docs/context/backend.md:279-282` → **Impact authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -142,7 +143,7 @@ Adjacent concepts: `gameplay.impact.requirement`, `network.state.impact-status`
 
 ## backend.impacts.rollback
 
-Owner: `KB/docs/context/backend.md:287-290` → **Impact rollback**
+Owner: `KB/docs/context/backend.md:289-292` → **Impact rollback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -205,7 +206,7 @@ Adjacent concepts: `backend.redis.leases`, `network.room.cross-pod`
 
 ## backend.lobby.debug-config
 
-Owner: `KB/docs/context/backend.md:186-191` → **Debug configuration**
+Owner: `KB/docs/context/backend.md:188-193` → **Debug configuration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -237,7 +238,7 @@ Adjacent concepts: `network.room.public`
 
 ## backend.persistence.durable-foundation
 
-Owner: `KB/docs/context/backend.md:171-177` → **Durable Supabase foundation**
+Owner: `KB/docs/context/backend.md:173-179` → **Durable Supabase foundation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -247,7 +248,7 @@ Adjacent concepts: `backend.identity.profile`, `backend.authority.persistence`, 
 
 ## backend.redis.hydration
 
-Owner: `KB/docs/context/backend.md:372-375` → **Hydration continuity**
+Owner: `KB/docs/context/backend.md:374-377` → **Hydration continuity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -258,7 +259,7 @@ Adjacent concepts: `network.state.snapshot`
 
 ## backend.redis.leases
 
-Owner: `KB/docs/context/backend.md:360-363` → **Redis leases**
+Owner: `KB/docs/context/backend.md:362-365` → **Redis leases**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -268,7 +269,7 @@ Adjacent concepts: `backend.lobby.cross-pod`
 
 ## backend.scoring.transaction
 
-Owner: `KB/docs/context/backend.md:265-268` → **Scoring transaction**
+Owner: `KB/docs/context/backend.md:267-270` → **Scoring transaction**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -278,7 +279,7 @@ Adjacent concepts: `gameplay.scoring.transaction`
 
 ## backend.stability.analysis
 
-Owner: `KB/docs/context/backend.md:298-305` → **Support graph**
+Owner: `KB/docs/context/backend.md:300-307` → **Support graph**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -288,7 +289,7 @@ Adjacent concepts: `gameplay.tower.stability`
 
 ## backend.stability.collapse
 
-Owner: `KB/docs/context/backend.md:315-318` → **Collapse authority**
+Owner: `KB/docs/context/backend.md:317-320` → **Collapse authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -299,7 +300,7 @@ Adjacent concepts: `hud.tower.collapse.presentation`, `gameplay.progression.fail
 
 ## backend.stability.pose
 
-Owner: `KB/docs/context/backend.md:325-328` → **Structural pose**
+Owner: `KB/docs/context/backend.md:327-330` → **Structural pose**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -309,7 +310,7 @@ Adjacent concepts: `hud.tower.pose`
 
 ## backend.supply.authority
 
-Owner: `KB/docs/context/backend.md:254-257` → **Supply authority**
+Owner: `KB/docs/context/backend.md:256-259` → **Supply authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

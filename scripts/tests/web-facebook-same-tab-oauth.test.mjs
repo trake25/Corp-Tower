@@ -21,107 +21,96 @@ function functionBody(contents, name, nextName) {
   return contents.slice(start, end === -1 ? contents.length : end);
 }
 
-function relayScript(html) {
-  const match = html.match(/<script>\s*([\s\S]*?)\s*<\/script>/i);
-  assert.ok(match, 'relay must contain an inline handoff script');
-  return match[1];
-}
-
-test('Mobile Web Facebook opens a same-origin auth tab while PC retains its same-tab route', () => {
+test('Mobile Web Facebook fresh sign-in uses Supabase PKCE in the initiating tab', () => {
   const auth = source('src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd');
-  const begin = functionBody(auth, '_begin_web_facebook_login', '_open_web_facebook_auth_tab');
-  const openAuthTab = functionBody(auth, '_open_web_facebook_auth_tab', '_build_web_facebook_authorize_url');
-  const route = functionBody(auth, '_facebook_link_route_for_runtime', 'is_web_facebook_link_route');
+  const signIn = functionBody(auth, 'sign_in_with_provider', 'facebook_link_route');
+  const browser = functionBody(auth, '_sign_in_with_browser', 'link_with_provider');
+  const navigation = functionBody(auth, '_web_oauth_navigation_script', '_provider_account_selection_query');
 
-  assert.match(route, /FACEBOOK_LINK_ROUTE_WEB_PC/);
-  assert.match(route, /FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB/);
-  assert.match(route, /FACEBOOK_LINK_ROUTE_NATIVE/);
-  assert.match(begin, /WEB_FACEBOOK_TOPOLOGY_AUTH_TAB/);
-  assert.match(begin, /_mobile_web_facebook_redirect_uri/);
-  assert.match(begin, /_open_web_facebook_auth_tab/);
-  assert.match(begin, /_web_oauth_navigation_script/);
-  assert.match(openAuthTab, /window\.open\(%s, "corp_tower_facebook_auth_"/);
-  assert.doesNotMatch(openAuthTab, /FACEBOOK_WEB_AUTH_URL/);
-  assert.match(auth, /WEB_FACEBOOK_AUTH_TAB_PATH := "\/facebook-oauth-callback.html"/);
+  assert.match(signIn, /if provider == "facebook" and OS\.has_feature\("web"\):/);
+  assert.match(signIn, /if _is_mobile_web_runtime\(\):\s*return _sign_in_with_browser\(provider\)/);
+  assert.match(signIn, /return _sign_in_with_web_facebook\(\)/);
+  assert.match(browser, /_build_authorize_url\(/);
+  assert.match(browser, /_mark_web_oauth_navigation_started\(provider, FLOW_SIGN_IN\)/);
+  assert.match(navigation, /window\.location\.replace/);
+  assert.doesNotMatch(navigation, /window\.open/);
 });
 
-test('The obsolete Web Facebook SDK helper and SDK calls are absent', () => {
+test('Mobile Web Facebook linking uses the authenticated Supabase link route and stages before commit', () => {
   const auth = source('src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd');
+  const link = functionBody(auth, 'link_with_provider', 'begin_facebook_link_preflight');
+  const browserLink = functionBody(auth, '_begin_browser_link', '_expire_oauth_after_grace');
+  const linkPath = functionBody(auth, '_build_link_authorize_path', '_generate_code_verifier');
+  const callback = functionBody(auth, 'consume_web_callback', 'take_oauth_error');
+  const linkCallback = functionBody(auth, '_consume_link_callback', '_recover_existing_google_link');
+  const staging = functionBody(auth, '_stage_link_session', '_stage_native_facebook_link_credential');
 
-  assert.equal(
-    existsSync(pathFromRoot('src/Client/App/corp-tower/Sys/Auth/Web_Facebook_Auth.gd')),
-    false,
-    'the unused SDK helper must be deleted after callers are removed'
+  assert.match(link, /_save_link_flow\(provider, user_id\)/);
+  assert.match(link, /return await _begin_browser_link\(provider\)/);
+  assert.doesNotMatch(link, /provider == "facebook"[\s\S]*REASON_PROVIDER_UNAVAILABLE/);
+  assert.match(browserLink, /_build_link_authorize_path\(/);
+  assert.match(linkPath, /\/auth\/v1\/user\/identities\/authorize/);
+  assert.match(browserLink, /_get_auth_authenticated\(path, access_token\(\)\)/);
+  assert.match(browserLink, /_mark_web_oauth_navigation_started\(provider, FLOW_LINK\)/);
+  assert.ok(
+    callback.indexOf('_has_active_link_flow()') < callback.indexOf('_exchange_code('),
+    'an active provider-link callback must be handled before a fresh sign-in exchange'
   );
-  assert.doesNotMatch(auth, /WebFacebookAuth|window\.FB|FB\.login|_setup_web_facebook/);
+  assert.match(linkCallback, /return REASON_IDENTITY_CONFLICT/);
+  assert.match(staging, /str\(user\.get\("id", ""\)\) != str\(flow\.get\("pre_link_user_id", ""\)\)/);
+  assert.match(staging, /pending_link_session = data\.duplicate\(true\)/);
+  assert.doesNotMatch(staging, /_store_session/);
 });
 
-test('The relay is a syntax-valid same-origin callback handoff with no token authority', () => {
-  const relay = source('src/Client/App/corp-tower/Web/facebook-oauth-callback.html');
-  const script = relayScript(relay);
-
-  assert.doesNotThrow(() => new Function(script), 'relay JavaScript must parse before export');
-  assert.match(script, /window\.localStorage/);
-  assert.match(script, /FLOW_PREFIX \+ transaction/);
-  assert.match(script, /RESULT_PREFIX \+ transaction/);
-  assert.match(script, /flow\.origin !== window\.location\.origin/);
-  assert.match(script, /flow\.redirect_uri !== window\.location\.origin \+ window\.location\.pathname/);
-  assert.match(script, /flow\.expires_at_unix <= Date\.now\(\) \/ 1000/);
-  assert.match(script, /window\.location\.replace\(flow\.authorize_url\)/);
-  assert.match(script, /window\.opener\.postMessage\(envelope, window\.location\.origin\)/);
-  assert.match(script, /new BroadcastChannel\(CHANNEL\)/);
-  assert.match(script, /window\.localStorage\.removeItem\(FLOW_PREFIX \+ transaction\)/);
-  assert.match(script, /window\.setTimeout\(\(\) => window\.close\(\), 0\)/);
-  assert.doesNotMatch(script, /access_token|app_secret|Godot|FB\.login/i);
-});
-
-test('The original tab consumes only a bound, unexpired, one-time callback result', () => {
+test('PC Web retains its direct Facebook code-exchange path and Android retains native linking', () => {
   const auth = source('src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd');
-  const callback = functionBody(auth, '_consume_web_facebook_callback', '_finish_web_facebook_callback');
-  const poll = functionBody(auth, '_poll_web_facebook_auth_tab', '_finish_web_facebook_auth_tab_failure');
-
-  assert.match(callback, /callback_state != expected_state/);
-  assert.match(callback, /flow_expired/);
-  assert.match(callback, /_web_url_origin\(redirect_to\) != expected_origin/);
-  assert.match(callback, /current_origin != expected_origin/);
-  assert.match(callback, /callback_origin != expected_origin/);
-  assert.match(callback, /_clear_web_facebook_flow\(\)/);
-  assert.match(callback, /_exchange_web_facebook_code\(code, redirect_to\)/);
-  assert.match(poll, /_take_web_facebook_auth_tab_result/);
-  assert.match(poll, /_has_active_web_facebook_auth_tab_flow/);
-  assert.match(poll, /_web_facebook_auth_tab_status\(\) != "open"/);
-});
-
-test('Web Facebook exchange remains server-authoritative and origin-bound to its deployment', () => {
-  const auth = source('src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd');
+  const route = functionBody(auth, '_facebook_link_route_for_runtime', '_sign_in_with_web_facebook');
+  const pcLink = functionBody(auth, 'begin_facebook_link_preflight', 'complete_facebook_link_after_preflight');
   const verifier = source('src/Server/app/Auth_Verifier.js');
   const server = source('src/Server/app/Server.js');
 
+  assert.match(route, /FACEBOOK_LINK_ROUTE_WEB_PC/);
+  assert.match(route, /FACEBOOK_LINK_ROUTE_WEB_MOBILE/);
+  assert.match(route, /FACEBOOK_LINK_ROUTE_NATIVE/);
+  assert.match(pcLink, /FACEBOOK_LINK_ROUTE_WEB_PC/);
+  assert.match(pcLink, /_begin_web_facebook_login\(FLOW_FACEBOOK_LINK_PREFLIGHT\)/);
+  assert.match(pcLink, /FACEBOOK_LINK_ROUTE_NATIVE/);
   assert.match(auth, /\/api\/auth\/facebook\/exchange/);
   assert.match(auth, /"code": code, "redirectUri": redirect_to/);
   assert.match(verifier, /exchangeFacebookAuthorizationCode/);
-  assert.match(verifier, /oauth\/access_token/);
-  assert.match(verifier, /client_secret/);
   assert.match(server, /FACEBOOK_WEB_ORIGIN/);
   assert.match(server, /redirectOriginMatchesRequest\(req, redirectUri, expectedWebOrigin\)/);
   assert.match(server, /requestOriginMatchesExpected\(req\)/);
-  assert.doesNotMatch(server, /Access-Control-Allow-Origin": "\*"/);
 });
 
-test('The Account lifecycle keeps mobile auth-tab linking loaded and preserves Android preflight', () => {
+test('ScreenManager gives Mobile Web linking the normal same-tab lifecycle', () => {
   const screen = source('src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd');
+  const navigation = functionBody(screen, '_handle_web_oauth_navigation', '_provider_link_stage_after_eligibility');
+  const stages = functionBody(screen, '_provider_link_stage_after_eligibility', '_on_facebook_link_credential_ready');
 
-  assert.match(screen, /provider_link_stage = "web_facebook_oauth"/);
-  assert.match(screen, /_keeps_account_link_connection_for_web_oauth/);
-  assert.match(screen, /FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB/);
-  assert.match(screen, /"facebook_native_credential"/);
-  assert.doesNotMatch(screen, /FACEBOOK_LINK_ROUTE_WEB_SDK|"facebook_credential"/);
+  assert.match(navigation, /provider_link_browser_round_trip_active = true/);
+  assert.match(navigation, /_clear_account_link_readiness\(\)/);
+  assert.match(stages, /FACEBOOK_LINK_ROUTE_WEB_PC[\s\S]*"web_facebook_oauth"/);
+  assert.match(stages, /FACEBOOK_LINK_ROUTE_WEB_MOBILE[\s\S]*"launch"/);
+  assert.match(stages, /FACEBOOK_LINK_ROUTE_NATIVE[\s\S]*"facebook_native_credential"/);
+  assert.doesNotMatch(screen, /mobile_web_facebook_auth_tab|MOBILE_AUTH_TAB|_keeps_account_link_connection_for_web_oauth/);
 });
 
-test('The shared Web export copies the relay to the public artifact root', () => {
+test('Relay-only code and export artifacts are absent', () => {
+  const auth = source('src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd');
   const buildAction = source('.github/actions/build-godot-web/action.yml');
 
-  assert.match(buildAction, /Web\/facebook-oauth-callback\.html/);
-  assert.match(buildAction, /\$OUTPUT_DIR\/facebook-oauth-callback\.html/);
-  assert.match(buildAction, /Facebook OAuth relay was not copied into the Web export/);
+  assert.equal(
+    existsSync(pathFromRoot('src/Client/App/corp-tower/Web/facebook-oauth-callback.html')),
+    false,
+    'the obsolete relay must be removed once no route uses it'
+  );
+  assert.doesNotMatch(auth, /WEB_FACEBOOK_AUTH_TAB|BroadcastChannel|window\.open|auth_tab/);
+  assert.doesNotMatch(buildAction, /facebook-oauth-callback\.html|Facebook OAuth relay/);
+  assert.equal(
+    existsSync(pathFromRoot('src/Client/App/corp-tower/Sys/Auth/Web_Facebook_Auth.gd')),
+    false,
+    'the unused SDK helper must stay absent'
+  );
+  assert.doesNotMatch(auth, /WebFacebookAuth|window\.FB|FB\.login|_setup_web_facebook/);
 });

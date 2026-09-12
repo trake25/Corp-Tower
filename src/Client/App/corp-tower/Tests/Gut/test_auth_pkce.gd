@@ -119,16 +119,22 @@ func test_google_link_authorize_path_uses_supabase_owned_callback_state() -> voi
 	assert_false(path.contains("state="))
 	assert_false(path.contains("display="))
 
-func test_web_facebook_selects_its_manual_oauth_routes_rather_than_supabase_linking() -> void:
+func test_web_facebook_selects_direct_pc_and_supabase_mobile_link_routes() -> void:
 	assert_eq(
 		auth._facebook_link_route_for_runtime(true, "Web", false),
 		auth.FACEBOOK_LINK_ROUTE_WEB_PC
 	)
 	assert_eq(
 		auth._facebook_link_route_for_runtime(true, "Web", true),
-		auth.FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
+		auth.FACEBOOK_LINK_ROUTE_WEB_MOBILE
 	)
-	assert_eq(await auth._begin_browser_link("facebook"), auth.REASON_PROVIDER_UNAVAILABLE)
+	var path: String = auth._build_link_authorize_path(
+		"facebook", "https://play.example.com/", "facebook-link-challenge", true
+	)
+	assert_true(path.contains("provider=facebook"))
+	assert_true(path.contains("code_challenge_method=s256"))
+	assert_true(path.contains("skip_http_redirect=true"))
+	assert_false(path.contains("display="))
 
 func test_callback_query_extracts_the_code() -> void:
 	var parsed: Dictionary = auth._parse_callback_query("?code=abc123&state=xyz")

@@ -91,7 +91,7 @@ Owner: `KB/docs/context/ui-hud.md:114-121` → **Score popups**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd` | `process_score_events` | 240 | `sed -n 228,260p src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd` | `process_score_events` | 244 | `sed -n 232,264p src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd` |
 
 Adjacent concepts: `network.state.transient-events`
 

@@ -131,13 +131,14 @@ adjacent: network.session.identity
 -->
 ## Identity verification
 
-Auth Verifier validates configured Supabase JWTs and Facebook access tokens without turning provider claims into game authority. For Web Facebook, the game server exchanges an authorization code with its server-held App Secret, verifies that the resulting token belongs to the configured Facebook application, and returns only the bounded credential needed by the original client flow. Verified identity overrides claimed wire profile identity when authentication is available.
+Auth Verifier validates configured Supabase JWTs and Facebook access tokens; provider claims never become game authority. PC Web Facebook uses the game server's authorization-code exchange with its server-held App Secret; the server verifies the token belongs to the configured Facebook app and returns only the credential for that direct flow. Mobile Web Facebook fresh sign-in and linking use Supabase browser flows, so provider-link commit receives a verified Supabase credential. Verified identity overrides claimed wire profile identity when authentication is available.
 
 <!-- kb
 id: backend.identity.profile
 alias: profile store
 alias: account store
 source: src/Server/app/Account_Store.js#resolve
+source: src/Server/app/Account_Store.js#commitProviderLink
 source: src/Server/app/Account_Store.js#markNameOnboardingSeen
 source: src/Server/app/Profile_Store.js#getProfile
 source: src/Server/app/Profile_Store.js#changeName
@@ -153,7 +154,8 @@ one logical external provider. Facebook HMAC-key rotation may create multiple st
 same logical Facebook identity, so raw identity-row count is not the provider-count invariant. Provider
 claiming is atomic and same-provider resolution may be idempotent, but a different provider or a
 provider identity already owned by another durable account is a conflict, never a merge. Provider
-linking consumes only a server-verified provider credential and must not reparent or overwrite the durable Profile. Profile Store owns durable profile
+linking consumes only a server-verified provider credential, atomically claims its provider subject, and must not
+reparent or overwrite the durable Profile. Profile Store owns durable profile
 presentation and the one-time player-name lifecycle. First-login naming exposure is durable account
 state, permanent-name consumption is durable profile state, and permanent names are database-enforced
 case-insensitive unique values. Provider presentation metadata never overwrites a successfully chosen

@@ -73,6 +73,7 @@ source: .github/workflows/EKS-Deploy-Game-Server.yml#Sync Supabase service role 
 source: scripts/backup/backup-server-up.sh#AUTH_ARGS
 source: scripts/verify-supabase-environment.sh#verify_supabase_environment() {
 source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_recover_existing_google_link
+source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#link_with_provider
 source: src/Server/app/Server.js#handleProfileMessage
 source: src/Server/app/Server.js#redirectOriginMatchesRequest
 adjacent: backend.identity.auth
@@ -85,13 +86,14 @@ Supabase Auth project enables anonymous sign-in, Google, Facebook, and Manual Li
 are intentionally public KB context so agents can reason about supported authentication flows. Top or Drop
 accepts at most one external provider per durable account and treats its backend account state as authoritative
 for that product rule. Provider linking upgrades the currently authenticated Guest in place and preserves the
-durable Top or Drop account and Profile. Web Google uses the selected environment's Supabase PKCE and manual
-identity-link path; callback recovery may complete only when that same project's original Guest is proven to
-already own its sole Google identity. Web Facebook returns an authorization code to its selected Web origin,
-and the game server accepts the exchange only when both request `Origin` and redirect URI match that
-deployment's explicit `FACEBOOK_WEB_ORIGIN`; backup and EKS deployment wiring map that non-secret value to
-the paired Web environment. The selected game server re-verifies and atomically claims the Facebook subject.
-Android Facebook keeps its ordinary native access-token flow separately. Every shipping deployment supplies an
+durable Top or Drop account and Profile. Web Google and Mobile Web Facebook use the selected environment's
+Supabase PKCE and authenticated manual identity-link paths; a link callback may stage only that same project's
+original Guest before authoritative commit, and an existing identity is a conflict rather than a merge. PC Web
+Facebook retains its direct authorization-code flow. Its game-server exchange is accepted only when both request
+`Origin` and redirect URI match that deployment's explicit `FACEBOOK_WEB_ORIGIN`; backup and EKS deployment
+wiring map that non-secret value to the paired Web environment. The selected game server re-verifies and
+atomically claims the Facebook subject. Android Facebook keeps its ordinary native access-token flow separately.
+Every shipping deployment supplies an
 explicit Production or Development marker, project ref, canonical project URL, and environment-scoped
 credentials. A non-mutating pre-deploy guard rejects the Seoul migration source, cross-environment values,
 missing durable Data API surfaces, and incomplete server HMAC configuration. Until the request transports are

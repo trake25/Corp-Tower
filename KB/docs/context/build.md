@@ -35,7 +35,7 @@ source: .github/workflows/Backup-Deploy-Web-Server.yml#Build web export
 -->
 ## Web pipeline
 
-Both shipping Web workflows provide one shared preset to the Web build action before import and export. That preset owns browser canvas/input export settings, including the virtual-keyboard capability required for touch-browser text entry; the action remains the sole preset-copy/export boundary. The action also copies the lightweight Facebook callback relay to the export root, so every Web artifact serves the same-origin auth-tab handoff without starting a second Godot instance.
+Both shipping Web workflows provide one shared preset to the Web build action before import and export. That preset owns browser canvas/input export settings, including the virtual-keyboard capability required for touch-browser text entry; the action remains the sole preset-copy/export boundary. Facebook OAuth returns to the initiating Godot Web tab through its configured redirect; the build emits no separate callback relay artifact.
 
 <!-- kb
 id: build.android.pipeline
@@ -99,11 +99,11 @@ Build-time endpoint generation selects one WebSocket target plus debug/demo flag
 capabilities. Shipping workflows must also supply the expected Production or Development marker, exact Supabase
 project ref, matching canonical URL, and client key; missing, Seoul-source, or cross-environment values fail
 before export. Web builds inject only the selected GitHub environment's public Facebook App ID for manual
-authorization-code login; the mobile relay derives its callback from the current origin only when it matches the
-generated Web redirect origin. Builds never inject a Facebook client token, App Secret, or other server material.
-Local non-shipping generation may still omit optional Auth. Android maps WebSocket target to data environment and
-has no independent database selector. Shipping workflows use generated configuration rather than runtime hostname
-guesses.
+authorization-code PC Web login. Mobile Web Facebook uses the generated Supabase browser redirect in its
+initiating tab and needs no relay artifact. Builds never inject a Facebook client token, App Secret, or other
+server material. Local non-shipping generation may still omit optional Auth. Android maps WebSocket target to data
+environment and has no independent database selector. Shipping workflows use generated configuration rather than
+runtime hostname guesses.
 
 <!-- kb
 id: build.auth.native-providers

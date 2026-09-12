@@ -62,18 +62,20 @@ alias: oauth UI
 source: src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn#SignInScreen
 source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#sign_in_with_provider
 source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_begin_web_facebook_login
+source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#link_with_provider
 adjacent: network.session.identity
 adjacent: build.endpoint-auth.injection
 -->
 ## Authentication screen
 
-Authentication shows only configured providers. Web Google uses Supabase PKCE in the initiating tab and
-requests provider account selection. PC Web Facebook retains its manual authorization-code redirect in that
-tab. Mobile Web Facebook opens a same-origin relay tab during the player gesture, keeps the game tab loaded,
-and returns only a bound code/state/error result to that original tab; the game server exchanges and verifies
-the code. Android's native Google and Facebook provider behavior remains separate. Empty committed auth
-values disable sign-in capability, and cancellation, blocked/closed auth tabs, or browser/provider failure
-leaves the screen retryable rather than presenting a server-availability failure.
+Authentication shows only configured providers. Web Google and Mobile Web Facebook use Supabase PKCE in the
+initiating tab; Google requests provider account selection. PC Web Facebook retains its manual
+authorization-code redirect in that tab. Mobile Web Guest-to-Facebook linking uses the authenticated Supabase
+provider-link round trip in the initiating tab: its callback stages the same Guest until the Account server
+accepts the durable provider claim. PC Web Facebook retains its direct code-exchange link flow, while Android's
+native Google and Facebook provider behavior remains separate. Empty committed auth values disable sign-in
+capability, and cancellation or browser/provider failure leaves the screen retryable rather than presenting a
+server-availability failure.
 
 <!-- kb
 id: ui.startup.restoration

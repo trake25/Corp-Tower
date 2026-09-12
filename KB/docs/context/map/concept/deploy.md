@@ -219,14 +219,15 @@ Adjacent concepts: `testing.release.gates`
 
 ## deploy.shared.auth-env
 
-Owner: `KB/docs/context/deployment.md:81-104` → **Authentication environment**
+Owner: `KB/docs/context/deployment.md:82-106` → **Authentication environment**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 292 | `sed -n 280,312p .github/workflows/EKS-Deploy-Game-Server.yml` |
 | `scripts/backup/backup-server-up.sh` | `AUTH_ARGS` | 59 | `sed -n 47,79p scripts/backup/backup-server-up.sh` |
 | `scripts/verify-supabase-environment.sh` | `verify_supabase_environment() {` | 44 | `sed -n 32,64p scripts/verify-supabase-environment.sh` |
-| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 1600 | `sed -n 1588,1620p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
+| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 1282 | `sed -n 1270,1302p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
+| `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `link_with_provider` | 1054 | `sed -n 1042,1074p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
 | `src/Server/app/Server.js` | `handleProfileMessage` | 55 | `sed -n 43,75p src/Server/app/Server.js` |
 | `src/Server/app/Server.js` | `redirectOriginMatchesRequest` | 259 | `sed -n 247,279p src/Server/app/Server.js` |
 
@@ -257,7 +258,7 @@ Adjacent concepts: `deploy.shared.environments`, `deploy.shared.auth-env`
 
 ## deploy.shared.secret-rollout
 
-Owner: `KB/docs/context/deployment.md:113-116` → **Secret rollout**
+Owner: `KB/docs/context/deployment.md:115-118` → **Secret rollout**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

@@ -7,19 +7,13 @@ const LINK_FLOW_FILE := "user://corp_tower_auth_link_flow.save"
 const WEB_VERIFIER_KEY := "corp_tower_auth_verifier"
 const WEB_LINK_FLOW_KEY := "corp_tower_auth_link_flow"
 const WEB_FACEBOOK_FLOW_KEY := "corp_tower_facebook_web_flow"
-const WEB_FACEBOOK_AUTH_TAB_FLOW_PREFIX := "corp_tower_facebook_auth_tab_flow:"
-const WEB_FACEBOOK_AUTH_TAB_RESULT_PREFIX := "corp_tower_facebook_auth_tab_result:"
-const WEB_FACEBOOK_AUTH_TAB_BRIDGE_KEY := "__corpTowerFacebookAuthTab"
-const WEB_FACEBOOK_AUTH_TAB_CHANNEL := "corp_tower_facebook_auth_tab"
-const WEB_FACEBOOK_AUTH_TAB_PATH := "/facebook-oauth-callback.html"
 const REFRESH_MARGIN_SECONDS := 120
 const REFRESH_CHECK_INTERVAL_SECONDS := 30.0
 const NATIVE_FACEBOOK_TIMEOUT_SECONDS := 30.0
 const VERIFIER_BYTES := 32
 const FACEBOOK_WEB_STATE_BYTES := 32
 const OAUTH_RESUME_GRACE_SECONDS := 2.0
-const WEB_FACEBOOK_AUTH_TAB_TRANSACTION_TTL_SECONDS := 600
-const WEB_FACEBOOK_AUTH_TAB_POLL_SECONDS := 0.25
+const WEB_FACEBOOK_FLOW_TTL_SECONDS := 600
 const FACEBOOK_WEB_AUTH_URL := "https://www.facebook.com/v22.0/dialog/oauth"
 const FACEBOOK_WEB_EXCHANGE_PATH := "/api/auth/facebook/exchange"
 
@@ -42,10 +36,8 @@ const NATIVE_CODE_CANCELLED := "cancelled"
 const FLOW_SIGN_IN := "sign_in"
 const FLOW_LINK := "link"
 const FLOW_FACEBOOK_LINK_PREFLIGHT := "facebook_link_preflight"
-const WEB_FACEBOOK_TOPOLOGY_SAME_TAB := "same_tab"
-const WEB_FACEBOOK_TOPOLOGY_AUTH_TAB := "auth_tab"
 const FACEBOOK_LINK_ROUTE_WEB_PC := "web_pc"
-const FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB := "web_mobile_auth_tab"
+const FACEBOOK_LINK_ROUTE_WEB_MOBILE := "web_mobile"
 const FACEBOOK_LINK_ROUTE_NATIVE := "native"
 
 signal oauth_completed(reason: String)
@@ -82,9 +74,6 @@ var native_signin_in_flight := false
 var native_google_enabled := true
 var native_facebook_enabled := true
 var auth_transport
-var web_facebook_auth_tab_in_flight := false
-var web_facebook_auth_tab_result_in_flight := false
-var web_facebook_auth_tab_poll_elapsed := 0.0
 
 func _ready() -> void:
 	auth_transport = AuthRequestTransportScript.new()
@@ -491,8 +480,7 @@ func _has_active_link_flow() -> bool:
 func _save_web_facebook_flow_for_redirect(
 	purpose: String,
 	state: String,
-	redirect_to: String,
-	topology: String
+	redirect_to: String
 ) -> void:
 	if not OS.has_feature("web"):
 		return
@@ -503,9 +491,8 @@ func _save_web_facebook_flow_for_redirect(
 		"state": state,
 		"redirect_uri": redirect_to,
 		"origin": _web_url_origin(redirect_to),
-		"topology": topology,
 		"created_at_unix": now,
-		"expires_at_unix": now + WEB_FACEBOOK_AUTH_TAB_TRANSACTION_TTL_SECONDS
+		"expires_at_unix": now + WEB_FACEBOOK_FLOW_TTL_SECONDS
 	}
 	if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
 		payload["pre_link_user_id"] = user_id
@@ -533,177 +520,25 @@ func _clear_web_facebook_flow() -> void:
 	if not OS.has_feature("web"):
 		return
 
-	var flow := _load_web_facebook_flow()
-	var state := str(flow.get("state", ""))
 	JavaScriptBridge.eval(
 		"window.sessionStorage.removeItem(%s)" % JSON.stringify(WEB_FACEBOOK_FLOW_KEY), true
 	)
-	if state != "":
-		JavaScriptBridge.eval(
-			"""
-(function () {
-  try {
-    window.localStorage.removeItem(%s);
-    window.localStorage.removeItem(%s);
-  } catch (_) {}
-})()
-""" % [
-				JSON.stringify(_web_facebook_auth_tab_storage_key(
-					WEB_FACEBOOK_AUTH_TAB_FLOW_PREFIX, state
-				)),
-				JSON.stringify(_web_facebook_auth_tab_storage_key(
-					WEB_FACEBOOK_AUTH_TAB_RESULT_PREFIX, state
-				))
-			],
-			true
-		)
-	_cleanup_web_facebook_auth_tab_bridge()
-	web_facebook_auth_tab_in_flight = false
-	web_facebook_auth_tab_result_in_flight = false
-	web_facebook_auth_tab_poll_elapsed = 0.0
 
 func _has_active_web_facebook_flow() -> bool:
 	var flow := _load_web_facebook_flow()
-	var purpose := str(flow.get("purpose", ""))
 	return (
-		(purpose == FLOW_SIGN_IN or purpose == FLOW_FACEBOOK_LINK_PREFLIGHT)
+		(
+			str(flow.get("purpose", "")) == FLOW_SIGN_IN
+			or str(flow.get("purpose", "")) == FLOW_FACEBOOK_LINK_PREFLIGHT
+		)
 		and str(flow.get("state", "")) != ""
 		and str(flow.get("redirect_uri", "")) != ""
 		and str(flow.get("origin", "")) != ""
 		and not _web_facebook_flow_expired(flow)
 	)
 
-func _has_active_web_facebook_auth_tab_flow() -> bool:
-	var flow := _load_web_facebook_flow()
-	return (
-		_has_active_web_facebook_flow()
-		and str(flow.get("topology", "")) == WEB_FACEBOOK_TOPOLOGY_AUTH_TAB
-	)
-
 func _web_facebook_flow_expired(flow: Dictionary) -> bool:
 	return int(flow.get("expires_at_unix", 0)) <= int(Time.get_unix_time_from_system())
-
-func _web_facebook_auth_tab_storage_key(prefix: String, state: String) -> String:
-	return prefix + state
-
-func _save_web_facebook_auth_tab_launch(flow: Dictionary, authorize_url: String) -> bool:
-	if not OS.has_feature("web"):
-		return false
-
-	var state := str(flow.get("state", ""))
-	if state == "" or authorize_url == "":
-		return false
-
-	var payload := {
-		"transaction": state,
-		"purpose": str(flow.get("purpose", "")),
-		"origin": str(flow.get("origin", "")),
-		"redirect_uri": str(flow.get("redirect_uri", "")),
-		"pre_link_user_id": str(flow.get("pre_link_user_id", "")),
-		"created_at_unix": int(flow.get("created_at_unix", 0)),
-		"expires_at_unix": int(flow.get("expires_at_unix", 0)),
-		"authorize_url": authorize_url
-	}
-	var stored := str(JavaScriptBridge.eval(
-		"""
-(function () {
-  try {
-    window.localStorage.setItem(%s, %s);
-    return "ok";
-  } catch (_) {
-    return "";
-  }
-})()
-""" % [
-			JSON.stringify(_web_facebook_auth_tab_storage_key(
-				WEB_FACEBOOK_AUTH_TAB_FLOW_PREFIX, state
-			)),
-			JSON.stringify(JSON.stringify(payload))
-		],
-		true
-	))
-	return stored == "ok"
-
-func _take_web_facebook_auth_tab_result(flow: Dictionary) -> Dictionary:
-	if not OS.has_feature("web"):
-		return {}
-
-	var state := str(flow.get("state", ""))
-	if state == "":
-		return {}
-
-	var raw := str(JavaScriptBridge.eval(
-		"""
-(function () {
-  const bridge = window[%s];
-  let result = bridge && typeof bridge.pendingResult === "string" ? bridge.pendingResult : "";
-  if (bridge) bridge.pendingResult = "";
-  try {
-    if (!result) result = window.localStorage.getItem(%s) || "";
-    window.localStorage.removeItem(%s);
-  } catch (_) {}
-  return result;
-})()
-""" % [
-			JSON.stringify(WEB_FACEBOOK_AUTH_TAB_BRIDGE_KEY),
-			JSON.stringify(_web_facebook_auth_tab_storage_key(
-				WEB_FACEBOOK_AUTH_TAB_RESULT_PREFIX, state
-			)),
-			JSON.stringify(_web_facebook_auth_tab_storage_key(
-				WEB_FACEBOOK_AUTH_TAB_RESULT_PREFIX, state
-			))
-		],
-		true
-	))
-	if raw == "":
-		return {}
-
-	var parsed = JSON.parse_string(raw)
-	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
-
-func _web_facebook_auth_tab_status() -> String:
-	if not OS.has_feature("web"):
-		return "missing"
-
-	return str(JavaScriptBridge.eval(
-		"""
-(function () {
-  const bridge = window[%s];
-  if (!bridge) return "missing";
-  if (!bridge.popup) return "blocked";
-  return bridge.popup.closed ? "closed" : "open";
-})()
-""" % JSON.stringify(WEB_FACEBOOK_AUTH_TAB_BRIDGE_KEY),
-		true
-	))
-
-func _cleanup_web_facebook_auth_tab_bridge(close_popup: bool = false) -> void:
-	if not OS.has_feature("web"):
-		return
-
-	JavaScriptBridge.eval(
-		"""
-(function () {
-  const bridge = window[%s];
-  if (!bridge) return;
-  try {
-    if (%s && bridge.popup && !bridge.popup.closed) bridge.popup.close();
-  } catch (_) {}
-  try {
-    if (bridge.messageHandler) window.removeEventListener("message", bridge.messageHandler);
-  } catch (_) {}
-  try {
-    if (bridge.channel) bridge.channel.close();
-  } catch (_) {}
-  window[%s] = null;
-})()
-""" % [
-			JSON.stringify(WEB_FACEBOOK_AUTH_TAB_BRIDGE_KEY),
-			"true" if close_popup else "false",
-			JSON.stringify(WEB_FACEBOOK_AUTH_TAB_BRIDGE_KEY)
-		],
-		true
-	)
 
 func _clear_pending_link_state() -> void:
 	pending_link_session = {}
@@ -803,14 +638,6 @@ func _web_url_origin(url: String) -> String:
 		true
 	)).rstrip("/")
 
-func _mobile_web_facebook_redirect_uri() -> String:
-	var configured_origin := _web_url_origin(EndpointConfig.AUTH_REDIRECT_WEB)
-	var current_origin := _current_web_origin()
-	if configured_origin == "" or current_origin == "" or current_origin != configured_origin:
-		return ""
-
-	return current_origin + WEB_FACEBOOK_AUTH_TAB_PATH
-
 func _is_mobile_web_runtime() -> bool:
 	if not OS.has_feature("web"):
 		return false
@@ -871,6 +698,8 @@ func sign_in_with_provider(provider: String) -> String:
 		return _sign_in_with_native_facebook()
 
 	if provider == "facebook" and OS.has_feature("web"):
+		if _is_mobile_web_runtime():
+			return _sign_in_with_browser(provider)
 		return _sign_in_with_web_facebook()
 
 	return _sign_in_with_browser(provider)
@@ -886,18 +715,12 @@ func _facebook_link_route_for_runtime(
 	is_mobile_web: bool = false
 ) -> String:
 	if is_web:
-		return (
-			FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
-			if is_mobile_web else FACEBOOK_LINK_ROUTE_WEB_PC
-		)
+		return FACEBOOK_LINK_ROUTE_WEB_MOBILE if is_mobile_web else FACEBOOK_LINK_ROUTE_WEB_PC
 
 	if platform_name == "Android":
 		return FACEBOOK_LINK_ROUTE_NATIVE
 
 	return ""
-
-func is_web_facebook_link_route(route: String) -> bool:
-	return route == FACEBOOK_LINK_ROUTE_WEB_PC or route == FACEBOOK_LINK_ROUTE_WEB_MOBILE_AUTH_TAB
 
 func _sign_in_with_web_facebook() -> String:
 	active_flow_purpose = FLOW_SIGN_IN
@@ -918,19 +741,11 @@ func _begin_web_facebook_login(purpose: String) -> String:
 	if state == "":
 		return REASON_REJECTED
 
-	var topology := (
-		WEB_FACEBOOK_TOPOLOGY_AUTH_TAB
-		if _is_mobile_web_runtime() else WEB_FACEBOOK_TOPOLOGY_SAME_TAB
-	)
-	var redirect_to := (
-		_mobile_web_facebook_redirect_uri()
-		if topology == WEB_FACEBOOK_TOPOLOGY_AUTH_TAB else redirect_uri()
-	)
+	var redirect_to := redirect_uri()
 	if redirect_to == "":
 		return REASON_PROVIDER_UNAVAILABLE
 
-	_save_web_facebook_flow_for_redirect(purpose, state, redirect_to, topology)
-	var flow := _load_web_facebook_flow()
+	_save_web_facebook_flow_for_redirect(purpose, state, redirect_to)
 	if not _has_active_web_facebook_flow():
 		_clear_web_facebook_flow()
 		return REASON_REJECTED
@@ -940,82 +755,14 @@ func _begin_web_facebook_login(purpose: String) -> String:
 		redirect_to,
 		state
 	)
-	active_flow_purpose = purpose
-	if topology == WEB_FACEBOOK_TOPOLOGY_AUTH_TAB:
-		if not _save_web_facebook_auth_tab_launch(flow, authorize_url):
-			_clear_web_facebook_flow()
-			return REASON_BROWSER
-		if not _open_web_facebook_auth_tab(redirect_to, state, str(flow.get("origin", ""))):
-			_clear_web_facebook_flow()
-			return REASON_BROWSER
-
-		web_facebook_auth_tab_in_flight = true
-		web_facebook_auth_tab_result_in_flight = false
-		web_facebook_auth_tab_poll_elapsed = 0.0
-		_mark_web_oauth_navigation_started(
-			"facebook",
-			FLOW_LINK if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT else FLOW_SIGN_IN
-		)
-		return REASON_NONE
-
 	_mark_web_oauth_navigation_started(
-		"facebook",
-		FLOW_LINK if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT else FLOW_SIGN_IN
+		"facebook", FLOW_LINK if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT else FLOW_SIGN_IN
 	)
 	JavaScriptBridge.eval(
 		_web_oauth_navigation_script(authorize_url),
 		true
 	)
 	return REASON_NONE
-
-func _open_web_facebook_auth_tab(relay_uri: String, state: String, origin: String) -> bool:
-	if relay_uri == "" or state == "" or origin == "":
-		return false
-
-	var launch_uri := "%s?launch=1&transaction=%s" % [relay_uri, state.uri_encode()]
-	var status := str(JavaScriptBridge.eval(
-		"""
-(function () {
-  const expectedState = %s;
-  const expectedOrigin = %s;
-  const bridgeKey = %s;
-  const existing = window[bridgeKey];
-  if (existing && existing.popup && !existing.popup.closed) return "blocked";
-
-  let popup = null;
-  try {
-    popup = window.open(%s, "corp_tower_facebook_auth_" + expectedState);
-  } catch (_) {
-    return "blocked";
-  }
-  if (!popup) return "blocked";
-
-  const bridge = { popup: popup, pendingResult: "", channel: null, messageHandler: null };
-  const receive = function (payload, receivedOrigin) {
-    if (receivedOrigin !== expectedOrigin || !payload ||
-        payload.type !== "corp_tower_facebook_auth_tab_result" ||
-        !payload.result || payload.result.state !== expectedState) return;
-    bridge.pendingResult = JSON.stringify(payload.result);
-  };
-  bridge.messageHandler = function (event) { receive(event.data, event.origin); };
-  window.addEventListener("message", bridge.messageHandler);
-  try {
-    bridge.channel = new BroadcastChannel(%s);
-    bridge.channel.onmessage = function (event) { receive(event.data, expectedOrigin); };
-  } catch (_) {}
-  window[bridgeKey] = bridge;
-  return "opened";
-})()
-""" % [
-			JSON.stringify(state),
-			JSON.stringify(origin),
-			JSON.stringify(WEB_FACEBOOK_AUTH_TAB_BRIDGE_KEY),
-			JSON.stringify(launch_uri),
-			JSON.stringify(WEB_FACEBOOK_AUTH_TAB_CHANNEL)
-		],
-		true
-	))
-	return status == "opened"
 
 func _build_web_facebook_authorize_url(app_id: String, redirect_to: String, state: String) -> String:
 	return "%s?client_id=%s&redirect_uri=%s&state=%s&response_type=code&scope=public_profile" % [
@@ -1098,16 +845,10 @@ func _consume_web_facebook_callback(
 	var callback_state := str(callback.get("state", ""))
 	var redirect_to := str(flow.get("redirect_uri", ""))
 	var expected_origin := str(flow.get("origin", ""))
-	var callback_origin := str(callback.get("origin", ""))
 	var pre_link_user_id := str(flow.get("pre_link_user_id", ""))
 	var flow_expired := _web_facebook_flow_expired(flow)
 	var current_origin := _current_web_origin()
-	var processing_auth_tab_result := web_facebook_auth_tab_result_in_flight
 	_clear_web_facebook_flow()
-	# Clearing callback authority also resets the tab lifecycle. Keep the narrow
-	# processing guard while the server exchange is in flight so an ordinary focus
-	# notification cannot turn a valid returned code into a browser failure.
-	web_facebook_auth_tab_result_in_flight = processing_auth_tab_result
 
 	if (
 		expected_state == ""
@@ -1118,10 +859,6 @@ func _consume_web_facebook_callback(
 		or flow_expired
 		or _web_url_origin(redirect_to) != expected_origin
 		or current_origin != expected_origin
-		or (
-			str(flow.get("topology", "")) == WEB_FACEBOOK_TOPOLOGY_AUTH_TAB
-			and callback_origin != expected_origin
-		)
 	):
 		return _finish_web_facebook_callback(purpose, REASON_REJECTED, emit_completion)
 
@@ -1170,9 +907,6 @@ func _finish_web_facebook_callback(
 	emit_completion: bool = false
 ) -> String:
 	oauth_in_flight = false
-	web_facebook_auth_tab_in_flight = false
-	web_facebook_auth_tab_result_in_flight = false
-	web_facebook_auth_tab_poll_elapsed = 0.0
 	active_flow_purpose = FLOW_SIGN_IN
 	if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
 		_record_web_facebook_link_result(reason, emit_completion)
@@ -1184,46 +918,9 @@ func _finish_web_facebook_callback(
 	return reason
 
 func _finish_abandoned_web_facebook_flow(emit_completion: bool = false) -> String:
-	var flow := _load_web_facebook_flow()
-	var purpose := str(flow.get("purpose", ""))
+	var purpose := str(_load_web_facebook_flow().get("purpose", ""))
 	_clear_web_facebook_flow()
 	return _finish_web_facebook_callback(purpose, REASON_BROWSER, emit_completion)
-
-func _process(delta: float) -> void:
-	if not web_facebook_auth_tab_in_flight or web_facebook_auth_tab_result_in_flight:
-		return
-
-	web_facebook_auth_tab_poll_elapsed += delta
-	if web_facebook_auth_tab_poll_elapsed < WEB_FACEBOOK_AUTH_TAB_POLL_SECONDS:
-		return
-	web_facebook_auth_tab_poll_elapsed = 0.0
-	_poll_web_facebook_auth_tab()
-
-func _poll_web_facebook_auth_tab() -> void:
-	if not web_facebook_auth_tab_in_flight or web_facebook_auth_tab_result_in_flight:
-		return
-
-	var flow := _load_web_facebook_flow()
-	if not _has_active_web_facebook_auth_tab_flow():
-		_finish_web_facebook_auth_tab_failure(REASON_BROWSER)
-		return
-
-	var callback := _take_web_facebook_auth_tab_result(flow)
-	if not callback.is_empty():
-		web_facebook_auth_tab_result_in_flight = true
-		await _consume_web_facebook_callback(callback, true)
-		web_facebook_auth_tab_result_in_flight = false
-		return
-
-	if _web_facebook_auth_tab_status() != "open":
-		_finish_web_facebook_auth_tab_failure(REASON_BROWSER)
-
-func _finish_web_facebook_auth_tab_failure(reason: String) -> void:
-	var flow := _load_web_facebook_flow()
-	var purpose := str(flow.get("purpose", active_flow_purpose))
-	_cleanup_web_facebook_auth_tab_bridge(true)
-	_clear_web_facebook_flow()
-	_finish_web_facebook_callback(purpose, reason, true)
 
 func _sign_in_with_native_google() -> String:
 	active_flow_purpose = FLOW_SIGN_IN
@@ -1358,11 +1055,6 @@ func link_with_provider(provider: String) -> String:
 	if not can_link_provider(provider):
 		return REASON_REJECTED
 
-	# Facebook linking has dedicated manual Web OAuth and native credential flows.
-	# Neither uses Supabase Facebook linking.
-	if provider == "facebook":
-		return REASON_PROVIDER_UNAVAILABLE
-
 	_save_link_flow(provider, user_id)
 	active_flow_purpose = FLOW_LINK
 
@@ -1380,13 +1072,16 @@ func begin_facebook_link_preflight() -> String:
 	if not can_link_provider("facebook"):
 		return REASON_REJECTED
 
-	if is_web_facebook_link_route(facebook_link_route()):
+	if facebook_link_route() == FACEBOOK_LINK_ROUTE_WEB_PC:
 		_clear_pending_link_state()
 		active_flow_purpose = FLOW_FACEBOOK_LINK_PREFLIGHT
 		var web_reason := _begin_web_facebook_login(FLOW_FACEBOOK_LINK_PREFLIGHT)
 		if web_reason != REASON_NONE:
 			active_flow_purpose = FLOW_SIGN_IN
 		return web_reason
+
+	if facebook_link_route() != FACEBOOK_LINK_ROUTE_NATIVE:
+		return REASON_PROVIDER_UNAVAILABLE
 
 	if not native_facebook_enabled or not _native_facebook_ready():
 		return REASON_PROVIDER_UNAVAILABLE
@@ -1407,9 +1102,6 @@ func complete_facebook_link_after_preflight() -> String:
 	return REASON_PROVIDER_UNAVAILABLE
 
 func _begin_browser_link(provider: String) -> String:
-	if provider == "facebook":
-		return REASON_PROVIDER_UNAVAILABLE
-
 	var flow := _load_link_flow()
 	var expected_provider := str(flow.get("provider", ""))
 
@@ -1458,22 +1150,11 @@ func _reject_unresolved_oauth_after_resume(is_web: bool) -> String:
 	if not oauth_in_flight:
 		return REASON_NONE
 
-	# A dedicated same-browser Facebook auth tab legitimately changes focus while the
-	# initiating game tab remains loaded. Its transaction has its own expiry/closed-tab
-	# handling, so the generic two-second resume grace must not invalidate it.
-	if is_web and (
-		web_facebook_auth_tab_in_flight
-		or web_facebook_auth_tab_result_in_flight
-		or _has_active_web_facebook_auth_tab_flow()
-	):
-		return REASON_NONE
-
 	oauth_in_flight = false
 	var reason := REASON_BROWSER if is_web else REASON_CANCELLED
 
 	if _has_active_web_facebook_flow():
-		var flow := _load_web_facebook_flow()
-		var purpose := str(flow.get("purpose", ""))
+		var purpose := str(_load_web_facebook_flow().get("purpose", ""))
 		_clear_web_facebook_flow()
 		if purpose == FLOW_FACEBOOK_LINK_PREFLIGHT:
 			_record_web_facebook_link_result(reason)
@@ -1587,12 +1268,13 @@ func _consume_link_callback(callback: Dictionary) -> String:
 		return REASON_REJECTED
 
 	if str(callback.get("code", "")) == "":
-		if (
-			str(flow.get("provider", "")) == "google"
-			and str(callback.get("error_code", "")).strip_edges().to_lower()
-				== AuthRequestTransportScript.ERROR_IDENTITY_ALREADY_EXISTS
-		):
-			return await _recover_existing_google_link(flow)
+		var error_code := str(callback.get("error_code", "")).strip_edges().to_lower()
+		if error_code == AuthRequestTransportScript.ERROR_IDENTITY_ALREADY_EXISTS:
+			if str(flow.get("provider", "")) == "google":
+				return await _recover_existing_google_link(flow)
+			return REASON_IDENTITY_CONFLICT
+		if error_code == AuthRequestTransportScript.ERROR_IDENTITY_CONFLICT:
+			return REASON_IDENTITY_CONFLICT
 		return REASON_CANCELLED if str(callback.get("error", "")) != "" else REASON_REJECTED
 
 	return await _exchange_link_code(str(callback["code"]), flow)
@@ -1766,10 +1448,6 @@ func sign_out() -> void:
 	_reset_native_provider_sessions()
 	native_signin_in_flight = false
 	oauth_in_flight = false
-	_cleanup_web_facebook_auth_tab_bridge(true)
-	web_facebook_auth_tab_in_flight = false
-	web_facebook_auth_tab_result_in_flight = false
-	web_facebook_auth_tab_poll_elapsed = 0.0
 	access_token_value = ""
 	refresh_token_value = ""
 	expires_at_unix = 0
