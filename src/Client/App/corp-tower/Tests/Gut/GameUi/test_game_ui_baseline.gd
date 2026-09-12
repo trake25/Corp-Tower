@@ -108,6 +108,21 @@ func test_live_stability_uses_the_tallest_component_with_stable_ties() -> void:
 	assert_true(label.text.contains("72%"))
 	assert_true(label.text.contains("right"))
 
+func test_danger_banners_clear_the_top_hud_on_short_viewports() -> void:
+	harness.resize(Vector2(320, 640))
+	harness.main.update_debug_config({"towerStabilityFeedbackMode": "live_preview"})
+	await get_tree().process_frame
+	var layer := harness.find("ScorePopupLayer") as Control
+	var top_indicator_rect := (harness.find("TopIndicatorRow") as Control).get_global_rect()
+	var stability_rect := (harness.find("TowerStabilityLabel") as Label).get_global_rect()
+	var hud_text_bottom := maxf(top_indicator_rect.end.y, stability_rect.end.y)
+
+	for event_type in ["tower_warning", "tower_critical"]:
+		var popup_center: Vector2 = harness.main.score_popups.get_score_popup_position({"type": event_type})
+		var popup_size: Vector2 = harness.main.score_popups.get_score_popup_size(event_type)
+		var popup_rect := Rect2(layer.get_global_rect().position + popup_center - popup_size * 0.5, popup_size)
+		assert_gt(popup_rect.position.y, hud_text_bottom, "%s must stay below the TOP and stability text region." % event_type)
+
 func test_score_events_deduplicate_by_id() -> void:
 	var layer: Control = harness.find("ScorePopupLayer") as Control
 	var first_wait: float = harness.main.score_popups.process_score_events(GAME_STATE_FIXTURE["scoreEvents"], PLAYERS_FIXTURE)

@@ -144,6 +144,11 @@ func test_ready_rejects_every_card_mode_with_throttled_feedback_and_cleans_stale
 	assert_eq(inventory.selected_slot_index, -1)
 	assert_eq(network_stub.placed.size(), 0)
 	assert_true((harness.find("WaitForBuildLabel") as Label).visible)
+	var wait_for_build_rect := (harness.find("WaitForBuildLabel") as Label).get_global_rect()
+	var supply_panel_rect := (harness.find("TeamInventoryPanel") as Control).get_global_rect()
+	assert_false(wait_for_build_rect.intersects(supply_panel_rect), "READY feedback must not obscure the shared supply panel.")
+	assert_true((harness.find("DrawPileNameLabel") as Label).visible)
+	assert_eq((harness.find("DrawPileNameLabel") as Label).text, "Next Draw")
 	assert_eq(harness.main.round_start_overlay.ready_feedback_count(0), 1)
 	assert_eq(inventory.get_placement_cooldown_remaining_ms(), 0)
 	harness.main.round_start_overlay.wait_for_build_deadline_ms = Time.get_ticks_msec() - 1

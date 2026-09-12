@@ -9,6 +9,10 @@ const SCORE_POPUP_INTRO_SECONDS := 0.14
 const SCORE_POPUP_RELEASE_SECONDS := 0.22
 const SCORE_POPUP_SECONDARY_EXIT_SECONDS := 0.20
 const POWER_TOAST_CENTER_Y_RATIO := 0.793
+const DANGER_BANNER_CENTER_Y_RATIO := 0.24
+const TOP_HUD_TEXT_BOTTOM_Y := 184.0
+const DANGER_BANNER_MAX_SCALE := 1.04
+const DANGER_BANNER_TOP_GAP := 8.0
 const PLAYER_LEFT_NOTICE_SECONDS := 3.0
 const INK_COLOR := Color("#07111f")
 const INK_EDGE_COLOR := Color("#17304a")
@@ -710,7 +714,9 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 	if event_type == "player_left":
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.52)
 	if event_type in ["tower_warning", "tower_critical"]:
-		return Vector2(layer_size.x * 0.5, layer_size.y * 0.24)
+		var banner_height := get_score_popup_size(event_type).y
+		var safe_center_y := TOP_HUD_TEXT_BOTTOM_Y + banner_height * 0.5 * DANGER_BANNER_MAX_SCALE + DANGER_BANNER_TOP_GAP
+		return Vector2(layer_size.x * 0.5, maxf(layer_size.y * DANGER_BANNER_CENTER_Y_RATIO, safe_center_y))
 
 	var player_id: String = str(event.get("playerId", ""))
 	var lane_count: int = max(1, players_ctx.order.size())
