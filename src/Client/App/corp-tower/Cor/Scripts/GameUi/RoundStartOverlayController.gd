@@ -10,6 +10,7 @@ var briefing_card: Control
 var heading_label: Label
 var level_target_label: Label
 var quest_label: Label
+var reward_label: Label
 var countdown_label: Label
 var wait_for_build_label: Label
 var ready_lock_overlays: Array[Control] = []
@@ -25,6 +26,7 @@ var feedback_count := [0, 0, 0]
 var briefing_tween: Tween
 var build_tween: Tween
 var wait_tween: Tween
+var reward_label_formatter: Callable = Callable()
 
 func bind_nodes(binder) -> void:
 	round_start_overlay = binder.require_node("RoundStartOverlay") as Control
@@ -32,6 +34,7 @@ func bind_nodes(binder) -> void:
 	heading_label = binder.require_node("ReadyHeadingLabel") as Label
 	level_target_label = binder.require_node("ReadyLevelTargetLabel") as Label
 	quest_label = binder.require_node("ReadyQuestLabel") as Label
+	reward_label = binder.require_node("ReadyRewardLabel") as Label
 	countdown_label = binder.require_node("StartCountdownLabel") as Label
 	wait_for_build_label = binder.require_node("WaitForBuildLabel") as Label
 	ready_lock_overlays = [
@@ -67,6 +70,15 @@ func reset() -> void:
 		countdown_label.modulate = Color.WHITE
 		countdown_label.scale = Vector2.ONE
 	update_ready_locks([false, false, false])
+	if quest_label != null:
+		quest_label.visible = false
+		quest_label.text = ""
+	if reward_label != null:
+		reward_label.visible = false
+		reward_label.text = ""
+
+func set_reward_label_formatter(formatter: Callable) -> void:
+	reward_label_formatter = formatter
 
 func apply_state(
 	state: String,
@@ -128,7 +140,13 @@ func _update_briefing(level: int, target_height: int, raw_side_quest: Variant) -
 	if quest_label != null:
 		quest_label.visible = quest_text != ""
 		quest_label.text = "QUEST · " + quest_text if quest_text != "" else ""
-		call_deferred("_fit_briefing_card_height")
+	var reward_text := ""
+	if quest_text != "" and reward_label_formatter.is_valid():
+		reward_text = str(reward_label_formatter.call(str(side_quest.get("rewardId", ""))))
+	if reward_label != null:
+		reward_label.visible = reward_text != ""
+		reward_label.text = "REWARD · " + reward_text if reward_text != "" else ""
+	call_deferred("_fit_briefing_card_height")
 
 func _fit_briefing_card_height() -> void:
 	if briefing_card == null:

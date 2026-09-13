@@ -90,6 +90,8 @@ func process_power_events(raw_events: Variant, players: Array) -> void:
 		if event_id == "" or seen_power_event_ids.has(event_id):
 			continue
 		seen_power_event_ids[event_id] = true
+		if str(event.get("type", "power_activated")) != "power_activated":
+			continue
 
 		score_popups.show_score_event_popup({
 			"type": "power_activated",

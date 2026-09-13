@@ -21,6 +21,7 @@ var terminal_failure_title_label: Label
 var terminal_failure_body_label: Label
 var terminal_failure_countdown_label: Label
 var quest_text_provider: Callable = Callable()
+var quest_reward_label_provider: Callable = Callable()
 var on_summary_ended: Callable = Callable()
 var last_level_summary_key: String = ""
 var pending_level_summary: Dictionary = {}
@@ -460,31 +461,34 @@ func get_impact_met_for_player(summary: Dictionary, player_id: String) -> Varian
 
 	return null
 
-func update_level_summary_quest_row(summary: Dictionary, use_completed_quest: bool = false) -> void:
+func update_level_summary_quest_row(summary: Dictionary, _use_completed_quest: bool = false) -> void:
 	if level_summary_quest_label == null:
 		return
 
-	if use_completed_quest:
-		var side_quest: Variant = summary.get("sideQuest", null)
-		if typeof(side_quest) != TYPE_DICTIONARY or (side_quest as Dictionary).is_empty():
-			level_summary_quest_label.text = ""
-			level_summary_quest_label.visible = false
-			return
+	var side_quest: Variant = summary.get("sideQuest", null)
+	if typeof(side_quest) != TYPE_DICTIONARY or (side_quest as Dictionary).is_empty():
+		level_summary_quest_label.text = ""
+		level_summary_quest_label.visible = false
+		return
 
-		var claimed_by := str((side_quest as Dictionary).get("claimedBy", ""))
-		level_summary_quest_label.text = (
-			"QUEST COMPLETE · " + display_result_player(claimed_by)
-			if claimed_by != ""
-			else "QUEST MISSED"
-		)
+	var quest: Dictionary = side_quest as Dictionary
+	var claimed_by := str(quest.get("claimedBy", ""))
+	if claimed_by == "":
+		level_summary_quest_label.text = "QUEST RESULT · Unclaimed"
 		level_summary_quest_label.visible = true
 		return
 
-	var quest_text: String = ""
-	if quest_text_provider.is_valid():
-		quest_text = str(quest_text_provider.call(summary.get("sideQuest", {})))
-	level_summary_quest_label.text = "Next Level Quest\n" + quest_text
-	level_summary_quest_label.visible = quest_text != ""
+	var claimant := "You" if players_ctx.is_local(claimed_by) else display_result_player(claimed_by)
+	level_summary_quest_label.text = (
+		"QUEST RESULT · Claimed by " + claimant + " · " +
+		get_quest_reward_label(str(quest.get("rewardId", "")))
+	)
+	level_summary_quest_label.visible = true
+
+func get_quest_reward_label(reward_id: String) -> String:
+	if quest_reward_label_provider.is_valid():
+		return str(quest_reward_label_provider.call(reward_id))
+	return reward_id.replace("_", " ").capitalize()
 
 func update_level_summary_bot_behavior(summary: Dictionary) -> void:
 	if level_summary_bot_behavior_label == null:

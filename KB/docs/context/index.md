@@ -187,6 +187,7 @@ implicitly widen KB adjacency.
 | `hud.players.impact-bars` | [ui-hud.md#impact-bars](./ui-hud.md#impact-bars) | Impact progress, contribution bar |
 | `hud.players.latency` | [ui-hud.md#latency-presentation](./ui-hud.md#latency-presentation) | latency indicator |
 | `hud.players.presence` | [ui-hud.md#player-presence](./ui-hud.md#player-presence) | disconnected player UI, LEFT player |
+| `hud.quest.presentation` | [ui-hud.md#quest-presentation](./ui-hud.md#quest-presentation) | Quest chip, Quest claim toast, Quest presentation lifecycle |
 | `hud.round-start.ready` | [ui-hud.md#round-start-ready](./ui-hud.md#round-start-ready) | Round Start Overlay, READY briefing, Start Countdown |
 | `hud.round-timer.urgency` | [ui-hud.md#play-timer-urgency](./ui-hud.md#play-timer-urgency) | play timer urgency |
 | `hud.spectator.presentation` | [ui-hud.md#spectator-presentation](./ui-hud.md#spectator-presentation) | spectator HUD, Bot Insight |

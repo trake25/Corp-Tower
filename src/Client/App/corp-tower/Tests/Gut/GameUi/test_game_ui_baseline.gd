@@ -112,6 +112,74 @@ func test_quest_chip_uses_only_active_and_completed_art() -> void:
 	assert_not_null(quest_chip.texture_normal, "A claimed quest should have a completed visual state.")
 	assert_ne(quest_chip.texture_normal, active_texture, "Claiming the room quest should change its visual state.")
 
+func _quest_state(level: int, claimed_by: String = "", snapshot: bool = false) -> Dictionary:
+	var state: Dictionary = GAME_STATE_FIXTURE.duplicate(true)
+	state["level"] = level
+	state["scoreEvents"] = []
+	state["powerEvents"] = []
+	state["snapshot"] = snapshot
+	state["sideQuest"] = {
+		"id": "exact_finish",
+		"label": "First to finish exactly",
+		"rewardId": "replenish",
+		"claimedBy": claimed_by
+	}
+	return state
+
+func test_live_quest_claim_animates_once_and_uses_the_dedicated_glass_toast() -> void:
+	harness.main.players_ctx.get_local_id = func(): return "P1"
+	harness.main.update_game_state(_quest_state(2))
+	var quest_chip := harness.find("QuestChip") as TextureButton
+	var chip_position := quest_chip.position
+	var chip_size := quest_chip.size
+	var active_texture := quest_chip.texture_normal
+	harness.main.update_game_state(_quest_state(2, "P1"))
+	var layer := harness.find("ScorePopupLayer") as Control
+	var toast := layer.get_node("QuestClaimToast") as PanelContainer
+	assert_not_null(toast)
+	assert_eq(toast.size, Vector2(260, 64))
+	assert_true(layer.get_global_rect().encloses(toast.get_global_rect()))
+	assert_eq((toast.find_child("QuestClaimTitle", true, false) as Label).text, "QUEST CLAIMED · YOU")
+	assert_eq((toast.find_child("QuestClaimReward", true, false) as Label).text, "Replenish earned")
+	await get_tree().process_frame
+	assert_gt(toast.modulate.a, 0.0, "The Quest toast must enter visibly before its hold/fade sequence.")
+	await get_tree().create_timer(0.38).timeout
+	assert_eq(quest_chip.position, chip_position)
+	assert_eq(quest_chip.size, chip_size)
+	assert_eq(quest_chip.scale, Vector2.ONE)
+	assert_ne(quest_chip.texture_normal, active_texture)
+	var toast_count := layer.get_child_count()
+	harness.main.update_game_state(_quest_state(2, "P1"))
+	assert_eq(layer.get_child_count(), toast_count, "Repeated claimed broadcasts must not replay the Quest toast.")
+
+func test_quest_snapshots_prime_without_replay_and_new_levels_reset_to_active() -> void:
+	var layer := harness.find("ScorePopupLayer") as Control
+	var quest_chip := harness.find("QuestChip") as TextureButton
+	harness.main.update_game_state(_quest_state(2, "P2", true))
+	assert_null(layer.get_node_or_null("QuestClaimToast"), "A claimed recovery snapshot is a static render, not a live claim.")
+	assert_eq(quest_chip.scale, Vector2.ONE)
+	var completed_texture := quest_chip.texture_normal
+	harness.main.update_game_state(_quest_state(3))
+	assert_eq(quest_chip.scale, Vector2.ONE)
+	assert_ne(quest_chip.texture_normal, completed_texture, "A new level must restore the active Quest chip.")
+	harness.main.quest.reset_presentation()
+	harness.main.update_game_state(_quest_state(4, "", true))
+	harness.main.update_game_state(_quest_state(4, "P2"))
+	assert_not_null(layer.get_node_or_null("QuestClaimToast"), "An unclaimed snapshot still permits one later live claim presentation.")
+
+func test_power_earned_never_uses_the_power_activation_effect_toast() -> void:
+	var layer := harness.find("ScorePopupLayer") as Control
+	harness.main.power.process_power_events([{
+		"id": "earned-1", "type": "power_earned", "powerId": "replenish"
+	}], PLAYERS_FIXTURE)
+	assert_eq(layer.get_child_count(), 0)
+	harness.main.power.process_power_events([{
+		"id": "activated-1", "type": "power_activated", "powerId": "replenish", "meta": {"blocksAdded": 3}
+	}], PLAYERS_FIXTURE)
+	var power_toast := layer.get_node("PowerToast") as PanelContainer
+	assert_not_null(power_toast)
+	assert_eq((power_toast.get_node("ToastMargin/ToastLabel") as Label).text, "Team inventory replenished +3 bricks")
+
 func test_demo_game_state_uses_the_shared_hud_contract() -> void:
 	harness.main.demo_mode_label.visible = true
 	var state: Dictionary = GAME_STATE_FIXTURE.duplicate(true)

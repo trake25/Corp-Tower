@@ -482,6 +482,18 @@ autowrap_mode = 2
 max_lines_visible = 2
 text_overrun_behavior = 3
 
+[node name="ReadyRewardLabel" type="Label" parent="RoundStartOverlay/ReadyBriefingCard/ReadyBriefingMargin/ReadyBriefingRows"]
+layout_mode = 2
+mouse_filter = 2
+custom_maximum_size = Vector2(220, -1)
+theme_override_colors/font_color = Color(0.2, 0.25, 0.3, 1)
+theme_override_font_sizes/font_size = 10
+text = "REWARD ·"
+horizontal_alignment = 1
+autowrap_mode = 0
+clip_text = true
+text_overrun_behavior = 3
+
 [node name="StartCountdownLabel" type="Label" parent="RoundStartOverlay"]
 visible = false
 layout_mode = 1

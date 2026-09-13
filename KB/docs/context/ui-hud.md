@@ -117,7 +117,8 @@ source: src/Server/app/engine/Impacts.js#buildFailureSummary
 Human completed and recoverable-failure Results begin only when the server marks the current
 Stage #3 outcome Results-ready. They use a bottom sheet that preserves the finished tower above
 it. Success ranks players by level score and shows level gain, resulting total, local-player
-identity, MVP recognition, Perfect Build when applicable, and the just-ended quest result.
+identity, MVP recognition, Perfect Build when applicable, and the just-ended Quest result. A
+claimed Quest identifies its claimant and earned reward; an unresolved Quest says unclaimed.
 Recoverable failure shows the exact failure reason, failed-attempt score, authoritative checkpoint
 rollback total, Impact met/missed status only when relevant, retries remaining, and the safe level
 that will be restored. The Results countdown and progress follow authoritative lifecycle remaining
@@ -188,6 +189,35 @@ source: src/Client/App/corp-tower/Cor/Scripts/PopoverPanel.gd#open
 ## Shared popovers
 
 Chat, Power, and Quest use one anchored glass-popover behavior. Each positions from its trigger's live global rectangle; only one is open at a time. Trigger toggle, outside tap, and timer close the active card without pausing play. READY/start uses the separate Round Start Overlay and never force-opens the Quest popover.
+
+<!-- kb
+id: hud.quest.presentation
+alias: Quest chip
+alias: Quest claim toast
+alias: Quest presentation lifecycle
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/QuestController.gd#apply_state
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd#_update_briefing
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/ScorePopupController.gd#show_quest_claim_toast
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#update_level_summary_quest_row
+adjacent: hud.round-start.ready
+adjacent: hud.overlays.popovers
+adjacent: hud.overlays.summary
+adjacent: network.state.snapshot
+-->
+## Quest presentation
+
+READY introduces the current Quest with its objective as the primary line and its earned-Power
+reward as a quieter secondary line. During PLAY, the fixed Quest chip stays quiet and opens the
+260 px shared glass popover for a two-line objective, reward, and unclaimed or claimant status;
+the completed chip remains inspectable through the level end.
+
+The client keys Quest presentation by authoritative `(level, sideQuest.id)`. Only a live change
+from unclaimed to claimed for that identity plays the fixed-rectangle chip transition and one
+lower-middle Quest glass toast. Duplicate broadcasts do nothing, while snapshots/recovery and a
+new identity establish a static baseline, so a persisted claim is never replayed. The earned toast
+states the reward only; a later Power activation retains its separate effect feedback. Results
+describe only the just-ended Quest as claimed by player plus reward, or unclaimed; they never
+preview the next Quest.
 
 <!-- kb
 id: hud.tower.pose
@@ -362,6 +392,6 @@ adjacent: backend.engine.timers
 -->
 ## Round start READY
 
-During authoritative `starting`, Play remains visible with the assigned opening hand, target, and current quest. The normal round timer is paused at the authoritative full level duration; the lifecycle start-delay countdown is a separate centered `3 → 2 → 1` presentation. Placement cards remain readable but explicitly READY-locked, and attempted placement gives restrained local lock feedback without arming, dragging, placing, or using cooldown visuals.
+During authoritative `starting`, Play remains visible with the assigned opening hand, target, and current Quest. READY presents its objective and a quieter reward line without claim/progress status. The normal round timer is paused at the authoritative full level duration; the lifecycle start-delay countdown is a separate centered `3 → 2 → 1` presentation. Placement cards remain readable but explicitly READY-locked, and attempted placement gives restrained local lock feedback without arming, dragging, placing, or using cooldown visuals.
 
 Only authoritative `playing` removes the READY lock and permits placement. `BUILD!` is the transition cue for that same unlock and may finish its visual punch after input is already live. READY never uses danger-red freeze treatment, never enables manual tower inspection, and never force-opens the Quest popover.

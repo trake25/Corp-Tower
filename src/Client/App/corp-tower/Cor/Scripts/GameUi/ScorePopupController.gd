@@ -9,6 +9,7 @@ const SCORE_POPUP_INTRO_SECONDS := 0.14
 const SCORE_POPUP_RELEASE_SECONDS := 0.22
 const SCORE_POPUP_SECONDARY_EXIT_SECONDS := 0.20
 const POWER_TOAST_CENTER_Y_RATIO := 0.793
+const QUEST_CLAIM_TOAST_SECONDS := 1.01
 const DANGER_BANNER_CENTER_Y_RATIO := 0.24
 const TOP_HUD_TEXT_BOTTOM_Y := 184.0
 const DANGER_BANNER_MAX_SCALE := 1.04
@@ -307,6 +308,74 @@ func show_player_left_notice(display_name: String) -> void:
 		"type": "player_left",
 		"label": display_name + " left the game"
 	}, [], PLAYER_LEFT_NOTICE_SECONDS)
+
+func show_quest_claim_toast(display_name: String, reward_label: String, claimant_color: Color) -> void:
+	if score_popup_layer == null:
+		return
+	var popup_size := Vector2(260, 64)
+	var popup := PanelContainer.new()
+	popup.name = "QuestClaimToast"
+	popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	popup.z_index = 20
+	popup.custom_minimum_size = popup_size
+	popup.size = popup_size
+	popup.pivot_offset = popup_size * 0.5
+	popup.modulate.a = 0.0
+	popup.scale = Vector2(0.92, 0.92)
+	popup.add_theme_stylebox_override("panel", UiStylesScript.glass_panel(18))
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 7)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 7)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 7)
+	var accent := ColorRect.new()
+	accent.color = claimant_color
+	accent.custom_minimum_size = Vector2(3, 0)
+	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(accent)
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.add_theme_constant_override("separation", 1)
+	var title := Label.new()
+	title.name = "QuestClaimTitle"
+	title.text = "QUEST CLAIMED · " + display_name.to_upper()
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	title.add_theme_color_override("font_color", Color(0.08, 0.08, 0.09, 1.0))
+	title.add_theme_font_size_override("font_size", 13)
+	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title.clip_text = true
+	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	copy.add_child(title)
+	var subtitle := Label.new()
+	subtitle.name = "QuestClaimReward"
+	subtitle.text = reward_label + " earned"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	subtitle.add_theme_color_override("font_color", Color(0.20, 0.24, 0.29, 1.0))
+	subtitle.add_theme_font_size_override("font_size", 12)
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_OFF
+	subtitle.clip_text = true
+	subtitle.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	copy.add_child(subtitle)
+	row.add_child(copy)
+	margin.add_child(row)
+	popup.add_child(margin)
+	score_popup_layer.add_child(popup)
+	popup.position = get_score_popup_position({"type": "quest_claimed"}) - popup_size * 0.5
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(popup, "modulate:a", 1.0, 0.14)
+	tween.tween_property(popup, "scale", Vector2.ONE, 0.14)
+	tween.set_parallel(false)
+	tween.tween_interval(QUEST_CLAIM_TOAST_SECONDS - 0.14 - 0.22)
+	tween.set_parallel(true)
+	tween.tween_property(popup, "modulate:a", 0.0, 0.22)
+	tween.tween_property(popup, "position:y", popup.position.y - 24.0, 0.22)
+	tween.set_parallel(false)
+	tween.tween_callback(Callable(popup, "queue_free"))
 
 func show_score_event_popup(event: Dictionary, players: Array, popup_duration_seconds: float) -> void:
 	if score_popup_layer == null:
@@ -710,7 +779,7 @@ func get_score_popup_position(event: Dictionary) -> Vector2:
 	if layer_size.x <= 0.0 or layer_size.y <= 0.0:
 		layer_size = get_viewport().get_visible_rect().size
 	var event_type: String = str(event.get("type", ""))
-	if event_type == "power_activated":
+	if event_type == "power_activated" or event_type == "quest_claimed":
 		return Vector2(layer_size.x * 0.5, layer_size.y * POWER_TOAST_CENTER_Y_RATIO)
 	if event_type == "player_left":
 		return Vector2(layer_size.x * 0.5, layer_size.y * 0.52)

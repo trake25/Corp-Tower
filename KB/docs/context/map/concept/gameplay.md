@@ -231,7 +231,7 @@ Owner: `KB/docs/context/gameplay.md:26-29` → **Reconnect meaning**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `resumePlayer` | 356 | `sed -n 344,376p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `resumePlayer` | 364 | `sed -n 352,384p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.session.recovery`
 

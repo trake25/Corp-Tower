@@ -63,13 +63,42 @@ func test_bottom_popovers_share_fixed_size_and_baseline() -> void:
 	assert_eq(StringName(card_of("PowerPopover").theme_type_variation), &"GlassPanel", "Power should use the shared glass surface.")
 	assert_eq(StringName(card_of("QuestPopover").theme_type_variation), &"GlassPanel", "Quest should use the shared glass surface.")
 
-func test_quest_card_stays_fixed_size_with_overlong_label() -> void:
+func test_quest_card_wraps_its_objective_without_exceeding_the_approved_bounds() -> void:
 	await mount_at(DESIGN_SIZE)
+	harness.main.quest.last_side_quest = {
+		"id": "exact_finish",
+		"label": "This side quest label is deliberately long enough to wrap onto a second popover line without growing into an unbounded card.",
+		"rewardId": "replenish",
+		"claimedBy": ""
+	}
 	harness.main.quest.open_quest_popover()
-	var initial_size: Vector2 = quest_card().size
-	harness.main.quest.last_side_quest = {"label": "This side quest label is deliberately far too long to fit on a single popover row so that it would wrap onto several lines and grow the card unless the row clips its text horizontally within the fixed card."}
+	await get_tree().process_frame
+	var card := quest_card()
+	var rows := (harness.find("QuestPopover") as Control).get_node("%RowsBox") as VBoxContainer
+	var objective := rows.get_child(0) as Label
+	assert_eq(card.size.x, 260.0)
+	assert_gte(card.size.y, 132.0)
+	assert_lte(card.size.y, 176.0)
+	assert_lte(objective.get_visible_line_count(), 2)
+	assert_eq((rows.get_child(2) as Label).text, "REWARD · Replenish")
+	assert_eq((rows.get_child(3) as Label).text, "UNCLAIMED")
+
+func test_open_quest_popover_updates_claim_state_in_place() -> void:
+	await mount_at(DESIGN_SIZE)
+	harness.main.players_ctx.get_local_id = func(): return "P1"
+	harness.main.players_ctx.roster = [{"id": "P1", "displayName": "Alex"}]
+	harness.main.quest.apply_state({
+		"id": "exact_finish", "label": "First to finish exactly", "rewardId": "replenish", "claimedBy": ""
+	}, 2, false)
 	harness.main.quest.open_quest_popover()
-	assert_eq(quest_card().size, initial_size, "Content length must not change the popover structure.")
+	var popover := harness.find("QuestPopover") as Control
+	harness.main.quest.apply_state({
+		"id": "exact_finish", "label": "First to finish exactly", "rewardId": "replenish", "claimedBy": "P1"
+	}, 2, false)
+	var rows := popover.get_node("%RowsBox") as VBoxContainer
+	assert_true(popover.visible, "A live claim must refresh the current card instead of reopening it.")
+	assert_eq((rows.get_child(3) as Label).text, "Claimed by You")
+	assert_eq((rows.get_child(2) as Label).text, "REWARD · Replenish")
 
 func test_score_popup_positions_scale_with_layer_size() -> void:
 	await mount_at(DESIGN_SIZE)

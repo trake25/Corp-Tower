@@ -28,20 +28,32 @@ func clear_rows() -> void:
 	for child in rows_box.get_children():
 		child.free()
 
-func add_row(text: String) -> Label:
+func add_row(
+	text: String,
+	wrap: bool = false,
+	max_lines: int = 1,
+	add_separator: bool = true
+) -> Label:
 	var row := Label.new()
 	row.theme_type_variation = &"PopoverBodyLabel"
-	row.autowrap_mode = TextServer.AUTOWRAP_OFF
+	row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
+	row.max_lines_visible = max_lines
 	row.clip_text = true
+	row.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if wrap:
+		row.custom_minimum_size = Vector2(0, 38)
 	row.text = text
 	rows_box.add_child(row)
 
-	if rows_box.get_child_count() > 1:
+	if add_separator and rows_box.get_child_count() > 1:
 		var rule := HSeparator.new()
 		rows_box.add_child(rule)
 		rows_box.move_child(rule, rows_box.get_child_count() - 2)
 
 	return row
+
+func set_rows_separation(value: int) -> void:
+	rows_box.add_theme_constant_override("separation", value)
 
 func add_icon_row(icon: Control, text: String) -> HBoxContainer:
 	var row := HBoxContainer.new()

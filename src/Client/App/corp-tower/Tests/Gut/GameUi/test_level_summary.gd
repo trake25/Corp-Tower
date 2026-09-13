@@ -13,7 +13,7 @@ const SUMMARY_FIXTURE := {
 	"exactFinish": true,
 	"overbuildHeight": 0,
 	"finisherId": "P1",
-	"sideQuest": {"claimedBy": "P1"},
+	"sideQuest": {"id": "exact_finish", "claimedBy": "P1", "rewardId": "replenish"},
 	"players": [
 		{"id": "P1", "levelScore": 10, "finalTotalScore": 30, "isMvp": false},
 		{"id": "P2", "levelScore": 18, "finalTotalScore": 40, "isMvp": true},
@@ -66,6 +66,7 @@ func test_human_success_uses_the_bottom_results_sheet_and_ranked_rows() -> void:
 	assert_true((harness.find("SummaryMvpTag_P2") as Label).visible, "MVP stays inside its ranked success row.")
 	assert_true((harness.find("LevelSummaryTeamLabel") as Label).visible)
 	assert_true((harness.find("LevelSummaryQuestLabel") as Label).visible)
+	assert_eq((harness.find("LevelSummaryQuestLabel") as Label).text, "QUEST RESULT · Claimed by You · Replenish")
 	assert_true((harness.find("LevelSummaryProgressRail") as ProgressBar).visible)
 
 func test_local_mvp_retains_both_local_and_mvp_identity_markers() -> void:
@@ -131,20 +132,24 @@ func test_final_success_and_completed_quest_by_another_player_do_not_preview_nex
 	var fixture: Dictionary = SUMMARY_FIXTURE.duplicate(true)
 	fixture["hasNextLevel"] = false
 	fixture["nextLevel"] = null
-	fixture["sideQuest"] = {"claimedBy": "P2"}
+	fixture["sideQuest"] = {"id": "exact_finish", "claimedBy": "P2", "rewardId": "replenish"}
 	harness.main.summary.show_level_summary(fixture, "finished", 2000)
 	assert_false(harness.main.summary.summary_has_next_level)
-	assert_true((harness.find("LevelSummaryQuestLabel") as Label).visible)
+	var quest_label := harness.find("LevelSummaryQuestLabel") as Label
+	assert_true(quest_label.visible)
+	assert_eq(quest_label.text, "QUEST RESULT · Claimed by Blair · Replenish")
+	assert_false(quest_label.text.contains("Next Level Quest"))
 
 func test_quest_missed_and_absent_quest_use_only_the_completed_quest_outcome() -> void:
 	var harness = HarnessScript.new()
 	await harness.mount(self, Vector2(412, 917))
 	set_result_players(harness)
 	var missed: Dictionary = SUMMARY_FIXTURE.duplicate(true)
-	missed["sideQuest"] = {"claimedBy": ""}
+	missed["sideQuest"] = {"id": "exact_finish", "claimedBy": "", "rewardId": "replenish"}
 	harness.main.summary.show_level_summary(missed, "finished")
 	var missed_label := harness.find("LevelSummaryQuestLabel") as Label
 	assert_true(missed_label.visible)
+	assert_eq(missed_label.text, "QUEST RESULT · Unclaimed")
 	var missed_text := missed_label.text
 	harness.main.summary.hide_level_summary()
 	harness.main.summary.last_level_summary_key = ""
@@ -153,6 +158,33 @@ func test_quest_missed_and_absent_quest_use_only_the_completed_quest_outcome() -
 	harness.main.summary.show_level_summary(absent, "finished")
 	assert_false((harness.find("LevelSummaryQuestLabel") as Label).visible)
 	assert_ne(missed_text, (harness.find("LevelSummaryQuestLabel") as Label).text)
+
+func test_spectator_results_use_the_ended_quest_result_without_previewing_the_next_quest() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	set_result_players(harness)
+	harness.main.summary.set_spectator_mode(true)
+	var fixture: Dictionary = SUMMARY_FIXTURE.duplicate(true)
+	fixture["sideQuest"] = {"id": "exact_finish", "claimedBy": "P2", "rewardId": "replenish"}
+	harness.main.summary.show_level_summary(fixture, "finished", 2000)
+	var quest_label := harness.find("LevelSummaryQuestLabel") as Label
+	assert_eq(quest_label.text, "QUEST RESULT · Claimed by Blair · Replenish")
+	assert_false(quest_label.text.contains("Next Level Quest"))
+
+func test_compact_results_keep_the_reward_bearing_quest_row_inside_the_sheet() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(320, 640))
+	set_result_players(harness)
+	var fixture: Dictionary = SUMMARY_FIXTURE.duplicate(true)
+	fixture["sideQuest"] = {"id": "exact_finish", "claimedBy": "P2", "rewardId": "replenish"}
+	harness.main.summary.show_level_summary(fixture, "finished", 2000)
+	await get_tree().create_timer(0.20).timeout
+	var panel := harness.find("LevelSummaryPanel") as PanelContainer
+	var quest_label := harness.find("LevelSummaryQuestLabel") as Label
+	var overlay := harness.find("LevelSummaryOverlay") as Control
+	assert_true(harness.main.summary.summary_uses_compact_layout)
+	assert_true(panel.get_global_rect().encloses(quest_label.get_global_rect()))
+	assert_lte(panel.get_global_rect().end.y, overlay.get_global_rect().end.y)
 
 func test_recoverable_failure_shows_reason_rollback_impact_and_safe_retry_copy() -> void:
 	var harness = HarnessScript.new()

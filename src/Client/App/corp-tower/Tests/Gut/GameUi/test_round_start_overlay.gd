@@ -36,7 +36,7 @@ func _state(state: String, state_remaining_ms: int = 4500, side_quest_label: Str
 		"level": 2,
 		"impactLevel": 2,
 		"impactInterval": 3,
-		"sideQuest": {"label": side_quest_label},
+		"sideQuest": {"id": "exact_finish", "label": side_quest_label, "rewardId": "replenish"},
 		"players": [],
 		"towerBlocks": [],
 		"scoreEvents": []
@@ -75,12 +75,16 @@ func test_long_quest_does_not_widen_the_ready_briefing_card() -> void:
 	await get_tree().process_frame
 	var briefing_card := harness.find("ReadyBriefingCard") as Control
 	var quest_label := harness.find("ReadyQuestLabel") as Label
+	var reward_label := harness.find("ReadyRewardLabel") as Label
 	var countdown_label := harness.find("StartCountdownLabel") as Label
 	var compact_width := briefing_card.size.x
 	var compact_height := briefing_card.size.y
 	var countdown_position := countdown_label.global_position
 	assert_true(quest_label.visible)
 	assert_true(quest_label.text.contains("QUEST · Reach the top"))
+	assert_true(reward_label.visible)
+	assert_eq(reward_label.text, "REWARD · Replenish")
+	assert_lt(reward_label.get_theme_font_size("font_size"), quest_label.get_theme_font_size("font_size"))
 	assert_gt(quest_label.size.y, 0.0)
 	assert_eq(quest_label.get_visible_line_count(), 1)
 
@@ -90,6 +94,7 @@ func test_long_quest_does_not_widen_the_ready_briefing_card() -> void:
 	assert_almost_eq(briefing_card.size.x, compact_width, 2.0, "Long quest copy must not materially widen the fixed READY briefing card.")
 	assert_gt(quest_label.size.y, 0.0)
 	assert_lte(quest_label.get_visible_line_count(), 2)
+	assert_eq(reward_label.text, "REWARD · Replenish")
 	assert_gte(briefing_card.size.y, compact_height)
 	assert_eq(countdown_label.global_position, countdown_position)
 
