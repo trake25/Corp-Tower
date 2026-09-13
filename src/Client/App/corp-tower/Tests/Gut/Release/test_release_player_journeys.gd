@@ -25,7 +25,7 @@ class NetworkStub:
 	var is_conn_estab := true
 	var placed: Array = []
 
-	func place_block(index: int, _column: int = -1, _origin_y: int = -1) -> void:
+	func place_block(index: int, _column: int = -1, _origin_y: int = -1, _placement_request_id: String = "") -> void:
 		placed.append(index)
 
 var screen_manager
