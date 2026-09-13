@@ -1073,6 +1073,10 @@ test("the fourth failure enters Game Over, restores checkpoint totals, and close
     assert.equal(engine.room.impactFailureCount, 4);
     assert.equal(engine.room.lastLevelSummary.result, "game_over");
     assert.equal(engine.room.lastLevelSummary.failureReason, "time_expired");
+    const terminalPlayer = engine.room.lastLevelSummary.players.find(player => player.id === "P1");
+    assert.equal(terminalPlayer.levelScore, 30);
+    assert.equal(terminalPlayer.finalTotalScore, 80);
+    assert.equal(terminalPlayer.rollbackTotalScore, 12);
     assert.equal(engine.rollbackToImpact(), false);
     assert.equal(first.score, 12);
     assert.equal(first.impactContribution, 9);
@@ -1092,12 +1096,65 @@ test("the fourth failure enters Game Over, restores checkpoint totals, and close
     assert.equal(engine.requestRoomClose("failure_limit_reached", "home"), false);
 });
 
+test("Game Over uses its dedicated close window while ordinary Results keeps its own window", () => {
+    const { engine } = createPlayingEngine(1, 10);
+    GameConfig.levelSummaryDelayMs = 100;
+    GameConfig.runOverDelayMs = 1000;
+
+    engine.room.state = "finished";
+    engine.beginResultsWindow();
+    assert.ok(engine.room.freezeEndsAt > 0);
+    assert.equal(engine.room.terminalCloseAt, 0);
+    engine.clearTimers();
+
+    engine.room.state = "game_over";
+    engine.room.resultsReady = false;
+    engine.room.freezeEndsAt = 0;
+    engine.beginResultsWindow();
+    const gameOverState = engine.buildGameState();
+    assert.ok(engine.room.terminalCloseAt > Date.now());
+    assert.equal(engine.room.freezeEndsAt, 0);
+    assert.ok(gameOverState.stateRemainingMs > GameConfig.levelSummaryDelayMs);
+    engine.clearTimers();
+});
+
+test("a rejected terminal close dispatch becomes retryable without duplicate close", async () => {
+    const attempts = [];
+    const { engine } = createPlayingEngine(1, 10, {
+        onRoomCloseRequested: (_roomId, reason, destination) => {
+            attempts.push({ reason, destination });
+            if (attempts.length === 1) {
+                return Promise.reject(new Error("temporary close failure"));
+            }
+            return Promise.resolve();
+        }
+    });
+    GameConfig.failRestartDelayMs = 0;
+    engine.room.state = "game_over";
+
+    assert.equal(engine.requestRoomClose("failure_limit_reached", "home"), true);
+    await new Promise(resolve => setImmediate(resolve));
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.deepEqual(attempts, [
+        { reason: "failure_limit_reached", destination: "home" },
+        { reason: "failure_limit_reached", destination: "home" }
+    ]);
+    assert.equal(engine.room.terminalCloseRequested, true);
+    engine.clearTimers();
+});
+
 test("hydrated Game Over restores only its terminal close timer", () => {
     const { engine } = createPlayingEngine(2, 10);
 
     engine.room.state = "game_over";
     engine.room.impactFailureCount = 4;
     engine.room.terminalCloseAt = Date.now() + 10000;
+    engine.room.lastLevelSummary = {
+        result: "game_over",
+        level: 4,
+        players: [{ id: "P1", levelScore: 18, finalTotalScore: 80, rollbackTotalScore: 12 }]
+    };
     const snapshot = stripRuntimeRoom({
         id: "TEST",
         players: engine.room.players,
@@ -1110,6 +1167,9 @@ test("hydrated Game Over restores only its terminal close timer", () => {
     assert.equal(resumed.startTimer, null);
     assert.equal(resumed.levelTimer, null);
     assert.ok(resumed.nextLevelTimer);
+    assert.equal(resumed.room.lastLevelSummary.players[0].finalTotalScore, 80);
+    assert.equal(resumed.room.lastLevelSummary.players[0].rollbackTotalScore, 12);
+    assert.ok(resumed.buildGameState().stateRemainingMs > 0);
     resumed.clearTimers();
 });
 

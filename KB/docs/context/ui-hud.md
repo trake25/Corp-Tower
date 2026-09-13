@@ -108,6 +108,7 @@ alias: failure summary
 source: src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn#LevelSummaryOverlay
 source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#update_level_summary_bot_behavior
 source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#queue_level_summary_after_score_popups
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#show_run_over
 source: src/Server/app/Game_Engine.js#beginResultsWindow
 source: src/Server/app/engine/Scoring.js#buildLevelSummary
 source: src/Server/app/engine/Impacts.js#buildFailureSummary
@@ -121,12 +122,19 @@ identity, MVP recognition, Perfect Build when applicable, and the just-ended Que
 claimed Quest identifies its claimant and earned reward; an unresolved Quest says unclaimed.
 Recoverable failure shows the exact failure reason, failed-attempt score, authoritative checkpoint
 rollback total, Impact met/missed status only when relevant, retries remaining, and the safe level
-that will be restored. The Results countdown and progress follow authoritative lifecycle remaining
-time, so reconnect/resync cannot restart a false local window. The next quest is never previewed
-in Results; it is introduced in the next READY. Clients still acknowledge their completed local
-outcome gate, and collapse/recovery remains its bounded predecessor. Spectator Results, including
-their optional per-bot behavior totals, and terminal-failure Results remain on their existing
-presentation paths until their dedicated stages.
+that will be restored. Normal human Results stay visible through a zero countdown until the
+authoritative next READY state replaces them; their countdown and progress follow authoritative
+lifecycle remaining time, so reconnect/resync cannot restart a false local window. The next quest
+is never previewed in Results; it is introduced in the next READY.
+
+Terminal retry exhaustion bypasses the failure sheet after the same completed-outcome gate. One
+centered Run Over presentation keeps the final tower visible while showing the exact failure
+reason, no retries remaining, level reached, checkpoint-restored trio standings, local-player
+identity, Run Leader, and a local pre-rollback-to-restored explanation when needed. Its countdown
+uses the authoritative terminal deadline and remains until targeted manual leave acknowledgement
+or authoritative room close routes the player Home; it has no Quest, retry, READY, or gameplay
+controls. Spectator Results, including their optional per-bot behavior totals, retain their
+separate observer presentation.
 
 <!-- kb
 id: hud.overlays.score-popups

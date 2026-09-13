@@ -586,6 +586,28 @@ test("only the current connection can intentionally leave a started game", async
     assert.equal(lobby.rooms.length, 1);
 });
 
+test("a Game Over participant can leave without closing the remaining terminal room", async () => {
+    const { cluster, lobby, players, sockets, room } = await createLobbyOfThree();
+    await startMatch(lobby, players);
+    room.engine.room.state = "game_over";
+    room.engine.room.terminalCloseAt = Date.now() + 10000;
+    room.engine.scheduleTerminalRoomClose();
+
+    await lobby.dispatchRoomAction(players[0], { type: "leave_game" });
+
+    assert.deepEqual(
+        messagesOfType(sockets[0], "game_left"),
+        [{ type: "game_left", destination: "home" }]
+    );
+    assert.equal(cluster.shared.sessions.get(players[0].sessionId).roomId, null);
+    assert.equal(room.players[0].presence, "left");
+    assert.equal(room.players[1].presence, "connected");
+    assert.equal(room.players[2].presence, "connected");
+    assert.equal(lobby.rooms.includes(room), true);
+    assert.ok(room.engine.nextLevelTimer);
+    room.engine.clearTimers();
+});
+
 test("started-room disconnect and resume broadcast and persist authoritative presence", async () => {
     const { cluster, lobby, players, sockets, room } = await createLobbyOfThree();
     await startMatch(lobby, players);

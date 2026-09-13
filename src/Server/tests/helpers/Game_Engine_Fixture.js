@@ -51,6 +51,7 @@ const QA_TUNING_BASELINE = Object.freeze({
     outcomeMinimumHoldMs: 850,
     outcomeReadyFallbackMs: 30000,
     levelSummaryDelayMs: 1000,
+    runOverDelayMs: 9000,
     impactInterval: 2,
     impactScoreRequirement: 0,
     impactMinContributionShare: 0.3,

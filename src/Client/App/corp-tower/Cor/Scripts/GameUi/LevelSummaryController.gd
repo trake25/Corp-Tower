@@ -17,12 +17,19 @@ var level_summary_countdown_label: Label
 var level_summary_progress_rail: ProgressBar
 var level_summary_players_box: VBoxContainer
 var terminal_failure_overlay: Control
+var terminal_failure_panel: PanelContainer
 var terminal_failure_title_label: Label
 var terminal_failure_body_label: Label
+var terminal_failure_status_label: Label
+var terminal_failure_level_label: Label
+var terminal_failure_players_box: VBoxContainer
+var terminal_failure_rollback_label: Label
 var terminal_failure_countdown_label: Label
+var terminal_failure_return_button: Button
 var quest_text_provider: Callable = Callable()
 var quest_reward_label_provider: Callable = Callable()
 var on_summary_ended: Callable = Callable()
+var return_home_action: Callable = Callable()
 var last_level_summary_key: String = ""
 var pending_level_summary: Dictionary = {}
 var pending_level_summary_state: String = ""
@@ -37,6 +44,8 @@ var summary_deadline_ms: int = 0
 var summary_countdown_last: int = -1
 var terminal_failure_deadline_ms: int = 0
 var terminal_failure_countdown_last: int = -1
+var terminal_leave_requested := false
+var terminal_failure_is_run_over := false
 var spectator_mode := false
 var summary_result: String = ""
 var summary_is_human_results := false
@@ -53,7 +62,7 @@ func _ready() -> void:
 
 	summary_hide_timer = Timer.new()
 	summary_hide_timer.one_shot = true
-	summary_hide_timer.timeout.connect(hide_level_summary)
+	summary_hide_timer.timeout.connect(_on_summary_countdown_elapsed)
 	add_child(summary_hide_timer)
 
 func _process(_delta: float) -> void:
@@ -72,9 +81,17 @@ func bind_nodes(binder) -> void:
 	level_summary_progress_rail = binder.optional_node("LevelSummaryProgressRail") as ProgressBar
 	level_summary_players_box = binder.require_node("LevelSummaryPlayersBox") as VBoxContainer
 	terminal_failure_overlay = binder.require_node("TerminalFailureOverlay") as Control
+	terminal_failure_panel = binder.require_node("TerminalFailurePanel") as PanelContainer
 	terminal_failure_title_label = binder.require_node("TerminalFailureTitleLabel") as Label
 	terminal_failure_body_label = binder.require_node("TerminalFailureBodyLabel") as Label
+	terminal_failure_status_label = binder.require_node("TerminalFailureStatusLabel") as Label
+	terminal_failure_level_label = binder.require_node("TerminalFailureLevelLabel") as Label
+	terminal_failure_players_box = binder.require_node("TerminalFailurePlayersBox") as VBoxContainer
+	terminal_failure_rollback_label = binder.require_node("TerminalFailureRollbackLabel") as Label
 	terminal_failure_countdown_label = binder.require_node("TerminalFailureCountdownLabel") as Label
+	terminal_failure_return_button = binder.require_node("TerminalFailureReturnButton") as Button
+	if !terminal_failure_return_button.pressed.is_connected(_on_terminal_return_home_pressed):
+		terminal_failure_return_button.pressed.connect(_on_terminal_return_home_pressed)
 
 func setup(players_ref, match_state_ref, tuning_ref) -> void:
 	players_ctx = players_ref
@@ -82,7 +99,9 @@ func setup(players_ref, match_state_ref, tuning_ref) -> void:
 	tuning = tuning_ref
 
 func is_overlay_visible() -> bool:
-	return level_summary_overlay != null and level_summary_overlay.visible
+	return (level_summary_overlay != null and level_summary_overlay.visible) or (
+		terminal_failure_overlay != null and terminal_failure_overlay.visible
+	)
 
 func set_spectator_mode(enabled: bool) -> void:
 	spectator_mode = enabled
@@ -109,9 +128,9 @@ func queue_level_summary_after_score_popups(
 
 	var summary_key: String = get_level_summary_key(summary)
 
-	if summary_key == last_level_summary_key and level_summary_overlay.visible:
+	if summary_key == last_level_summary_key and is_overlay_visible():
 		if results_ready:
-			resynchronize_summary_window(results_remaining_ms)
+			resynchronize_presentation_window(results_remaining_ms)
 		return
 
 	if (
@@ -197,12 +216,17 @@ func cancel_pending_level_summary() -> void:
 	pending_results_remaining_ms = -1
 
 func show_level_summary(summary_value: Variant, state: String, results_remaining_ms: int = -1) -> void:
-	if level_summary_overlay == null or typeof(summary_value) != TYPE_DICTIONARY:
+	if (level_summary_overlay == null and terminal_failure_overlay == null) or typeof(summary_value) != TYPE_DICTIONARY:
 		return
 
 	var summary: Dictionary = summary_value
 
 	if summary.is_empty():
+		return
+
+	var result: String = str(summary.get("result", state))
+	if result == "game_over" and !spectator_mode:
+		show_run_over(summary, results_remaining_ms)
 		return
 
 	var summary_key: String = get_level_summary_key(summary)
@@ -216,7 +240,6 @@ func show_level_summary(summary_value: Variant, state: String, results_remaining
 	level_summary_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	level_summary_overlay.modulate.a = 0.0
 
-	var result: String = str(summary.get("result", state))
 	var level_number: int = int(summary.get("level", match_state.current_level))
 	var failure_status: Dictionary = get_failure_status(summary)
 	summary_result = result
@@ -269,6 +292,184 @@ func show_level_summary(summary_value: Variant, state: String, results_remaining
 
 	resynchronize_summary_window(results_remaining_ms)
 
+func show_run_over(summary: Dictionary, results_remaining_ms: int) -> void:
+	if terminal_failure_overlay == null:
+		return
+
+	var summary_key := get_level_summary_key(summary)
+	if summary_key == last_level_summary_key and terminal_failure_overlay.visible:
+		resynchronize_terminal_window(results_remaining_ms)
+		return
+
+	last_level_summary_key = summary_key
+	terminal_failure_is_run_over = true
+	if summary_hide_timer != null:
+		summary_hide_timer.stop()
+	summary_deadline_ms = 0
+	summary_countdown_last = -1
+	if level_summary_overlay != null:
+		level_summary_overlay.visible = false
+		level_summary_overlay.modulate.a = 1.0
+
+	terminal_failure_title_label.text = "RUN OVER"
+	terminal_failure_body_label.text = get_run_over_failure_reason(summary)
+	terminal_failure_body_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	terminal_failure_status_label.text = "NO RETRIES REMAINING"
+	terminal_failure_level_label.text = "RUN ENDED AT LEVEL " + str(int(summary.get("level", match_state.current_level)))
+	terminal_failure_status_label.visible = true
+	terminal_failure_level_label.visible = true
+	terminal_failure_players_box.visible = true
+	terminal_failure_return_button.visible = true
+	clear_children(terminal_failure_players_box)
+
+	var players: Array = []
+	var source_index := 0
+	for player_value in summary.get("players", []):
+		if typeof(player_value) == TYPE_DICTIONARY:
+			var player_summary: Dictionary = (player_value as Dictionary).duplicate(true)
+			player_summary["_run_over_source_index"] = source_index
+			players.append(player_summary)
+			source_index += 1
+	players.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var a_score := int(a.get("rollbackTotalScore", a.get("finalTotalScore", 0)))
+		var b_score := int(b.get("rollbackTotalScore", b.get("finalTotalScore", 0)))
+		return a_score > b_score if a_score != b_score else int(a.get("_run_over_source_index", 0)) < int(b.get("_run_over_source_index", 0))
+	)
+
+	var local_rollback_text := ""
+	var rank := 1
+	for player_summary in players:
+		terminal_failure_players_box.add_child(create_run_over_player_row(player_summary, rank))
+		var player_id := str(player_summary.get("id", ""))
+		var before_total := int(player_summary.get("finalTotalScore", 0))
+		var restored_total := int(player_summary.get("rollbackTotalScore", before_total))
+		if players_ctx.is_local(player_id) and before_total > restored_total:
+			local_rollback_text = str(before_total) + " → " + str(restored_total) + " FINAL\nRESTORED TO CHECKPOINT"
+		rank += 1
+	terminal_failure_rollback_label.text = local_rollback_text
+	terminal_failure_rollback_label.visible = local_rollback_text != ""
+
+	terminal_leave_requested = false
+	terminal_failure_return_button.disabled = false
+	terminal_failure_return_button.text = "RETURN HOME"
+	configure_run_over_layout()
+	terminal_failure_overlay.visible = true
+	terminal_failure_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	terminal_failure_overlay.modulate.a = 0.0
+	terminal_failure_panel.scale = Vector2(0.97, 0.97)
+	terminal_failure_deadline_ms = 0
+	terminal_failure_countdown_last = -1
+	resynchronize_terminal_window(results_remaining_ms)
+	var tween := create_tween()
+	tween.tween_property(terminal_failure_overlay, "modulate:a", 1.0, 0.16)
+	tween.parallel().tween_property(terminal_failure_panel, "scale", Vector2.ONE, 0.18)
+
+func configure_run_over_layout() -> void:
+	if terminal_failure_panel == null or terminal_failure_overlay == null:
+		return
+	var viewport_size := terminal_failure_overlay.size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		viewport_size = terminal_failure_overlay.get_viewport_rect().size
+	var compact := viewport_size.y <= 700.0 and viewport_size.y > viewport_size.x
+	var width := minf(460.0, maxf(292.0, viewport_size.x - 24.0))
+	var height := minf(viewport_size.y - 24.0, 470.0 if compact else 540.0)
+	terminal_failure_panel.size = Vector2(width, height)
+	terminal_failure_panel.position = (viewport_size - terminal_failure_panel.size) * 0.5
+	if terminal_failure_players_box != null:
+		terminal_failure_players_box.custom_minimum_size = Vector2(0, 114 if compact else 150)
+		terminal_failure_players_box.add_theme_constant_override("separation", 3 if compact else 6)
+		for row_value in terminal_failure_players_box.get_children():
+			var row := row_value as PanelContainer
+			if row == null:
+				continue
+			row.custom_minimum_size.y = 38 if compact else 46
+			var row_margin := row.get_child(0) as MarginContainer
+			if row_margin != null:
+				row_margin.add_theme_constant_override("margin_top", 2 if compact else 4)
+				row_margin.add_theme_constant_override("margin_bottom", 2 if compact else 4)
+	if terminal_failure_title_label != null:
+		terminal_failure_title_label.add_theme_font_size_override("font_size", 22 if compact else 28)
+	if terminal_failure_body_label != null:
+		terminal_failure_body_label.add_theme_font_size_override("font_size", 14 if compact else 17)
+
+func create_run_over_player_row(player_summary: Dictionary, rank: int) -> Control:
+	var player_id := str(player_summary.get("id", ""))
+	var is_local := bool(players_ctx.is_local(player_id))
+	var player_color: Color = players_ctx.color_for(player_id)
+	var row_panel := PanelContainer.new()
+	row_panel.name = "RunOverPlayerRow_" + player_id
+	row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row_panel.custom_minimum_size = Vector2(0, 46)
+	row_panel.add_theme_stylebox_override("panel", make_summary_row_style(player_color, false, is_local, true))
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 7)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_bottom", 4)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	var rank_label := Label.new()
+	rank_label.name = "RunOverRank_" + player_id
+	rank_label.text = "#" + str(rank)
+	rank_label.custom_minimum_size = Vector2(26, 0)
+	rank_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	rank_label.add_theme_font_override("font", PoppinsBoldFont)
+	rank_label.add_theme_font_size_override("font_size", 13)
+	var avatar_wrap := Control.new()
+	avatar_wrap.custom_minimum_size = Vector2(34, 34)
+	var avatar_ring := Panel.new()
+	avatar_ring.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	avatar_ring.add_theme_stylebox_override("panel", make_summary_avatar_style(player_color, false, is_local, true))
+	var avatar_texture := TextureRect.new()
+	avatar_texture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	avatar_texture.offset_left = 2.0
+	avatar_texture.offset_top = 2.0
+	avatar_texture.offset_right = -2.0
+	avatar_texture.offset_bottom = -2.0
+	avatar_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	avatar_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	avatar_texture.texture = PlayerRailEntryScript.load_avatar_texture(players_ctx.avatar_id(player_id))
+	avatar_wrap.add_child(avatar_ring)
+	avatar_wrap.add_child(avatar_texture)
+	var identity := VBoxContainer.new()
+	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity.add_theme_constant_override("separation", 0)
+	var name_line := HBoxContainer.new()
+	name_line.add_theme_constant_override("separation", 4)
+	var name_label := Label.new()
+	name_label.name = "RunOverPlayerName_" + player_id
+	var player_name := str(players_ctx.display_name(player_id))
+	name_label.text = player_name if player_name != "" else player_id
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.clip_text = true
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_label.add_theme_font_size_override("font_size", 14)
+	var you_label := make_results_tag("YOU", player_color)
+	you_label.name = "RunOverYouTag_" + player_id
+	you_label.visible = is_local
+	var leader_label := make_results_tag("RUN LEADER", Color(1.0, 0.72, 0.02, 1.0))
+	leader_label.name = "RunOverLeaderTag_" + player_id
+	leader_label.visible = rank == 1
+	name_line.add_child(name_label)
+	name_line.add_child(you_label)
+	name_line.add_child(leader_label)
+	identity.add_child(name_line)
+	var score_label := Label.new()
+	score_label.name = "RunOverPlayerScore_" + player_id
+	score_label.text = str(int(player_summary.get("rollbackTotalScore", player_summary.get("finalTotalScore", 0)))) + " FINAL"
+	score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	score_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	score_label.custom_minimum_size = Vector2(82, 0)
+	score_label.add_theme_font_override("font", PoppinsBoldFont)
+	score_label.add_theme_font_size_override("font_size", 12)
+	row.add_child(rank_label)
+	row.add_child(avatar_wrap)
+	row.add_child(identity)
+	row.add_child(score_label)
+	margin.add_child(row)
+	row_panel.add_child(margin)
+	return row_panel
+
 func hide_level_summary() -> void:
 	if summary_hide_timer != null:
 		summary_hide_timer.stop()
@@ -284,6 +485,9 @@ func hide_level_summary() -> void:
 
 	if on_summary_ended.is_valid():
 		on_summary_ended.call()
+
+func _on_summary_countdown_elapsed() -> void:
+	update_summary_countdown()
 
 func get_level_summary_key(summary: Dictionary) -> String:
 	var key := (
@@ -434,6 +638,19 @@ func get_human_failure_reason(summary: Dictionary) -> String:
 		_:
 			return "LEVEL FAILED"
 
+func get_run_over_failure_reason(summary: Dictionary) -> String:
+	match str(summary.get("failureReason", summary.get("reason", ""))):
+		"time_expired":
+			return "TIME EXPIRED"
+		"impact_score_requirement":
+			return "IMPACT MISSED"
+		"all_blocks_used":
+			return "SUPPLY EXHAUSTED"
+		"not_enough_height_remaining":
+			return "TARGET NOT REACHED"
+		_:
+			return "RUN FAILED"
+
 func get_safe_level(summary: Dictionary) -> int:
 	var impact_status: Variant = summary.get("impactScoreStatus", {})
 	if typeof(impact_status) == TYPE_DICTIONARY:
@@ -551,6 +768,18 @@ func resynchronize_summary_window(results_remaining_ms: int) -> void:
 	update_summary_countdown()
 	summary_hide_timer.start()
 
+func resynchronize_presentation_window(results_remaining_ms: int) -> void:
+	if terminal_failure_overlay != null and terminal_failure_overlay.visible:
+		resynchronize_terminal_window(results_remaining_ms)
+		return
+	resynchronize_summary_window(results_remaining_ms)
+
+func resynchronize_terminal_window(results_remaining_ms: int) -> void:
+	var remaining_ms := maxi(0, results_remaining_ms)
+	terminal_failure_deadline_ms = Time.get_ticks_msec() + remaining_ms
+	terminal_failure_countdown_last = -1
+	update_terminal_failure_countdown()
+
 func update_summary_countdown() -> void:
 	if (
 		level_summary_countdown_label == null or
@@ -577,48 +806,55 @@ func update_summary_countdown() -> void:
 	if summary_is_human_results:
 		if summary_result == "completed":
 			level_summary_countdown_label.text = (
-				"NEXT LEVEL IN " + str(remaining_seconds)
+				"NEXT LEVEL…" if remaining_seconds <= 0
+				else "NEXT LEVEL IN " + str(remaining_seconds)
 				if summary_has_next_level
 				else "RUN COMPLETE"
 			)
 		else:
 			level_summary_countdown_label.text = (
-				"RETRYING FROM SAFE LEVEL " + str(summary_safe_level) + " IN " + str(remaining_seconds)
+				"RETURNING TO SAFE LEVEL " + str(summary_safe_level) + "…"
+				if remaining_seconds <= 0
+				else "RETRYING FROM SAFE LEVEL " + str(summary_safe_level) + " IN " + str(remaining_seconds)
 			)
 		return
 
 	level_summary_countdown_label.text = "Next level is starting in " + str(remaining_seconds) + "s..."
 
-func show_terminal_failure_popup(summary: Dictionary, result: String) -> void:
-	if terminal_failure_overlay == null:
-		return
-
-	var failure_status: Dictionary = get_failure_status(summary)
-	var is_terminal_failure: bool = result == "game_over" or bool(failure_status.get("gameOver", false))
-
-	if !is_terminal_failure:
-		hide_terminal_failure_popup()
-		return
-
-	terminal_failure_title_label.text = "Team Failed"
-	terminal_failure_body_label.text = "Your team failed and will be sent Home."
-	terminal_failure_overlay.visible = true
-	terminal_failure_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	terminal_failure_overlay.modulate.a = 0.0
-	terminal_failure_deadline_ms = Time.get_ticks_msec() + 3000
-	terminal_failure_countdown_last = -1
-	update_terminal_failure_countdown()
-
-	var tween: Tween = create_tween()
-	tween.tween_property(terminal_failure_overlay, "modulate:a", 1.0, 0.16)
-
 func hide_terminal_failure_popup() -> void:
 	if terminal_failure_overlay != null:
 		terminal_failure_overlay.visible = false
 		terminal_failure_overlay.modulate.a = 1.0
+	if terminal_failure_return_button != null:
+		terminal_failure_return_button.disabled = false
+		terminal_failure_return_button.text = "RETURN HOME"
 
 	terminal_failure_deadline_ms = 0
 	terminal_failure_countdown_last = -1
+	terminal_leave_requested = false
+	terminal_failure_is_run_over = false
+
+func show_terminal_failure_popup(summary: Dictionary, result: String) -> void:
+	if terminal_failure_overlay == null:
+		return
+	var failure_status := get_failure_status(summary)
+	if result != "game_over" and !bool(failure_status.get("gameOver", false)):
+		hide_terminal_failure_popup()
+		return
+	terminal_failure_title_label.text = "Team Failed"
+	terminal_failure_body_label.text = "Your team failed and will be sent Home."
+	terminal_failure_body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	terminal_failure_status_label.visible = false
+	terminal_failure_level_label.visible = false
+	terminal_failure_players_box.visible = false
+	terminal_failure_rollback_label.visible = false
+	terminal_failure_return_button.visible = false
+	terminal_failure_overlay.visible = true
+	terminal_failure_overlay.modulate.a = 1.0
+	terminal_failure_is_run_over = false
+	terminal_failure_deadline_ms = Time.get_ticks_msec() + 3000
+	terminal_failure_countdown_last = -1
+	update_terminal_failure_countdown()
 
 func update_terminal_failure_countdown() -> void:
 	if (
@@ -632,8 +868,7 @@ func update_terminal_failure_countdown() -> void:
 	var remaining_seconds: int = maxi(0, int(ceil(
 		float(terminal_failure_deadline_ms - Time.get_ticks_msec()) / 1000.0
 	)))
-
-	if remaining_seconds <= 0:
+	if remaining_seconds <= 0 and !terminal_failure_is_run_over:
 		hide_terminal_failure_popup()
 		return
 
@@ -641,7 +876,19 @@ func update_terminal_failure_countdown() -> void:
 		return
 
 	terminal_failure_countdown_last = remaining_seconds
-	terminal_failure_countdown_label.text = "Returning Home in " + str(remaining_seconds) + "s..."
+	terminal_failure_countdown_label.text = (
+		"RETURNING HOME…"
+		if remaining_seconds <= 0
+		else "RETURNING HOME IN " + str(remaining_seconds)
+	)
+
+func _on_terminal_return_home_pressed() -> void:
+	if terminal_leave_requested or !return_home_action.is_valid():
+		return
+	if bool(return_home_action.call()):
+		terminal_leave_requested = true
+		terminal_failure_return_button.disabled = true
+		terminal_failure_return_button.text = "RETURNING HOME…"
 
 func get_level_summary_mvp_text(summary: Dictionary) -> String:
 	var mvp_id: String = str(summary.get("mvpId", ""))

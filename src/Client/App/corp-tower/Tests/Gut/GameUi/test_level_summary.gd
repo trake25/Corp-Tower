@@ -52,6 +52,18 @@ func failure_fixture(reason: String) -> Dictionary:
 	]
 	return fixture
 
+func terminal_fixture(reason: String = "time_expired") -> Dictionary:
+	var fixture := failure_fixture(reason)
+	fixture["level"] = 8
+	fixture["result"] = "game_over"
+	fixture["failureStatus"] = {"gameOver": true, "retriesRemaining": 0}
+	fixture["players"] = [
+		{"id": "P1", "levelScore": 40, "finalTotalScore": 190, "rollbackTotalScore": 120},
+		{"id": "P2", "levelScore": 8, "finalTotalScore": 150, "rollbackTotalScore": 150},
+		{"id": "P3", "levelScore": 60, "finalTotalScore": 180, "rollbackTotalScore": 80}
+	]
+	return fixture
+
 func test_human_success_uses_the_bottom_results_sheet_and_ranked_rows() -> void:
 	var harness = HarnessScript.new()
 	await harness.mount(self, Vector2(412, 917))
@@ -226,6 +238,80 @@ func test_authoritative_remaining_time_controls_the_footer_without_restarting_th
 	summary.queue_level_summary_after_score_popups(SUMMARY_FIXTURE, "finished", 0.0, Callable(), true, Callable(), 600)
 	assert_lt(summary.summary_hide_timer.wait_time, first_wait, "A Results-ready resync uses the newer server remainder.")
 	assert_lt((harness.find("LevelSummaryProgressRail") as ProgressBar).value, first_progress)
+
+func test_results_stays_visible_at_zero_until_authoritative_state_replaces_it() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	set_result_players(harness)
+	var summary = harness.main.summary
+	summary.show_level_summary(SUMMARY_FIXTURE, "finished", 0)
+	summary.summary_deadline_ms = Time.get_ticks_msec() - 1
+	summary.update_summary_countdown()
+	assert_true((harness.find("LevelSummaryOverlay") as Control).visible)
+	assert_eq((harness.find("LevelSummaryCountdownLabel") as Label).text, "NEXT LEVEL…")
+	var failed := failure_fixture("time_expired")
+	summary.hide_level_summary()
+	summary.last_level_summary_key = ""
+	summary.show_level_summary(failed, "failed", 0)
+	summary.summary_deadline_ms = Time.get_ticks_msec() - 1
+	summary.update_summary_countdown()
+	assert_eq(
+		(harness.find("LevelSummaryCountdownLabel") as Label).text,
+		"RETURNING TO SAFE LEVEL 3…"
+	)
+
+func test_run_over_bypasses_results_and_uses_restored_standings() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	set_result_players(harness)
+	var summary = harness.main.summary
+	summary.show_level_summary(terminal_fixture(), "game_over", 1800)
+	await get_tree().process_frame
+	assert_false((harness.find("LevelSummaryOverlay") as Control).visible)
+	assert_true((harness.find("TerminalFailureOverlay") as Control).visible)
+	assert_eq((harness.find("TerminalFailureTitleLabel") as Label).text, "RUN OVER")
+	assert_eq((harness.find("TerminalFailureBodyLabel") as Label).text, "TIME EXPIRED")
+	assert_eq((harness.find("TerminalFailureStatusLabel") as Label).text, "NO RETRIES REMAINING")
+	assert_eq((harness.find("TerminalFailureLevelLabel") as Label).text, "RUN ENDED AT LEVEL 8")
+	var rows := harness.find("TerminalFailurePlayersBox") as VBoxContainer
+	assert_eq(rows.get_child_count(), 3)
+	assert_eq(rows.get_child(0).name, "RunOverPlayerRow_P2", "Final standing uses restored totals.")
+	assert_true((harness.find("RunOverYouTag_P1") as Label).visible)
+	assert_true((harness.find("RunOverLeaderTag_P2") as Label).visible)
+	assert_true((harness.find("TerminalFailureRollbackLabel") as Label).visible)
+	assert_eq((harness.find("TerminalFailureRollbackLabel") as Label).text, "190 → 120 FINAL\nRESTORED TO CHECKPOINT")
+	assert_null(harness.find("RunOverMvpTag_P2"), "Run Over does not reuse MVP.")
+	var panel := harness.find("TerminalFailurePanel") as PanelContainer
+	var overlay := harness.find("TerminalFailureOverlay") as Control
+	assert_lte(panel.get_global_rect().end.y, overlay.get_global_rect().end.y)
+
+func test_run_over_resync_and_return_home_keep_server_authority() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(320, 640))
+	set_result_players(harness)
+	var summary = harness.main.summary
+	var leave_calls: Array = []
+	summary.return_home_action = func() -> bool:
+		leave_calls.append(true)
+		return true
+	summary.show_level_summary(terminal_fixture("impact_score_requirement"), "game_over", 1200)
+	await get_tree().process_frame
+	var panel := harness.find("TerminalFailurePanel") as PanelContainer
+	var overlay := harness.find("TerminalFailureOverlay") as Control
+	var return_button := harness.find("TerminalFailureReturnButton") as Button
+	assert_true(panel.get_global_rect().encloses(return_button.get_global_rect()))
+	assert_lte(panel.get_global_rect().end.y, overlay.get_global_rect().end.y)
+	var first_deadline: int = summary.terminal_failure_deadline_ms
+	summary.show_level_summary(terminal_fixture("impact_score_requirement"), "game_over", 500)
+	assert_lt(summary.terminal_failure_deadline_ms, first_deadline)
+	summary.terminal_failure_deadline_ms = Time.get_ticks_msec() - 1
+	summary.update_terminal_failure_countdown()
+	assert_true((harness.find("TerminalFailureOverlay") as Control).visible)
+	assert_eq((harness.find("TerminalFailureCountdownLabel") as Label).text, "RETURNING HOME…")
+	summary._on_terminal_return_home_pressed()
+	summary._on_terminal_return_home_pressed()
+	assert_eq(leave_calls.size(), 1)
+	assert_true(return_button.disabled)
 
 func test_summary_remains_hidden_until_authoritative_results_ready() -> void:
 	var harness = HarnessScript.new()

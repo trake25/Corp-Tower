@@ -771,7 +771,11 @@ class GameEngine {
         this.nextLevelTimer = null;
         this.room.resultsReady = true;
         this.room.outcomeReadyFallbackAt = 0;
-        const delay = Math.max(0, Number(GameConfig.levelSummaryDelayMs) || 0);
+        const delay = Math.max(0, Number(
+            this.room.state === "game_over"
+                ? GameConfig.runOverDelayMs
+                : GameConfig.levelSummaryDelayMs
+        ) || 0);
         if (this.room.state === "game_over") {
             this.room.terminalCloseAt = Date.now() + delay;
         } else {
@@ -940,6 +944,14 @@ class GameEngine {
             this.onRoomCloseRequested(this.room.id, reason, destination)
         ).catch(error => {
             console.error("Room close request failed:", error.message);
+            if (!this.room || this.room.state !== "game_over") {
+                return;
+            }
+            this.room.terminalCloseRequested = false;
+            this.persistRoom();
+            this.scheduleTerminalRoomClose(
+                Math.max(0, Number(GameConfig.failRestartDelayMs) || 0)
+            );
         });
 
         return true;

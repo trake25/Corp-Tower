@@ -148,6 +148,7 @@ func _ready() -> void:
 	summary.quest_reward_label_provider = quest.get_reward_label
 	round_start_overlay.set_reward_label_formatter(quest.get_reward_label)
 	summary.on_summary_ended = visual_fx.end_beat
+	summary.return_home_action = NetworkManager.leave_game
 	chat.setup(match_state, NetworkManager, popovers, roster, score_popups, should_block_participant_popovers, tutorial.on_chat_sent)
 	power.setup(NetworkManager, popovers, score_popups, should_block_participant_popovers, tutorial.on_power_activated)
 	tutorial.setup({

@@ -199,7 +199,7 @@ adjacent: network.state.snapshot
 -->
 ## Engine lifecycle
 
-Game Engine owns waiting, starting, playing, finished, failed, game-over, completed, and closed room states. Game over accepts no gameplay actions and is limited to terminal presentation and close timing.
+Game Engine owns waiting, starting, playing, finished, failed, game-over, completed, and closed room states. Game over accepts no gameplay actions and is limited to terminal presentation and close timing. Its close dispatch is retry-safe: a transient owner callback failure releases the in-memory one-shot guard and reschedules the still-persisted terminal room rather than stranding it.
 
 <!-- kb
 id: backend.engine.timers
@@ -210,7 +210,7 @@ adjacent: gameplay.progression.timing
 -->
 ## Engine timers
 
-The active deadline is stored with room state so presentation time and failure timers cannot diverge. Start, play, post-level freeze, and terminal close use their own deadlines. Hydration restores only the timer appropriate to persisted state and only on the current lease owner.
+The active deadline is stored with room state so presentation time and failure timers cannot diverge. Start, play, post-level freeze, and terminal close use their own deadlines. Game over has its own authoritative Run Over close deadline rather than ordinary Results pacing. Hydration restores only the remaining timer appropriate to persisted state and only on the current lease owner.
 
 <!-- kb
 id: backend.engine.placement
@@ -288,7 +288,7 @@ adjacent: gameplay.progression.rollback
 -->
 ## Impact rollback
 
-Recoverable failure restores checkpoint score, eligible contribution, and Power while preserving retry count. Only securing the next checkpoint resets retries. Terminal failure restores the checkpoint once, broadcasts game over, and closes toward Home.
+Recoverable failure restores checkpoint score, eligible contribution, and Power while preserving retry count. Only securing the next checkpoint resets retries. Terminal failure first preserves the failed-attempt summary, including pre-rollback totals and level scores alongside the authoritative checkpoint-restored totals, then restores checkpoint score, eligible contribution, and Power exactly once. Live player scores are already restored when game over is broadcast, and its persisted terminal window closes toward Home.
 
 <!-- kb
 id: backend.stability.analysis

@@ -440,10 +440,6 @@ function resolveCheckpointFailure(engine, options = {}) {
         engine.room.terminalFailureReason = reason;
         engine.room.terminalCloseAt = 0;
         engine.room.terminalCloseRequested = false;
-        engine.restoreImpactScores();
-        engine.restoreImpactPowers();
-        engine.restoreImpactContributions();
-        clearAttemptState(engine);
         engine.room.lastLevelSummary = buildFailureSummary(engine, {
             result: "game_over",
             reason: "failure_limit_reached",
@@ -453,9 +449,13 @@ function resolveCheckpointFailure(engine, options = {}) {
             impactScoreFailures,
             failureStatus,
             mvp,
-            previousTotalScores: engine.getPlayerScoreMap(),
+            previousTotalScores,
             rollbackTotalScores: engine.room.impactScores
         });
+        engine.restoreImpactScores();
+        engine.restoreImpactPowers();
+        engine.restoreImpactContributions();
+        clearAttemptState(engine);
         engine.beginOutcomeSynchronization();
         return true;
     }

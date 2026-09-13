@@ -119,6 +119,6 @@ Owner: `KB/docs/context/testing.md:36-39` → **Reconnect coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/tests/Matchmaking_Queue.test.js` | `a resumed connection keeps its room socket when the superseded socket closes` | 1219 | `sed -n 1207,1239p src/Server/tests/Matchmaking_Queue.test.js` |
+| `src/Server/tests/Matchmaking_Queue.test.js` | `a resumed connection keeps its room socket when the superseded socket closes` | 1241 | `sed -n 1229,1261p src/Server/tests/Matchmaking_Queue.test.js` |
 
 Adjacent concepts: `network.session.recovery`

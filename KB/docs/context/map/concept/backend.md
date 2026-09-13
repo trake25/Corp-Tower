@@ -71,7 +71,7 @@ Owner: `KB/docs/context/backend.md:200-203` → **Engine lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `startLevel` | 812 | `sed -n 800,832p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `startLevel` | 816 | `sed -n 804,836p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.snapshot`
 

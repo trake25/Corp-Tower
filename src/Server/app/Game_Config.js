@@ -36,6 +36,7 @@ const GameConfig = {
     outcomeMinimumHoldMs: 850,
     outcomeReadyFallbackMs: 30000,
     levelSummaryDelayMs: 4000,
+    runOverDelayMs: 9000,
     impactInterval: 2,
     impactScoreRequirement: 0,
     impactMinContributionShare: 0.30,
