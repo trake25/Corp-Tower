@@ -349,6 +349,58 @@ test("a close after public membership begins rolls back the abandoned room", asy
     assert.equal(socket.sent.some(message => message.type === "room_created"), false);
 });
 
+test("public rollback preserves healthy readiness and restored lobby availability", async () => {
+    const { lobby, stateStore } = createMemoryLobby();
+    const healthySocket = new FakeSocket();
+    const healthyPlayer = await lobby.createPlayer(healthySocket, {});
+    await lobby.addPlayer(healthyPlayer);
+    const room = healthyPlayer.room;
+    room.readyPlayerIds.add(healthyPlayer.id);
+    await stateStore.saveRoom(room, true);
+
+    const enteredPersistence = deferred();
+    const releasePersistence = deferred();
+    const saveRoom = stateStore.saveRoom.bind(stateStore);
+    let delayed = false;
+    stateStore.saveRoom = async candidateRoom => {
+        if (
+            !delayed &&
+            candidateRoom.players.some(player => player.id !== healthyPlayer.id && !player.isBot)
+        ) {
+            delayed = true;
+            enteredPersistence.resolve();
+            await releasePersistence.promise;
+        }
+        return await saveRoom(candidateRoom);
+    };
+    const entrantSocket = new FakeSocket();
+
+    openLobbyConnection(lobby, entrantSocket);
+    await enteredPersistence.promise;
+    const entrant = [...lobby.connectedPlayers.values()].find(
+        player => player !== healthyPlayer
+    );
+    assert.ok(entrant);
+    assert.ok(room.players.some(player => player.id === entrant.id));
+
+    entrantSocket.emit("close");
+    releasePersistence.resolve();
+    await settle();
+    await settle();
+
+    assert.equal(lobby.connectedPlayers.get(healthyPlayer.id), healthyPlayer);
+    assert.equal(room.players.some(player => player.id === entrant.id), false);
+    assert.equal(room.readyPlayerIds.has(entrant.id), false);
+    assert.equal(room.readyPlayerIds.has(healthyPlayer.id), true);
+    assert.equal(room.lobbyDeadlineAt, 0);
+    assert.equal(stateStore.memoryOpenRooms.has(room.id), true);
+    assert.deepEqual(
+        stateStore.memoryRooms.get(String(room.id)).players.map(player => player.id),
+        [healthyPlayer.id]
+    );
+    assert.equal((await stateStore.getSession(entrant.sessionId)).roomId, null);
+});
+
 test("failed close cleanup remains retryable without double completion", async () => {
     let attempts = 0;
     const connection = openGameplayConnection({

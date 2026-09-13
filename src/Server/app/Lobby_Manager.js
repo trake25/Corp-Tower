@@ -2011,7 +2011,6 @@ class LobbyManager {
                     room.lobbyDeadlineAt = 0;
                     await this.reconcilePublicLobby(room, {
                         rosterChanged: true,
-                        resetHumanReadiness: true,
                         closeReason: "initial_establishment_abandoned"
                     });
                 }
