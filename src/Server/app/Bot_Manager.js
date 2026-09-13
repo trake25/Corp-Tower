@@ -16,7 +16,7 @@ const CRITICAL_LAST_RESORT_WAITS = Object.freeze({
 const PERSONALITY_DEFAULTS = Object.freeze({
     climber: Object.freeze({
         personality: "climber",
-        reactionMs: 1400,
+        reactionMs: 3500,
         skill: 0.78,
         riskTolerance: 0.45,
         greed: 0.76,
@@ -25,7 +25,7 @@ const PERSONALITY_DEFAULTS = Object.freeze({
     }),
     engineer: Object.freeze({
         personality: "engineer",
-        reactionMs: 1750,
+        reactionMs: 3600,
         skill: 0.86,
         riskTolerance: 0.16,
         greed: 0.30,
@@ -34,7 +34,7 @@ const PERSONALITY_DEFAULTS = Object.freeze({
     }),
     opportunist: Object.freeze({
         personality: "opportunist",
-        reactionMs: 1250,
+        reactionMs: 3400,
         skill: 0.72,
         riskTolerance: 0.58,
         greed: 0.92,
@@ -181,23 +181,23 @@ class BotManager {
     }
 
     getReactionDelay(bot) {
-        if (!bot?.botProfile) {
-            const min = Math.max(
-                MIN_REACTION_MS,
-                Math.floor(Number(GameConfig.debugBotDelayMin) || MIN_REACTION_MS)
-            );
-            const max = Math.max(
-                min,
-                Math.floor(Number(GameConfig.debugBotDelayMax) || min)
-            );
+        const min = Math.max(
+            MIN_REACTION_MS,
+            Math.floor(Number(GameConfig.debugBotDelayMin) || MIN_REACTION_MS)
+        );
+        const max = Math.max(
+            min,
+            Math.floor(Number(GameConfig.debugBotDelayMax) || min)
+        );
 
+        if (!bot?.botProfile) {
             return min + Math.floor(Math.random() * (max - min + 1));
         }
 
         const profile = this.getBotProfile(bot);
         const jitter = 0.85 + Math.random() * 0.30;
 
-        return Math.round(profile.reactionMs * jitter);
+        return Math.max(min, Math.min(max, Math.round(profile.reactionMs * jitter)));
     }
 
     startBots(engine) {

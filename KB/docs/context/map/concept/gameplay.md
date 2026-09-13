@@ -137,7 +137,7 @@ Owner: `KB/docs/context/gameplay.md:166-169` → **Failure rules**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `failLevel` | 1205 | `sed -n 1193,1225p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `failLevel` | 1183 | `sed -n 1171,1203p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Placement.js` | `checkFailCondition` | 416 | `sed -n 404,436p src/Server/app/engine/Placement.js` |
 | `src/Server/app/engine/Impacts.js` | `resolveCheckpointFailure` | 400 | `sed -n 388,420p src/Server/app/engine/Impacts.js` |
 

@@ -766,45 +766,29 @@ test("strong Reinforcement reaches two action units and scales continuously", ()
     assert.equal(strong.classification, "reinforcement");
 });
 
-test("round-clock slack lerps down from levelTimeSlack to levelTimeSlackMin across levelTimeSlackFullLevel", () => {
+test("round clock uses the deterministic base duration plus five seconds per level", () => {
     const { engine } = createPlayingEngine(1, 10, {
         tunables: {
-            levelTimeLimitMs: 60000,
-            levelTimeSlack: 3,
-            levelTimeSlackMin: 1.5,
-            levelTimeSlackFullLevel: 25,
-            placementCooldown: 1000
+            levelTimeLimitMs: 180000,
+            levelTimePerLevelMs: 5000,
+            levelTimeSlack: 99,
+            levelTimeSlackMin: 0.1,
+            levelTimeSlackFullLevel: 2,
+            placementCooldown: 5000
         }
     });
 
-    const fixedHeight = 1000;
-    const atLevel1 = engine.getLevelTimeLimitMs(fixedHeight, 1);
-    const atLevel13 = engine.getLevelTimeLimitMs(fixedHeight, 13);
-    const atLevel25 = engine.getLevelTimeLimitMs(fixedHeight, 25);
-    const atLevel40 = engine.getLevelTimeLimitMs(fixedHeight, 40);
-
-    assert.ok(
-        atLevel1 > atLevel13,
-        `expected level 1 (${atLevel1}) to allow more time than level 13 (${atLevel13})`
-    );
-    assert.ok(
-        atLevel13 > atLevel25,
-        `expected level 13 (${atLevel13}) to allow more time than level 25 (${atLevel25})`
-    );
-    assert.equal(atLevel25, atLevel40, "slack stays flat once levelTimeSlackFullLevel is reached");
-});
-
-test("the round-clock floor binds at low levels and releases once the derived clock outgrows it", () => {
-    const { engine } = createPlayingEngine(1, 10, { tunables: { placementCooldown: 1000 } });
-
+    assert.equal(engine.getLevelTimeLimitMs(1, 1), 180000);
+    assert.equal(engine.getLevelTimeLimitMs(1000, 2), 185000);
+    assert.equal(engine.getLevelTimeLimitMs(100000, 12), 235000);
+    assert.equal(engine.getLevelTimeLimitMs(1, 12), 235000);
+    GameConfig.placementCooldown = 250;
+    GameConfig.levelTimeSlack = 0.1;
+    assert.equal(engine.getLevelTimeLimitMs(100000, 12), 235000);
     assert.equal(
-        engine.getLevelTimeLimitMs(engine.getTargetHeightForLevel(1), 1),
-        GameConfig.levelTimeLimitMs,
-        "level 1's small target should still be floored"
-    );
-    assert.ok(
-        engine.getLevelTimeLimitMs(engine.getTargetHeightForLevel(20), 20) > GameConfig.levelTimeLimitMs,
-        "by level 20 the derived clock should have grown past the floor"
+        engine.getLevelTimeLimitMs(100000, 0),
+        180000,
+        "levels below one use the Level 1 duration"
     );
 });
 

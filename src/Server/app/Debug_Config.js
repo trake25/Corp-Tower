@@ -65,7 +65,7 @@ const RULES = {
     placementCooldown: ["int", 0, 5000],
     quickChatCooldownMs: ["int", 1000, 30000],
     towerStabilityFeedbackMode: ["enum", ["warnings_only", "live_preview"]],
-    levelTimeLimitMs: ["int", 5000, 120000],
+    levelTimeLimitMs: ["int", 5000, 180000],
     startDelayMs: ["int", 0, 10000],
     placementScorePopupDurationMs: ["int", 500, 10000],
     finishScorePopupDurationMs: ["int", 500, 10000],

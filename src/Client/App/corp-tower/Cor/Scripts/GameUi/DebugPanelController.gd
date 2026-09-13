@@ -289,7 +289,7 @@ func setup(
 	configure_slider(bot_delay_max_slider, 250, 10000, 250, func(value): send_debug_int("debugBotDelayMax", value))
 	configure_slider(debug_start_level_slider, 1, 99, 1, func(value): send_debug_int("debugStartLevel", value))
 	configure_slider(cooldown_slider, 0, 5000, 250, func(value): send_debug_int("placementCooldown", value))
-	configure_slider(level_time_slider, 5000, 120000, 1000, func(value): send_debug_int("levelTimeLimitMs", value))
+	configure_slider(level_time_slider, 5000, 180000, 1000, func(value): send_debug_int("levelTimeLimitMs", value))
 	configure_slider(start_delay_slider, 0, 10000, 500, func(value): send_debug_int("startDelayMs", value))
 	configure_slider(placement_popup_duration_slider, 500, 10000, 500, on_placement_popup_duration_changed)
 	configure_slider(finish_popup_duration_slider, 500, 10000, 500, on_finish_popup_duration_changed)

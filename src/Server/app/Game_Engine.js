@@ -982,39 +982,17 @@ class GameEngine {
     }
 
     getLevelTimeLimitMs(targetHeight, level) {
-        const floor = Math.max(1000, Number(GameConfig.levelTimeLimitMs) || 1000);
-        const height = Math.max(0, Number(
-            targetHeight ?? this.room?.targetHeight
-        ) || 0);
-
-        if (height <= 0) {
-            return floor;
-        }
-
-        const efficiency = Math.max(
-            0.05,
-            Math.min(1, Number(GameConfig.levelTimePlannedEfficiency) || 0.05)
-        );
-        const slackStart = Math.max(0.1, Number(GameConfig.levelTimeSlack) || 1);
-        const slackEnd = Math.max(
-            0.1, Math.min(slackStart, Number(GameConfig.levelTimeSlackMin) || slackStart)
-        );
-        const slackFullLevel = Math.max(
-            1, Number(GameConfig.levelTimeSlackFullLevel) || 1
+        const baseDurationMs = Math.max(
+            1000, Number(GameConfig.levelTimeLimitMs) || 1000
         );
         const resolvedLevel = Math.max(1, Number(level ?? this.room?.level) || 1);
-        const slackRamp = Math.min(1, (resolvedLevel - 1) / Math.max(1, slackFullLevel - 1));
-        const slack = slackStart + (slackEnd - slackStart) * slackRamp;
-        const cooldown = Math.max(1, Number(GameConfig.placementCooldown) || 1);
-        const players = Math.max(1, this.room?.players?.length || 1);
-        const heightPerPlacement = Math.max(
-            0.1,
-            this.getAverageBrickHeight() * efficiency
+        const perLevelDurationMs = Math.max(
+            0, Number(GameConfig.levelTimePerLevelMs) || 0
         );
-        const placementsNeeded = Math.ceil(height / heightPerPlacement);
-        const derived = Math.ceil(placementsNeeded / players) * cooldown * slack;
 
-        return Math.max(floor, Math.round(derived));
+        return Math.round(
+            baseDurationMs + (resolvedLevel - 1) * perLevelDurationMs
+        );
     }
 
     getConfiguredStartLevel() {

@@ -39,6 +39,7 @@ const QA_TUNING_BASELINE = Object.freeze({
     privateLobbyReconnectPhaseMs: 10000,
     privateLobbyGracePhaseMs: 10000,
     levelTimeLimitMs: 120000,
+    levelTimePerLevelMs: 5000,
     levelTimePlannedEfficiency: 0.55,
     levelTimeSlack: 3,
     levelTimeSlackMin: 1.5,

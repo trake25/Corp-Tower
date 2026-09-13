@@ -150,7 +150,7 @@ adjacent: network.session.recovery
 -->
 ## Round timing
 
-The round clock derives from target height, expected human packing efficiency, player count, cooldown, and level slack. It grows with the tower rather than using one flat duration. Reconnect TTL is independent, so a late-game round can outlast a disconnected player's recovery window. The pre-play start delay is a separate lifecycle countdown and does not consume or replace the round clock; the round duration begins only when the authoritative state enters `playing`.
+The active round clock is deterministic: Level 1 lasts 180 seconds, and each later level adds five seconds. Target height, expected packing efficiency, player count, cooldown, and slack do not alter that duration. Reconnect TTL is independent, so a late-game round can outlast a disconnected player's recovery window. The pre-play start delay is a separate lifecycle countdown and does not consume or replace the round clock; the round duration begins only when the authoritative state enters `playing`.
 
 <!-- kb
 id: gameplay.progression.failure

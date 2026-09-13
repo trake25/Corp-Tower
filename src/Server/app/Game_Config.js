@@ -17,13 +17,14 @@ const GameConfig = {
     targetHeightStepGrowthEvery: 3,
     startDelayMs: 4000,
     lobbyReadyTimeoutMs: 60000,
-    publicLobbyBotFillEnabled: true,
+    publicLobbyBotFillEnabled: false,
     publicLobbyBotFillDelayMs: 120000,
     publicLobbyBotReadyDelayMs: 2000,
     privateLobbyStartCountdownMs: 5000,
     privateLobbyReconnectPhaseMs: 10000,
     privateLobbyGracePhaseMs: 10000,
-    levelTimeLimitMs: 120000,
+    levelTimeLimitMs: 180000,
+    levelTimePerLevelMs: 5000,
     levelTimePlannedEfficiency: 0.55,
     levelTimeSlack: 3.0,
     levelTimeSlackMin: 1.5,
@@ -45,8 +46,8 @@ const GameConfig = {
     towerSiteSlendernessTarget: 6.75,
     towerSiteWidthMin: 8,
     towerSiteWidthMax: 8,
-    towerMaxTiltAngleDeg: 12,
-    towerStructuralPoseMaxAngleDeg: 10,
+    towerMaxTiltAngleDeg: 10,
+    towerStructuralPoseMaxAngleDeg: 8,
     towerStructuralPoseMaxDipUnits: 0.18,
     towerStructuralPoseRigidRisk: 0.08,
     towerStructuralPoseIntegritySwayShare: 0.45,
@@ -93,9 +94,9 @@ const GameConfig = {
     towerStabilityWarningThreshold: 75,
     towerStabilityCriticalThreshold: 30,
     towerStabilityMoodThreshold: 2,
-    towerStabilityFeedbackMode: process.env.CORP_TOWER_LIVE_PREVIEW_ENABLED === "false"
-        ? "warnings_only"
-        : "live_preview",
+    towerStabilityFeedbackMode: process.env.CORP_TOWER_LIVE_PREVIEW_ENABLED === "true"
+        ? "live_preview"
+        : "warnings_only",
     powerUnlockLevel: 1,
     powerMaxSlots: 3,
     powerActivationCooldownMs: 3000,
@@ -175,8 +176,8 @@ const GameConfig = {
     debugBotsEnabled: process.env.CORP_TOWER_BOTS_ENABLED === "true",
     showLatencyIndicator: process.env.CORP_TOWER_LATENCY_INDICATOR_ENABLED !== "false",
     debugBotCount: 2,
-    debugBotDelayMin: 6000,
-    debugBotDelayMax: 7000,
+    debugBotDelayMin: 3000,
+    debugBotDelayMax: 4000,
     debugBotStrategy: process.env.CORP_TOWER_BOT_STRATEGY === "cooperative"
         ? "mvp_greedy"
         : "cooperative",

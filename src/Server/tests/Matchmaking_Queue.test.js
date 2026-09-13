@@ -916,7 +916,8 @@ test("a mature public threshold fills only vacant seats with unready cooperative
     const lobby = new LobbyManager(cluster.makeStore("podA"));
     activeLobbies.push(lobby);
     await lobby.start();
-    assert.equal(lobby.getDebugConfig().publicLobbyBotFillEnabled, true);
+    assert.equal(lobby.getDebugConfig().publicLobbyBotFillEnabled, false);
+    await lobby.updateDebugConfig("publicLobbyBotFillEnabled", true);
 
     const player = await lobby.createPlayer(createFakeWs(), {});
     await lobby.addPlayer(player);
@@ -954,6 +955,7 @@ test("real matchmaking replaces a provisional production bot without exceeding t
     const lobby = new LobbyManager(cluster.makeStore("podA"));
     activeLobbies.push(lobby);
     await lobby.start();
+    await lobby.updateDebugConfig("publicLobbyBotFillEnabled", true);
 
     const first = await lobby.createPlayer(createFakeWs(), {});
     await lobby.addPlayer(first);
@@ -1000,6 +1002,7 @@ test("the public bot-fill toggle removes only waiting production bots and preser
     const lobby = new LobbyManager(cluster.makeStore("podA"));
     activeLobbies.push(lobby);
     await lobby.start();
+    await lobby.updateDebugConfig("publicLobbyBotFillEnabled", false);
 
     const player = await lobby.createPlayer(createFakeWs(), {});
     await lobby.addPlayer(player);
@@ -1008,6 +1011,13 @@ test("the public bot-fill toggle removes only waiting production bots and preser
     room.publicLobbyBotFillDeadlineAt = Date.now() - 1;
     await lobby.reconcilePublicLobby(room);
     const threshold = room.publicLobbyBotFillDeadlineAt;
+
+    assert.equal(lobby.getDebugConfig().publicLobbyBotFillEnabled, false);
+    assert.equal(room.players.filter(candidate => candidate.botCategory === "public_fill").length, 0);
+
+    await lobby.updateDebugConfig("publicLobbyBotFillEnabled", true);
+
+    assert.equal(room.players.filter(candidate => candidate.botCategory === "public_fill").length, 2);
 
     await lobby.updateDebugConfig("publicLobbyBotFillEnabled", false);
 
@@ -1026,6 +1036,7 @@ test("public bot-fill state survives hydration and only the owner restores lobby
     const lobby = new LobbyManager(cluster.makeStore("podA"));
     activeLobbies.push(lobby);
     await lobby.start();
+    await lobby.updateDebugConfig("publicLobbyBotFillEnabled", true);
 
     const socket = createFakeWs();
     const player = await lobby.createPlayer(socket, {});

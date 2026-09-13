@@ -118,7 +118,7 @@ class ImpactBanner extends Control:
 			_draw_critical_burst()
 
 		var plate := Rect2(8.0, 10.0, maxf(0.0, size.x - 16.0), maxf(0.0, size.y - 20.0))
-		draw_rect(plate, Color(INK_COLOR.r, INK_COLOR.g, INK_COLOR.b, 0.94), true)
+		draw_rect(plate, Color(INK_COLOR.r, INK_COLOR.g, INK_COLOR.b, 0.80), true)
 		draw_rect(plate, INK_EDGE_COLOR, false, 1.0, true)
 		var rail_length := 26.0 + (size.x - 128.0) * 0.18 + reward_strength * 8.0
 		if banner_kind == "critical_save":
@@ -158,7 +158,7 @@ class ImpactBanner extends Control:
 
 	func _draw_danger_banner() -> void:
 		var plate := Rect2(8.0, 8.0, maxf(0.0, size.x - 16.0), maxf(0.0, size.y - 16.0))
-		draw_rect(plate, Color(INK_COLOR.r, INK_COLOR.g, INK_COLOR.b, 0.97), true)
+		draw_rect(plate, Color(INK_COLOR.r, INK_COLOR.g, INK_COLOR.b, 0.80), true)
 		draw_rect(plate, DANGER_CORAL, false, 2.0, true)
 		var triangle := PackedVector2Array([
 			Vector2(18.0, size.y * 0.5 + 14.0),

@@ -17,7 +17,7 @@ const CONFIG_FIXTURE := {
 	"debugBotDelayMin": 500,
 	"debugBotDelayMax": 1000,
 	"debugStartLevel": 3,
-	"levelTimeLimitMs": 45000,
+	"levelTimeLimitMs": 180000,
 	"startDelayMs": 2000,
 	"placementScorePopupDurationMs": 4000,
 	"finishScorePopupDurationMs": 5000,
@@ -73,6 +73,9 @@ func test_apply_config_syncs_sliders_toggles_and_options() -> void:
 	assert_eq((harness.find("CriticalSaveActionSlider") as HSlider).value, 310.0)
 	assert_eq((harness.find("PerfectBuildFinisherSlider") as HSlider).value, 525.0)
 	assert_eq((harness.find("PerfectBuildImpactSlider") as HSlider).value, 20.0)
+	var level_time := harness.find("LevelTimeSlider") as HSlider
+	assert_eq(level_time.value, 180000.0)
+	assert_eq(level_time.max_value, 180000.0)
 	var lateral_share := harness.find("TowerLateralLoadShareSlider") as HSlider
 	assert_eq(lateral_share.value, 40.0)
 	assert_eq(lateral_share.min_value, 0.0)
