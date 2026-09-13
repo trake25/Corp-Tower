@@ -78,6 +78,144 @@ class MobileWebFacebookLinkAuthManager extends AuthManagerScript:
 		mobile_link_calls += 1
 		return REASON_NONE
 
+class MobileWebFacebookHandoffAuthManager extends AuthManagerScript:
+	const OWNER_TAB_ID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	const FLOW_ID := "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+	const MISMATCHED_FLOW_ID := "ccccccccccccccccccccccccccccccccccccccccccc"
+
+	var handoff_now := 2000000000
+	var owner_tab_id := OWNER_TAB_ID
+	var owner_transaction: Dictionary = {}
+	var shared_transaction: Dictionary = {}
+	var shared_result: Dictionary = {}
+	var link_flow: Dictionary = {}
+	var verifier := ""
+	var exchanged_requests: Array[Dictionary] = []
+	var link_callback_reason := REASON_NONE
+	var stage_link_callback := false
+	var callback_query_clears := 0
+	var secondary_close_attempts := 0
+
+	func _is_web_handoff_bridge_available() -> bool:
+		return true
+
+	func _is_mobile_web_facebook_runtime() -> bool:
+		return true
+
+	func _mobile_web_facebook_handoff_now_unix() -> int:
+		return handoff_now
+
+	func _mobile_web_facebook_handoff_random_id() -> String:
+		return FLOW_ID
+
+	func redirect_uri() -> String:
+		return "https://play.example.com/"
+
+	func _load_mobile_web_facebook_handoff_owner_tab_id() -> String:
+		return owner_tab_id
+
+	func _save_mobile_web_facebook_handoff_owner_tab_id(value: String) -> bool:
+		owner_tab_id = value
+		return true
+
+	func _load_mobile_web_facebook_handoff_owner_transaction() -> Dictionary:
+		return owner_transaction.duplicate(true)
+
+	func _save_mobile_web_facebook_handoff_owner_transaction(transaction: Dictionary) -> bool:
+		owner_transaction = transaction.duplicate(true)
+		return true
+
+	func _load_mobile_web_facebook_handoff_shared_transaction(_flow_id: String) -> Dictionary:
+		return shared_transaction.duplicate(true)
+
+	func _save_mobile_web_facebook_handoff_shared_transaction(
+		_flow_id: String,
+		transaction: Dictionary
+	) -> bool:
+		shared_transaction = transaction.duplicate(true)
+		return true
+
+	func _load_mobile_web_facebook_handoff_shared_result(_flow_id: String) -> Dictionary:
+		return shared_result.duplicate(true)
+
+	func _save_mobile_web_facebook_handoff_shared_result(
+		_flow_id: String,
+		result: Dictionary
+	) -> bool:
+		shared_result = result.duplicate(true)
+		return true
+
+	func _clear_mobile_web_facebook_handoff_owner_transaction(
+		expected_purpose: String = ""
+	) -> void:
+		if (
+			not owner_transaction.is_empty()
+			and expected_purpose != ""
+			and str(owner_transaction.get("purpose", "")) != expected_purpose
+		):
+			return
+
+		owner_transaction = {}
+		shared_transaction = {}
+		shared_result = {}
+		mobile_web_facebook_handoff_result_consuming = false
+		mobile_web_facebook_handoff_last_poll_msec = 0
+
+	func _set_mobile_web_facebook_handoff_terminal(message: String) -> void:
+		mobile_web_facebook_handoff_terminal_message = message
+
+	func has_mobile_web_facebook_handoff_terminal() -> bool:
+		return mobile_web_facebook_handoff_terminal_message != ""
+
+	func mobile_web_facebook_handoff_terminal_copy() -> String:
+		return mobile_web_facebook_handoff_terminal_message
+
+	func _clear_mobile_web_facebook_handoff_terminal() -> void:
+		mobile_web_facebook_handoff_terminal_message = ""
+
+	func _clear_mobile_web_facebook_handoff_callback_query() -> void:
+		callback_query_clears += 1
+
+	func _attempt_mobile_web_facebook_handoff_secondary_close() -> void:
+		secondary_close_attempts += 1
+
+	func _save_verifier(value: String) -> void:
+		verifier = value
+
+	func _load_verifier() -> String:
+		return verifier
+
+	func _clear_verifier() -> void:
+		verifier = ""
+
+	func _save_link_flow(provider: String, pre_link_user_id: String) -> void:
+		link_flow = {
+			"purpose": FLOW_LINK,
+			"provider": provider,
+			"pre_link_user_id": pre_link_user_id
+		}
+
+	func _load_link_flow() -> Dictionary:
+		return link_flow.duplicate(true)
+
+	func _clear_link_flow() -> void:
+		link_flow = {}
+
+	func _exchange_code(code: String) -> String:
+		exchanged_requests.append({"code": code, "verifier": _load_verifier()})
+		_clear_verifier()
+		return REASON_NONE
+
+	func _consume_link_callback(_callback: Dictionary) -> String:
+		if stage_link_callback and link_callback_reason == REASON_NONE:
+			pending_link_session = {
+				"access_token": "linked-access",
+				"refresh_token": "linked-refresh",
+				"user": {"id": user_id, "is_anonymous": false}
+			}
+			pending_link_provider_value = "facebook"
+		return link_callback_reason
+
 class RecoveryAuthManager extends AuthManagerScript:
 	func access_token() -> String:
 		return access_token_value
@@ -357,7 +495,235 @@ func test_mobile_web_facebook_fresh_sign_in_uses_backup_route_without_in_flight(
 	assert_eq(mobile_auth.generic_browser_sign_in_calls, 0)
 	assert_eq(mobile_auth.pc_web_sign_in_calls, 0)
 	assert_false(mobile_auth.oauth_in_flight)
+
+	assert_eq(mobile_auth.sign_in_with_provider("google"), mobile_auth.REASON_NONE)
+	assert_eq(mobile_auth.mobile_fresh_sign_in_calls, 1)
+	assert_eq(mobile_auth.generic_browser_sign_in_calls, 1)
+	assert_eq(mobile_auth.pc_web_sign_in_calls, 0)
 	mobile_auth.free()
+
+func test_mobile_web_facebook_handoff_transaction_is_bounded_and_non_secret() -> void:
+	var handoff = MobileWebFacebookHandoffAuthManager.new()
+	handoff.oauth_in_flight = true
+	var transaction := handoff._begin_mobile_web_facebook_handoff_transaction(
+		handoff.FLOW_SIGN_IN
+	)
+
+	assert_eq(transaction.get("flow_id", ""), handoff.FLOW_ID)
+	assert_eq(transaction.get("owner_tab_id", ""), handoff.OWNER_TAB_ID)
+	assert_eq(transaction.get("purpose", ""), handoff.FLOW_SIGN_IN)
+	assert_eq(
+		transaction.get("expires_at_unix", 0),
+		handoff.handoff_now + handoff.WEB_FACEBOOK_FLOW_TTL_SECONDS
+	)
+	assert_eq(handoff.owner_transaction, transaction)
+	assert_eq(handoff.shared_transaction, transaction)
+	assert_false(transaction.has("code_verifier"))
+	assert_false(transaction.has("access_token"))
+	assert_false(transaction.has("refresh_token"))
+	assert_false(transaction.has("guest_credential"))
+
+	var redirect_to := handoff._build_mobile_web_facebook_handoff_redirect_to(transaction)
+	assert_true(redirect_to.begins_with("https://play.example.com/?ct_fb_flow="))
+	assert_true(redirect_to.contains("ct_fb_owner=" + handoff.OWNER_TAB_ID))
+	assert_true(redirect_to.contains("ct_fb_purpose=sign_in"))
+	assert_false(handoff.oauth_in_flight)
+	handoff.free()
+
+func test_mobile_web_facebook_handoff_same_tab_uses_its_original_verifier() -> void:
+	var handoff = MobileWebFacebookHandoffAuthManager.new()
+	var transaction := handoff._begin_mobile_web_facebook_handoff_transaction(
+		handoff.FLOW_SIGN_IN
+	)
+	handoff._save_verifier("owner-tab-verifier")
+
+	assert_eq(await handoff._consume_mobile_web_facebook_handoff_callback({
+		"code": "same-tab-code",
+		"mobile_facebook_flow": transaction["flow_id"],
+		"mobile_facebook_owner": transaction["owner_tab_id"],
+		"mobile_facebook_purpose": transaction["purpose"]
+	}), handoff.REASON_NONE)
+	assert_eq(handoff.exchanged_requests, [{
+		"code": "same-tab-code", "verifier": "owner-tab-verifier"
+	}])
+	assert_eq(handoff.callback_query_clears, 1)
+	assert_true(handoff.owner_transaction.is_empty())
+	assert_true(handoff.shared_transaction.is_empty())
+	assert_false(handoff.has_mobile_web_facebook_handoff_terminal())
+	handoff.free()
+
+func test_mobile_web_facebook_link_handoff_keeps_guest_state_tab_scoped() -> void:
+	var handoff = MobileWebFacebookHandoffAuthManager.new()
+	handoff._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	handoff._save_link_flow("facebook", "guest-user")
+	var transaction := handoff._begin_mobile_web_facebook_handoff_transaction(
+		handoff.FLOW_LINK
+	)
+
+	assert_eq(transaction.get("purpose", ""), handoff.FLOW_LINK)
+	assert_eq(handoff._load_link_flow().get("pre_link_user_id", ""), "guest-user")
+	assert_eq(handoff.user_id, "guest-user")
+	assert_true(handoff.is_anonymous)
+	assert_false(handoff.shared_transaction.has("pre_link_user_id"))
+	assert_false(handoff.shared_transaction.has("access_token"))
+	assert_false(handoff.shared_transaction.has("refresh_token"))
+	handoff.free()
+
+func test_mobile_web_facebook_secondary_callback_forwards_once_and_owner_exchanges_once() -> void:
+	var owner = MobileWebFacebookHandoffAuthManager.new()
+	var transaction := owner._begin_mobile_web_facebook_handoff_transaction(owner.FLOW_SIGN_IN)
+	owner._save_verifier("owner-only-verifier")
+	var secondary = MobileWebFacebookHandoffAuthManager.new()
+	secondary.shared_transaction = owner.shared_transaction.duplicate(true)
+	var callback := {
+		"code": "forwarded-code",
+		"mobile_facebook_flow": transaction["flow_id"],
+		"mobile_facebook_owner": transaction["owner_tab_id"],
+		"mobile_facebook_purpose": transaction["purpose"]
+	}
+
+	assert_eq(
+		await secondary._consume_mobile_web_facebook_handoff_callback(callback),
+		secondary.REASON_NONE
+	)
+	assert_true(secondary.exchanged_requests.is_empty())
+	assert_eq(
+		secondary.mobile_web_facebook_handoff_terminal_copy(),
+		secondary.MOBILE_WEB_FACEBOOK_HANDOFF_SECONDARY_SUCCESS_MESSAGE
+	)
+	assert_eq(secondary.secondary_close_attempts, 1)
+	assert_false(secondary.shared_result.is_empty())
+	assert_false(secondary.shared_result.has("code_verifier"))
+	assert_false(secondary.shared_result.has("access_token"))
+	assert_false(secondary.shared_result.has("refresh_token"))
+	assert_false(secondary.shared_result.has("guest_credential"))
+
+	assert_eq(
+		await secondary._consume_mobile_web_facebook_handoff_callback(callback),
+		secondary.REASON_NONE
+	)
+	assert_true(secondary.exchanged_requests.is_empty())
+	assert_eq(
+		secondary.mobile_web_facebook_handoff_terminal_copy(),
+		secondary.MOBILE_WEB_FACEBOOK_HANDOFF_SECONDARY_FAILURE_MESSAGE
+	)
+
+	owner.shared_transaction = secondary.shared_transaction.duplicate(true)
+	owner.shared_result = secondary.shared_result.duplicate(true)
+	owner.mobile_web_facebook_handoff_last_poll_msec = -1000
+	await owner._poll_mobile_web_facebook_handoff()
+
+	assert_eq(owner.exchanged_requests, [{
+		"code": "forwarded-code", "verifier": "owner-only-verifier"
+	}])
+	assert_true(owner.owner_transaction.is_empty())
+	assert_true(owner.shared_result.is_empty())
+	owner.free()
+	secondary.free()
+
+func test_mobile_web_facebook_recovered_link_stages_the_original_guest_before_commit() -> void:
+	var owner = MobileWebFacebookHandoffAuthManager.new()
+	var completions: Array[String] = []
+	owner.provider_link_completed.connect(func(reason: String): completions.append(reason))
+	owner._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	owner._save_link_flow("facebook", "guest-user")
+	owner.stage_link_callback = true
+	var transaction := owner._begin_mobile_web_facebook_handoff_transaction(owner.FLOW_LINK)
+	owner._save_verifier("guest-owner-verifier")
+	owner.shared_result = {
+		"flow_id": transaction["flow_id"],
+		"owner_tab_id": transaction["owner_tab_id"],
+		"purpose": transaction["purpose"],
+		"code": "forwarded-link-code",
+		"error": "",
+		"error_code": "",
+		"delivered_at_unix": owner.handoff_now
+	}
+	owner.mobile_web_facebook_handoff_last_poll_msec = -1000
+
+	await owner._poll_mobile_web_facebook_handoff()
+
+	assert_eq(completions, [owner.REASON_NONE])
+	assert_true(owner.has_pending_provider_link())
+	assert_eq(owner.pending_link_provider(), "facebook")
+	assert_eq(owner.user_id, "guest-user")
+	assert_true(owner.is_anonymous)
+	owner.free()
+
+func test_mobile_web_facebook_handoff_mismatch_and_missing_owner_fail_closed() -> void:
+	var owner = MobileWebFacebookHandoffAuthManager.new()
+	var transaction := owner._begin_mobile_web_facebook_handoff_transaction(owner.FLOW_SIGN_IN)
+	owner._save_verifier("owner-verifier")
+
+	assert_eq(await owner._consume_mobile_web_facebook_handoff_callback({
+		"code": "mismatched-code",
+		"mobile_facebook_flow": owner.MISMATCHED_FLOW_ID,
+		"mobile_facebook_owner": transaction["owner_tab_id"],
+		"mobile_facebook_purpose": transaction["purpose"]
+	}), owner.REASON_MOBILE_FACEBOOK_HANDOFF)
+	assert_true(owner.exchanged_requests.is_empty())
+	assert_eq(owner._load_verifier(), "")
+
+	var orphan = MobileWebFacebookHandoffAuthManager.new()
+	assert_eq(await orphan._consume_mobile_web_facebook_handoff_callback({
+		"code": "orphan-code",
+		"mobile_facebook_flow": orphan.FLOW_ID,
+		"mobile_facebook_owner": orphan.OWNER_TAB_ID,
+		"mobile_facebook_purpose": orphan.FLOW_SIGN_IN
+	}), orphan.REASON_NONE)
+	assert_true(orphan.exchanged_requests.is_empty())
+	assert_eq(
+		orphan.mobile_web_facebook_handoff_terminal_copy(),
+		orphan.MOBILE_WEB_FACEBOOK_HANDOFF_SECONDARY_FAILURE_MESSAGE
+	)
+	owner.free()
+	orphan.free()
+
+func test_mobile_web_facebook_handoff_watchdog_completes_once_and_preserves_guest_linking() -> void:
+	var fresh = MobileWebFacebookHandoffAuthManager.new()
+	var fresh_completions: Array[String] = []
+	fresh.oauth_completed.connect(func(reason: String): fresh_completions.append(reason))
+	var fresh_transaction := fresh._begin_mobile_web_facebook_handoff_transaction(fresh.FLOW_SIGN_IN)
+	fresh_transaction["expires_at_unix"] = fresh.handoff_now
+	fresh.owner_transaction = fresh_transaction
+	fresh._save_verifier("expired-owner-verifier")
+
+	await fresh._poll_mobile_web_facebook_handoff()
+	await fresh._poll_mobile_web_facebook_handoff()
+	assert_eq(fresh_completions, [fresh.REASON_MOBILE_FACEBOOK_HANDOFF])
+	assert_eq(fresh._load_verifier(), "")
+
+	var link = MobileWebFacebookHandoffAuthManager.new()
+	var link_completions: Array[String] = []
+	link.provider_link_completed.connect(func(reason: String): link_completions.append(reason))
+	link._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	link._save_link_flow("facebook", "guest-user")
+	var link_transaction := link._begin_mobile_web_facebook_handoff_transaction(link.FLOW_LINK)
+	link_transaction["expires_at_unix"] = link.handoff_now
+	link.owner_transaction = link_transaction
+
+	await link._poll_mobile_web_facebook_handoff()
+	assert_eq(link_completions, [link.REASON_MOBILE_FACEBOOK_HANDOFF])
+	assert_eq(link.user_id, "guest-user")
+	assert_true(link.is_anonymous)
+	assert_false(link.has_pending_provider_link())
+	fresh.free()
+	link.free()
 
 func test_normal_pkce_callback_exchange_stores_the_fresh_supabase_session() -> void:
 	var transport = FakeCurrentProjectTransport.new()

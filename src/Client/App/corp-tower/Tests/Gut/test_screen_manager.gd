@@ -445,6 +445,26 @@ func test_browser_sign_in_failure_restores_the_same_screen_for_retry() -> void:
 	assert_true("browser" in error_label.text.to_lower())
 	assert_false("servers unavailable" in error_label.text.to_lower())
 
+func test_mobile_web_facebook_handoff_sign_in_failure_unlocks_the_existing_screen() -> void:
+	screen_manager.show_sign_in_screen()
+	await get_tree().process_frame
+	var sign_in = screen_manager.current_overlay
+	sign_in.set_busy(true)
+
+	screen_manager._finish_provider_login(
+		sign_in, AuthManager.REASON_MOBILE_FACEBOOK_HANDOFF
+	)
+
+	var guest_button: Button = sign_in.get_node("SafeArea/Root/GuestButton")
+	var error_label: Label = sign_in.get_node("SafeArea/Root/ErrorLabel")
+	assert_eq(screen_manager.current_overlay, sign_in)
+	assert_false(guest_button.disabled)
+	assert_eq(
+		error_label.text,
+		"Facebook sign-in couldn’t finish. Contact Support with error FB-WEB-01."
+	)
+	assert_true(error_label.visible)
+
 func test_web_link_navigation_retires_the_account_profile_connection() -> void:
 	_show_unlinked_account()
 	await get_tree().process_frame
@@ -557,6 +577,55 @@ func test_mobile_web_facebook_link_uses_same_tab_supabase_staging_before_commit(
 	assert_eq(AuthManager.user_id, "guest-user")
 	AuthManager.sign_out()
 
+func test_mobile_web_facebook_recovered_link_callback_uses_the_existing_authoritative_commit() -> void:
+	AuthManager.sign_out()
+	AuthManager._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	_show_unlinked_account()
+	await get_tree().process_frame
+	_acknowledge_account_profile_readiness()
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "launch"
+	screen_manager._handle_web_oauth_navigation(
+		"facebook",
+		AuthManager.FLOW_LINK,
+		AuthManager.FACEBOOK_LINK_ROUTE_WEB_MOBILE
+	)
+	assert_eq(AuthManager._stage_link_session({
+		"access_token": "linked-access",
+		"refresh_token": "linked-refresh",
+		"expires_in": 3600,
+		"user": {
+			"id": "guest-user",
+			"is_anonymous": false,
+			"app_metadata": {"provider": "facebook"}
+		}
+	}, {
+		"purpose": AuthManager.FLOW_LINK,
+		"provider": "facebook",
+		"pre_link_user_id": "guest-user"
+	}), AuthManager.REASON_NONE)
+	AuthManager._record_provider_link_result(AuthManager.REASON_NONE, false)
+
+	screen_manager._on_provider_link_completed(AuthManager.REASON_NONE)
+
+	assert_eq(screen_manager.provider_link_pending_provider, "facebook")
+	assert_eq(screen_manager.provider_link_stage, "commit")
+	assert_true(NetworkManager.is_connecting)
+	_acknowledge_account_profile_readiness()
+	assert_eq(NetworkManager.ws.sent_messages, [{
+		"type": "provider_link_commit",
+		"provider": "facebook",
+		"accessToken": "linked-access"
+	}])
+	assert_true(AuthManager.is_anonymous)
+	assert_eq(AuthManager.user_id, "guest-user")
+	AuthManager.sign_out()
+
 func test_pc_web_facebook_keeps_the_established_same_tab_round_trip_lifecycle() -> void:
 	_show_unlinked_account()
 	await get_tree().process_frame
@@ -610,6 +679,52 @@ func test_mobile_facebook_link_callback_failures_restore_account_and_preserve_gu
 		assert_true(AuthManager.is_anonymous)
 
 	AuthManager.sign_out()
+
+func test_mobile_web_facebook_handoff_link_failure_restores_account_and_preserves_guest() -> void:
+	AuthManager.sign_out()
+	AuthManager._apply_session({
+		"access_token": "guest-access",
+		"refresh_token": "guest-refresh",
+		"expires_in": 3600,
+		"user": {"id": "guest-user", "is_anonymous": true}
+	})
+	screen_manager.provider_link_pending_provider = "facebook"
+	screen_manager.provider_link_stage = "launch"
+	screen_manager.provider_link_browser_round_trip_active = true
+	AuthManager.last_provider_link_provider = "facebook"
+	AuthManager.last_provider_link_reason = AuthManager.REASON_MOBILE_FACEBOOK_HANDOFF
+	AuthManager.provider_link_result_pending = true
+
+	screen_manager._on_provider_link_completed(AuthManager.REASON_MOBILE_FACEBOOK_HANDOFF)
+
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/AccountScreen.tscn"))
+	assert_eq(AuthManager.user_id, "guest-user")
+	assert_true(AuthManager.is_anonymous)
+	assert_eq(
+		screen_manager.current_overlay.error_label.text,
+		"Facebook linking couldn’t finish. Your Guest account is unchanged. Contact Support with error FB-WEB-02."
+	)
+	assert_true(screen_manager.current_overlay.error_label.visible)
+	AuthManager.sign_out()
+
+func test_mobile_web_facebook_secondary_callback_terminal_never_starts_a_playable_session() -> void:
+	AuthManager.sign_out()
+	AuthManager.mobile_web_facebook_handoff_terminal_message = (
+		AuthManager.MOBILE_WEB_FACEBOOK_HANDOFF_SECONDARY_SUCCESS_MESSAGE
+	)
+
+	await screen_manager._show_initial_screen()
+
+	var sign_in = screen_manager.current_overlay
+	assert_true(sign_in.scene_file_path.ends_with("/SignInScreen.tscn"))
+	assert_false(sign_in.get_node("SafeArea/Root/GuestButton").visible)
+	assert_false(sign_in.get_node("SafeArea/Root/SocialRow").visible)
+	assert_eq(
+		sign_in.get_node("SafeArea/Root/ErrorLabel").text,
+		"Facebook sign-in finished. Return to your original Top or Drop tab."
+	)
+	assert_eq(screen_manager.profile_route_pending, "")
+	AuthManager.mobile_web_facebook_handoff_terminal_message = ""
 
 func test_facebook_eligibility_uses_explicit_web_and_native_lifecycle_stages() -> void:
 	assert_eq(

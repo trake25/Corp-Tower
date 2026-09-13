@@ -139,6 +139,9 @@ func _show_initial_screen() -> void:
 		return
 
 	var restored := await AuthManager.restore_session()
+	if AuthManager.has_mobile_web_facebook_handoff_terminal():
+		_show_mobile_web_facebook_handoff_terminal()
+		return
 
 	if AuthManager.has_provider_link_result():
 		_resume_provider_link_callback()
@@ -281,6 +284,15 @@ func show_sign_in_screen() -> void:
 
 	if pending != AuthManager.REASON_NONE:
 		screen.call("show_error", pending)
+
+func _show_mobile_web_facebook_handoff_terminal() -> void:
+	var screen := SignInScreenScene.instantiate()
+	_set_overlay(screen)
+	_set_debug_context(DEBUG_CONTEXT_SIGN_IN)
+	screen.call(
+		"show_mobile_web_facebook_handoff_terminal",
+		AuthManager.mobile_web_facebook_handoff_terminal_copy()
+	)
 
 func _on_guest_login_requested() -> void:
 	var screen := current_overlay

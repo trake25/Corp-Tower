@@ -7,6 +7,11 @@ const LINK_FLOW_FILE := "user://corp_tower_auth_link_flow.save"
 const WEB_VERIFIER_KEY := "corp_tower_auth_verifier"
 const WEB_LINK_FLOW_KEY := "corp_tower_auth_link_flow"
 const WEB_FACEBOOK_FLOW_KEY := "corp_tower_facebook_web_flow"
+const WEB_MOBILE_FACEBOOK_HANDOFF_OWNER_TAB_KEY := "corp_tower_mobile_facebook_handoff_owner_tab"
+const WEB_MOBILE_FACEBOOK_HANDOFF_OWNER_FLOW_KEY := "corp_tower_mobile_facebook_handoff_owner_flow"
+const WEB_MOBILE_FACEBOOK_HANDOFF_TERMINAL_KEY := "corp_tower_mobile_facebook_handoff_terminal"
+const WEB_MOBILE_FACEBOOK_HANDOFF_SHARED_PREFIX := "corp_tower_mobile_facebook_handoff:"
+const WEB_MOBILE_FACEBOOK_HANDOFF_RESULT_SUFFIX := ":result"
 const REFRESH_MARGIN_SECONDS := 120
 const REFRESH_CHECK_INTERVAL_SECONDS := 30.0
 const NATIVE_FACEBOOK_TIMEOUT_SECONDS := 30.0
@@ -14,6 +19,18 @@ const VERIFIER_BYTES := 32
 const FACEBOOK_WEB_STATE_BYTES := 32
 const OAUTH_RESUME_GRACE_SECONDS := 2.0
 const WEB_FACEBOOK_FLOW_TTL_SECONDS := 600
+const MOBILE_WEB_FACEBOOK_HANDOFF_POLL_MILLISECONDS := 250
+const MOBILE_WEB_FACEBOOK_HANDOFF_CALLBACK_CODE_MAX_LENGTH := 4096
+const MOBILE_WEB_FACEBOOK_HANDOFF_CALLBACK_ERROR_MAX_LENGTH := 256
+const MOBILE_WEB_FACEBOOK_HANDOFF_QUERY_FLOW := "ct_fb_flow"
+const MOBILE_WEB_FACEBOOK_HANDOFF_QUERY_OWNER := "ct_fb_owner"
+const MOBILE_WEB_FACEBOOK_HANDOFF_QUERY_PURPOSE := "ct_fb_purpose"
+const MOBILE_WEB_FACEBOOK_HANDOFF_SECONDARY_SUCCESS_MESSAGE := (
+	"Facebook sign-in finished. Return to your original Top or Drop tab."
+)
+const MOBILE_WEB_FACEBOOK_HANDOFF_SECONDARY_FAILURE_MESSAGE := (
+	"Facebook sign-in or linking couldn’t finish in this tab. Return to your original Top or Drop tab."
+)
 const FACEBOOK_WEB_AUTH_URL := "https://www.facebook.com/v22.0/dialog/oauth"
 const FACEBOOK_WEB_EXCHANGE_PATH := "/api/auth/facebook/exchange"
 
@@ -29,6 +46,7 @@ const REASON_UNREACHABLE := "unreachable"
 const REASON_REJECTED := "rejected"
 const REASON_CANCELLED := "cancelled"
 const REASON_BROWSER := "browser"
+const REASON_MOBILE_FACEBOOK_HANDOFF := "mobile_facebook_handoff"
 const REASON_IDENTITY_CONFLICT := "identity_conflict"
 const REASON_PROVIDER_UNAVAILABLE := "provider_unavailable"
 
@@ -74,6 +92,9 @@ var native_signin_in_flight := false
 var native_google_enabled := true
 var native_facebook_enabled := true
 var auth_transport
+var mobile_web_facebook_handoff_result_consuming := false
+var mobile_web_facebook_handoff_last_poll_msec := 0
+var mobile_web_facebook_handoff_terminal_message := ""
 
 func _ready() -> void:
 	auth_transport = AuthRequestTransportScript.new()
@@ -93,6 +114,9 @@ func _ready() -> void:
 	_setup_deeplink()
 	_setup_native_google()
 	_setup_native_facebook()
+
+func _process(_delta: float) -> void:
+	_poll_mobile_web_facebook_handoff()
 
 func _setup_deeplink() -> void:
 	if not is_oauth_enabled() or OS.get_name() != "Android":
@@ -243,6 +267,8 @@ func restore_session() -> bool:
 		return false
 
 	await consume_web_callback()
+	if has_mobile_web_facebook_handoff_terminal():
+		return false
 
 	if _has_facebook_access_token():
 		return true
@@ -261,6 +287,9 @@ func consume_web_callback() -> String:
 
 	var query := str(JavaScriptBridge.eval("window.location.search", true))
 	var callback := _parse_callback_query(query)
+	if _has_mobile_web_facebook_handoff_metadata(callback):
+		return await _consume_mobile_web_facebook_handoff_callback(callback)
+
 	# Route any retained Facebook callback record through its own fail-closed
 	# consumer, including malformed or expired records. Otherwise an expired
 	# Facebook code could be misinterpreted as a generic Supabase callback.
@@ -272,9 +301,7 @@ func consume_web_callback() -> String:
 		return REASON_NONE
 
 	oauth_in_flight = false
-	JavaScriptBridge.eval(
-		"window.history.replaceState({}, '', window.location.pathname)", true
-	)
+	_clear_mobile_web_facebook_handoff_callback_query()
 
 	if facebook_flow_present:
 		return await _consume_web_facebook_callback(callback)
@@ -540,6 +567,572 @@ func _has_active_web_facebook_flow() -> bool:
 func _web_facebook_flow_expired(flow: Dictionary) -> bool:
 	return int(flow.get("expires_at_unix", 0)) <= int(Time.get_unix_time_from_system())
 
+func _is_web_handoff_bridge_available() -> bool:
+	return OS.has_feature("web")
+
+func _is_mobile_web_facebook_handoff_runtime() -> bool:
+	return _is_web_handoff_bridge_available() and _is_mobile_web_facebook_runtime()
+
+func _mobile_web_facebook_handoff_now_unix() -> int:
+	return int(Time.get_unix_time_from_system())
+
+func _mobile_web_facebook_handoff_random_id() -> String:
+	return _base64url(Crypto.new().generate_random_bytes(FACEBOOK_WEB_STATE_BYTES))
+
+func _is_mobile_web_facebook_handoff_id(value: String) -> bool:
+	if value.length() < 32 or value.length() > 128:
+		return false
+
+	const allowed := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+	for index in value.length():
+		if not allowed.contains(value.substr(index, 1)):
+			return false
+
+	return true
+
+func _is_mobile_web_facebook_handoff_purpose(purpose: String) -> bool:
+	return purpose == FLOW_SIGN_IN or purpose == FLOW_LINK
+
+func _web_handoff_storage_read(storage_name: String, key: String) -> String:
+	if not _is_web_handoff_bridge_available():
+		return ""
+
+	return str(JavaScriptBridge.eval(
+		"""
+(function (storageName, key) {
+  try {
+    return window[storageName].getItem(key) || "";
+  } catch (_) {
+    return "";
+  }
+})(%s, %s)
+""" % [JSON.stringify(storage_name), JSON.stringify(key)],
+		true
+	))
+
+func _web_handoff_storage_write(storage_name: String, key: String, value: String) -> bool:
+	if not _is_web_handoff_bridge_available():
+		return false
+
+	return str(JavaScriptBridge.eval(
+		"""
+(function (storageName, key, value) {
+  try {
+    window[storageName].setItem(key, value);
+    return "ok";
+  } catch (_) {
+    return "";
+  }
+})(%s, %s, %s)
+""" % [
+			JSON.stringify(storage_name), JSON.stringify(key), JSON.stringify(value)
+		],
+		true
+	)) == "ok"
+
+func _web_handoff_storage_remove(storage_name: String, key: String) -> void:
+	if not _is_web_handoff_bridge_available():
+		return
+
+	JavaScriptBridge.eval(
+		"""
+(function (storageName, key) {
+  try {
+    window[storageName].removeItem(key);
+  } catch (_) {}
+})(%s, %s)
+""" % [JSON.stringify(storage_name), JSON.stringify(key)],
+		true
+	)
+
+func _parse_mobile_web_facebook_handoff_storage(raw: String) -> Dictionary:
+	if raw == "":
+		return {}
+
+	var parsed = JSON.parse_string(raw)
+	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
+
+func _load_mobile_web_facebook_handoff_owner_tab_id() -> String:
+	return _web_handoff_storage_read(
+		"sessionStorage", WEB_MOBILE_FACEBOOK_HANDOFF_OWNER_TAB_KEY
+	)
+
+func _save_mobile_web_facebook_handoff_owner_tab_id(owner_tab_id: String) -> bool:
+	if not _is_mobile_web_facebook_handoff_id(owner_tab_id):
+		return false
+
+	return _web_handoff_storage_write(
+		"sessionStorage", WEB_MOBILE_FACEBOOK_HANDOFF_OWNER_TAB_KEY, owner_tab_id
+	)
+
+func _load_mobile_web_facebook_handoff_owner_transaction() -> Dictionary:
+	return _parse_mobile_web_facebook_handoff_storage(_web_handoff_storage_read(
+		"sessionStorage", WEB_MOBILE_FACEBOOK_HANDOFF_OWNER_FLOW_KEY
+	))
+
+func _save_mobile_web_facebook_handoff_owner_transaction(transaction: Dictionary) -> bool:
+	return _web_handoff_storage_write(
+		"sessionStorage",
+		WEB_MOBILE_FACEBOOK_HANDOFF_OWNER_FLOW_KEY,
+		JSON.stringify(transaction)
+	)
+
+func _mobile_web_facebook_handoff_shared_transaction_key(flow_id: String) -> String:
+	return WEB_MOBILE_FACEBOOK_HANDOFF_SHARED_PREFIX + flow_id
+
+func _mobile_web_facebook_handoff_shared_result_key(flow_id: String) -> String:
+	return _mobile_web_facebook_handoff_shared_transaction_key(flow_id) + \
+		WEB_MOBILE_FACEBOOK_HANDOFF_RESULT_SUFFIX
+
+func _load_mobile_web_facebook_handoff_shared_transaction(flow_id: String) -> Dictionary:
+	if not _is_mobile_web_facebook_handoff_id(flow_id):
+		return {}
+
+	return _parse_mobile_web_facebook_handoff_storage(_web_handoff_storage_read(
+		"localStorage", _mobile_web_facebook_handoff_shared_transaction_key(flow_id)
+	))
+
+func _save_mobile_web_facebook_handoff_shared_transaction(
+	flow_id: String,
+	transaction: Dictionary
+) -> bool:
+	if not _is_mobile_web_facebook_handoff_id(flow_id):
+		return false
+
+	return _web_handoff_storage_write(
+		"localStorage",
+		_mobile_web_facebook_handoff_shared_transaction_key(flow_id),
+		JSON.stringify(transaction)
+	)
+
+func _load_mobile_web_facebook_handoff_shared_result(flow_id: String) -> Dictionary:
+	if not _is_mobile_web_facebook_handoff_id(flow_id):
+		return {}
+
+	return _parse_mobile_web_facebook_handoff_storage(_web_handoff_storage_read(
+		"localStorage", _mobile_web_facebook_handoff_shared_result_key(flow_id)
+	))
+
+func _save_mobile_web_facebook_handoff_shared_result(
+	flow_id: String,
+	result: Dictionary
+) -> bool:
+	if not _is_mobile_web_facebook_handoff_id(flow_id):
+		return false
+
+	return _web_handoff_storage_write(
+		"localStorage",
+		_mobile_web_facebook_handoff_shared_result_key(flow_id),
+		JSON.stringify(result)
+	)
+
+func _clear_mobile_web_facebook_handoff_shared_records(flow_id: String) -> void:
+	if not _is_mobile_web_facebook_handoff_id(flow_id):
+		return
+
+	_web_handoff_storage_remove(
+		"localStorage", _mobile_web_facebook_handoff_shared_transaction_key(flow_id)
+	)
+	_web_handoff_storage_remove(
+		"localStorage", _mobile_web_facebook_handoff_shared_result_key(flow_id)
+	)
+
+func _is_live_mobile_web_facebook_handoff_transaction(transaction: Dictionary) -> bool:
+	var flow_id := str(transaction.get("flow_id", ""))
+	var owner_tab_id := str(transaction.get("owner_tab_id", ""))
+	var purpose := str(transaction.get("purpose", ""))
+	var created_at_unix := int(transaction.get("created_at_unix", 0))
+	var expires_at_unix := int(transaction.get("expires_at_unix", 0))
+	var now := _mobile_web_facebook_handoff_now_unix()
+
+	return (
+		_is_mobile_web_facebook_handoff_id(flow_id)
+		and _is_mobile_web_facebook_handoff_id(owner_tab_id)
+		and _is_mobile_web_facebook_handoff_purpose(purpose)
+		and created_at_unix > 0
+		and expires_at_unix - created_at_unix == WEB_FACEBOOK_FLOW_TTL_SECONDS
+		and created_at_unix <= now
+		and expires_at_unix > now
+		and expires_at_unix - now <= WEB_FACEBOOK_FLOW_TTL_SECONDS
+	)
+
+func _mobile_web_facebook_handoff_metadata(callback: Dictionary) -> Dictionary:
+	return {
+		"flow_id": str(callback.get("mobile_facebook_flow", "")),
+		"owner_tab_id": str(callback.get("mobile_facebook_owner", "")),
+		"purpose": str(callback.get("mobile_facebook_purpose", ""))
+	}
+
+func _has_mobile_web_facebook_handoff_metadata(callback: Dictionary) -> bool:
+	var metadata := _mobile_web_facebook_handoff_metadata(callback)
+	return (
+		str(metadata.get("flow_id", "")) != ""
+		or str(metadata.get("owner_tab_id", "")) != ""
+		or str(metadata.get("purpose", "")) != ""
+	)
+
+func _is_valid_mobile_web_facebook_handoff_metadata(metadata: Dictionary) -> bool:
+	return (
+		_is_mobile_web_facebook_handoff_id(str(metadata.get("flow_id", "")))
+		and _is_mobile_web_facebook_handoff_id(str(metadata.get("owner_tab_id", "")))
+		and _is_mobile_web_facebook_handoff_purpose(str(metadata.get("purpose", "")))
+	)
+
+func _mobile_web_facebook_handoff_transaction_matches(
+	transaction: Dictionary,
+	metadata: Dictionary
+) -> bool:
+	return (
+		_is_live_mobile_web_facebook_handoff_transaction(transaction)
+		and _is_valid_mobile_web_facebook_handoff_metadata(metadata)
+		and str(transaction.get("flow_id", "")) == str(metadata.get("flow_id", ""))
+		and str(transaction.get("owner_tab_id", "")) == str(metadata.get("owner_tab_id", ""))
+		and str(transaction.get("purpose", "")) == str(metadata.get("purpose", ""))
+	)
+
+func _begin_mobile_web_facebook_handoff_transaction(purpose: String) -> Dictionary:
+	if (
+		not _is_mobile_web_facebook_handoff_runtime()
+		or not _is_mobile_web_facebook_handoff_purpose(purpose)
+	):
+		return {}
+
+	_clear_mobile_web_facebook_handoff_owner_transaction()
+	_clear_mobile_web_facebook_handoff_terminal()
+	oauth_in_flight = false
+
+	var owner_tab_id := _load_mobile_web_facebook_handoff_owner_tab_id()
+	if not _is_mobile_web_facebook_handoff_id(owner_tab_id):
+		owner_tab_id = _mobile_web_facebook_handoff_random_id()
+		if not _save_mobile_web_facebook_handoff_owner_tab_id(owner_tab_id):
+			return {}
+
+	var flow_id := _mobile_web_facebook_handoff_random_id()
+	if not _is_mobile_web_facebook_handoff_id(flow_id):
+		return {}
+
+	var now := _mobile_web_facebook_handoff_now_unix()
+	var transaction := {
+		"flow_id": flow_id,
+		"owner_tab_id": owner_tab_id,
+		"purpose": purpose,
+		"created_at_unix": now,
+		"expires_at_unix": now + WEB_FACEBOOK_FLOW_TTL_SECONDS,
+		"consumed": false
+	}
+	if not _save_mobile_web_facebook_handoff_owner_transaction(transaction):
+		return {}
+
+	# Shared storage is only a same-browser recovery aid. The primary same-tab
+	# PKCE path remains valid when a browser denies shared storage access.
+	_save_mobile_web_facebook_handoff_shared_transaction(flow_id, transaction)
+	return transaction
+
+func _clear_mobile_web_facebook_handoff_owner_transaction(expected_purpose: String = "") -> void:
+	var transaction := _load_mobile_web_facebook_handoff_owner_transaction()
+	if (
+		not transaction.is_empty()
+		and expected_purpose != ""
+		and str(transaction.get("purpose", "")) != expected_purpose
+	):
+		return
+
+	var flow_id := str(transaction.get("flow_id", ""))
+	_web_handoff_storage_remove("sessionStorage", WEB_MOBILE_FACEBOOK_HANDOFF_OWNER_FLOW_KEY)
+	if _is_mobile_web_facebook_handoff_id(flow_id):
+		_clear_mobile_web_facebook_handoff_shared_records(flow_id)
+
+	mobile_web_facebook_handoff_result_consuming = false
+	mobile_web_facebook_handoff_last_poll_msec = 0
+
+func _set_mobile_web_facebook_handoff_terminal(message: String) -> void:
+	mobile_web_facebook_handoff_terminal_message = message
+	_web_handoff_storage_write("sessionStorage", WEB_MOBILE_FACEBOOK_HANDOFF_TERMINAL_KEY, message)
+
+func has_mobile_web_facebook_handoff_terminal() -> bool:
+	if mobile_web_facebook_handoff_terminal_message != "":
+		return true
+
+	mobile_web_facebook_handoff_terminal_message = _web_handoff_storage_read(
+		"sessionStorage", WEB_MOBILE_FACEBOOK_HANDOFF_TERMINAL_KEY
+	)
+	return mobile_web_facebook_handoff_terminal_message != ""
+
+func mobile_web_facebook_handoff_terminal_copy() -> String:
+	has_mobile_web_facebook_handoff_terminal()
+	return mobile_web_facebook_handoff_terminal_message
+
+func _clear_mobile_web_facebook_handoff_terminal() -> void:
+	mobile_web_facebook_handoff_terminal_message = ""
+	_web_handoff_storage_remove("sessionStorage", WEB_MOBILE_FACEBOOK_HANDOFF_TERMINAL_KEY)
+
+func _build_mobile_web_facebook_handoff_redirect_to(transaction: Dictionary) -> String:
+	if not _is_live_mobile_web_facebook_handoff_transaction(transaction):
+		return ""
+
+	var redirect_to := redirect_uri()
+	if redirect_to == "":
+		return ""
+
+	var fragment := ""
+	var fragment_index := redirect_to.find("#")
+	if fragment_index >= 0:
+		fragment = redirect_to.substr(fragment_index)
+		redirect_to = redirect_to.left(fragment_index)
+
+	var separator := "&" if redirect_to.contains("?") else "?"
+	if redirect_to.ends_with("?") or redirect_to.ends_with("&"):
+		separator = ""
+
+	var query := "&".join(PackedStringArray([
+		MOBILE_WEB_FACEBOOK_HANDOFF_QUERY_FLOW + "=" +
+			str(transaction.get("flow_id", "")).uri_encode(),
+		MOBILE_WEB_FACEBOOK_HANDOFF_QUERY_OWNER + "=" +
+			str(transaction.get("owner_tab_id", "")).uri_encode(),
+		MOBILE_WEB_FACEBOOK_HANDOFF_QUERY_PURPOSE + "=" +
+			str(transaction.get("purpose", "")).uri_encode()
+	]))
+	return redirect_to + separator + query + fragment
+
+func _mobile_web_facebook_handoff_callback_envelope(
+	callback: Dictionary,
+	metadata: Dictionary
+) -> Dictionary:
+	if not _is_valid_mobile_web_facebook_handoff_metadata(metadata):
+		return {}
+
+	var code := str(callback.get("code", ""))
+	var error := str(callback.get("error", ""))
+	var error_code := str(callback.get("error_code", ""))
+	if (
+		code.length() > MOBILE_WEB_FACEBOOK_HANDOFF_CALLBACK_CODE_MAX_LENGTH
+		or error.length() > MOBILE_WEB_FACEBOOK_HANDOFF_CALLBACK_ERROR_MAX_LENGTH
+		or error_code.length() > MOBILE_WEB_FACEBOOK_HANDOFF_CALLBACK_ERROR_MAX_LENGTH
+		or (code != "" and (error != "" or error_code != ""))
+		or (code == "" and error == "" and error_code == "")
+	):
+		return {}
+
+	return {
+		"flow_id": str(metadata.get("flow_id", "")),
+		"owner_tab_id": str(metadata.get("owner_tab_id", "")),
+		"purpose": str(metadata.get("purpose", "")),
+		"code": code,
+		"error": error,
+		"error_code": error_code,
+		"delivered_at_unix": _mobile_web_facebook_handoff_now_unix()
+	}
+
+func _mobile_web_facebook_handoff_result_matches(
+	result: Dictionary,
+	transaction: Dictionary
+) -> bool:
+	var metadata := {
+		"flow_id": str(result.get("flow_id", "")),
+		"owner_tab_id": str(result.get("owner_tab_id", "")),
+		"purpose": str(result.get("purpose", ""))
+	}
+	var delivered_at_unix := int(result.get("delivered_at_unix", 0))
+	var now := _mobile_web_facebook_handoff_now_unix()
+	return (
+		_mobile_web_facebook_handoff_transaction_matches(transaction, metadata)
+		and not _mobile_web_facebook_handoff_callback_envelope(result, metadata).is_empty()
+		and delivered_at_unix >= int(transaction.get("created_at_unix", 0))
+		and delivered_at_unix <= now
+	)
+
+func _publish_mobile_web_facebook_handoff_callback(
+	callback: Dictionary,
+	metadata: Dictionary
+) -> bool:
+	if not _is_valid_mobile_web_facebook_handoff_metadata(metadata):
+		return false
+
+	var flow_id := str(metadata.get("flow_id", ""))
+	var transaction := _load_mobile_web_facebook_handoff_shared_transaction(flow_id)
+	if (
+		not _mobile_web_facebook_handoff_transaction_matches(transaction, metadata)
+		or bool(transaction.get("consumed", false))
+		or not _load_mobile_web_facebook_handoff_shared_result(flow_id).is_empty()
+	):
+		return false
+
+	var envelope := _mobile_web_facebook_handoff_callback_envelope(callback, metadata)
+	if envelope.is_empty():
+		return false
+
+	return _save_mobile_web_facebook_handoff_shared_result(flow_id, envelope)
+
+func _claim_mobile_web_facebook_handoff_owner_transaction(
+	transaction: Dictionary,
+	metadata: Dictionary,
+	require_shared_transaction: bool
+) -> bool:
+	if (
+		not _mobile_web_facebook_handoff_transaction_matches(transaction, metadata)
+		or bool(transaction.get("consumed", false))
+	):
+		return false
+
+	var owner_transaction := transaction.duplicate(true)
+	owner_transaction["consumed"] = true
+	owner_transaction["consumed_at_unix"] = _mobile_web_facebook_handoff_now_unix()
+	if not _save_mobile_web_facebook_handoff_owner_transaction(owner_transaction):
+		return false
+
+	var flow_id := str(metadata.get("flow_id", ""))
+	var shared_transaction := _load_mobile_web_facebook_handoff_shared_transaction(flow_id)
+	if shared_transaction.is_empty():
+		return not require_shared_transaction
+	if (
+		not _mobile_web_facebook_handoff_transaction_matches(shared_transaction, metadata)
+		or bool(shared_transaction.get("consumed", false))
+	):
+		return false
+
+	shared_transaction["consumed"] = true
+	shared_transaction["consumed_at_unix"] = _mobile_web_facebook_handoff_now_unix()
+	return _save_mobile_web_facebook_handoff_shared_transaction(flow_id, shared_transaction)
+
+func _clear_mobile_web_facebook_handoff_callback_query() -> void:
+	if not _is_web_handoff_bridge_available():
+		return
+
+	JavaScriptBridge.eval(
+		"window.history.replaceState({}, '', window.location.pathname)", true
+	)
+
+func _attempt_mobile_web_facebook_handoff_secondary_close() -> void:
+	if not _is_web_handoff_bridge_available():
+		return
+
+	JavaScriptBridge.eval("window.close()", true)
+
+func _complete_mobile_web_facebook_handoff_owner_callback(
+	callback: Dictionary,
+	purpose: String,
+	emit_completion: bool
+) -> String:
+	if purpose == FLOW_LINK:
+		var link_reason := await _consume_link_callback(callback)
+		_record_provider_link_result(link_reason, emit_completion)
+		return link_reason
+
+	if purpose != FLOW_SIGN_IN:
+		return REASON_MOBILE_FACEBOOK_HANDOFF
+
+	var code := str(callback.get("code", ""))
+	if code == "":
+		_clear_verifier()
+		last_oauth_reason = (
+			REASON_CANCELLED if str(callback.get("error", "")) != "" else REASON_REJECTED
+		)
+	else:
+		last_oauth_reason = await _exchange_code(code)
+
+	if emit_completion:
+		oauth_completed.emit(last_oauth_reason)
+	return last_oauth_reason
+
+func _finish_mobile_web_facebook_handoff_owner_failure(
+	transaction: Dictionary,
+	emit_completion: bool
+) -> String:
+	var purpose := str(transaction.get("purpose", ""))
+	_clear_mobile_web_facebook_handoff_owner_transaction()
+
+	if purpose == FLOW_LINK:
+		_record_provider_link_result(REASON_MOBILE_FACEBOOK_HANDOFF, emit_completion)
+		return REASON_MOBILE_FACEBOOK_HANDOFF
+
+	_clear_verifier()
+	last_oauth_reason = REASON_MOBILE_FACEBOOK_HANDOFF
+	if emit_completion:
+		oauth_completed.emit(last_oauth_reason)
+	return last_oauth_reason
+
+func _consume_mobile_web_facebook_handoff_callback(callback: Dictionary) -> String:
+	var metadata := _mobile_web_facebook_handoff_metadata(callback)
+	var owner_transaction := _load_mobile_web_facebook_handoff_owner_transaction()
+	_clear_mobile_web_facebook_handoff_callback_query()
+
+	if not owner_transaction.is_empty():
+		if (
+			not _mobile_web_facebook_handoff_transaction_matches(owner_transaction, metadata)
+			or _mobile_web_facebook_handoff_callback_envelope(callback, metadata).is_empty()
+			or mobile_web_facebook_handoff_result_consuming
+		):
+			return _finish_mobile_web_facebook_handoff_owner_failure(owner_transaction, false)
+
+		if not _claim_mobile_web_facebook_handoff_owner_transaction(
+			owner_transaction, metadata, false
+		):
+			return _finish_mobile_web_facebook_handoff_owner_failure(owner_transaction, false)
+
+		mobile_web_facebook_handoff_result_consuming = true
+		var owner_reason := await _complete_mobile_web_facebook_handoff_owner_callback(
+			callback, str(metadata.get("purpose", "")), false
+		)
+		mobile_web_facebook_handoff_result_consuming = false
+		_clear_mobile_web_facebook_handoff_owner_transaction()
+		return owner_reason
+
+	if _publish_mobile_web_facebook_handoff_callback(callback, metadata):
+		_set_mobile_web_facebook_handoff_terminal(
+			MOBILE_WEB_FACEBOOK_HANDOFF_SECONDARY_SUCCESS_MESSAGE
+		)
+		_attempt_mobile_web_facebook_handoff_secondary_close()
+	else:
+		_set_mobile_web_facebook_handoff_terminal(
+			MOBILE_WEB_FACEBOOK_HANDOFF_SECONDARY_FAILURE_MESSAGE
+		)
+	return REASON_NONE
+
+func _poll_mobile_web_facebook_handoff() -> void:
+	if not _is_web_handoff_bridge_available():
+		return
+
+	var now_msec := int(Time.get_ticks_msec())
+	if now_msec - mobile_web_facebook_handoff_last_poll_msec < \
+		MOBILE_WEB_FACEBOOK_HANDOFF_POLL_MILLISECONDS:
+		return
+	mobile_web_facebook_handoff_last_poll_msec = now_msec
+
+	var owner_transaction := _load_mobile_web_facebook_handoff_owner_transaction()
+	if owner_transaction.is_empty():
+		return
+	if not _is_live_mobile_web_facebook_handoff_transaction(owner_transaction):
+		_finish_mobile_web_facebook_handoff_owner_failure(owner_transaction, true)
+		return
+	if mobile_web_facebook_handoff_result_consuming:
+		return
+
+	var flow_id := str(owner_transaction.get("flow_id", ""))
+	var result := _load_mobile_web_facebook_handoff_shared_result(flow_id)
+	if result.is_empty():
+		return
+	if not _mobile_web_facebook_handoff_result_matches(result, owner_transaction):
+		_finish_mobile_web_facebook_handoff_owner_failure(owner_transaction, true)
+		return
+
+	var metadata := {
+		"flow_id": str(result.get("flow_id", "")),
+		"owner_tab_id": str(result.get("owner_tab_id", "")),
+		"purpose": str(result.get("purpose", ""))
+	}
+	if not _claim_mobile_web_facebook_handoff_owner_transaction(
+		owner_transaction, metadata, true
+	):
+		_finish_mobile_web_facebook_handoff_owner_failure(owner_transaction, true)
+		return
+
+	mobile_web_facebook_handoff_result_consuming = true
+	await _complete_mobile_web_facebook_handoff_owner_callback(
+		result, str(metadata.get("purpose", "")), true
+	)
+	mobile_web_facebook_handoff_result_consuming = false
+	_clear_mobile_web_facebook_handoff_owner_transaction()
+
 func _clear_pending_link_state() -> void:
 	pending_link_session = {}
 	pending_link_provider_value = ""
@@ -552,6 +1145,7 @@ func _clear_pending_link_state() -> void:
 	_clear_verifier()
 	_clear_link_flow()
 	_clear_web_facebook_flow()
+	_clear_mobile_web_facebook_handoff_owner_transaction(FLOW_LINK)
 
 func _record_provider_link_result(reason: String, emit_completion: bool = true) -> void:
 	var result_provider := pending_link_provider_value
@@ -559,6 +1153,8 @@ func _record_provider_link_result(reason: String, emit_completion: bool = true) 
 		result_provider = str(_load_link_flow().get("provider", ""))
 	if not PROVIDERS.has(result_provider):
 		result_provider = ""
+
+	_clear_mobile_web_facebook_handoff_owner_transaction(FLOW_LINK)
 
 	if reason != REASON_NONE:
 		_clear_verifier()
@@ -709,12 +1305,21 @@ func _is_mobile_web_facebook_runtime() -> bool:
 	return OS.has_feature("web") and _is_mobile_web_runtime()
 
 func _sign_in_with_mobile_web_facebook() -> String:
+	var transaction := _begin_mobile_web_facebook_handoff_transaction(FLOW_SIGN_IN)
+	if transaction.is_empty():
+		return REASON_REJECTED
+
 	var verifier := _generate_code_verifier()
 	_save_verifier(verifier)
+	var handoff_redirect_to := _build_mobile_web_facebook_handoff_redirect_to(transaction)
+	if handoff_redirect_to == "":
+		_clear_verifier()
+		_clear_mobile_web_facebook_handoff_owner_transaction()
+		return REASON_REJECTED
 
 	var url := _build_authorize_url(
 		"facebook",
-		redirect_uri(),
+		handoff_redirect_to,
 		_code_challenge(verifier),
 		true
 	)
@@ -1091,7 +1696,19 @@ func link_with_provider(provider: String) -> String:
 	return await _begin_browser_link(provider)
 
 func _begin_mobile_web_facebook_link() -> String:
-	return await _begin_browser_link("facebook", false)
+	var transaction := _begin_mobile_web_facebook_handoff_transaction(FLOW_LINK)
+	if transaction.is_empty():
+		return REASON_REJECTED
+
+	var handoff_redirect_to := _build_mobile_web_facebook_handoff_redirect_to(transaction)
+	if handoff_redirect_to == "":
+		_clear_mobile_web_facebook_handoff_owner_transaction(FLOW_LINK)
+		return REASON_REJECTED
+
+	var reason := await _begin_browser_link("facebook", false, handoff_redirect_to)
+	if reason != REASON_NONE:
+		_clear_mobile_web_facebook_handoff_owner_transaction(FLOW_LINK)
+	return reason
 
 func begin_facebook_link_preflight() -> String:
 	if not can_link_provider("facebook"):
@@ -1126,7 +1743,11 @@ func begin_facebook_link_preflight() -> String:
 func complete_facebook_link_after_preflight() -> String:
 	return REASON_PROVIDER_UNAVAILABLE
 
-func _begin_browser_link(provider: String, arm_web_oauth_navigation: bool = true) -> String:
+func _begin_browser_link(
+	provider: String,
+	arm_web_oauth_navigation: bool = true,
+	redirect_to_override: String = ""
+) -> String:
 	var flow := _load_link_flow()
 	var expected_provider := str(flow.get("provider", ""))
 
@@ -1136,9 +1757,15 @@ func _begin_browser_link(provider: String, arm_web_oauth_navigation: bool = true
 
 	var verifier := _generate_code_verifier()
 	_save_verifier(verifier)
+	var callback_redirect_to := (
+		redirect_to_override if redirect_to_override != "" else redirect_uri()
+	)
+	if callback_redirect_to == "":
+		_clear_pending_link_state()
+		return REASON_REJECTED
 	var path := _build_link_authorize_path(
 		provider,
-		redirect_uri(),
+		callback_redirect_to,
 		_code_challenge(verifier),
 		OS.has_feature("web")
 	)
@@ -1249,7 +1876,15 @@ func _base64url(bytes: PackedByteArray) -> String:
 	return Marshalls.raw_to_base64(bytes).replace("+", "-").replace("/", "_").rstrip("=")
 
 func _parse_callback_query(query: String) -> Dictionary:
-	var result := {"code": "", "error": "", "error_code": "", "state": ""}
+	var result := {
+		"code": "",
+		"error": "",
+		"error_code": "",
+		"state": "",
+		"mobile_facebook_flow": "",
+		"mobile_facebook_owner": "",
+		"mobile_facebook_purpose": ""
+	}
 
 	for pair in query.trim_prefix("?").split("&", false):
 		var parts := pair.split("=", true, 1)
@@ -1266,6 +1901,12 @@ func _parse_callback_query(query: String) -> Dictionary:
 				result["error_code"] = parts[1].uri_decode()
 			"state":
 				result["state"] = parts[1].uri_decode()
+			MOBILE_WEB_FACEBOOK_HANDOFF_QUERY_FLOW:
+				result["mobile_facebook_flow"] = parts[1].uri_decode()
+			MOBILE_WEB_FACEBOOK_HANDOFF_QUERY_OWNER:
+				result["mobile_facebook_owner"] = parts[1].uri_decode()
+			MOBILE_WEB_FACEBOOK_HANDOFF_QUERY_PURPOSE:
+				result["mobile_facebook_purpose"] = parts[1].uri_decode()
 
 	return result
 
@@ -1493,6 +2134,7 @@ func sign_out() -> void:
 	google_email = ""
 
 	_clear_pending_link_state()
+	_clear_mobile_web_facebook_handoff_owner_transaction()
 
 	if FileAccess.file_exists(SESSION_FILE):
 		DirAccess.remove_absolute(SESSION_FILE)

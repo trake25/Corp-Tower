@@ -42,7 +42,7 @@ Owner: `KB/docs/context/ui-hud.md:14-23` → **State application**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 404 | `sed -n 392,424p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Server/app/Game_Engine.js` | `captureRoundEndRemainingMs` | 46 | `sed -n 34,66p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `captureRoundEndRemainingMs` | 47 | `sed -n 35,67p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.snapshot`, `hud.controller.architecture`
 
@@ -117,7 +117,7 @@ Owner: `KB/docs/context/ui-hud.md:113-125` → **Summary overlay**
 | `src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn` | `LevelSummaryOverlay` | 3 | `sed -n 1,23p src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 302 | `sed -n 290,322p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `queue_level_summary_after_score_popups` | 81 | `sed -n 69,101p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
-| `src/Server/app/Game_Engine.js` | `beginResultsWindow` | 759 | `sed -n 747,779p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `beginResultsWindow` | 768 | `sed -n 756,788p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: none
 

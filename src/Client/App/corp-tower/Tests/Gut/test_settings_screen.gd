@@ -2,6 +2,7 @@ extends GutTest
 
 const SettingsScreenScene = preload("res://Cor/Scenes/SettingsScreen.tscn")
 const AccountScreenScene = preload("res://Cor/Scenes/AccountScreen.tscn")
+const SignInScreenScene = preload("res://Cor/Scenes/SignInScreen.tscn")
 const AccountScreenScript = preload("res://Cor/Scripts/AccountScreen.gd")
 const UiPreferencesScript = preload("res://Cor/Scripts/UiPreferences.gd")
 const TEST_PREFERENCES_FILE := "user://corp_tower_ui_preferences_test.save"
@@ -120,6 +121,30 @@ func test_account_busy_and_conflict_feedback_restore_link_controls() -> void:
 		"This account is already linked. Sign out and sign in with it instead."
 	)
 	assert_true(account.error_label.visible)
+
+func test_mobile_web_facebook_handoff_errors_use_the_dedicated_player_copy() -> void:
+	var sign_in = SignInScreenScene.instantiate()
+	add_child_autofree(sign_in)
+	await get_tree().process_frame
+	sign_in.show_error("mobile_facebook_handoff")
+	assert_eq(
+		sign_in.get_node("SafeArea/Root/ErrorLabel").text,
+		"Facebook sign-in couldn’t finish. Contact Support with error FB-WEB-01."
+	)
+	sign_in.show_error("browser")
+	assert_eq(
+		sign_in.get_node("SafeArea/Root/ErrorLabel").text,
+		"Could not complete browser sign-in. Please try again."
+	)
+
+	var account = AccountScreenScene.instantiate()
+	add_child_autofree(account)
+	await get_tree().process_frame
+	account.show_error("mobile_facebook_handoff", "F4")
+	assert_eq(
+		account.error_label.text,
+		"Facebook linking couldn’t finish. Your Guest account is unchanged. Contact Support with error FB-WEB-02."
+	)
 
 func test_account_screen_renders_facebook_diagnostics_without_replacing_semantic_errors() -> void:
 	var account = AccountScreenScene.instantiate()

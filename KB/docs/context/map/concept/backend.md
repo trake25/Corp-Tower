@@ -9,7 +9,7 @@ Owner: `KB/docs/context/backend.md:20-23` → **Game Engine boundary**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `GameEngine` | 9 | `sed -n 1,29p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `GameEngine` | 10 | `sed -n 1,30p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: none
 
@@ -19,8 +19,8 @@ Owner: `KB/docs/context/backend.md:32-35` → **Persistence ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 3034 | `sed -n 3022,3054p src/Server/app/Lobby_Manager.js` |
-| `src/Server/app/Redis_State.js` | `saveRoom` | 554 | `sed -n 542,574p src/Server/app/Redis_State.js` |
+| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 3025 | `sed -n 3013,3045p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Redis_State.js` | `saveRoom` | 573 | `sed -n 561,593p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.redis.leases`
 
@@ -30,7 +30,7 @@ Owner: `KB/docs/context/backend.md:11-14` → **Server authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameState` | 64 | `sed -n 52,84p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameState` | 65 | `sed -n 53,85p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.adapters.boundaries`
 
@@ -71,7 +71,7 @@ Owner: `KB/docs/context/backend.md:200-203` → **Engine lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `startLevel` | 803 | `sed -n 791,823p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `startLevel` | 812 | `sed -n 800,832p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.snapshot`
 
@@ -91,7 +91,7 @@ Owner: `KB/docs/context/backend.md:246-249` → **Power events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `activatePower` | 650 | `sed -n 638,670p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `activatePower` | 659 | `sed -n 647,679p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.transient-events`
 
@@ -101,7 +101,7 @@ Owner: `KB/docs/context/backend.md:211-214` → **Engine timers**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 361 | `sed -n 349,381p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 370 | `sed -n 358,390p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.progression.timing`
 
@@ -113,7 +113,7 @@ Owner: `KB/docs/context/backend.md:132-135` → **Identity verification**
 |---|---|---:|---|
 | `src/Server/app/Auth_Verifier.js` | `verifyAccessToken` | 87 | `sed -n 75,107p src/Server/app/Auth_Verifier.js` |
 | `src/Server/app/Auth_Verifier.js` | `exchangeFacebookAuthorizationCode` | 125 | `sed -n 113,145p src/Server/app/Auth_Verifier.js` |
-| `src/Server/app/Server.js` | `handleFacebookOauthExchange` | 270 | `sed -n 258,290p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleFacebookOauthExchange` | 269 | `sed -n 257,289p src/Server/app/Server.js` |
 
 Adjacent concepts: `network.session.identity`
 
@@ -157,7 +157,7 @@ Owner: `KB/docs/context/backend.md:118-121` → **Intentional active leave**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 2669 | `sed -n 2657,2689p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 2660 | `sed -n 2648,2680p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.room.active-leave`
 
@@ -167,8 +167,8 @@ Owner: `KB/docs/context/backend.md:83-86` → **Bot spectator rooms**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2340 | `sed -n 2328,2360p src/Server/app/Lobby_Manager.js` |
-| `src/Server/app/Lobby_Manager.js` | `closeRoom` | 1347 | `sed -n 1335,1367p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2331 | `sed -n 2319,2351p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `closeRoom` | 1338 | `sed -n 1326,1358p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.room.bot-spectator`, `backend.bots.preview`
 
@@ -178,7 +178,7 @@ Owner: `KB/docs/context/backend.md:107-110` → **Terminal room close**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `closeRoom` | 1347 | `sed -n 1335,1367p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `closeRoom` | 1338 | `sed -n 1326,1358p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.room.close`
 
@@ -188,8 +188,8 @@ Owner: `KB/docs/context/backend.md:44-47` → **Session connection ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `isCurrentPlayerConnection` | 219 | `sed -n 207,239p src/Server/app/Lobby_Manager.js` |
-| `src/Server/app/Redis_State.js` | `isCurrentSessionConnection` | 437 | `sed -n 425,457p src/Server/app/Redis_State.js` |
+| `src/Server/app/Lobby_Manager.js` | `isCurrentPlayerConnection` | 212 | `sed -n 200,232p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Redis_State.js` | `isCurrentSessionConnection` | 456 | `sed -n 444,476p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `network.session.supersession`
 
@@ -199,8 +199,8 @@ Owner: `KB/docs/context/backend.md:96-99` → **Cross-pod ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3324 | `sed -n 3312,3344p src/Server/app/Lobby_Manager.js` |
-| `src/Server/app/Redis_State.js` | `claimRoomLease` | 593 | `sed -n 581,613p src/Server/app/Redis_State.js` |
+| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3315 | `sed -n 3303,3335p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Redis_State.js` | `claimRoomLease` | 612 | `sed -n 600,632p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.redis.leases`, `network.room.cross-pod`
 
@@ -211,7 +211,7 @@ Owner: `KB/docs/context/backend.md:188-193` → **Debug configuration**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Debug_Config.js` | `applyValue` | 132 | `sed -n 120,152p src/Server/app/Debug_Config.js` |
-| `src/Server/app/Lobby_Manager.js` | `updateDebugConfig` | 1580 | `sed -n 1568,1600p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `updateDebugConfig` | 1571 | `sed -n 1559,1591p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `gameplay.debug.tuning`
 
@@ -221,7 +221,7 @@ Owner: `KB/docs/context/backend.md:70-73` → **Private rooms**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `createPrivateRoom` | 1957 | `sed -n 1945,1977p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `createPrivateRoom` | 1948 | `sed -n 1936,1968p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.room.private`
 
@@ -231,8 +231,8 @@ Owner: `KB/docs/context/backend.md:56-62` → **Public matchmaking**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `joinOrCreateRoom` | 1945 | `sed -n 1933,1965p src/Server/app/Lobby_Manager.js` |
-| `src/Server/app/Redis_State.js` | `withMatchmakingLock` | 528 | `sed -n 516,548p src/Server/app/Redis_State.js` |
+| `src/Server/app/Lobby_Manager.js` | `joinOrCreateRoom` | 1936 | `sed -n 1924,1956p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Redis_State.js` | `withMatchmakingLock` | 547 | `sed -n 535,567p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `network.room.public`
 
@@ -252,8 +252,8 @@ Owner: `KB/docs/context/backend.md:374-377` → **Hydration continuity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Redis_State.js` | `saveRoom` | 554 | `sed -n 542,574p src/Server/app/Redis_State.js` |
-| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 3034 | `sed -n 3022,3054p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Redis_State.js` | `saveRoom` | 573 | `sed -n 561,593p src/Server/app/Redis_State.js` |
+| `src/Server/app/Lobby_Manager.js` | `hydrateRoom` | 3025 | `sed -n 3013,3045p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `network.state.snapshot`
 
@@ -263,7 +263,7 @@ Owner: `KB/docs/context/backend.md:362-365` → **Redis leases**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Redis_State.js` | `claimRoomLease` | 593 | `sed -n 581,613p src/Server/app/Redis_State.js` |
+| `src/Server/app/Redis_State.js` | `claimRoomLease` | 612 | `sed -n 600,632p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.lobby.cross-pod`
 

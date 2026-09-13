@@ -60,22 +60,29 @@ id: ui.auth.presentation
 alias: sign in screen
 alias: oauth UI
 source: src/Client/App/corp-tower/Cor/Scenes/SignInScreen.tscn#SignInScreen
+source: src/Client/App/corp-tower/Cor/Scripts/SignInScreen.gd#show_error
 source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#sign_in_with_provider
+source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_begin_mobile_web_facebook_handoff_transaction
+source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_consume_mobile_web_facebook_handoff_callback
+source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_poll_mobile_web_facebook_handoff
 source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_begin_web_facebook_login
 source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#link_with_provider
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_show_initial_screen
 adjacent: network.session.identity
 adjacent: build.endpoint-auth.injection
 -->
 ## Authentication screen
 
 Authentication shows only configured providers. Web Google and Mobile Web Facebook use Supabase PKCE in the
-initiating tab; Google requests provider account selection. PC Web Facebook retains its manual
-authorization-code redirect in that tab. Mobile Web Guest-to-Facebook linking uses the authenticated Supabase
-provider-link round trip in the initiating tab: its callback stages the same Guest until the Account server
-accepts the durable provider claim. PC Web Facebook retains its direct code-exchange link flow, while Android's
-native Google and Facebook provider behavior remains separate. Empty committed auth values disable sign-in
-capability, and cancellation or browser/provider failure leaves the screen retryable rather than presenting a
-server-availability failure.
+initiating tab; Google requests provider account selection. Mobile Web Facebook is current-tab-first, with a
+short-lived random flow and owner-tab identity that permits a provider-created callback tab in the same browser
+profile to forward only its bounded callback result. The original tab retains PKCE and Guest-link authority;
+the callback tab never becomes a playable session, and unsupported browser/app handoffs fail closed while the
+owner watchdog returns the retryable `FB-WEB-01` or `FB-WEB-02` presentation. Mobile Web Guest-to-Facebook
+linking stages the same Guest until the Account server accepts the durable provider claim. PC Web Facebook
+retains its direct code-exchange link flow, while Android's native Google and Facebook provider behavior remains
+separate. Empty committed auth values disable sign-in capability, and cancellation or browser/provider failure
+leaves the screen retryable rather than presenting a server-availability failure.
 
 <!-- kb
 id: ui.startup.restoration
@@ -158,8 +165,11 @@ Private Lobby renders server identity, fixed seats, host-only kick, readiness, c
 id: ui.settings.presentation
 alias: settings screen
 source: src/Client/App/corp-tower/Cor/Scenes/SettingsScreen.tscn#SettingsScreen
+source: src/Client/App/corp-tower/Cor/Scripts/AccountScreen.gd#show_error
 source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_on_provider_link_requested
 source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_handle_web_oauth_navigation
+source: src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd#_on_provider_link_completed
+source: src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd#_begin_mobile_web_facebook_link
 -->
 ## Settings
 
@@ -169,9 +179,10 @@ player may link exactly one configured external provider—Google or Facebook—
 presentation conventions as Sign In. Linking upgrades the current guest in place: success refreshes
 linked account presentation and hides all provider-link controls, while cancellation, rejection, or
 provider conflict leaves the existing player identity intact. Web Google manual linking retains the
-original Guest identity across its Supabase PKCE callback. Mobile Web Facebook opens its same-origin auth
-tab from the player gesture and keeps the Account screen, Guest, and profile connection loaded until the
-original tab receives a valid callback result; PC Web keeps its same-tab interruption lifecycle. The game
+original Guest identity across its Supabase PKCE callback. Mobile Web Facebook remains current-tab-first:
+the initiating Account flow retains the Guest and PKCE/link authority, while a provider-created same-browser
+callback tab may forward a bounded result and otherwise remains non-playable. An unrecoverable handoff restores
+Account with `FB-WEB-02` and leaves the Guest unchanged; PC Web keeps its same-tab interruption lifecycle. The game
 server re-verifies Facebook before the atomic credential commit, while Android retains its native credential
 preflight/commit lifecycle. Neither flow auto-merges an identity owned by another Top or Drop account. Google account recognition may
 show the provider display name plus a masked account email that reveals no more than the first four

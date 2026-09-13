@@ -8,6 +8,7 @@ const ERROR_MESSAGES := {
 	"rejected": "Could not link your account. Please try again.",
 	"cancelled": "Account linking cancelled.",
 	"browser": "Could not complete browser account linking. Please try again.",
+	"mobile_facebook_handoff": "Facebook linking couldn’t finish. Your Guest account is unchanged. Contact Support with error FB-WEB-02.",
 	"identity_conflict": "This account is already linked. Sign out and sign in with it instead.",
 	"provider_unavailable": "Facebook linking is currently unavailable in this build."
 }
@@ -21,6 +22,7 @@ const SEMANTIC_LINK_ERROR_REASONS := [
 	"unreachable",
 	"cancelled",
 	"browser",
+	"mobile_facebook_handoff",
 	"identity_conflict",
 	"provider_unavailable",
 	"provider_conflict"

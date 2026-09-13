@@ -8,6 +8,15 @@ const EXPORT_CONFIG_PATH := "res://addons/DeeplinkPlugin/export.cfg"
 const RFC7636_VERIFIER := "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
 const RFC7636_CHALLENGE := "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
 
+class MobileWebFacebookHandoffRedirectAuthManager extends AuthManagerScript:
+	var handoff_now := 2000000000
+
+	func redirect_uri() -> String:
+		return "https://play.example.com/"
+
+	func _mobile_web_facebook_handoff_now_unix() -> int:
+		return handoff_now
+
 var auth
 
 func before_each() -> void:
@@ -87,6 +96,26 @@ func test_mobile_web_facebook_fresh_authorize_url_has_no_popup_or_account_select
 	assert_false(url.contains("skip_http_redirect"))
 	assert_false(url.contains("display="))
 	assert_false(url.contains("prompt=select_account"))
+
+func test_mobile_web_facebook_handoff_redirect_keeps_the_allowed_origin_and_only_adds_flow_metadata() -> void:
+	var handoff = MobileWebFacebookHandoffRedirectAuthManager.new()
+	var transaction := {
+		"flow_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		"owner_tab_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"purpose": handoff.FLOW_LINK,
+		"created_at_unix": handoff.handoff_now,
+		"expires_at_unix": handoff.handoff_now + handoff.WEB_FACEBOOK_FLOW_TTL_SECONDS,
+		"consumed": false
+	}
+	var redirect_to := handoff._build_mobile_web_facebook_handoff_redirect_to(transaction)
+
+	assert_true(redirect_to.begins_with("https://play.example.com/?"))
+	assert_true(redirect_to.contains("ct_fb_flow=" + str(transaction["flow_id"])))
+	assert_true(redirect_to.contains("ct_fb_owner=" + str(transaction["owner_tab_id"])))
+	assert_true(redirect_to.contains("ct_fb_purpose=link"))
+	assert_false(redirect_to.contains("code_verifier"))
+	assert_false(redirect_to.contains("access_token"))
+	handoff.free()
 
 func test_android_facebook_authorize_url_has_no_web_presentation_hint() -> void:
 	var url: String = auth._build_authorize_url(
@@ -168,6 +197,16 @@ func test_callback_query_reports_a_denied_consent() -> void:
 		auth._parse_callback_query("?error=server_error&error_code=identity_already_exists")["error_code"],
 		"identity_already_exists"
 	)
+
+func test_callback_query_keeps_mobile_facebook_handoff_metadata_separate_from_oauth_code() -> void:
+	var parsed := auth._parse_callback_query(
+		"?code=auth-code&ct_fb_flow=flow-id&ct_fb_owner=owner-id&ct_fb_purpose=sign_in"
+	)
+
+	assert_eq(parsed["code"], "auth-code")
+	assert_eq(parsed["mobile_facebook_flow"], "flow-id")
+	assert_eq(parsed["mobile_facebook_owner"], "owner-id")
+	assert_eq(parsed["mobile_facebook_purpose"], "sign_in")
 
 func test_android_redirect_parts_split_correctly() -> void:
 	assert_eq(auth.redirect_android_scheme(), "com.galaxxigames.tod")

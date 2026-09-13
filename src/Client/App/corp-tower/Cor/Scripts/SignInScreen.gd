@@ -11,7 +11,8 @@ const ERROR_MESSAGES := {
 	"unreachable": "Servers unavailable. Check your connection and try again.",
 	"rejected": "Sign-in failed. Please try again.",
 	"cancelled": "Sign-in cancelled.",
-	"browser": "Could not complete browser sign-in. Please try again."
+	"browser": "Could not complete browser sign-in. Please try again.",
+	"mobile_facebook_handoff": "Facebook sign-in couldn’t finish. Contact Support with error FB-WEB-01."
 }
 const PROVIDER_BUTTONS := {
 	"google": "GoogleButton",
@@ -67,6 +68,19 @@ func set_busy(busy: bool) -> void:
 
 func show_error(reason: String) -> void:
 	%ErrorLabel.text = ERROR_MESSAGES.get(reason, ERROR_MESSAGES["rejected"])
+	%ErrorLabel.visible = true
+
+func show_mobile_web_facebook_handoff_terminal(message: String) -> void:
+	set_busy(false)
+	%SocialRow.visible = false
+	%OrDivider.visible = false
+	%GuestButton.visible = false
+	%GuestButton.disabled = true
+
+	for provider in PROVIDER_BUTTONS:
+		%SocialRow.get_node(PROVIDER_BUTTONS[provider]).disabled = true
+
+	%ErrorLabel.text = message
 	%ErrorLabel.visible = true
 
 func toggle_debug_overlay() -> void:
