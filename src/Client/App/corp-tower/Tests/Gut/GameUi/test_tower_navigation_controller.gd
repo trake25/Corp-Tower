@@ -111,6 +111,21 @@ func dispatch_mouse_pan(tower: Control, relative_y: float) -> void:
 	release.pressed = false
 	harness.main.get_viewport().push_input(release, true)
 
+func dispatch_mouse_click_at(position: Vector2) -> void:
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.position = position
+	press.global_position = position
+	press.pressed = true
+	harness.main.get_viewport().push_input(press, true)
+
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.position = position
+	release.global_position = position
+	release.pressed = false
+	harness.main.get_viewport().push_input(release, true)
+
 func dispatch_mouse_wheel(tower: Control, direction: int) -> void:
 	var position: Vector2 = tower.get_global_rect().get_center()
 	var wheel := InputEventMouseButton.new()
@@ -260,13 +275,40 @@ func test_spectator_debug_labels_pass_tower_navigation_without_disabling_debug_c
 	await get_tree().process_frame
 	var title := harness.find("DebugTitle") as Label
 	var slider := harness.find("BotCountSlider") as HSlider
+	var tower_drop_zone := harness.find("TowerDropZone") as Control
+	var received_tower_events: Array = []
+	var received_slider_events: Array = []
+	tower_drop_zone.gui_input.connect(func(event: InputEvent): received_tower_events.append(event))
+	slider.gui_input.connect(func(event: InputEvent): received_slider_events.append(event))
+	harness.main.tower_navigation.set_process_unhandled_input(false)
 	var original_offset: float = tower.scroll_state.displayed_offset_units
 
+	assert_eq(panel.mouse_filter, Control.MOUSE_FILTER_IGNORE)
 	assert_eq(title.mouse_filter, Control.MOUSE_FILTER_IGNORE)
 	assert_eq(slider.mouse_filter, Control.MOUSE_FILTER_STOP)
 	assert_true(tower.get_global_rect().has_point(title.get_global_rect().get_center()))
 	dispatch_touch_pan_at(-tower.brick_unit_size, title.get_global_rect().get_center())
+	assert_gt(received_tower_events.filter(func(event): return event is InputEventScreenTouch).size(), 0)
+	assert_gt(received_tower_events.filter(func(event): return event is InputEventScreenDrag).size(), 0)
 	assert_lt(tower.scroll_state.displayed_offset_units, original_offset)
+	dispatch_mouse_click_at(slider.get_global_rect().get_center())
+	assert_gt(received_slider_events.filter(func(event): return event is InputEventMouseButton).size(), 0)
+
+func test_spectator_debug_panel_allows_overlapping_hamburger_input() -> void:
+	prepare_playing_tower()
+	enable_spectator_mode()
+	harness.main.debug_panel.set_open(true)
+	await get_tree().process_frame
+	var panel := harness.find("DebugPanel") as PanelContainer
+	var hamburger := harness.find("HamburgerButton") as TextureButton
+	var menu_requests: Array[bool] = []
+	harness.main.menu_requested.connect(func(): menu_requests.append(true))
+
+	assert_true(panel.visible)
+	assert_eq(panel.mouse_filter, Control.MOUSE_FILTER_IGNORE)
+	assert_true(panel.get_global_rect().has_point(hamburger.get_global_rect().get_center()))
+	dispatch_mouse_click_at(hamburger.get_global_rect().get_center())
+	assert_eq(menu_requests.size(), 1)
 
 func test_manual_pan_respects_placement_overlay_and_presentation_blockers() -> void:
 	var tower: Control = prepare_playing_tower()

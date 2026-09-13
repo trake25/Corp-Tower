@@ -40,10 +40,7 @@ func _apply_spectator_panel_input_mode(control: Control) -> void:
 	if spectator_calibration and not _preserves_mouse_input(control):
 		if not spectator_panel_mouse_filters.has(control_id):
 			spectator_panel_mouse_filters[control_id] = control.mouse_filter
-		control.mouse_filter = (
-			Control.MOUSE_FILTER_PASS if control == debug_panel
-			else Control.MOUSE_FILTER_IGNORE
-		)
+		control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	elif spectator_panel_mouse_filters.has(control_id):
 		control.mouse_filter = spectator_panel_mouse_filters[control_id]
 		spectator_panel_mouse_filters.erase(control_id)
