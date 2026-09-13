@@ -35,9 +35,11 @@ handoff instead of rediscovering context; its bounded runtime retrieval remains 
 id: automation.planning.phase2
 alias: phase 2 execution handoff
 alias: execution-oriented plan
+source: policy/PLANNER.md#Phase 2 feasibility gate
 source: policy/PLANNER.md#Policy selection
-source: policy/PLANNER.md#Defaults and selected policy
 source: policy/PLANNER.md#Standard Phase 2 format
+source: policy/IMPLEMENT.md#Treat Planner-supplied feasibility/dependency traces, semantic interfaces, and cross-boundary invariants as part of the task contract when present.
+source: policy/REVIEWER.md#When the plan contains a feasibility/dependency trace or explicit cross-boundary invariants, verify those declared boundaries first:
 source: policy/CODEX.md#Agent-supported repository process defaults
 adjacent: automation.retrieval.direct
 adjacent: automation.orchestration.execution
@@ -45,13 +47,43 @@ adjacent: automation.task-close.process-controls
 -->
 ## Phase 2 execution handoff
 
-Phase 2 is Codex's self-contained task execution contract. Planner compiles the approved intended
-behavior, only task policy selected for this implementation, current source evidence, KB context
-only where semantic authority is material, exact retrieval inputs for optional deeper semantic
-detail, bounded source context, expected write scope, ordered implementation requirements, minimum
-verification, and done criteria. A source-grounded task may therefore state `None required` for
-compacted KB context and KB retrieval inputs.
+Phase 2 is Codex's self-contained task execution contract. Before the handoff is ready, Planner
+checks every approved behavior against current source and establishes what already supports it, what
+is incomplete, the complete material source/state path needed to guarantee it, the direct-edit
+boundaries implied by that path, and the minimum verification that proves both the behavior and its
+material risks.
 
+Feasibility is behavioral rather than file-level. Finding an obvious owner file or showing that an
+implementation appears possible is insufficient. When approved behavior materially crosses
+client/server authority, persistence and hydration, snapshot/reconnect/resync, cross-pod or session
+ownership, lifecycle timers, asynchronous presentation, multiplayer membership, or
+background/disconnect recovery, Planner traces the relevant path end to end. Material normal,
+failure, fallback, stale/duplicate, disconnect, and recovery paths are included when they can
+invalidate the approved behavior. A server or authoritative lifecycle that depends on client-side
+completion must have either a proved deterministic authoritative bound or explicit bounded
+synchronization with an authoritative fallback; approximate animation or tuning durations are not
+treated as completion bounds without source proof.
+
+For integration-heavy work, the Phase 2 Context contains a compact feasibility/dependency trace that
+maps each material approved behavior to its current source/state path, identified support or gap,
+required boundaries/files, and verification proof. Expected write scope is derived from that
+assessment rather than from obvious ownership alone. Verification is the minimum proof of every
+approved behavior and every material feasibility risk Planner identified. An unresolved material
+dependency means Phase 2 is not ready; Planner continues source analysis when the approved outcome
+already determines the answer, or returns to design only when a genuinely new product/workflow
+decision is required.
+
+Planner then compiles the approved intended behavior, only task policy selected for this
+implementation, current source evidence, KB context only where semantic authority is material, exact
+retrieval inputs for optional deeper semantic detail, bounded source context, evidence-based expected
+write scope, ordered implementation requirements, verification, and done criteria. Codex treats the
+Planner-supplied feasibility/dependency trace and cross-boundary invariants as part of the task
+contract, implements the complete material dependency path rather than only the nearest happy path,
+and stops if current source materially contradicts the assessment or exposes a missing dependency
+required for correctness. Reviewer verifies the declared feasibility boundaries and material risks
+before relying on the implementation as complete.
+
+A source-grounded task may state `None required` for compacted KB context and KB retrieval inputs.
 The execution architecture has three layers: `AGENTS.md` contains only universal Codex policy; the
 Phase 2 plan contains only task-selected policy; the KB/source handoff contains domain and task-scope
 knowledge. Runtime skills are not an authority layer.
