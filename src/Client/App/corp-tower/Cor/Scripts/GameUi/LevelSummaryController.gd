@@ -222,6 +222,7 @@ func show_level_summary(summary_value: Variant, state: String, results_remaining
 	summary_is_human_results = !spectator_mode and (result == "completed" or result == "failed")
 	summary_has_next_level = bool(summary.get("hasNextLevel", true))
 	summary_safe_level = get_safe_level(summary)
+	clear_children(level_summary_players_box)
 	configure_summary_presentation(summary_is_human_results)
 
 	if summary_is_human_results:
@@ -235,8 +236,6 @@ func show_level_summary(summary_value: Variant, state: String, results_remaining
 	update_level_summary_quest_row(summary, summary_is_human_results)
 	update_level_summary_bot_behavior(summary)
 	show_terminal_failure_popup(summary, result)
-
-	clear_children(level_summary_players_box)
 
 	var players: Array = []
 	for player_value in summary.get("players", []):
@@ -969,4 +968,5 @@ func clear_children(container: Node) -> void:
 		return
 
 	for child in container.get_children():
+		container.remove_child(child)
 		child.queue_free()

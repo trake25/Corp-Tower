@@ -84,6 +84,46 @@ func test_local_mvp_retains_both_local_and_mvp_identity_markers() -> void:
 	assert_true((harness.find("SummaryYouTag_P1") as Label).visible)
 	assert_true((harness.find("SummaryMvpTag_P1") as Label).visible)
 
+func test_consecutive_results_detach_previous_rows_before_current_layout_is_measured() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(320, 640))
+	set_result_players(harness)
+	var summary = harness.main.summary
+	summary.show_level_summary(SUMMARY_FIXTURE, "finished", 3000)
+	summary.hide_level_summary()
+	summary.last_level_summary_key = ""
+	harness.main.players_ctx.roster = [
+		{"id": "P4", "displayName": "Drew", "avatarId": ""},
+		{"id": "P5", "displayName": "Emery", "avatarId": ""},
+		{"id": "P6", "displayName": "Frankie", "avatarId": ""}
+	]
+	harness.main.players_ctx.update_from_players([
+		{"id": "P4"}, {"id": "P5"}, {"id": "P6"}
+	])
+	var second_outcome := failure_fixture("impact_score_requirement")
+	second_outcome["players"] = [
+		{"id": "P4", "levelScore": 5, "finalTotalScore": 100, "rollbackTotalScore": 90, "isMvp": false},
+		{"id": "P5", "levelScore": 12, "finalTotalScore": 120, "rollbackTotalScore": 120, "isMvp": false},
+		{"id": "P6", "levelScore": 8, "finalTotalScore": 110, "rollbackTotalScore": 95, "isMvp": false}
+	]
+	second_outcome["impactScoreStatus"] = {
+		"impactLevel": 3,
+		"players": [
+			{"id": "P4", "met": true},
+			{"id": "P5", "met": false},
+			{"id": "P6", "met": true}
+		]
+	}
+	summary.show_level_summary(second_outcome, "failed", 3000)
+	var rows := harness.find("LevelSummaryPlayersBox") as VBoxContainer
+	assert_eq(rows.get_child_count(), 3)
+	assert_eq(rows.get_child(0).name, "LevelSummaryPlayerRow_P5")
+	assert_eq(rows.get_child(1).name, "LevelSummaryPlayerRow_P6")
+	assert_eq(rows.get_child(2).name, "LevelSummaryPlayerRow_P4")
+	assert_null(rows.get_node_or_null("LevelSummaryPlayerRow_P1"))
+	assert_null(rows.get_node_or_null("LevelSummaryPlayerRow_P2"))
+	assert_null(rows.get_node_or_null("LevelSummaryPlayerRow_P3"))
+
 func test_final_success_and_completed_quest_by_another_player_do_not_preview_next_quest() -> void:
 	var harness = HarnessScript.new()
 	await harness.mount(self, Vector2(412, 917))
