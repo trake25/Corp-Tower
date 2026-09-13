@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { afterEach, test } = require("node:test");
+const WebSocket = require("ws");
 
 const LobbyManager = require("../app/Lobby_Manager");
 const { handleMessage } = require("../app/Server");
@@ -39,13 +40,20 @@ test("latency pings echo only their nonce to the originating socket", async () =
     const sent = [];
     const player = {
         id: "player-one",
-        ws: { send: message => sent.push(JSON.parse(message)) }
+        ws: {
+            readyState: WebSocket.OPEN,
+            send: message => sent.push(JSON.parse(message))
+        }
     };
 
     await handleMessage(player, Buffer.from(JSON.stringify({
         type: "latency_ping",
         nonce: "probe-1"
-    })));
+    })), {
+        lobbyManager: {
+            isCurrentPlayerConnection: async () => true
+        }
+    });
 
     assert.deepEqual(sent, [{ type: "latency_pong", nonce: "probe-1" }]);
 });

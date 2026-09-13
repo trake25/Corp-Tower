@@ -5,6 +5,7 @@ const LastChance = require("./engine/Last_Chance");
 const Placement = require("./engine/Placement");
 const Scoring = require("./engine/Scoring");
 const Impacts = require("./engine/Impacts");
+const { safeSendJson } = require("./Socket_Transport");
 
 class GameEngine {
     constructor(options = {}) {
@@ -176,7 +177,15 @@ class GameEngine {
         });
 
         if (this.onRoomMessage) {
-            this.onRoomMessage(this.room.id, gameState, { botInsight });
+            try {
+                Promise.resolve(
+                    this.onRoomMessage(this.room.id, gameState, { botInsight })
+                ).catch(error => {
+                    console.error("Room message publishing failed:", error.message);
+                });
+            } catch (error) {
+                console.error("Room message publishing failed:", error.message);
+            }
         }
 
         this.room.players.forEach(player => {
@@ -184,7 +193,7 @@ class GameEngine {
                 return;
             }
 
-            player.ws.send(JSON.stringify(gameState));
+            safeSendJson(player.ws, gameState, "Game state send");
         });
 
         if (this.room.isSpectatorMatch && this.room.state === "game_completed") {

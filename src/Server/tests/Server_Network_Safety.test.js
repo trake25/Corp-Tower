@@ -1,0 +1,335 @@
+const assert = require("node:assert/strict");
+const { EventEmitter } = require("node:events");
+const { test } = require("node:test");
+const WebSocket = require("ws");
+
+const GameEngine = require("../app/Game_Engine");
+const { RedisState } = require("../app/Redis_State");
+const { handleMessage, listenServer, wireConnection } = require("../app/Server");
+
+class FakeSocket extends EventEmitter {
+    constructor() {
+        super();
+        this.readyState = WebSocket.OPEN;
+        this.closeCalls = [];
+        this.sent = [];
+        this.sendError = null;
+    }
+
+    send(payload, callback) {
+        if (this.sendError === "throw") {
+            throw new Error("send failed");
+        }
+
+        this.sent.push(JSON.parse(payload));
+        if (this.sendError === "callback") {
+            callback(new Error("send callback failed"));
+        }
+    }
+
+    close(code, reason) {
+        this.closeCalls.push({ code, reason });
+        this.readyState = WebSocket.CLOSED;
+        this.emit("close");
+    }
+}
+
+function flush() {
+    return new Promise(resolve => setImmediate(resolve));
+}
+
+async function settle() {
+    await flush();
+    await flush();
+}
+
+function deferred() {
+    let resolve;
+    let reject;
+    const promise = new Promise((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return { promise, reject, resolve };
+}
+
+function createManager(options = {}) {
+    const calls = {
+        add: 0,
+        create: 0,
+        remove: 0
+    };
+    const player = options.player || {
+        id: "P-safe",
+        connectionId: "connection-safe",
+        ws: options.ws || null
+    };
+
+    return {
+        calls,
+        manager: {
+            profileStore: {
+                getAuthoritativeProfile: async () => ({
+                    displayName: "Safe Player",
+                    avatarId: "default",
+                    nameChangeUsed: false
+                })
+            },
+            createPlayer: async ws => {
+                calls.create += 1;
+                player.ws = ws;
+                if (options.onCreate) {
+                    options.onCreate(ws, player);
+                }
+                return player;
+            },
+            addPlayer: async () => {
+                calls.add += 1;
+                if (options.addPlayer) {
+                    return await options.addPlayer();
+                }
+            },
+            broadcastDebugConfig: () => {},
+            removePlayer: async () => {
+                calls.remove += 1;
+                if (options.removePlayer) {
+                    return await options.removePlayer();
+                }
+            }
+        },
+        player
+    };
+}
+
+function openGameplayConnection(options = {}) {
+    const socket = new FakeSocket();
+    const { calls, manager, player } = createManager({ ...options, ws: socket });
+    const connection = wireConnection(socket, {
+        accountStore: { resolve: async () => null },
+        authVerifier: {
+            isRequired: () => false,
+            verifyAccessToken: async () => null
+        },
+        lobbyManager: manager,
+        ...options.dependencies
+    });
+    return { calls, connection, manager, player, socket };
+}
+
+test("accepted sockets install an immediate error boundary", async () => {
+    const { calls, socket } = openGameplayConnection();
+
+    assert.equal(socket.listenerCount("error"), 1);
+    socket.emit("error", new Error("transport failed"));
+    await settle();
+
+    assert.equal(socket.closeCalls.length, 1);
+    assert.equal(calls.remove, 0);
+});
+
+test("HTTP listen failures reject through the startup path", async () => {
+    const server = new EventEmitter();
+    server.listen = () => {
+        queueMicrotask(() => server.emit("error", new Error("port unavailable")));
+    };
+
+    await assert.rejects(listenServer(server, 3000), /port unavailable/);
+});
+
+test("handshake, gameplay, profile, and close failures stay within their connection", async () => {
+    const handshakeSocket = new FakeSocket();
+    wireConnection(handshakeSocket, {
+        accountStore: { resolve: async () => null },
+        authVerifier: {
+            isRequired: () => false,
+            verifyAccessToken: async () => {
+                throw new Error("auth store unavailable");
+            }
+        },
+        lobbyManager: createManager().manager
+    });
+    handshakeSocket.emit("message", "{}");
+    await settle();
+    assert.equal(handshakeSocket.closeCalls.length, 1);
+
+    const gameplay = openGameplayConnection({
+        dependencies: {
+            handleMessage: async () => {
+                throw new Error("gameplay handler failed");
+            }
+        }
+    });
+    gameplay.socket.emit("message", "{}");
+    await settle();
+    gameplay.socket.emit("message", JSON.stringify({ type: "ready" }));
+    await settle();
+    assert.equal(gameplay.socket.closeCalls.length, 1);
+    assert.equal(gameplay.calls.remove, 1);
+
+    const profileSocket = new FakeSocket();
+    const profileManager = createManager().manager;
+    wireConnection(profileSocket, {
+        accountStore: {
+            resolve: async () => ({ userId: "profile-safe" })
+        },
+        authVerifier: {
+            isRequired: () => true,
+            verifyAccessToken: async () => ({ kind: "guest" })
+        },
+        handleProfileMessage: async () => {
+            throw new Error("profile handler failed");
+        },
+        lobbyManager: profileManager
+    });
+    profileSocket.emit("message", JSON.stringify({ type: "profile_connect" }));
+    await settle();
+    profileSocket.emit("message", JSON.stringify({ type: "profile_change_name" }));
+    await settle();
+    assert.equal(profileSocket.closeCalls.length, 1);
+
+    const cleanup = openGameplayConnection({
+        removePlayer: async () => {
+            throw new Error("disconnect persistence failed");
+        }
+    });
+    cleanup.socket.emit("message", "{}");
+    await settle();
+    cleanup.socket.emit("close");
+    cleanup.socket.emit("close");
+    await settle();
+    assert.equal(cleanup.calls.remove, 1);
+});
+
+test("close during a handshake cannot create a ghost player", async () => {
+    const verification = deferred();
+    const socket = new FakeSocket();
+    const { calls, manager } = createManager();
+
+    wireConnection(socket, {
+        accountStore: { resolve: async () => null },
+        authVerifier: {
+            isRequired: () => false,
+            verifyAccessToken: async () => await verification.promise
+        },
+        lobbyManager: manager
+    });
+    socket.emit("message", "{}");
+    await flush();
+    socket.emit("close");
+    verification.resolve(null);
+    await settle();
+
+    assert.equal(calls.create, 0);
+    assert.equal(calls.add, 0);
+    assert.equal(calls.remove, 0);
+});
+
+test("a close after player creation receives exactly one cleanup without matchmaking", async () => {
+    const socket = new FakeSocket();
+    const { calls, manager } = createManager({
+        onCreate: ws => ws.emit("close")
+    });
+
+    wireConnection(socket, {
+        accountStore: { resolve: async () => null },
+        authVerifier: {
+            isRequired: () => false,
+            verifyAccessToken: async () => null
+        },
+        lobbyManager: manager
+    });
+    socket.emit("message", "{}");
+    await settle();
+
+    assert.equal(calls.create, 1);
+    assert.equal(calls.add, 0);
+    assert.equal(calls.remove, 1);
+});
+
+test("a close during matchmaking cleans up only after the in-flight work settles", async () => {
+    const matchmaking = deferred();
+    const connection = openGameplayConnection({
+        addPlayer: async () => await matchmaking.promise
+    });
+
+    connection.socket.emit("message", "{}");
+    await settle();
+    assert.equal(connection.calls.add, 1);
+
+    connection.socket.emit("close");
+    await settle();
+    assert.equal(connection.calls.remove, 0);
+
+    matchmaking.resolve();
+    await settle();
+    assert.equal(connection.calls.remove, 1);
+});
+
+test("stale latency requests do not send through superseded sockets", async () => {
+    const socket = new FakeSocket();
+    const player = { id: "P-stale", ws: socket };
+
+    await handleMessage(player, JSON.stringify({
+        type: "latency_ping",
+        nonce: "old-connection"
+    }), {
+        lobbyManager: {
+            isCurrentPlayerConnection: async () => false
+        }
+    });
+
+    assert.deepEqual(socket.sent, []);
+});
+
+test("game state broadcast survives socket send failures and room publish rejection", async () => {
+    const failedSocket = new FakeSocket();
+    failedSocket.sendError = "throw";
+    const callbackFailureSocket = new FakeSocket();
+    callbackFailureSocket.sendError = "callback";
+    const healthySocket = new FakeSocket();
+    const engine = new GameEngine({
+        onRoomMessage: async () => {
+            throw new Error("Redis publish failed");
+        }
+    });
+
+    engine.createRoom([
+        { id: "P-failed", ws: failedSocket },
+        { id: "P-callback", ws: callbackFailureSocket },
+        { id: "P-healthy", ws: healthySocket }
+    ]);
+    engine.room.id = "network-safety";
+    engine.broadcastGameState();
+    await settle();
+
+    assert.equal(healthySocket.sent.length, 1);
+    assert.equal(healthySocket.sent[0].type, "game_state");
+    engine.clearTimers();
+});
+
+test("Redis subscribers drop malformed input and contain consumer rejections", async () => {
+    const state = new RedisState();
+    const handlers = new Map();
+    state.enabled = true;
+    state.subscriber = {
+        subscribe: async (channel, handler) => handlers.set(channel, handler)
+    };
+
+    await state.subscribeToRoom("room-safe", () => {
+        throw new Error("room handler should not receive malformed input");
+    });
+    await state.subscribeToRoomActions("room-safe", () => {
+        throw new Error("action handler should not receive malformed input");
+    });
+    await state.subscribeToPlayerAssignments(async () => {
+        throw new Error("assignment rejection");
+    });
+
+    handlers.get("room:room-safe:events")("{");
+    handlers.get("room:room-safe:actions")("{");
+    handlers.get("player:assignments")("{");
+    handlers.get("player:assignments")(JSON.stringify({ playerId: "P-safe" }));
+    await settle();
+
+    assert.equal(handlers.size, 3);
+});

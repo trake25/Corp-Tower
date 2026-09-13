@@ -4,6 +4,7 @@ const WebSocket = require("ws");
 const LobbyManager = require("./Lobby_Manager");
 const AuthVerifier = require("./Auth_Verifier");
 const AccountStore = require("./Account_Store");
+const { isOpenSocket, safeClose, safeSendJson } = require("./Socket_Transport");
 
 const lobbyManager = new LobbyManager();
 const authVerifier = new AuthVerifier();
@@ -35,9 +36,7 @@ function profileSnapshot(identity, profile) {
 }
 
 function sendJson(ws, data) {
-    if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(data));
-    }
+    return safeSendJson(ws, data, "Server JSON send");
 }
 
 function normalizedLinkProvider(value) {
@@ -344,72 +343,179 @@ function requestListener(req, res) {
     res.end();
 }
 
-async function main() {
-    await accountStore.connect();
-    await lobbyManager.start();
+function listenServer(server, listenPort) {
+    return new Promise((resolve, reject) => {
+        const onListening = () => {
+            server.removeListener("error", onStartupError);
+            resolve();
+        };
+        const onStartupError = error => {
+            server.removeListener("listening", onListening);
+            reject(error);
+        };
 
-    const server = http.createServer(requestListener);
-    const wss = new WebSocket.Server({ server });
+        server.once("listening", onListening);
+        server.once("error", onStartupError);
 
-    server.listen(port);
+        try {
+            server.listen(listenPort);
+        } catch (error) {
+            server.removeListener("listening", onListening);
+            server.removeListener("error", onStartupError);
+            reject(error);
+        }
+    });
+}
 
-    console.log(`WebSocket server running on port ${port}`);
+function wireConnection(ws, dependencies = {}) {
+    const manager = dependencies.lobbyManager || lobbyManager;
+    const verifier = dependencies.authVerifier || authVerifier;
+    const accounts = dependencies.accountStore || accountStore;
+    const profileMessageHandler = dependencies.handleProfileMessage || handleProfileMessage;
+    const gameplayMessageHandler = dependencies.handleMessage || handleMessage;
+    let player = null;
+    let retired = false;
+    let handshakeInProgress = false;
+    let cleanedPlayer = null;
+    let cleanupPromise = Promise.resolve();
 
-    wss.on("connection", async function connection(ws) {
-        let player = null;
+    const isLive = () => !retired && isOpenSocket(ws);
 
-        ws.once("message", async function firstMessage(message) {
+    const cleanupPlayer = () => {
+        const currentPlayer = player;
+
+        if (handshakeInProgress) {
+            return cleanupPromise;
+        }
+
+        if (!currentPlayer || cleanedPlayer === currentPlayer) {
+            return cleanupPromise;
+        }
+
+        cleanedPlayer = currentPlayer;
+        cleanupPromise = Promise.resolve().then(async () => {
+            console.log(`${currentPlayer.id} disconnected`);
+            await manager.removePlayer(currentPlayer);
+        }).catch(error => {
+            console.error("WebSocket disconnect cleanup failed:", error.message);
+        });
+
+        return cleanupPromise;
+    };
+
+    const retireConnection = (label, error = null, code = 1011, reason = "internal error") => {
+        if (error) {
+            console.error(`${label}:`, error?.message || error);
+        }
+
+        retired = true;
+        safeClose(ws, code, reason, "WebSocket connection close");
+        return cleanupPlayer();
+    };
+
+    const runBoundary = (label, work) => {
+        return Promise.resolve().then(work).catch(error => {
+            return retireConnection(label, error);
+        });
+    };
+
+    ws.on("error", error => {
+        void retireConnection("WebSocket connection error", error);
+    });
+
+    ws.once("close", () => {
+        retired = true;
+        void cleanupPlayer();
+    });
+
+    ws.once("message", message => {
+        handshakeInProgress = true;
+        runBoundary("WebSocket handshake failed", async () => {
+            if (!isLive()) {
+                return;
+            }
+
             const data = safeJson(message) || {};
             const profileRequest = data.type === "profile_connect";
-            const reconnectRequest =
-                data.type === "reconnect" ? data : {};
-
-            const credential = await authVerifier.verifyAccessToken(
+            const reconnectRequest = data.type === "reconnect" ? data : {};
+            const credential = await verifier.verifyAccessToken(
                 data.accessToken, data.authProvider
             );
+
+            if (!isLive()) {
+                return;
+            }
+
             let identity = null;
 
             if (credential) {
                 try {
-                    identity = await accountStore.resolve(credential);
+                    identity = await accounts.resolve(credential);
                     if (identity && credential.kind === "supabase") {
                         identity.supabaseUserId = credential.supabaseUserId;
                     }
                 } catch (error) {
                     console.log("Account identity rejected:", error.message);
                 }
+
+                if (!isLive()) {
+                    return;
+                }
             }
 
-            if (authVerifier.isRequired() && !identity) {
+            if (verifier.isRequired() && !identity) {
                 console.log("Rejected a connection with no verifiable access token");
-                ws.close(4401, "unauthorized");
+                await retireConnection(
+                    "Unauthorized WebSocket connection", null, 4401, "unauthorized"
+                );
                 return;
             }
 
             if (profileRequest) {
                 if (!identity) {
                     console.log("Rejected an unverified profile connection");
-                    ws.close(4401, "unauthorized");
+                    await retireConnection(
+                        "Unauthorized profile WebSocket connection", null, 4401, "unauthorized"
+                    );
                     return;
                 }
 
                 try {
-                    const profile = await lobbyManager.profileStore.getAuthoritativeProfile(
+                    const profile = await manager.profileStore.getAuthoritativeProfile(
                         identity.userId
                     );
+
+                    if (!isLive()) {
+                        return;
+                    }
+
                     sendJson(ws, profileSnapshot(identity, profile));
-                    ws.on("message", async function incomingProfile(nextMessage) {
-                        await handleProfileMessage(ws, identity, nextMessage);
+                    if (!isLive()) {
+                        return;
+                    }
+                    ws.on("message", nextMessage => {
+                        runBoundary("Profile message handling failed", async () => {
+                            if (isLive()) {
+                                await profileMessageHandler(ws, identity, nextMessage);
+                            }
+                        });
                     });
                 } catch (error) {
                     console.log("Profile bootstrap failed:", error.message);
                     sendJson(ws, { type: "profile_unavailable" });
-                    ws.close(1011, "profile unavailable");
+                    await retireConnection(
+                        "Profile bootstrap connection close", null, 1011, "profile unavailable"
+                    );
                 }
                 return;
             }
 
-            player = await lobbyManager.createPlayer(ws, reconnectRequest, identity);
+            player = await manager.createPlayer(ws, reconnectRequest, identity);
+
+            if (!isLive()) {
+                await cleanupPlayer();
+                return;
+            }
 
             console.log(`${player.id} connected${identity ? " (verified)" : ""}`);
 
@@ -420,28 +526,69 @@ async function main() {
                     (!player.room && !player.resumeUnavailable)
                 )
             ) {
-                await lobbyManager.addPlayer(player);
+                await manager.addPlayer(player);
+
+                if (!isLive()) {
+                    await cleanupPlayer();
+                    return;
+                }
             }
 
-            lobbyManager.broadcastDebugConfig();
+            manager.broadcastDebugConfig();
 
-            ws.on("message", async function incoming(nextMessage) {
-                await handleMessage(player, nextMessage);
-            });
-        });
-
-        ws.on("close", async function () {
-            if (!player) {
+            if (!isLive()) {
+                await cleanupPlayer();
                 return;
             }
 
-            console.log(`${player.id} disconnected`);
-            await lobbyManager.removePlayer(player);
+            ws.on("message", nextMessage => {
+                runBoundary("Gameplay message handling failed", async () => {
+                    if (isLive()) {
+                        await gameplayMessageHandler(player, nextMessage, { lobbyManager: manager });
+                    }
+                });
+            });
+        }).finally(() => {
+            handshakeInProgress = false;
+
+            if (retired) {
+                return cleanupPlayer();
+            }
         });
     });
+
+    return {
+        cleanup: cleanupPlayer,
+        getPlayer: () => player,
+        isRetired: () => retired
+    };
 }
 
-async function handleMessage(player, message) {
+async function main() {
+    await accountStore.connect();
+    await lobbyManager.start();
+
+    const server = http.createServer(requestListener);
+    server.on("error", error => {
+        console.error("HTTP server error:", error.message);
+    });
+
+    const wss = new WebSocket.Server({ server });
+    wss.on("error", error => {
+        console.error("WebSocket server error:", error.message);
+    });
+    wss.on("connection", ws => {
+        wireConnection(ws);
+    });
+
+    await listenServer(server, port);
+    console.log(`WebSocket server running on port ${port}`);
+
+    return { server, wss };
+}
+
+async function handleMessage(player, message, dependencies = {}) {
+    const manager = dependencies.lobbyManager || lobbyManager;
     const data = safeJson(message);
 
     if (!data) {
@@ -451,13 +598,17 @@ async function handleMessage(player, message) {
     console.log(`${player.id} sent:`, data.type);
 
     if (data.type === "latency_ping") {
-        if (typeof data.nonce === "string" && data.nonce !== "") {
-            player.ws.send(JSON.stringify({ type: "latency_pong", nonce: data.nonce }));
+        if (
+            typeof data.nonce === "string" &&
+            data.nonce !== "" &&
+            await manager.isCurrentPlayerConnection(player)
+        ) {
+            safeSendJson(player.ws, { type: "latency_pong", nonce: data.nonce }, "Latency pong send");
         }
         return;
     }
 
-    if (!await lobbyManager.isCurrentPlayerConnection(player)) {
+    if (!await manager.isCurrentPlayerConnection(player)) {
         return;
     }
 
@@ -471,12 +622,12 @@ async function handleMessage(player, message) {
     }
 
     if (data.type === "update_config") {
-        await lobbyManager.updateDebugConfig(data.key, data.value);
+        await manager.updateDebugConfig(data.key, data.value);
         return;
     }
 
     if (data.type === "resync_state") {
-        await lobbyManager.resyncState(player, data.requestId);
+        await manager.resyncState(player, data.requestId);
         return;
     }
 
@@ -486,7 +637,7 @@ async function handleMessage(player, message) {
             return;
         }
 
-        await lobbyManager.toggleLobbyReady(player);
+        await manager.toggleLobbyReady(player);
         return;
     }
 
@@ -496,7 +647,7 @@ async function handleMessage(player, message) {
             return;
         }
 
-        await lobbyManager.leaveLobby(player);
+        await manager.leaveLobby(player);
         return;
     }
 
@@ -506,7 +657,7 @@ async function handleMessage(player, message) {
             return;
         }
 
-        await lobbyManager.dispatchRoomAction(player, { type: "leave_game" });
+        await manager.dispatchRoomAction(player, { type: "leave_game" });
         return;
     }
 
@@ -516,7 +667,7 @@ async function handleMessage(player, message) {
             return;
         }
 
-        await lobbyManager.kickPrivatePlayer(player, data.targetPlayerId);
+        await manager.kickPrivatePlayer(player, data.targetPlayerId);
         return;
     }
 
@@ -526,7 +677,7 @@ async function handleMessage(player, message) {
             return;
         }
 
-        await lobbyManager.dispatchRoomAction(player, {
+        await manager.dispatchRoomAction(player, {
             type: "place_block",
             blockIndex: data.blockIndex,
             column: data.column,
@@ -541,7 +692,7 @@ async function handleMessage(player, message) {
             return;
         }
 
-        await lobbyManager.dispatchRoomAction(player, {
+        await manager.dispatchRoomAction(player, {
             type: "outcome_ready",
             outcomeId: data.outcomeId
         });
@@ -554,7 +705,7 @@ async function handleMessage(player, message) {
             return;
         }
 
-        await lobbyManager.dispatchRoomAction(player, {
+        await manager.dispatchRoomAction(player, {
             type: "send_quick_chat",
             slot: data.slot
         });
@@ -562,7 +713,7 @@ async function handleMessage(player, message) {
     }
 
     if (data.type === "activate_power" && player.room) {
-        await lobbyManager.dispatchRoomAction(player, {
+        await manager.dispatchRoomAction(player, {
             type: "activate_power",
             slot: data.slot
         });
@@ -581,8 +732,12 @@ module.exports = {
     handleFacebookOauthExchange,
     handleMessage,
     handleProfileMessage,
+    listenServer,
+    main,
     profileSnapshot,
     redirectOriginMatchesRequest,
     requestOriginMatchesExpected,
-    requestListener
+    requestListener,
+    sendJson,
+    wireConnection
 };

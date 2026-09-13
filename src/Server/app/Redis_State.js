@@ -27,6 +27,25 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function dispatchSubscriberMessage(raw, handler, channel) {
+    let message;
+
+    try {
+        message = JSON.parse(raw);
+    } catch (error) {
+        console.error(`Redis ${channel} message dropped:`, error.message);
+        return;
+    }
+
+    try {
+        Promise.resolve(handler(message)).catch(error => {
+            console.error(`Redis ${channel} handler failed:`, error.message);
+        });
+    } catch (error) {
+        console.error(`Redis ${channel} handler failed:`, error.message);
+    }
+}
+
 function stripRuntimePlayer(player) {
     const presence = ["connected", "disconnected", "left"].includes(player.presence)
         ? player.presence
@@ -658,7 +677,7 @@ class RedisState {
         }
 
         await this.subscriber.subscribe(`room:${roomId}:events`, raw => {
-            handler(JSON.parse(raw));
+            dispatchSubscriberMessage(raw, handler, "room event");
         });
     }
 
@@ -690,7 +709,7 @@ class RedisState {
         }
 
         await this.subscriber.subscribe(`room:${roomId}:actions`, raw => {
-            handler(JSON.parse(raw));
+            dispatchSubscriberMessage(raw, handler, "room action");
         });
     }
 
@@ -730,12 +749,13 @@ class RedisState {
         }
 
         await this.subscriber.subscribe("player:assignments", raw => {
-            handler(JSON.parse(raw));
+            dispatchSubscriberMessage(raw, handler, "player assignment");
         });
     }
 }
 
 module.exports = {
+    dispatchSubscriberMessage,
     RedisState,
     stripRuntimePlayer,
     stripRuntimeRoom

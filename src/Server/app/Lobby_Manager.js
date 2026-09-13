@@ -5,6 +5,7 @@ const GameConfig = require("./Game_Config");
 const DebugConfig = require("./Debug_Config");
 const { RedisState, stripRuntimePlayer } = require("./Redis_State");
 const ProfileStore = require("./Profile_Store");
+const { safeClose, safeSendJson } = require("./Socket_Transport");
 
 const MAX_OPEN_ROOM_CLAIM_ATTEMPTS = 5;
 const PRIVATE_ROOM_SEAT_COUNT = 3;
@@ -205,15 +206,7 @@ class LobbyManager {
     }
 
     retireConnection(player) {
-        if (
-            !player?.ws ||
-            player.ws.readyState !== 1 ||
-            typeof player.ws.close !== "function"
-        ) {
-            return;
-        }
-
-        player.ws.close(4000, "superseded_connection");
+        safeClose(player?.ws, 4000, "superseded_connection", "Superseded connection close");
     }
 
     async isCurrentPlayerConnection(player) {
@@ -1339,9 +1332,7 @@ class LobbyManager {
     }
 
     sendPlayer(player, message) {
-        if (player?.ws && player.ws.readyState === 1) {
-            player.ws.send(JSON.stringify(message));
-        }
+        return safeSendJson(player?.ws, message, "Player message send");
     }
 
     async closeRoom(room, reason, destination = null, destinationByPlayerId = null) {
