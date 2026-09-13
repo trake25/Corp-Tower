@@ -26,6 +26,7 @@ task/
 repair/
 report/benchmarks/raw/
 *.x86_64
+.codex/
 
 # Private art asset pipeline — R2 credentials for local dev.
 # The assets themselves are ignored in src/Client/App/corp-tower/.gitignore
