@@ -140,7 +140,7 @@ Owner: `KB/docs/context/deployment-eks.md:47-50` → **Applied-tree guard**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `.github/workflows/EKS-Infra-Apply.yml` | `Record applied infra tree` | 62 | `sed -n 50,72p .github/workflows/EKS-Infra-Apply.yml` |
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `verify-infra` | 53 | `sed -n 41,73p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `verify-infra` | 49 | `sed -n 37,69p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: none
 
@@ -160,7 +160,7 @@ Owner: `KB/docs/context/deployment-eks.md:77-80` → **DNS update**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Update Cloudflare CNAME content` | 191 | `sed -n 179,211p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Update Cloudflare CNAME content` | 187 | `sed -n 175,207p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: none
 
@@ -213,7 +213,7 @@ Owner: `KB/docs/context/deployment-eks.md:67-70` → **Deployment workflows**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `deploy-eks` | 121 | `sed -n 109,141p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `deploy-eks` | 117 | `sed -n 105,137p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: `testing.release.gates`
 
@@ -223,7 +223,7 @@ Owner: `KB/docs/context/deployment.md:82-106` → **Authentication environment**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 292 | `sed -n 280,312p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 288 | `sed -n 276,308p .github/workflows/EKS-Deploy-Game-Server.yml` |
 | `scripts/backup/backup-server-up.sh` | `AUTH_ARGS` | 59 | `sed -n 47,79p scripts/backup/backup-server-up.sh` |
 | `scripts/verify-supabase-environment.sh` | `verify_supabase_environment() {` | 44 | `sed -n 32,64p scripts/verify-supabase-environment.sh` |
 | `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 1956 | `sed -n 1944,1976p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
@@ -262,8 +262,8 @@ Owner: `KB/docs/context/deployment.md:115-118` → **Secret rollout**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 292 | `sed -n 280,312p .github/workflows/EKS-Deploy-Game-Server.yml` |
-| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Apply Corp Tower Kustomize overlay` | 348 | `sed -n 336,368p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Sync Supabase service role secret` | 288 | `sed -n 276,308p .github/workflows/EKS-Deploy-Game-Server.yml` |
+| `.github/workflows/EKS-Deploy-Game-Server.yml` | `Apply Corp Tower Kustomize overlay` | 344 | `sed -n 332,364p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: `deploy.eks.workflows`
 

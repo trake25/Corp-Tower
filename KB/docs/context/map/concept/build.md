@@ -9,7 +9,7 @@ Owner: `KB/docs/context/build.md:69-72` → **AAB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/Android-Deploy-wstodplay.yml` | `Validate signed Android AAB deployment artifact` | 376 | `sed -n 364,396p .github/workflows/Android-Deploy-wstodplay.yml` |
+| `.github/workflows/Android-Deploy-wstodplay.yml` | `Validate signed Android AAB deployment artifact` | 373 | `sed -n 361,393p .github/workflows/Android-Deploy-wstodplay.yml` |
 
 Adjacent concepts: `build.android.pipeline`
 
@@ -39,7 +39,7 @@ Owner: `KB/docs/context/build.md:58-61` → **Play version code**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/Android-Deploy-wstodplay.yml` | `Resolve Google Play version code` | 146 | `sed -n 134,166p .github/workflows/Android-Deploy-wstodplay.yml` |
+| `.github/workflows/Android-Deploy-wstodplay.yml` | `Resolve Google Play version code` | 143 | `sed -n 131,163p .github/workflows/Android-Deploy-wstodplay.yml` |
 
 Adjacent concepts: none
 
@@ -60,7 +60,7 @@ Owner: `KB/docs/context/build.md:114-117` → **Native provider build inputs**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/Android-Deploy-wstodplay.yml` | `Validate native sign-in plugin artifacts` | 286 | `sed -n 274,306p .github/workflows/Android-Deploy-wstodplay.yml` |
+| `.github/workflows/Android-Deploy-wstodplay.yml` | `Validate native sign-in plugin artifacts` | 283 | `sed -n 271,303p .github/workflows/Android-Deploy-wstodplay.yml` |
 
 Adjacent concepts: none
 

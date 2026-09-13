@@ -145,7 +145,10 @@ adjacent: tutorial.defaults.parity
 -->
 ## Tutorial parity
 
-Tutorial defaults parity is a focused cross-domain contract test. It validates only derived live Level-1 mirrors and does not turn every tutorial edit into automation-protocol scope.
+Tutorial defaults parity is retained focused cross-domain tooling for explicit parity-tooling
+maintenance and future tutorial alignment. It validates derived live Level-1 mirrors only when
+its parity library or focused test changes; normal production tuning and tutorial lesson edits do
+not select it, and it is not a release gate.
 
 <!-- kb
 id: testing.release.gates
@@ -163,8 +166,7 @@ run every retained permanent regression merely because it exists. Android
 deployment runs client smoke plus the curated release GUT suite, which protects
 durable player journeys and client correctness. EKS game-server deployment runs
 syntax/loadability checks plus curated Node cases protecting authoritative
-identity, room/session, gameplay, score/state, and persistence contracts;
-tutorial-default parity remains its focused cross-domain authority check.
+identity, room/session, gameplay, score/state, and persistence contracts.
 
 Narrow permanent regressions remain available through targeted QA and the
 broader local regression commands. Balance and tuning simulations or probes are

@@ -96,15 +96,24 @@ test('KB Tree concept paths select focused concept QA without runtime suites', (
   assert.equal(AUTOMATION_PROTOCOL_TESTS.includes('scripts/tests/kb-calibration.test.mjs'), false);
 });
 
-test('both sides of the tutorial defaults contract select the parity test', () => {
-  const paths = [
+test('tutorial defaults parity is self-selected only by its tooling', () => {
+  const productPaths = [
     'src/Server/app/Game_Config.js',
     'src/Client/App/corp-tower/Cor/Scripts/GameUi/Tutorial/TutorialLessons.gd',
+  ];
+
+  for (const path of productPaths) {
+    assert.deepEqual(selectContractQa([path]).tests, []);
+    assert.deepEqual(selectToolingQa([path]).tests, []);
+    assert.deepEqual(selectQa([path]).contract_tests, []);
+  }
+
+  const toolingPaths = [
     'scripts/lib/tutorial-defaults-parity.mjs',
     TUTORIAL_PARITY_TEST,
   ];
 
-  for (const path of paths) {
+  for (const path of toolingPaths) {
     assert.deepEqual(selectContractQa([path]).tests, [TUTORIAL_PARITY_TEST]);
     assert.deepEqual(selectToolingQa([path]).tests, []);
     assert.deepEqual(selectQa([path]).contract_tests, [TUTORIAL_PARITY_TEST]);

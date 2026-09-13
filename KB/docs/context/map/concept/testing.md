@@ -20,7 +20,7 @@ Owner: `KB/docs/context/testing.md:122-139` → **Automation protocol coverage**
 | `scripts/tests/codex-observability-hook.test.mjs` | `production hook smoke keeps observability fail-open and private` | 66 | `sed -n 54,86p scripts/tests/codex-observability-hook.test.mjs` |
 | `scripts/tests/codex-task-run.test.mjs` | `telemetry-enabled launcher establishes an opt-in binding that settles without task-close` | 37 | `sed -n 25,57p scripts/tests/codex-task-run.test.mjs` |
 | `scripts/tests/task-receipt.test.mjs` | `standalone receipt writes only explicit sanitized scope and states skipped QA` | 16 | `sed -n 4,36p scripts/tests/task-receipt.test.mjs` |
-| `scripts/qa-gate.mjs` | `selectToolingQa` | 96 | `sed -n 84,116p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectToolingQa` | 94 | `sed -n 82,114p scripts/qa-gate.mjs` |
 | `scripts/fixtures/agent-observability/provider-events.json` | `events` | 25 | `sed -n 13,45p scripts/fixtures/agent-observability/provider-events.json` |
 
 Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifecycle`, `automation.orchestration.ownership`
@@ -46,7 +46,7 @@ Owner: `KB/docs/context/testing.md:48-53` → **Godot coverage**
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_application_scripts` | 41 | `sed -n 29,61p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 49 | `sed -n 37,69p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
-| `scripts/qa-gate.mjs` | `main` | 271 | `sed -n 259,291p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `main` | 269 | `sed -n 257,289p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
@@ -74,7 +74,7 @@ Adjacent concepts: none
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:146-149` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:146-152` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -84,7 +84,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:159-172` → **Release gates**
+Owner: `KB/docs/context/testing.md:162-174` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -99,7 +99,7 @@ Owner: `KB/docs/context/testing.md:11-19` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/qa-gate.mjs` | `selectQa` | 124 | `sed -n 112,144p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectQa` | 122 | `sed -n 110,142p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 

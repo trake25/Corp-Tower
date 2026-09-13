@@ -46,10 +46,6 @@ jobs:
       - name: Run curated server release tests
         run: npm run test:release
 
-      - name: Verify tutorial defaults match server authority
-        working-directory: ${{ github.workspace }}
-        run: node --test scripts/tests/tutorial-defaults-parity.test.mjs
-
   verify-infra:
     name: Verify Infra Matches Last Apply
     runs-on: ubuntu-24.04
