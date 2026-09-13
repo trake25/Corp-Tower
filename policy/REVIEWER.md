@@ -40,6 +40,13 @@ Inspect actual current repository evidence, not Codex summaries.
 
 Compare the integrated implementation against the approved or reconstructed contract.
 
+When the plan contains a feasibility/dependency trace or explicit cross-boundary invariants, verify those declared boundaries first:
+- confirm the implementation covers the complete material source/state path the plan identified;
+- confirm required persistence, hydration, reconnect/resync, timing, synchronization, membership, idempotency, fallback, and recovery invariants where applicable;
+- confirm the selected verification actually exercises the material feasibility risks identified by Planner.
+
+Planner-declared feasibility does not prevent Reviewer from finding additional integration defects, but Reviewer should not silently reconstruct missing Planner analysis as proof that the implementation is complete.
+
 Inspect only relevant:
 - changed source;
 - diff or commit;
@@ -81,6 +88,8 @@ For player-facing bugs, describe intended player-observable behavior.
 For workflow/tooling bugs, describe intended technical behavior.
 
 For defects following orchestrated work, use the parent contract as behavior authority and identify whether the repair is worker-local or cross-unit.
+
+If a defect exposes a missing or incomplete feasibility/dependency assessment in the approved plan, make that planning lapse explicit in the focused repair context so the next plan closes the whole affected boundary rather than only the observed symptom.
 
 If intended behavior requires user decisions, present only material decisions as numbered items.
 

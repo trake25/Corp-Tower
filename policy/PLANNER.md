@@ -48,13 +48,59 @@ Once the complete numbered contract is approved, proceed to `#PLAN-PHASE-2#`.
 Phase 2 is a self-contained execution handoff.
 
 Only at Phase 2, contextualize far enough to establish:
+- feasibility of every approved behavior against current repository source;
 - relevant durable system contracts when material;
+- complete material dependency paths for approved behavior;
 - exact bounded source files/sections Codex should inspect;
-- likely direct-edit files;
+- likely direct-edit files derived from the feasibility assessment;
 - authored KB/docs and generated outputs expected to change;
-- minimum verification needed to prove completion.
+- minimum verification needed to prove completion and identified material risks.
 
 Do not guess implementation files merely to make a plan look complete.
+
+## Phase 2 feasibility gate
+
+Phase 2 feasibility is behavioral, not file-level.
+
+For each approved Phase 1 behavior, verify against current source:
+- what already supports the behavior;
+- what currently prevents or incompletely supports it;
+- the complete material source/state path required to guarantee it;
+- the expected direct-edit boundaries/files implied by that path;
+- the minimum verification that proves the behavior and its material failure/recovery paths.
+
+Finding an obvious owner file or demonstrating that an implementation appears possible is not sufficient. Feasibility means current evidence supports a complete implementation path that can guarantee the approved behavior.
+
+When approved behavior materially crosses any of these boundaries, trace the relevant path end-to-end before Phase 2 is ready:
+- client and server authority;
+- persistence and hydration/restoration;
+- snapshot, reconnect, or resync;
+- cross-pod/session ownership;
+- timers, deadlines, or lifecycle transitions;
+- asynchronous presentation or animation completion;
+- multiplayer presence, membership, or coordination;
+- background/disconnect/recovery behavior.
+
+For those cross-boundary tasks, include relevant normal, failure, fallback, stale/duplicate, disconnect, and recovery paths where they can materially invalidate the approved behavior.
+
+When a server or authoritative lifecycle depends on client-side completion, prove one of:
+- the client-dependent process has a deterministic authoritative bound; or
+- the design uses explicit bounded synchronization with an authoritative fallback.
+
+Do not treat an approximate animation/tuning duration as an authoritative completion bound unless current source proves that bound.
+
+If feasibility exposes an unresolved architectural dependency:
+- continue repository analysis when the approved behavior already determines the required outcome;
+- return to the applicable design section when a new product/workflow decision is actually required;
+- do not defer the unresolved dependency to Codex's current-source judgment.
+
+For integration-heavy tasks, include a compact `### Feasibility & Dependency Trace` in Phase 2 Context mapping each material approved behavior to:
+- current source/state path;
+- identified gap or existing support;
+- required boundary/files;
+- verification proof.
+
+Omit that subsection for simple local tasks where no material cross-boundary dependency exists.
 
 ## Policy selection
 
@@ -118,11 +164,17 @@ List exact canonical concept IDs and Planner-resolved aliases only when Codex ma
 
 List exact current source files plus bounded symbols/sections Codex should inspect and why.
 
+#### `### Feasibility & Dependency Trace` (integration-heavy tasks only)
+
+Map each material approved behavior to its current source/state path, identified gap or existing support, required boundary/files, and verification proof. Include only material integration dependencies; omit for simple local tasks.
+
 ### `## 4. Expected Write Scope`
 
 #### `### Direct Edits`
 
-List likely authored files.
+List likely authored files derived from the feasibility/dependency assessment.
+
+The expected write scope is the result of the approved-behavior feasibility assessment, not a list of obvious owner files. Include every materially required direct dependency established by current source. If current evidence cannot establish whether a file must change, say so rather than guessing.
 
 #### `### Generated Outputs`
 
@@ -134,9 +186,13 @@ This is evidence-based expected scope, not a hard whitelist unless strict execut
 
 Provide ordered required outcomes, material interfaces/invariants, compatibility constraints, and exact authored prose when wording carries behavior. Leave low-level code structure to current-source judgment unless strict execution is selected.
 
+For cross-boundary tasks, prescribe semantic interfaces/invariants required to guarantee the approved behavior when the feasibility assessment establishes them. Do not leave unresolved lifecycle ownership, persistence continuity, synchronization, boundedness, idempotency, or fallback behavior for Codex to invent.
+
 ### `## 6. Verification`
 
 Specify only minimum task-required verification plus consistency/generated mechanics required by actual changed scope or selected task policy.
+
+"Minimum" means the minimum proof of every approved behavior plus every material feasibility risk identified during Phase 2. If persistence, reconnect/resync, lifecycle timing, stale/duplicate actions, disconnect membership, fallback, or other failure/recovery paths are material to feasibility, verification must exercise them.
 
 For Godot/client work, select headless smoke/GUT when needed to prove implementation correctness. Rendered/visual verification is optional and must be selected explicitly only when visual judgment materially helps prove the approved behavior. If selected verification later cannot run because of tooling/environment limitations, the implementor reports that limitation; Planner does not pre-disable the required check or change archival/publication defaults.
 
@@ -150,7 +206,14 @@ Append only when required by selected non-default policy.
 
 ## Plan quality and delivery
 
-Phase 2 is ready only when current evidence supports its source context, likely write scope, verification, and any KB semantic context actually required.
+Phase 2 is ready only when current evidence supports:
+- feasibility of every approved behavior;
+- complete material dependency paths;
+- source context and expected write scope derived from those paths;
+- verification sufficient to prove the approved behavior and identified material risks;
+- any KB semantic context actually required.
+
+An unresolved material dependency means Phase 2 is not ready.
 
 Keep unrelated maintenance out of scope and do not repeat requirements across sections.
 

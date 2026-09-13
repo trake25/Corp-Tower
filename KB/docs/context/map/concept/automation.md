@@ -116,7 +116,7 @@ Owner: `KB/docs/context/automation.md:197-212` → **Orchestrated execution**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/PLANNER.md` | `Execution-shape planning` | 89 | `sed -n 77,109p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Execution-shape planning` | 135 | `sed -n 123,155p policy/PLANNER.md` |
 | `policy/CODEX.md` | `Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.` | 123 | `sed -n 111,134p policy/CODEX.md` |
 | `policy/REVIEWER.md` | `For orchestrated work, the approved parent plan is the implementation contract.` | 25 | `sed -n 13,45p policy/REVIEWER.md` |
 
@@ -141,9 +141,9 @@ Owner: `KB/docs/context/automation.md:46-63` → **Phase 2 execution handoff**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `policy/PLANNER.md` | `Policy selection` | 59 | `sed -n 47,79p policy/PLANNER.md` |
-| `policy/PLANNER.md` | `Defaults and selected policy` | 83 | `sed -n 71,103p policy/PLANNER.md` |
-| `policy/PLANNER.md` | `Standard Phase 2 format` | 95 | `sed -n 83,115p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Policy selection` | 105 | `sed -n 93,125p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Defaults and selected policy` | 129 | `sed -n 117,149p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Standard Phase 2 format` | 141 | `sed -n 129,161p policy/PLANNER.md` |
 | `policy/CODEX.md` | `Agent-supported repository process defaults` | 33 | `sed -n 21,53p policy/CODEX.md` |
 
 Adjacent concepts: `automation.retrieval.direct`, `automation.orchestration.execution`, `automation.task-close.process-controls`
@@ -175,7 +175,7 @@ Owner: `KB/docs/context/automation.md:17-33` → **Direct retrieval discipline**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `AGENTS.md` | `Codex universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
-| `policy/PLANNER.md` | `Standard Phase 2 format` | 95 | `sed -n 83,115p policy/PLANNER.md` |
+| `policy/PLANNER.md` | `Standard Phase 2 format` | 141 | `sed -n 129,161p policy/PLANNER.md` |
 | `policy/CHATGPT.md` | `Repository contextualization` | 16 | `sed -n 4,36p policy/CHATGPT.md` |
 
 Adjacent concepts: `automation.planning.phase2`, `automation.retrieval.protocol`
