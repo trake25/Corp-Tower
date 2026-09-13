@@ -1,9 +1,12 @@
 const assert = require("node:assert/strict");
 const { EventEmitter } = require("node:events");
+const fs = require("node:fs");
+const path = require("node:path");
 const { test } = require("node:test");
 const WebSocket = require("ws");
 
 const GameEngine = require("../app/Game_Engine");
+const LobbyManager = require("../app/Lobby_Manager");
 const { RedisState } = require("../app/Redis_State");
 const { handleMessage, listenServer, wireConnection } = require("../app/Server");
 
@@ -83,10 +86,10 @@ function createManager(options = {}) {
                 }
                 return player;
             },
-            addPlayer: async () => {
+            addPlayer: async (...args) => {
                 calls.add += 1;
                 if (options.addPlayer) {
-                    return await options.addPlayer();
+                    return await options.addPlayer(...args);
                 }
             },
             broadcastDebugConfig: () => {},
@@ -114,6 +117,25 @@ function openGameplayConnection(options = {}) {
         ...options.dependencies
     });
     return { calls, connection, manager, player, socket };
+}
+
+function createMemoryLobby() {
+    const stateStore = new RedisState();
+    stateStore.enabled = false;
+    return { lobby: new LobbyManager(stateStore), stateStore };
+}
+
+function openLobbyConnection(lobby, socket, request = {}) {
+    const connection = wireConnection(socket, {
+        accountStore: { resolve: async () => null },
+        authVerifier: {
+            isRequired: () => false,
+            verifyAccessToken: async () => null
+        },
+        lobbyManager: lobby
+    });
+    socket.emit("message", JSON.stringify(request));
+    return connection;
 }
 
 test("accepted sockets install an immediate error boundary", async () => {
@@ -246,10 +268,14 @@ test("a close after player creation receives exactly one cleanup without matchma
     assert.equal(calls.remove, 1);
 });
 
-test("a close during matchmaking cleans up only after the in-flight work settles", async () => {
+test("a close during matchmaking invalidates the room-entry guard before cleanup", async () => {
     const matchmaking = deferred();
+    let isActive = null;
     const connection = openGameplayConnection({
-        addPlayer: async () => await matchmaking.promise
+        addPlayer: async (_player, options) => {
+            isActive = options.isActive;
+            await matchmaking.promise;
+        }
     });
 
     connection.socket.emit("message", "{}");
@@ -259,10 +285,129 @@ test("a close during matchmaking cleans up only after the in-flight work settles
     connection.socket.emit("close");
     await settle();
     assert.equal(connection.calls.remove, 0);
+    assert.equal(isActive(), false);
 
     matchmaking.resolve();
     await settle();
     assert.equal(connection.calls.remove, 1);
+});
+
+test("a retired socket cannot create a public or private room while entry is pending", async () => {
+    for (const request of [
+        {},
+        { entryMode: "private_create", privatePassword: "1234" }
+    ]) {
+        const { lobby, stateStore } = createMemoryLobby();
+        const roomId = deferred();
+        stateStore.nextRoomId = async () => await roomId.promise;
+        const socket = new FakeSocket();
+
+        openLobbyConnection(lobby, socket, request);
+        await settle();
+        socket.emit("close");
+        roomId.resolve(101);
+        await settle();
+
+        assert.equal(lobby.rooms.length, 0);
+        assert.equal(lobby.connectedPlayers.size, 0);
+        assert.equal(stateStore.memoryOpenRooms.size, 0);
+        assert.equal(stateStore.memoryPrivateInvites.size, 0);
+        assert.equal(socket.sent.some(message => message.type === "room_created"), false);
+    }
+});
+
+test("a close after public membership begins rolls back the abandoned room", async () => {
+    const { lobby, stateStore } = createMemoryLobby();
+    const enteredPersistence = deferred();
+    const releasePersistence = deferred();
+    const saveRoom = stateStore.saveRoom.bind(stateStore);
+    let delayed = false;
+    stateStore.saveRoom = async room => {
+        if (!delayed) {
+            delayed = true;
+            enteredPersistence.resolve();
+            await releasePersistence.promise;
+        }
+        return await saveRoom(room);
+    };
+    const socket = new FakeSocket();
+
+    openLobbyConnection(lobby, socket);
+    await enteredPersistence.promise;
+    assert.equal(lobby.rooms.length, 1);
+    assert.equal(lobby.rooms[0].players.filter(player => !player.isBot).length, 1);
+
+    socket.emit("close");
+    releasePersistence.resolve();
+    await settle();
+    await settle();
+
+    assert.equal(lobby.rooms.length, 0);
+    assert.equal(lobby.connectedPlayers.size, 0);
+    assert.equal(stateStore.memoryRooms.size, 0);
+    assert.equal(stateStore.memoryOpenRooms.size, 0);
+    assert.equal(socket.sent.some(message => message.type === "room_created"), false);
+});
+
+test("failed close cleanup remains retryable without double completion", async () => {
+    let attempts = 0;
+    const connection = openGameplayConnection({
+        removePlayer: async () => {
+            attempts += 1;
+            if (attempts === 1) {
+                throw new Error("disconnect persistence failed");
+            }
+        }
+    });
+
+    connection.socket.emit("message", "{}");
+    await settle();
+    connection.socket.emit("close");
+    await settle();
+    assert.equal(attempts, 1);
+
+    await connection.connection.cleanup();
+    assert.equal(attempts, 2);
+    await connection.connection.cleanup();
+    assert.equal(attempts, 2);
+});
+
+test("session cleanup retry preserves a superseding connection", async () => {
+    const { lobby, stateStore } = createMemoryLobby();
+    const oldPlayer = await lobby.createPlayer(new FakeSocket(), {});
+    const markSessionDisconnected = stateStore.markSessionDisconnected.bind(stateStore);
+    let attempts = 0;
+    stateStore.markSessionDisconnected = async (player, options) => {
+        attempts += 1;
+        if (attempts === 1) {
+            throw new Error("session persistence failed");
+        }
+        return await markSessionDisconnected(player, options);
+    };
+
+    await assert.rejects(lobby.removePlayer(oldPlayer), /session persistence failed/);
+    assert.equal(lobby.connectedPlayers.get(oldPlayer.id), oldPlayer);
+
+    const replacement = await lobby.createPlayer(new FakeSocket(), {
+        playerId: oldPlayer.id,
+        reconnectToken: oldPlayer.sessionId
+    });
+    await lobby.removePlayer(oldPlayer);
+
+    assert.equal(lobby.connectedPlayers.get(oldPlayer.id), replacement);
+    assert.equal((await stateStore.getSession(oldPlayer.sessionId)).connectionId, replacement.connectionId);
+    assert.equal((await stateStore.getSession(oldPlayer.sessionId)).connected, true);
+    assert.equal(attempts, 1);
+});
+
+test("the release syntax gate retains Placement and Socket Transport", () => {
+    const packageJson = JSON.parse(fs.readFileSync(
+        path.join(__dirname, "..", "package.json"), "utf8"
+    ));
+    const releaseCheck = packageJson.scripts["check:release"];
+
+    assert.match(releaseCheck, /node --check app\/engine\/Placement\.js/);
+    assert.match(releaseCheck, /node --check app\/Socket_Transport\.js/);
 });
 
 test("stale latency requests do not send through superseded sockets", async () => {

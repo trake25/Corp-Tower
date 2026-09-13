@@ -377,7 +377,7 @@ function wireConnection(ws, dependencies = {}) {
     let retired = false;
     let handshakeInProgress = false;
     let cleanedPlayer = null;
-    let cleanupPromise = Promise.resolve();
+    let cleanupPromise = null;
 
     const isLive = () => !retired && isOpenSocket(ws);
 
@@ -385,22 +385,33 @@ function wireConnection(ws, dependencies = {}) {
         const currentPlayer = player;
 
         if (handshakeInProgress) {
-            return cleanupPromise;
+            return cleanupPromise || Promise.resolve();
         }
 
         if (!currentPlayer || cleanedPlayer === currentPlayer) {
+            return cleanupPromise || Promise.resolve();
+        }
+
+        if (cleanupPromise) {
             return cleanupPromise;
         }
 
-        cleanedPlayer = currentPlayer;
-        cleanupPromise = Promise.resolve().then(async () => {
+        const attempt = Promise.resolve().then(async () => {
             console.log(`${currentPlayer.id} disconnected`);
             await manager.removePlayer(currentPlayer);
+            cleanedPlayer = currentPlayer;
         }).catch(error => {
             console.error("WebSocket disconnect cleanup failed:", error.message);
         });
 
-        return cleanupPromise;
+        const cleanup = attempt.finally(() => {
+            if (cleanupPromise === cleanup) {
+                cleanupPromise = null;
+            }
+        });
+        cleanupPromise = cleanup;
+
+        return cleanup;
     };
 
     const retireConnection = (label, error = null, code = 1011, reason = "internal error") => {
@@ -526,7 +537,7 @@ function wireConnection(ws, dependencies = {}) {
                     (!player.room && !player.resumeUnavailable)
                 )
             ) {
-                await manager.addPlayer(player);
+                await manager.addPlayer(player, { isActive: isLive });
 
                 if (!isLive()) {
                     await cleanupPlayer();

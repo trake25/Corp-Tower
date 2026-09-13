@@ -467,7 +467,7 @@ class RedisState {
         return session.connectionId === connectionId;
     }
 
-    async markSessionDisconnected(player) {
+    async markSessionDisconnected(player, { clearRoom = false } = {}) {
         if (!player?.sessionId) {
             return;
         }
@@ -488,7 +488,7 @@ class RedisState {
         await this.saveSession({
             ...session,
             connected: false,
-            roomId: player.room?.id || session.roomId || null
+            roomId: clearRoom ? null : (player.room?.id || session.roomId || null)
         });
 
         return true;
