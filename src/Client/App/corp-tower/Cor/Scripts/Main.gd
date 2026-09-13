@@ -571,11 +571,12 @@ func update_game_state(data) -> void:
 		)) / 1000.0
 		var outcome_wait_seconds := maxf(
 			maxf(0.0, outcome_minimum_hold_seconds),
-			score_popup_wait_seconds,
-			visual_fx.on_level_result(data, state)
+			maxf(score_popup_wait_seconds, visual_fx.on_level_result(data, state))
 		)
 		if results_ready:
 			outcome_wait_seconds = 0.0
+		var outcome_ack: Callable = func() -> void:
+			NetworkManager.send_outcome_ready(outcome_id)
 		summary.queue_level_summary_after_score_popups(
 			data.get("lastLevelSummary", {}),
 			state,
@@ -583,8 +584,8 @@ func update_game_state(data) -> void:
 			func() -> bool:
 				return tower_stack == null or !tower_stack.is_collapse_input_blocked(),
 			results_ready,
-			func() -> void:
-				NetworkManager.send_outcome_ready(outcome_id)
+			outcome_ack,
+			state_remaining_ms
 		)
 	else:
 		summary.cancel_pending_level_summary()

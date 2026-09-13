@@ -147,7 +147,7 @@ Owner: `KB/docs/context/backend.md:289-292` → **Impact rollback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Impacts.js` | `rollbackToImpact` | 486 | `sed -n 474,506p src/Server/app/engine/Impacts.js` |
+| `src/Server/app/engine/Impacts.js` | `rollbackToImpact` | 489 | `sed -n 477,509p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.progression.rollback`
 
@@ -273,7 +273,7 @@ Owner: `KB/docs/context/backend.md:267-270` → **Scoring transaction**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Scoring.js` | `addPlacementScore` | 354 | `sed -n 342,374p src/Server/app/engine/Scoring.js` |
+| `src/Server/app/engine/Scoring.js` | `addPlacementScore` | 361 | `sed -n 349,381p src/Server/app/engine/Scoring.js` |
 
 Adjacent concepts: `gameplay.scoring.transaction`
 

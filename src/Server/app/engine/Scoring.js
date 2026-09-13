@@ -76,7 +76,9 @@ function getPlayerBonusBreakdown(engine, player) {
 function buildLevelSummary(engine, options) {
     const mvp = options.mvp || engine.getLevelMVP();
     const previousTotalScores = options.previousTotalScores || {};
+    const rollbackTotalScores = options.rollbackTotalScores || null;
     const teamLevelScore = engine.getTeamLevelScore();
+    const hasNextLevel = engine.room.level < GameConfig.maxLevel;
 
     return {
         result: options.result,
@@ -84,6 +86,8 @@ function buildLevelSummary(engine, options) {
         failureReason: options.failureReason || null,
         failureStatus: options.failureStatus || null,
         level: engine.room.level,
+        hasNextLevel,
+        nextLevel: hasNextLevel ? engine.room.level + 1 : null,
         blockedLevel: options.blockedLevel || null,
         impactScoreRequirement:
             Number(options.impactScoreRequirement || 0),
@@ -111,6 +115,9 @@ function buildLevelSummary(engine, options) {
                 levelScore: Number(player.levelScore || 0),
                 previousTotalScore: previousTotalScore,
                 finalTotalScore: Number(player.score || 0),
+                rollbackTotalScore: rollbackTotalScores === null
+                    ? null
+                    : Number(rollbackTotalScores[player.id] || 0),
                 contributedHeight: Number(player.contributedHeight || 0),
                 levelImpactContribution: Number(player.levelImpactContribution || 0),
                 impactContribution: Number(player.impactContribution || 0),

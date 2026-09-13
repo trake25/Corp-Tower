@@ -109,19 +109,23 @@ source: src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn#LevelSummaryOverl
 source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#update_level_summary_bot_behavior
 source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#queue_level_summary_after_score_popups
 source: src/Server/app/Game_Engine.js#beginResultsWindow
+source: src/Server/app/engine/Scoring.js#buildLevelSummary
+source: src/Server/app/engine/Impacts.js#buildFailureSummary
 -->
 ## Summary overlay
 
-Level Summary is a centered state overlay for completed, failed, and terminal outcomes. It
-composes player results, quest outcome, authoritative transition countdown, retry state on
-recoverable failure, and terminal return-to-Home countdown. Its handoff waits for the longest
-applicable finishing presentation and a short outcome hold, then defers only for active
-collapse/recovery; persistent Impact Beat is cancelled by Summary takeover rather than becoming
-an unbounded gate. Spectator summaries may additionally render the server's per-bot personality,
-scoring, height, repair/recovery, Impact, risk/mistake, collapse, wait, and Power totals. Exact
-copy and measurements remain scene/controller details. Clients acknowledge their completed local
-outcome gate but show Summary only when the server marks the current outcome Results-ready; the
-full Summary window then starts from that authoritative boundary rather than from outcome commit.
+Human completed and recoverable-failure Results begin only when the server marks the current
+Stage #3 outcome Results-ready. They use a bottom sheet that preserves the finished tower above
+it. Success ranks players by level score and shows level gain, resulting total, local-player
+identity, MVP recognition, Perfect Build when applicable, and the just-ended quest result.
+Recoverable failure shows the exact failure reason, failed-attempt score, authoritative checkpoint
+rollback total, Impact met/missed status only when relevant, retries remaining, and the safe level
+that will be restored. The Results countdown and progress follow authoritative lifecycle remaining
+time, so reconnect/resync cannot restart a false local window. The next quest is never previewed
+in Results; it is introduced in the next READY. Clients still acknowledge their completed local
+outcome gate, and collapse/recovery remains its bounded predecessor. Spectator Results, including
+their optional per-bot behavior totals, and terminal-failure Results remain on their existing
+presentation paths until their dedicated stages.
 
 <!-- kb
 id: hud.overlays.score-popups

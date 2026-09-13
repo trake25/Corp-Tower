@@ -94,7 +94,7 @@ Owner: `KB/docs/context/gameplay.md:261-264` → **Eligible contribution**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/engine/Impacts.js` | `getImpactScoreStatus` | 221 | `sed -n 209,241p src/Server/app/engine/Impacts.js` |
-| `src/Server/app/engine/Scoring.js` | `addPlacementScore` | 354 | `sed -n 342,374p src/Server/app/engine/Scoring.js` |
+| `src/Server/app/engine/Scoring.js` | `addPlacementScore` | 361 | `sed -n 349,381p src/Server/app/engine/Scoring.js` |
 
 Adjacent concepts: `network.state.impact-status`
 
@@ -105,7 +105,7 @@ Owner: `KB/docs/context/gameplay.md:272-275` → **Personal requirement**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/engine/Impacts.js` | `getImpactScoreRequirement` | 166 | `sed -n 154,186p src/Server/app/engine/Impacts.js` |
-| `src/Server/app/engine/Scoring.js` | `getExpectedNormalUsefulScoreForLevel` | 144 | `sed -n 132,164p src/Server/app/engine/Scoring.js` |
+| `src/Server/app/engine/Scoring.js` | `getExpectedNormalUsefulScoreForLevel` | 151 | `sed -n 139,171p src/Server/app/engine/Scoring.js` |
 
 Adjacent concepts: none
 
@@ -139,7 +139,7 @@ Owner: `KB/docs/context/gameplay.md:166-169` → **Failure rules**
 |---|---|---:|---|
 | `src/Server/app/Game_Engine.js` | `failLevel` | 1192 | `sed -n 1180,1212p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Placement.js` | `checkFailCondition` | 416 | `sed -n 404,436p src/Server/app/engine/Placement.js` |
-| `src/Server/app/engine/Impacts.js` | `resolveCheckpointFailure` | 400 | `sed -n 388,420p src/Server/app/engine/Impacts.js` |
+| `src/Server/app/engine/Impacts.js` | `resolveCheckpointFailure` | 401 | `sed -n 389,421p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.supply.reserve`, `gameplay.impact.requirement`
 
@@ -149,7 +149,7 @@ Owner: `KB/docs/context/gameplay.md:178-181` → **Impact rollback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Impacts.js` | `rollbackToImpact` | 486 | `sed -n 474,506p src/Server/app/engine/Impacts.js` |
+| `src/Server/app/engine/Impacts.js` | `rollbackToImpact` | 489 | `sed -n 477,509p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.impact.requirement`, `backend.impacts.rollback`
 
@@ -170,7 +170,7 @@ Owner: `KB/docs/context/gameplay.md:235-240` → **Critical Save**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Scoring.js` | `getCriticalSavePreview` | 183 | `sed -n 171,203p src/Server/app/engine/Scoring.js` |
+| `src/Server/app/engine/Scoring.js` | `getCriticalSavePreview` | 190 | `sed -n 178,210p src/Server/app/engine/Scoring.js` |
 
 Adjacent concepts: `gameplay.tower.stability`, `hud.tower.weak-support`
 
@@ -180,7 +180,7 @@ Owner: `KB/docs/context/gameplay.md:249-252` → **Exact finish**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Scoring.js` | `getPerfectBuildFinisherPoints` | 403 | `sed -n 391,423p src/Server/app/engine/Scoring.js` |
+| `src/Server/app/engine/Scoring.js` | `getPerfectBuildFinisherPoints` | 410 | `sed -n 398,430p src/Server/app/engine/Scoring.js` |
 | `src/Server/app/engine/Impacts.js` | `awardPerfectBuildImpact` | 281 | `sed -n 269,301p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.impact.checkpoint-credit`
@@ -191,7 +191,7 @@ Owner: `KB/docs/context/gameplay.md:199-202` → **Height**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Scoring.js` | `classifyHeightRows` | 242 | `sed -n 230,262p src/Server/app/engine/Scoring.js` |
+| `src/Server/app/engine/Scoring.js` | `classifyHeightRows` | 249 | `sed -n 237,269p src/Server/app/engine/Scoring.js` |
 
 Adjacent concepts: none
 
@@ -201,7 +201,7 @@ Owner: `KB/docs/context/gameplay.md:209-212` → **Recovery**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Scoring.js` | `getRebuildScoreMultipliers` | 273 | `sed -n 261,293p src/Server/app/engine/Scoring.js` |
+| `src/Server/app/engine/Scoring.js` | `getRebuildScoreMultipliers` | 280 | `sed -n 268,300p src/Server/app/engine/Scoring.js` |
 
 Adjacent concepts: none
 
@@ -211,7 +211,7 @@ Owner: `KB/docs/context/gameplay.md:222-225` → **Reinforcement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Scoring.js` | `getStructuralAssessment` | 152 | `sed -n 140,172p src/Server/app/engine/Scoring.js` |
+| `src/Server/app/engine/Scoring.js` | `getStructuralAssessment` | 159 | `sed -n 147,179p src/Server/app/engine/Scoring.js` |
 
 Adjacent concepts: `gameplay.tower.stability`, `gameplay.scoring.critical-save`
 
@@ -221,7 +221,7 @@ Owner: `KB/docs/context/gameplay.md:189-192` → **Placement transaction**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Scoring.js` | `addPlacementScore` | 354 | `sed -n 342,374p src/Server/app/engine/Scoring.js` |
+| `src/Server/app/engine/Scoring.js` | `addPlacementScore` | 361 | `sed -n 349,381p src/Server/app/engine/Scoring.js` |
 
 Adjacent concepts: `backend.scoring.transaction`
 

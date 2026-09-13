@@ -341,6 +341,7 @@ function buildFailureSummary(engine, options) {
         carriedBlockCount: 0,
         mvp: options.mvp,
         previousTotalScores: options.previousTotalScores,
+        rollbackTotalScores: options.rollbackTotalScores || engine.room.impactScores,
         impactScoreRequirement: options.impactScoreStatus.requiredContribution,
         impactMinContributionShare: engine.getImpactMinContributionShare(),
         impactScoreStatus: options.impactScoreStatus,
@@ -452,7 +453,8 @@ function resolveCheckpointFailure(engine, options = {}) {
             impactScoreFailures,
             failureStatus,
             mvp,
-            previousTotalScores: engine.getPlayerScoreMap()
+            previousTotalScores: engine.getPlayerScoreMap(),
+            rollbackTotalScores: engine.room.impactScores
         });
         engine.beginOutcomeSynchronization();
         return true;
@@ -468,7 +470,8 @@ function resolveCheckpointFailure(engine, options = {}) {
         impactScoreFailures,
         failureStatus,
         mvp,
-        previousTotalScores
+        previousTotalScores,
+        rollbackTotalScores: engine.room.impactScores
     });
     engine.beginOutcomeSynchronization();
 

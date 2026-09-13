@@ -683,6 +683,60 @@ test("the level summary carries the level's side quest", () => {
     assert.equal(summary.sideQuest.claimedBy, engine.room.players[1].id);
 });
 
+test("level summary preserves score semantics and declares whether another level is playable", () => {
+    const { engine } = createPlayingEngine(1, 5);
+    const first = engine.room.players[0];
+    const second = engine.room.players[1];
+
+    GameConfig.maxLevel = 2;
+    engine.setupSideQuest();
+    engine.room.sideQuest.claimedBy = first.id;
+    first.score = 130;
+    first.levelScore = 30;
+    second.score = 120;
+    second.levelScore = 40;
+
+    const continuing = engine.buildLevelSummary({
+        result: "completed",
+        previousTotalScores: { [first.id]: 100, [second.id]: 80 },
+        exactFinish: true,
+        finisher: first
+    });
+
+    assert.equal(continuing.hasNextLevel, true);
+    assert.equal(continuing.nextLevel, 2);
+    assert.equal(continuing.exactFinish, true);
+    assert.equal(continuing.finisherId, first.id);
+    assert.equal(continuing.mvpId, second.id);
+    assert.equal(continuing.sideQuest.claimedBy, first.id);
+    assert.deepEqual(continuing.players.find(player => player.id === first.id), {
+        id: first.id,
+        isBot: false,
+        levelScore: 30,
+        previousTotalScore: 100,
+        finalTotalScore: 130,
+        rollbackTotalScore: null,
+        contributedHeight: 0,
+        levelImpactContribution: 0,
+        impactContribution: 0,
+        isMvp: false,
+        bonusBreakdown: {
+            height: 0,
+            recovery: 0,
+            structural: 0,
+            criticalSave: 0,
+            finisher: 0,
+            perfectBuild: 0,
+            assist: 0
+        }
+    });
+
+    engine.room.level = GameConfig.maxLevel;
+    const finalLevel = engine.buildLevelSummary({ result: "completed" });
+    assert.equal(finalLevel.hasNextLevel, false);
+    assert.equal(finalLevel.nextLevel, null);
+});
+
 test("failed level summary does not bank level score into final totals", () => {
     const { engine } = createPlayingEngine(1, 5);
 
@@ -935,6 +989,26 @@ test("rollback preserves retries and restores checkpoint score, contribution, an
     first.powerInventory = [{ id: "refresh", earnedLevel: 4 }];
 
     assert.equal(engine.failLevel("time_expired"), true);
+    const failedSummary = engine.room.lastLevelSummary;
+    const failedPlayer = failedSummary.players.find(player => player.id === first.id);
+    assert.equal(failedPlayer.levelScore, 20);
+    assert.equal(failedPlayer.finalTotalScore, 99);
+    assert.equal(failedPlayer.rollbackTotalScore, 41);
+
+    const persisted = stripRuntimeRoom({
+        id: "TEST",
+        players: engine.room.players,
+        state: engine.room
+    });
+    const resumed = new GameEngine();
+    resumed.hydrateRoom(persisted, persisted.players.map(player => ({ ...player })));
+    const resumedPlayer = resumed.buildGameStateSnapshot()
+        .lastLevelSummary.players.find(player => player.id === first.id);
+    assert.equal(resumed.buildGameStateSnapshot().lastLevelSummary.hasNextLevel, true);
+    assert.equal(resumedPlayer.finalTotalScore, 99);
+    assert.equal(resumedPlayer.rollbackTotalScore, 41);
+    resumed.clearTimers();
+
     assert.equal(engine.rollbackToImpact(), true);
     assert.equal(engine.room.state, "starting");
     assert.equal(engine.room.level, 3);
