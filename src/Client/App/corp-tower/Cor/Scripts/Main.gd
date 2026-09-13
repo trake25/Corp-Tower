@@ -564,8 +564,11 @@ func update_game_state(data) -> void:
 	var score_popup_wait_seconds: float = score_popups.process_score_events(data.get("scoreEvents", []), players)
 
 	if is_outcome_state:
+		var outcome_minimum_hold_seconds := float(data.get(
+			"outcomeMinimumHoldMs", int(OUTCOME_MINIMUM_HOLD_SECONDS * 1000.0)
+		)) / 1000.0
 		var outcome_wait_seconds := maxf(
-			OUTCOME_MINIMUM_HOLD_SECONDS,
+			maxf(0.0, outcome_minimum_hold_seconds),
 			score_popup_wait_seconds,
 			visual_fx.on_level_result(data, state)
 		)

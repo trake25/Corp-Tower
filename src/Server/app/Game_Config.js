@@ -32,6 +32,7 @@ const GameConfig = {
     failRestartDelayMs: 1000,
     placementScorePopupDurationMs: 1000,
     finishScorePopupDurationMs: 1550,
+    outcomeMinimumHoldMs: 850,
     levelSummaryDelayMs: 4000,
     impactInterval: 2,
     impactScoreRequirement: 0,

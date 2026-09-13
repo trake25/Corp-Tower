@@ -111,6 +111,7 @@ class GameEngine {
             placementScorePopupDurationMs: this.getPlacementScorePopupDurationMs(),
             finishScorePopupDurationMs: this.getFinishScorePopupDurationMs(),
             scorePopupDurationMs: this.getMaxScorePopupDurationMs(),
+            outcomeMinimumHoldMs: this.getOutcomeMinimumHoldMs(),
             levelSummaryDelayMs: GameConfig.levelSummaryDelayMs,
             players: this.room.players.map(player => ({
                 id: player.id,
@@ -316,6 +317,9 @@ class GameEngine {
             startsAt: snapshot.state.startsAt,
             endsAt: snapshot.state.endsAt,
             freezeEndsAt: snapshot.state.freezeEndsAt || 0,
+            roundEndRemainingMs: Number.isFinite(snapshot.state.roundEndRemainingMs)
+                ? Math.max(0, Number(snapshot.state.roundEndRemainingMs))
+                : null,
             lastLevelSummary: snapshot.state.lastLevelSummary,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
@@ -653,7 +657,33 @@ class GameEngine {
         const levelSummaryDelayMs =
             Math.max(0, Number(GameConfig.levelSummaryDelayMs) || 0);
 
-        return this.getMaxScorePopupDurationMs() + levelSummaryDelayMs;
+        return this.getOutcomePresentationEnvelopeMs() + levelSummaryDelayMs;
+    }
+
+    getOutcomePresentationEnvelopeMs() {
+        const visualHooks = GameConfig.visualHooks || {};
+        const impactBeatMs = visualHooks.impactBeat
+            ? Math.max(0, Number(visualHooks.impactBeatZoomOutMs) || 0) +
+                Math.max(0, Number(visualHooks.impactBeatWaveMs) || 0) +
+                Math.max(0, Number(visualHooks.impactBeatHoldMs) || 0)
+            : 0;
+        const hasCollapse = (this.room?.towerBlocks || []).some(entry => {
+            return entry?.towerState === "fallen";
+        });
+        const collapsePresentationMs = hasCollapse
+            ? Math.max(0, Number(visualHooks.collapseDebrisLifetimeMs) || 0)
+            : 0;
+
+        return Math.max(
+            this.getOutcomeMinimumHoldMs(),
+            this.getMaxScorePopupDurationMs(),
+            impactBeatMs,
+            collapsePresentationMs
+        );
+    }
+
+    getOutcomeMinimumHoldMs() {
+        return Math.max(0, Number(GameConfig.outcomeMinimumHoldMs) || 0);
     }
 
     getPlacementScorePopupDurationMs() {

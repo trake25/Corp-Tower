@@ -5,23 +5,23 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## network.adapters.boundaries
 
-Owner: `KB/docs/context/networking.md:261-264` → **Adapter boundaries**
+Owner: `KB/docs/context/networking.md:271-274` → **Adapter boundaries**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Server.js` | `handleMessage` | 444 | `sed -n 432,464p src/Server/app/Server.js` |
-| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3314 | `sed -n 3302,3334p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3317 | `sed -n 3305,3337p src/Server/app/Lobby_Manager.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `accept_game_state` | 880 | `sed -n 868,900p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.authority.server`
 
 ## network.compatibility.deploy-together
 
-Owner: `KB/docs/context/networking.md:272-275` → **Compatibility boundary**
+Owner: `KB/docs/context/networking.md:282-285` → **Compatibility boundary**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 147 | `sed -n 135,167p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 148 | `sed -n 136,168p src/Server/app/Game_Engine.js` |
 | `src/Server/app/Redis_State.js` | `stripRuntimeRoom` | 69 | `sed -n 57,89p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: none
@@ -109,8 +109,8 @@ Owner: `KB/docs/context/networking.md:125-128` → **Cross-pod room routing**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3314 | `sed -n 3302,3334p src/Server/app/Lobby_Manager.js` |
-| `src/Server/app/Redis_State.js` | `publishRoomAction` | 666 | `sed -n 654,686p src/Server/app/Redis_State.js` |
+| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3317 | `sed -n 3305,3337p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Redis_State.js` | `publishRoomAction` | 669 | `sed -n 657,689p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.lobby.cross-pod`
 
@@ -173,57 +173,58 @@ Owner: `KB/docs/context/networking.md:72-75` → **Socket supersession**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Lobby_Manager.js` | `isCurrentPlayerConnection` | 219 | `sed -n 207,239p src/Server/app/Lobby_Manager.js` |
-| `src/Server/app/Redis_State.js` | `isCurrentSessionConnection` | 430 | `sed -n 418,450p src/Server/app/Redis_State.js` |
+| `src/Server/app/Redis_State.js` | `isCurrentSessionConnection` | 433 | `sed -n 421,453p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.lobby.connection`
 
 ## network.state.grid-site
 
-Owner: `KB/docs/context/networking.md:213-216` → **Grid and site state**
+Owner: `KB/docs/context/networking.md:223-226` → **Grid and site state**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 147 | `sed -n 135,167p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 148 | `sed -n 136,168p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.tower.site`, `hud.placement.snapping`
 
 ## network.state.impact-status
 
-Owner: `KB/docs/context/networking.md:224-227` → **Impact status state**
+Owner: `KB/docs/context/networking.md:234-237` → **Impact status state**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 147 | `sed -n 135,167p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 148 | `sed -n 136,168p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.impact.eligible`, `hud.players.impact-bars`
 
 ## network.state.revision
 
-Owner: `KB/docs/context/networking.md:248-251` → **State revision and resync**
+Owner: `KB/docs/context/networking.md:258-261` → **State revision and resync**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 147 | `sed -n 135,167p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 148 | `sed -n 136,168p src/Server/app/Game_Engine.js` |
 | `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `accept_game_state` | 880 | `sed -n 868,900p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `network.session.recovery`
 
 ## network.state.snapshot
 
-Owner: `KB/docs/context/networking.md:200-204` → **Snapshot contract**
+Owner: `KB/docs/context/networking.md:201-214` → **Snapshot contract**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 147 | `sed -n 135,167p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 148 | `sed -n 136,168p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Redis_State.js` | `stripRuntimeRoom` | 69 | `sed -n 57,89p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.engine.lifecycle`, `hud.controller.state-application`
 
 ## network.state.transient-events
 
-Owner: `KB/docs/context/networking.md:236-239` → **Transient events**
+Owner: `KB/docs/context/networking.md:246-249` → **Transient events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 147 | `sed -n 135,167p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 148 | `sed -n 136,168p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `hud.overlays.score-popups`, `backend.engine.power-events`

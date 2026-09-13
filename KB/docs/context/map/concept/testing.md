@@ -109,7 +109,7 @@ Owner: `KB/docs/context/testing.md:26-29` → **Server coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/tests/Gameplay_Events.test.js` | `placement emits one authoritative score transaction and contribution` | 310 | `sed -n 298,330p src/Server/tests/Gameplay_Events.test.js` |
+| `src/Server/tests/Gameplay_Events.test.js` | `placement emits one authoritative score transaction and contribution` | 354 | `sed -n 342,374p src/Server/tests/Gameplay_Events.test.js` |
 
 Adjacent concepts: none
 

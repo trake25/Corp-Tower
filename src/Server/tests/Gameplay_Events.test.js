@@ -36,6 +36,50 @@ test("placement cooldown state acknowledges accepted and rejected placement requ
 	assert.ok(playerState.placementCooldownRemainingMs > 0);
 });
 
+test("final round time survives persisted outcome hydration, including zero", () => {
+	for (const roundEndRemainingMs of [83250, 0]) {
+		const { engine } = createPlayingEngine(1, 10);
+		engine.room.state = "finished";
+		engine.room.roundEndRemainingMs = roundEndRemainingMs;
+		engine.room.freezeEndsAt = Date.now() + 10000;
+		const snapshot = stripRuntimeRoom({
+			id: "TEST",
+			players: engine.room.players,
+			state: engine.room
+		});
+		const resumed = new GameEngine();
+
+		assert.equal(snapshot.state.roundEndRemainingMs, roundEndRemainingMs);
+		resumed.hydrateRoom(snapshot, snapshot.players.map(player => ({ ...player })));
+		assert.equal(resumed.buildGameStateSnapshot().roundEndRemainingMs, roundEndRemainingMs);
+		resumed.clearTimers();
+	}
+});
+
+test("post-level timing uses the concurrent outcome envelope before Results", () => {
+	const { engine } = createPlayingEngine(1, 10);
+	GameConfig.outcomeMinimumHoldMs = 850;
+	GameConfig.placementScorePopupDurationMs = 1550;
+	GameConfig.finishScorePopupDurationMs = 1550;
+	GameConfig.levelSummaryDelayMs = 4000;
+	GameConfig.visualHooks = {
+		...GameConfig.visualHooks,
+		impactBeat: true,
+		impactBeatZoomOutMs: 900,
+		impactBeatWaveMs: 1100,
+		impactBeatHoldMs: 0,
+		collapseDebrisLifetimeMs: 2500
+	};
+
+	assert.equal(engine.getOutcomePresentationEnvelopeMs(), 2000);
+	assert.equal(engine.getPostLevelTransitionDelayMs(), 6000);
+
+	engine.room.towerBlocks = [{ towerState: "fallen" }];
+	GameConfig.visualHooks.impactBeat = false;
+	assert.equal(engine.getOutcomePresentationEnvelopeMs(), 2500);
+	assert.equal(engine.getPostLevelTransitionDelayMs(), 6500);
+});
+
 function flatCells(width) {
     return Array.from({ length: width }, (_, x) => [x, 0]);
 }

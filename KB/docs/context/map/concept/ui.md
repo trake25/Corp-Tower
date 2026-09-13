@@ -63,7 +63,7 @@ Owner: `KB/docs/context/ui.md:253-256` → **Debug entry**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` | `toggle` | 64 | `sed -n 52,66p src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` | `toggle` | 61 | `sed -n 49,63p src/Client/App/corp-tower/Cor/Scripts/DebugOverlay.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `_toggle_home_spectator_setup` | 1310 | `sed -n 1298,1330p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` | `update_debug_button_availability` | 1217 | `sed -n 1205,1237p src/Client/App/corp-tower/Cor/Scripts/ScreenManager.gd` |
 

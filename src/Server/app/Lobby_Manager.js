@@ -3137,6 +3137,9 @@ class LobbyManager {
                 startsAt: snapshot.state.startsAt,
                 endsAt: snapshot.state.endsAt,
                 freezeEndsAt: snapshot.state.freezeEndsAt || 0,
+                roundEndRemainingMs: Number.isFinite(snapshot.state.roundEndRemainingMs)
+                    ? Math.max(0, Number(snapshot.state.roundEndRemainingMs))
+                    : null,
                 lastLevelSummary: snapshot.state.lastLevelSummary,
                 pendingScoreEvents: [],
                 pendingQuickChatEvents: [],

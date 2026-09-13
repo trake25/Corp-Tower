@@ -119,6 +119,9 @@ function stripRuntimeRoom(room) {
             startsAt: engineRoom.startsAt || 0,
             endsAt: engineRoom.endsAt || 0,
             freezeEndsAt: engineRoom.freezeEndsAt || 0,
+            roundEndRemainingMs: Number.isFinite(engineRoom.roundEndRemainingMs)
+                ? Math.max(0, Number(engineRoom.roundEndRemainingMs))
+                : null,
             lastLevelSummary: engineRoom.lastLevelSummary || null
         }
     };
