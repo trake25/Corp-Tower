@@ -42,6 +42,7 @@ var summary_is_human_results := false
 var summary_has_next_level := true
 var summary_safe_level: int = 0
 var summary_full_window_ms: int = 1
+var summary_uses_compact_layout := false
 
 func _ready() -> void:
 	summary_show_timer = Timer.new()
@@ -330,11 +331,20 @@ func configure_summary_presentation(use_human_sheet: bool) -> void:
 	level_summary_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 
 	if use_human_sheet:
+		summary_uses_compact_layout = is_short_portrait_results_viewport(viewport_size)
+		configure_human_results_layout(summary_uses_compact_layout)
 		var sheet_width := minf(520.0, maxf(280.0, viewport_size.x - 24.0))
-		var sheet_height := maxf(
-			clampf(viewport_size.y * 0.42, 330.0, 410.0),
-			level_summary_panel.get_combined_minimum_size().y
-		)
+		var sheet_height: float
+		if summary_uses_compact_layout:
+			sheet_height = minf(
+				viewport_size.y * 0.45,
+				maxf(viewport_size.y * 0.42, level_summary_panel.get_combined_minimum_size().y)
+			)
+		else:
+			sheet_height = maxf(
+				clampf(viewport_size.y * 0.42, 330.0, 410.0),
+				level_summary_panel.get_combined_minimum_size().y
+			)
 		level_summary_panel.custom_minimum_size = Vector2.ZERO
 		level_summary_panel.size = Vector2(sheet_width, sheet_height)
 		level_summary_panel.position = Vector2(
@@ -345,12 +355,47 @@ func configure_summary_presentation(use_human_sheet: bool) -> void:
 			level_summary_progress_rail.visible = true
 		return
 
+	summary_uses_compact_layout = false
 	var legacy_size := Vector2(360, 420)
 	level_summary_panel.custom_minimum_size = legacy_size
 	level_summary_panel.size = legacy_size
 	level_summary_panel.position = (viewport_size - legacy_size) * 0.5
 	if level_summary_progress_rail != null:
 		level_summary_progress_rail.visible = false
+
+func is_short_portrait_results_viewport(viewport_size: Vector2) -> bool:
+	return viewport_size.y <= 700.0 and viewport_size.y > viewport_size.x
+
+func configure_human_results_layout(use_compact_layout: bool) -> void:
+	if level_summary_panel == null:
+		return
+
+	var margin := level_summary_panel.get_node_or_null("LevelSummaryMargin") as MarginContainer
+	var rows := level_summary_panel.get_node_or_null("LevelSummaryMargin/LevelSummaryRows") as VBoxContainer
+	if margin != null:
+		margin.add_theme_constant_override("margin_left", 10 if use_compact_layout else 20)
+		margin.add_theme_constant_override("margin_top", 4 if use_compact_layout else 8)
+		margin.add_theme_constant_override("margin_right", 10 if use_compact_layout else 20)
+		margin.add_theme_constant_override("margin_bottom", 4 if use_compact_layout else 8)
+	if rows != null:
+		rows.add_theme_constant_override("separation", 2 if use_compact_layout else 6)
+	if level_summary_players_box != null:
+		level_summary_players_box.add_theme_constant_override("separation", 3 if use_compact_layout else 7)
+	if level_summary_title_label != null:
+		level_summary_title_label.custom_minimum_size = Vector2(0, 22 if use_compact_layout else 30)
+		level_summary_title_label.add_theme_font_size_override("font_size", 18 if use_compact_layout else 21)
+	if level_summary_team_label != null:
+		level_summary_team_label.add_theme_font_size_override("font_size", 12 if use_compact_layout else 14)
+	if level_summary_mvp_label != null:
+		level_summary_mvp_label.add_theme_font_size_override("font_size", 10 if use_compact_layout else 12)
+	if level_summary_quest_label != null:
+		level_summary_quest_label.custom_minimum_size = Vector2(0, 16 if use_compact_layout else 26)
+		level_summary_quest_label.add_theme_font_size_override("font_size", 11 if use_compact_layout else 15)
+	if level_summary_countdown_label != null:
+		level_summary_countdown_label.custom_minimum_size = Vector2(0, 20 if use_compact_layout else 34)
+		level_summary_countdown_label.add_theme_font_size_override("font_size", 12 if use_compact_layout else 15)
+	if level_summary_progress_rail != null:
+		level_summary_progress_rail.custom_minimum_size = Vector2(0, 3 if use_compact_layout else 5)
 
 func configure_human_results_content(
 	summary: Dictionary,
@@ -611,14 +656,21 @@ func create_level_summary_player_row(
 	impact_met: Variant = null
 ) -> Control:
 	if use_human_sheet:
-		return create_human_results_player_row(player_summary, result, rank, impact_met)
+		return create_human_results_player_row(
+			player_summary,
+			result,
+			rank,
+			impact_met,
+			summary_uses_compact_layout
+		)
 	return create_legacy_level_summary_player_row(player_summary)
 
 func create_human_results_player_row(
 	player_summary: Dictionary,
 	result: String,
 	rank: int,
-	impact_met: Variant
+	impact_met: Variant,
+	use_compact_layout: bool
 ) -> Control:
 	var player_id := str(player_summary.get("id", ""))
 	var is_local: bool = bool(players_ctx.is_local(player_id))
@@ -631,42 +683,50 @@ func create_human_results_player_row(
 	var row_panel := PanelContainer.new()
 	row_panel.name = "LevelSummaryPlayerRow_" + player_id
 	row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row_panel.custom_minimum_size = Vector2(0, 54)
+	row_panel.custom_minimum_size = Vector2(0, 44 if use_compact_layout else 54)
 	row_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row_panel.add_theme_stylebox_override("panel", make_summary_row_style(player_color, is_mvp, is_local))
+	row_panel.add_theme_stylebox_override(
+		"panel",
+		make_summary_row_style(player_color, is_mvp, is_local, true)
+	)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 8)
-	margin.add_theme_constant_override("margin_top", 5)
-	margin.add_theme_constant_override("margin_right", 9)
-	margin.add_theme_constant_override("margin_bottom", 5)
+	margin.add_theme_constant_override("margin_left", 6 if use_compact_layout else 8)
+	margin.add_theme_constant_override("margin_top", 3 if use_compact_layout else 5)
+	margin.add_theme_constant_override("margin_right", 6 if use_compact_layout else 9)
+	margin.add_theme_constant_override("margin_bottom", 3 if use_compact_layout else 5)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 7)
+	row.add_theme_constant_override("separation", 4 if use_compact_layout else 7)
 
 	var rank_label := Label.new()
 	rank_label.name = "SummaryRank_" + player_id
 	rank_label.text = "#" + str(rank)
-	rank_label.custom_minimum_size = Vector2(26, 0)
+	rank_label.custom_minimum_size = Vector2(20 if use_compact_layout else 26, 0)
 	rank_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rank_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	rank_label.add_theme_font_override("font", PoppinsBoldFont)
-	rank_label.add_theme_font_size_override("font_size", 14)
+	rank_label.add_theme_font_size_override("font_size", 11 if use_compact_layout else 14)
 
 	var avatar_wrap := Control.new()
-	avatar_wrap.custom_minimum_size = Vector2(38, 38)
+	var avatar_size := 30.0 if use_compact_layout else 38.0
+	avatar_wrap.custom_minimum_size = Vector2(avatar_size, avatar_size)
 	avatar_wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var avatar_ring := Panel.new()
 	avatar_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	avatar_ring.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	avatar_ring.add_theme_stylebox_override("panel", make_summary_avatar_style(player_color, is_mvp, is_local))
+	avatar_ring.add_theme_stylebox_override(
+		"panel",
+		make_summary_avatar_style(player_color, is_mvp, is_local, true)
+	)
 	var avatar_texture := TextureRect.new()
 	avatar_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	avatar_texture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	avatar_texture.offset_left = 3.0
-	avatar_texture.offset_top = 3.0
-	avatar_texture.offset_right = -3.0
-	avatar_texture.offset_bottom = -3.0
+	var avatar_inset := 2.0 if use_compact_layout else 3.0
+	avatar_texture.offset_left = avatar_inset
+	avatar_texture.offset_top = avatar_inset
+	avatar_texture.offset_right = -avatar_inset
+	avatar_texture.offset_bottom = -avatar_inset
 	avatar_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	avatar_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	avatar_texture.texture = PlayerRailEntryScript.load_avatar_texture(players_ctx.avatar_id(player_id))
@@ -686,11 +746,11 @@ func create_human_results_player_row(
 	name_label.clip_text = true
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_label.add_theme_color_override("font_color", Color(0.08, 0.08, 0.09, 1.0))
-	name_label.add_theme_font_size_override("font_size", 15)
-	var you_label := make_results_tag("YOU", player_color)
+	name_label.add_theme_font_size_override("font_size", 12 if use_compact_layout else 15)
+	var you_label := make_results_tag("YOU", player_color, use_compact_layout)
 	you_label.name = "SummaryYouTag_" + player_id
 	you_label.visible = is_local
-	var mvp_label := make_results_tag("MVP", Color(1.0, 0.72, 0.02, 1.0))
+	var mvp_label := make_results_tag("MVP", Color(1.0, 0.72, 0.02, 1.0), use_compact_layout)
 	mvp_label.name = "SummaryMvpTag_" + player_id
 	mvp_label.visible = is_mvp
 	identity_line.add_child(name_label)
@@ -704,7 +764,7 @@ func create_human_results_player_row(
 			"font_color",
 			Color(0.08, 0.56, 0.28, 1.0) if bool(impact_met) else Color(0.78, 0.17, 0.16, 1.0)
 		)
-		impact_label.add_theme_font_size_override("font_size", 11)
+		impact_label.add_theme_font_size_override("font_size", 9 if use_compact_layout else 11)
 		identity_line.add_child(impact_label)
 	var status_label := Label.new()
 	status_label.name = "SummaryPlayerStatus_" + player_id
@@ -719,7 +779,7 @@ func create_human_results_player_row(
 		"font_color",
 		Color(0.78, 0.17, 0.16, 1.0) if result == "failed" and rollback_loss > 0 else player_color
 	)
-	status_label.add_theme_font_size_override("font_size", 10)
+	status_label.add_theme_font_size_override("font_size", 9 if use_compact_layout else 10)
 	identity.add_child(identity_line)
 	identity.add_child(status_label)
 
@@ -735,10 +795,10 @@ func create_human_results_player_row(
 		]
 	score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	score_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	score_label.custom_minimum_size = Vector2(150, 0)
+	score_label.custom_minimum_size = Vector2(96 if use_compact_layout else 150, 0)
 	score_label.add_theme_font_override("font", PoppinsBoldFont)
 	score_label.add_theme_color_override("font_color", Color(0.08, 0.08, 0.09, 1.0))
-	score_label.add_theme_font_size_override("font_size", 11)
+	score_label.add_theme_font_size_override("font_size", 9 if use_compact_layout else 11)
 
 	row.add_child(rank_label)
 	row.add_child(avatar_wrap)
@@ -754,13 +814,13 @@ func create_human_results_player_row(
 
 	return row_panel
 
-func make_results_tag(tag_text: String, tag_color: Color) -> Label:
+func make_results_tag(tag_text: String, tag_color: Color, use_compact_layout: bool = false) -> Label:
 	var tag := Label.new()
 	tag.text = tag_text
 	tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	tag.add_theme_font_override("font", PoppinsBoldFont)
 	tag.add_theme_color_override("font_color", tag_color)
-	tag.add_theme_font_size_override("font_size", 11)
+	tag.add_theme_font_size_override("font_size", 10 if use_compact_layout else 11)
 	return tag
 
 func create_legacy_level_summary_player_row(player_summary: Dictionary) -> Control:
@@ -844,23 +904,29 @@ func create_legacy_level_summary_player_row(player_summary: Dictionary) -> Contr
 
 	return row_panel
 
-func make_summary_row_style(player_color: Color, is_mvp: bool, is_local: bool = false) -> StyleBoxFlat:
+func make_summary_row_style(
+	player_color: Color,
+	is_mvp: bool,
+	is_local: bool = false,
+	use_player_identity_for_mvp: bool = false
+) -> StyleBoxFlat:
 	var style: StyleBoxFlat = StyleBoxFlat.new()
+	var use_player_identity := is_local or (use_player_identity_for_mvp and is_mvp)
 	style.bg_color = (
-		Color(1.0, 0.98, 0.84, 0.94)
+		Color(player_color.r, player_color.g, player_color.b, 0.14)
+		if use_player_identity
+		else Color(1.0, 0.98, 0.84, 0.94)
 		if is_mvp
-		else Color(player_color.r, player_color.g, player_color.b, 0.14)
-		if is_local
 		else Color(1.0, 1.0, 1.0, 0.9)
 	)
 	style.border_color = (
-		Color(1.0, 0.82, 0.04, 1.0)
+		player_color
+		if use_player_identity
+		else Color(1.0, 0.82, 0.04, 1.0)
 		if is_mvp
-		else player_color
-		if is_local
 		else Color(0.86, 0.86, 0.86, 0.92)
 	)
-	style.border_width_left = 4 if is_local else 2
+	style.border_width_left = 4 if use_player_identity else 2
 	style.border_width_top = 2
 	style.border_width_right = 2
 	style.border_width_bottom = 2
@@ -873,14 +939,19 @@ func make_summary_row_style(player_color: Color, is_mvp: bool, is_local: bool = 
 	style.shadow_offset = Vector2(0, 2)
 	return style
 
-func make_summary_avatar_style(player_color: Color, is_mvp: bool, is_local: bool = false) -> StyleBoxFlat:
+func make_summary_avatar_style(
+	player_color: Color,
+	is_mvp: bool,
+	is_local: bool = false,
+	use_player_identity_for_mvp: bool = false
+) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = player_color
 	style.border_color = (
-		Color(1.0, 0.82, 0.04, 1.0)
+		player_color
+		if is_local or (use_player_identity_for_mvp and is_mvp)
+		else Color(1.0, 0.82, 0.04, 1.0)
 		if is_mvp
-		else player_color
-		if is_local
 		else Color(1, 1, 1, 1)
 	)
 	style.border_width_left = 2
