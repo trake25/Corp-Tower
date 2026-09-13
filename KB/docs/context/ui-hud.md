@@ -108,7 +108,7 @@ alias: failure summary
 source: src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn#LevelSummaryOverlay
 source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#update_level_summary_bot_behavior
 source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#queue_level_summary_after_score_popups
-source: src/Server/app/Game_Engine.js#getPostLevelTransitionDelayMs
+source: src/Server/app/Game_Engine.js#beginResultsWindow
 -->
 ## Summary overlay
 
@@ -119,9 +119,9 @@ applicable finishing presentation and a short outcome hold, then defers only for
 collapse/recovery; persistent Impact Beat is cancelled by Summary takeover rather than becoming
 an unbounded gate. Spectator summaries may additionally render the server's per-bot personality,
 scoring, height, repair/recovery, Impact, risk/mistake, collapse, wait, and Power totals. Exact
-copy and measurements remain scene/controller details. The authoritative lifecycle reserves that
-same bounded concurrent presentation envelope before the full Summary window, so it cannot enter
-READY while the current outcome handoff is still entitled to display.
+copy and measurements remain scene/controller details. Clients acknowledge their completed local
+outcome gate but show Summary only when the server marks the current outcome Results-ready; the
+full Summary window then starts from that authoritative boundary rather than from outcome commit.
 
 <!-- kb
 id: hud.overlays.score-popups

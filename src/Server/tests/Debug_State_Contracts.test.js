@@ -373,6 +373,36 @@ test("room placement actions preserve cooldown request correlation", async () =>
 	assert.deepEqual(received, ["P1", 1, 4, 2, "placement-request-1"]);
 });
 
+test("superseded connections cannot acknowledge an outcome", async () => {
+	let received = [];
+	const lobbyManager = Object.create(LobbyManager.prototype);
+	lobbyManager.stateStore = {
+		async isCurrentSessionConnection(_sessionId, connectionId) {
+			return connectionId === "current-connection";
+		}
+	};
+	const room = {
+		players: [{ id: "P1", sessionId: "session-1", presence: "connected" }],
+		engine: {
+			acknowledgeOutcomeReady: (...args) => { received = args; }
+		}
+	};
+
+	await lobbyManager.runRoomAction(room, "P1", {
+		type: "outcome_ready",
+		outcomeId: "3:failed:old",
+		connectionId: "superseded-connection"
+	});
+	assert.deepEqual(received, []);
+
+	await lobbyManager.runRoomAction(room, "P1", {
+		type: "outcome_ready",
+		outcomeId: "3:failed:current",
+		connectionId: "current-connection"
+	});
+	assert.deepEqual(received, ["P1", "3:failed:current"]);
+});
+
 test("game state carries the room's visual hook config", () => {
     const { engine, messages } = createPlayingEngine(1, 8);
 

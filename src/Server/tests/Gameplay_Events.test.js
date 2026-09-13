@@ -42,6 +42,10 @@ test("final round time survives persisted outcome hydration, including zero", ()
 		engine.room.state = "finished";
 		engine.room.roundEndRemainingMs = roundEndRemainingMs;
 		engine.room.freezeEndsAt = Date.now() + 10000;
+		engine.room.outcomeId = "1:finished:persisted";
+		engine.room.outcomeReadyPlayerIds = { P1: true };
+		engine.room.outcomeReadyFallbackAt = Date.now() + 10000;
+		engine.room.resultsReady = false;
 		const snapshot = stripRuntimeRoom({
 			id: "TEST",
 			players: engine.room.players,
@@ -52,32 +56,61 @@ test("final round time survives persisted outcome hydration, including zero", ()
 		assert.equal(snapshot.state.roundEndRemainingMs, roundEndRemainingMs);
 		resumed.hydrateRoom(snapshot, snapshot.players.map(player => ({ ...player })));
 		assert.equal(resumed.buildGameStateSnapshot().roundEndRemainingMs, roundEndRemainingMs);
+		assert.equal(resumed.buildGameStateSnapshot().outcomeId, "1:finished:persisted");
+		assert.equal(resumed.buildGameStateSnapshot().resultsReady, false);
 		resumed.clearTimers();
 	}
 });
 
-test("post-level timing uses the concurrent outcome envelope before Results", () => {
+test("outcome readiness starts Results once all connected humans acknowledge", () => {
 	const { engine } = createPlayingEngine(1, 10);
-	GameConfig.outcomeMinimumHoldMs = 850;
-	GameConfig.placementScorePopupDurationMs = 1550;
-	GameConfig.finishScorePopupDurationMs = 1550;
 	GameConfig.levelSummaryDelayMs = 4000;
-	GameConfig.visualHooks = {
-		...GameConfig.visualHooks,
-		impactBeat: true,
-		impactBeatZoomOutMs: 900,
-		impactBeatWaveMs: 1100,
-		impactBeatHoldMs: 0,
-		collapseDebrisLifetimeMs: 2500
-	};
+	engine.room.state = "finished";
+	engine.beginOutcomeSynchronization();
+	const outcomeId = engine.room.outcomeId;
 
-	assert.equal(engine.getOutcomePresentationEnvelopeMs(), 2000);
-	assert.equal(engine.getPostLevelTransitionDelayMs(), 6000);
+	assert.equal(engine.room.resultsReady, false);
+	assert.equal(engine.acknowledgeOutcomeReady("P1", outcomeId), true);
+	assert.equal(engine.room.resultsReady, false);
+	assert.equal(engine.acknowledgeOutcomeReady("P1", outcomeId), true);
+	assert.equal(engine.acknowledgeOutcomeReady("P2", "stale"), false);
+	assert.equal(engine.acknowledgeOutcomeReady("P2", outcomeId), true);
+	assert.equal(engine.room.resultsReady, false);
+	assert.equal(engine.acknowledgeOutcomeReady("P3", outcomeId), true);
+	assert.equal(engine.room.resultsReady, true);
+	assert.ok(engine.room.freezeEndsAt > Date.now());
+	assert.ok(engine.room.freezeEndsAt <= Date.now() + GameConfig.levelSummaryDelayMs);
+});
 
-	engine.room.towerBlocks = [{ towerState: "fallen" }];
-	GameConfig.visualHooks.impactBeat = false;
-	assert.equal(engine.getOutcomePresentationEnvelopeMs(), 2500);
-	assert.equal(engine.getPostLevelTransitionDelayMs(), 6500);
+test("disconnected humans stop gating and the fallback begins Results", async () => {
+	const { engine } = createPlayingEngine(1, 10);
+	engine.room.state = "failed";
+	engine.room.players[2].presence = "disconnected";
+	engine.beginOutcomeSynchronization();
+	const outcomeId = engine.room.outcomeId;
+	engine.acknowledgeOutcomeReady("P1", outcomeId);
+	engine.acknowledgeOutcomeReady("P2", outcomeId);
+	assert.equal(engine.room.resultsReady, true);
+
+	engine.room.state = "finished";
+	engine.beginOutcomeSynchronization();
+	engine.room.outcomeReadyFallbackAt = Date.now();
+	engine.scheduleOutcomeReadyFallback(0);
+	await new Promise(resolve => setImmediate(resolve));
+	assert.equal(engine.room.resultsReady, true);
+});
+
+test("bot participants never gate outcome readiness", () => {
+	const { engine } = createPlayingEngine(1, 10);
+	engine.room.state = "finished";
+	engine.room.players[2].isBot = true;
+	engine.beginOutcomeSynchronization();
+	const outcomeId = engine.room.outcomeId;
+
+	engine.acknowledgeOutcomeReady("P1", outcomeId);
+	assert.equal(engine.room.resultsReady, false);
+	engine.acknowledgeOutcomeReady("P2", outcomeId);
+	assert.equal(engine.room.resultsReady, true);
 });
 
 function flatCells(width) {

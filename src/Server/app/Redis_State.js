@@ -122,6 +122,10 @@ function stripRuntimeRoom(room) {
             roundEndRemainingMs: Number.isFinite(engineRoom.roundEndRemainingMs)
                 ? Math.max(0, Number(engineRoom.roundEndRemainingMs))
                 : null,
+            outcomeId: engineRoom.outcomeId || "",
+            outcomeReadyPlayerIds: engineRoom.outcomeReadyPlayerIds || {},
+            outcomeReadyFallbackAt: engineRoom.outcomeReadyFallbackAt || 0,
+            resultsReady: Boolean(engineRoom.resultsReady),
             lastLevelSummary: engineRoom.lastLevelSummary || null
         }
     };

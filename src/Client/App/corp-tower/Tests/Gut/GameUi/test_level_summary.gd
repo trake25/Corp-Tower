@@ -80,6 +80,51 @@ func test_scene_summary_waits_for_popup_window() -> void:
 	await get_tree().create_timer(0.4).timeout
 	assert_true(overlay.visible, "The summary should show once the popup window elapses.")
 
+func test_outcome_ack_waits_for_the_local_gate_and_results_ready() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	var scene_summary = harness.main.summary
+	var local_gate_ready := false
+	var acknowledgement_count := 0
+	scene_summary.queue_level_summary_after_score_popups(
+		SUMMARY_FIXTURE,
+		"finished",
+		0.0,
+		func() -> bool: return local_gate_ready,
+		false,
+		func() -> void: acknowledgement_count += 1
+	)
+	await get_tree().create_timer(0.1).timeout
+	assert_eq(acknowledgement_count, 0, "A blocked collapse/recovery gate must not acknowledge the outcome.")
+	assert_false((harness.find("LevelSummaryOverlay") as Control).visible)
+	local_gate_ready = true
+	await get_tree().create_timer(0.1).timeout
+	assert_eq(acknowledgement_count, 1, "The local gate sends one acknowledgement when it becomes ready.")
+	assert_false((harness.find("LevelSummaryOverlay") as Control).visible, "Results stays hidden until the server marks it ready.")
+
+func test_authoritative_results_ready_starts_the_summary_window() -> void:
+	var harness = HarnessScript.new()
+	await harness.mount(self, Vector2(412, 917))
+	var scene_summary = harness.main.summary
+	var acknowledgement_count := 0
+	scene_summary.queue_level_summary_after_score_popups(
+		SUMMARY_FIXTURE,
+		"finished",
+		0.0,
+		func() -> bool: return true,
+		false,
+		func() -> void: acknowledgement_count += 1
+	)
+	assert_eq(acknowledgement_count, 1)
+	scene_summary.queue_level_summary_after_score_popups(
+		SUMMARY_FIXTURE,
+		"finished",
+		0.0,
+		func() -> bool: return true,
+		true
+	)
+	assert_true((harness.find("LevelSummaryOverlay") as Control).visible, "Only the authoritative Results-ready broadcast starts the summary.")
+
 func test_cancel_pending_stops_queued_summary() -> void:
 	var harness = HarnessScript.new()
 	await harness.mount(self, Vector2(412, 917))

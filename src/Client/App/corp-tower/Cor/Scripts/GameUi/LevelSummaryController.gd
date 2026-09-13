@@ -25,6 +25,8 @@ var pending_level_summary: Dictionary = {}
 var pending_level_summary_state: String = ""
 var pending_level_summary_key: String = ""
 var pending_outcome_ready: Callable = Callable()
+var pending_outcome_ack: Callable = Callable()
+var pending_results_ready := true
 var summary_show_timer: Timer
 var summary_hide_timer: Timer
 var summary_deadline_ms: int = 0
@@ -80,7 +82,9 @@ func queue_level_summary_after_score_popups(
 	summary_value: Variant,
 	state: String,
 	score_popup_wait_seconds: float,
-	outcome_ready: Callable = Callable()
+	outcome_ready: Callable = Callable(),
+	results_ready: bool = true,
+	outcome_ack: Callable = Callable()
 ) -> void:
 	if level_summary_overlay == null or typeof(summary_value) != TYPE_DICTIONARY:
 		return
@@ -100,12 +104,18 @@ func queue_level_summary_after_score_popups(
 		summary_show_timer != null and
 		!summary_show_timer.is_stopped()
 	):
+		if results_ready:
+			pending_results_ready = true
+			summary_show_timer.stop()
+			show_pending_level_summary()
 		return
 
 	pending_level_summary = summary.duplicate(true)
 	pending_level_summary_state = state
 	pending_level_summary_key = summary_key
 	pending_outcome_ready = outcome_ready
+	pending_results_ready = results_ready
+	pending_outcome_ack = outcome_ack
 
 	if score_popup_wait_seconds > 0.0:
 		if summary_hide_timer != null:
@@ -132,6 +142,15 @@ func show_pending_level_summary() -> void:
 			summary_show_timer.wait_time = 0.05
 			summary_show_timer.start()
 		return
+	if !pending_results_ready:
+		if pending_outcome_ack.is_valid():
+			pending_outcome_ack.call()
+		pending_level_summary = {}
+		pending_level_summary_state = ""
+		pending_level_summary_key = ""
+		pending_outcome_ready = Callable()
+		pending_outcome_ack = Callable()
+		return
 
 	var summary: Dictionary = pending_level_summary
 	var state: String = pending_level_summary_state
@@ -140,6 +159,8 @@ func show_pending_level_summary() -> void:
 	pending_level_summary_state = ""
 	pending_level_summary_key = ""
 	pending_outcome_ready = Callable()
+	pending_outcome_ack = Callable()
+	pending_results_ready = true
 
 	show_level_summary(summary, state)
 
@@ -151,6 +172,8 @@ func cancel_pending_level_summary() -> void:
 	pending_level_summary_state = ""
 	pending_level_summary_key = ""
 	pending_outcome_ready = Callable()
+	pending_outcome_ack = Callable()
+	pending_results_ready = true
 
 func show_level_summary(summary_value: Variant, state: String) -> void:
 	if level_summary_overlay == null or typeof(summary_value) != TYPE_DICTIONARY:

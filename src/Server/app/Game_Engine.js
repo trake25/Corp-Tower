@@ -103,6 +103,8 @@ class GameEngine {
             roundEndRemainingMs: Number.isFinite(this.room.roundEndRemainingMs)
                 ? Math.max(0, Number(this.room.roundEndRemainingMs))
                 : null,
+            outcomeId: this.room.outcomeId || "",
+            resultsReady: Boolean(this.room.resultsReady),
             lastLevelSummary: this.room.lastLevelSummary,
             scoreEvents: options.scoreEvents || [],
             quickChatEvents: options.quickChatEvents || [],
@@ -228,6 +230,10 @@ class GameEngine {
             endsAt: 0,
             freezeEndsAt: 0,
             roundEndRemainingMs: null,
+            outcomeId: "",
+            outcomeReadyPlayerIds: {},
+            outcomeReadyFallbackAt: 0,
+            resultsReady: false,
             lastLevelSummary: null,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
@@ -320,6 +326,10 @@ class GameEngine {
             roundEndRemainingMs: Number.isFinite(snapshot.state.roundEndRemainingMs)
                 ? Math.max(0, Number(snapshot.state.roundEndRemainingMs))
                 : null,
+            outcomeId: snapshot.state.outcomeId || "",
+            outcomeReadyPlayerIds: snapshot.state.outcomeReadyPlayerIds || {},
+            outcomeReadyFallbackAt: Math.max(0, Number(snapshot.state.outcomeReadyFallbackAt) || 0),
+            resultsReady: Boolean(snapshot.state.resultsReady),
             lastLevelSummary: snapshot.state.lastLevelSummary,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
@@ -377,6 +387,12 @@ class GameEngine {
         }
 
         if (this.room.state === "finished") {
+            if (this.room.outcomeId && !this.room.resultsReady) {
+                this.scheduleOutcomeReadyFallback(
+                    Math.max(0, this.room.outcomeReadyFallbackAt - Date.now())
+                );
+                return;
+            }
             this.nextLevelTimer = setTimeout(() => {
                 this.nextLevel();
             }, Math.max(0, this.room.freezeEndsAt - Date.now()));
@@ -384,6 +400,12 @@ class GameEngine {
         }
 
         if (this.room.state === "failed") {
+            if (this.room.outcomeId && !this.room.resultsReady) {
+                this.scheduleOutcomeReadyFallback(
+                    Math.max(0, this.room.outcomeReadyFallbackAt - Date.now())
+                );
+                return;
+            }
             this.scheduleCheckpointRecovery(
                 Math.max(0, this.room.freezeEndsAt - Date.now())
             );
@@ -391,6 +413,12 @@ class GameEngine {
         }
 
         if (this.room.state === "game_over") {
+            if (this.room.outcomeId && !this.room.resultsReady) {
+                this.scheduleOutcomeReadyFallback(
+                    Math.max(0, this.room.outcomeReadyFallbackAt - Date.now())
+                );
+                return;
+            }
             this.scheduleTerminalRoomClose(
                 Math.max(0, this.room.terminalCloseAt - Date.now())
             );
@@ -653,37 +681,102 @@ class GameEngine {
         this.persistRoom(); this.broadcastGameState(); return true;
     }
 
-    getPostLevelTransitionDelayMs() {
-        const levelSummaryDelayMs =
-            Math.max(0, Number(GameConfig.levelSummaryDelayMs) || 0);
-
-        return this.getOutcomePresentationEnvelopeMs() + levelSummaryDelayMs;
-    }
-
-    getOutcomePresentationEnvelopeMs() {
-        const visualHooks = GameConfig.visualHooks || {};
-        const impactBeatMs = visualHooks.impactBeat
-            ? Math.max(0, Number(visualHooks.impactBeatZoomOutMs) || 0) +
-                Math.max(0, Number(visualHooks.impactBeatWaveMs) || 0) +
-                Math.max(0, Number(visualHooks.impactBeatHoldMs) || 0)
-            : 0;
-        const hasCollapse = (this.room?.towerBlocks || []).some(entry => {
-            return entry?.towerState === "fallen";
-        });
-        const collapsePresentationMs = hasCollapse
-            ? Math.max(0, Number(visualHooks.collapseDebrisLifetimeMs) || 0)
-            : 0;
-
-        return Math.max(
-            this.getOutcomeMinimumHoldMs(),
-            this.getMaxScorePopupDurationMs(),
-            impactBeatMs,
-            collapsePresentationMs
-        );
-    }
-
     getOutcomeMinimumHoldMs() {
         return Math.max(0, Number(GameConfig.outcomeMinimumHoldMs) || 0);
+    }
+
+    getOutcomeReadyFallbackMs() {
+        return Math.max(1000, Number(GameConfig.outcomeReadyFallbackMs) || 30000);
+    }
+
+    isOutcomeState() {
+        return ["finished", "failed", "game_over"].includes(this.room?.state);
+    }
+
+    outcomeGatePlayerIds() {
+        if (!this.room) return [];
+        return this.room.players
+            .filter(player => !player.isBot && player.presence === "connected")
+            .map(player => player.id);
+    }
+
+    beginOutcomeSynchronization() {
+        if (!this.isOutcomeState()) return;
+
+        const now = Date.now();
+        this.room.outcomeId = `${this.room.level}:${this.room.state}:${now}`;
+        this.room.outcomeReadyPlayerIds = {};
+        this.room.resultsReady = false;
+        this.room.outcomeReadyFallbackAt = now + this.getOutcomeReadyFallbackMs();
+        if (this.room.state === "game_over") {
+            this.room.terminalCloseAt = this.room.outcomeReadyFallbackAt;
+        } else {
+            this.room.freezeEndsAt = this.room.outcomeReadyFallbackAt;
+        }
+        this.persistRoom();
+        this.broadcastGameState();
+        this.scheduleOutcomeReadyFallback();
+        this.refreshOutcomeReadiness();
+    }
+
+    scheduleOutcomeReadyFallback(delayMs = null) {
+        if (!this.isOutcomeState() || this.room.resultsReady) return;
+        clearTimeout(this.nextLevelTimer);
+        const delay = delayMs === null
+            ? Math.max(0, this.room.outcomeReadyFallbackAt - Date.now())
+            : Math.max(0, Number(delayMs) || 0);
+        this.nextLevelTimer = setTimeout(() => {
+            this.beginResultsWindow();
+        }, delay);
+    }
+
+    acknowledgeOutcomeReady(playerId, outcomeId) {
+        if (!this.isOutcomeState() || this.room.resultsReady || outcomeId !== this.room.outcomeId) {
+            return false;
+        }
+        if (!this.outcomeGatePlayerIds().includes(playerId)) {
+            return false;
+        }
+        if (this.room.outcomeReadyPlayerIds[playerId]) {
+            return true;
+        }
+        this.room.outcomeReadyPlayerIds[playerId] = true;
+        this.persistRoom();
+        this.refreshOutcomeReadiness();
+        return true;
+    }
+
+    refreshOutcomeReadiness() {
+        if (!this.isOutcomeState() || this.room.resultsReady) return false;
+        const gatePlayerIds = this.outcomeGatePlayerIds();
+        if (!gatePlayerIds.every(playerId => this.room.outcomeReadyPlayerIds[playerId])) {
+            return false;
+        }
+        this.beginResultsWindow();
+        return true;
+    }
+
+    beginResultsWindow() {
+        if (!this.isOutcomeState() || this.room.resultsReady) return;
+        clearTimeout(this.nextLevelTimer);
+        this.nextLevelTimer = null;
+        this.room.resultsReady = true;
+        this.room.outcomeReadyFallbackAt = 0;
+        const delay = Math.max(0, Number(GameConfig.levelSummaryDelayMs) || 0);
+        if (this.room.state === "game_over") {
+            this.room.terminalCloseAt = Date.now() + delay;
+        } else {
+            this.room.freezeEndsAt = Date.now() + delay;
+        }
+        this.persistRoom();
+        this.broadcastGameState();
+        if (this.room.state === "finished") {
+            this.nextLevelTimer = setTimeout(() => this.nextLevel(), delay);
+        } else if (this.room.state === "failed") {
+            this.scheduleCheckpointRecovery(delay);
+        } else {
+            this.scheduleTerminalRoomClose(delay);
+        }
     }
 
     getPlacementScorePopupDurationMs() {
@@ -716,6 +809,10 @@ class GameEngine {
 
         this.room.failureTransitionCommitted = false;
         this.room.roundEndRemainingMs = null;
+        this.room.outcomeId = "";
+        this.room.outcomeReadyPlayerIds = {};
+        this.room.outcomeReadyFallbackAt = 0;
+        this.room.resultsReady = false;
         this.room.state = "starting";
         this.room.currentHeight = 0;
         this.room.towerBlocks = [];
@@ -1021,8 +1118,6 @@ class GameEngine {
     completeLevel(finisher, finishingBlock) {
         this.captureRoundEndRemainingMs();
         this.room.state = "finished";
-        this.room.freezeEndsAt =
-            Date.now() + this.getPostLevelTransitionDelayMs() + GameConfig.startDelayMs;
         clearTimeout(this.levelTimer);
         clearInterval(this.tickTimer);
 
@@ -1104,12 +1199,7 @@ class GameEngine {
             previousTotalScores: previousTotalScores
         });
 
-        this.persistRoom();
-        this.broadcastGameState();
-
-        this.nextLevelTimer = setTimeout(() => {
-            this.nextLevel();
-        }, this.getPostLevelTransitionDelayMs());
+        this.beginOutcomeSynchronization();
     }
 
     failLevel(reason) {

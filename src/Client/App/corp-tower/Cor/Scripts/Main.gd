@@ -564,6 +564,8 @@ func update_game_state(data) -> void:
 	var score_popup_wait_seconds: float = score_popups.process_score_events(data.get("scoreEvents", []), players)
 
 	if is_outcome_state:
+		var outcome_id := str(data.get("outcomeId", ""))
+		var results_ready := bool(data.get("resultsReady", false))
 		var outcome_minimum_hold_seconds := float(data.get(
 			"outcomeMinimumHoldMs", int(OUTCOME_MINIMUM_HOLD_SECONDS * 1000.0)
 		)) / 1000.0
@@ -572,12 +574,17 @@ func update_game_state(data) -> void:
 			score_popup_wait_seconds,
 			visual_fx.on_level_result(data, state)
 		)
+		if results_ready:
+			outcome_wait_seconds = 0.0
 		summary.queue_level_summary_after_score_popups(
 			data.get("lastLevelSummary", {}),
 			state,
 			outcome_wait_seconds,
 			func() -> bool:
-				return tower_stack == null or !tower_stack.is_collapse_input_blocked()
+				return tower_stack == null or !tower_stack.is_collapse_input_blocked(),
+			results_ready,
+			func() -> void:
+				NetworkManager.send_outcome_ready(outcome_id)
 		)
 	else:
 		summary.cancel_pending_level_summary()

@@ -1303,6 +1303,8 @@ class LobbyManager {
             room.engine.broadcastGameState({ includeTransientEvents: false });
         }
 
+        room.engine.refreshOutcomeReadiness();
+
         await this.stateStore.saveRoom(room, true);
 
         if (
@@ -2693,6 +2695,7 @@ class LobbyManager {
         player.ws = null;
         player.presence = "left";
 
+        room.engine.refreshOutcomeReadiness();
         room.engine.broadcastGameState({ includeTransientEvents: false });
         await this.stateStore.saveRoom(room, true);
         await Promise.resolve(
@@ -3140,6 +3143,10 @@ class LobbyManager {
                 roundEndRemainingMs: Number.isFinite(snapshot.state.roundEndRemainingMs)
                     ? Math.max(0, Number(snapshot.state.roundEndRemainingMs))
                     : null,
+                outcomeId: snapshot.state.outcomeId || "",
+                outcomeReadyPlayerIds: snapshot.state.outcomeReadyPlayerIds || {},
+                outcomeReadyFallbackAt: Math.max(0, Number(snapshot.state.outcomeReadyFallbackAt) || 0),
+                resultsReady: Boolean(snapshot.state.resultsReady),
                 lastLevelSummary: snapshot.state.lastLevelSummary,
                 pendingScoreEvents: [],
                 pendingQuickChatEvents: [],
@@ -3522,6 +3529,10 @@ class LobbyManager {
                     playerId, action.blockIndex, action.column, action.originY,
                     action.placementRequestId
                 );
+                return;
+
+            case "outcome_ready":
+                room.engine.acknowledgeOutcomeReady(playerId, action.outcomeId);
                 return;
 
             case "activate_power":

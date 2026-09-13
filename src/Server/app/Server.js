@@ -536,6 +536,18 @@ async function handleMessage(player, message) {
         return;
     }
 
+    if (data.type === "outcome_ready") {
+        if (!player.room || typeof data.outcomeId !== "string") {
+            return;
+        }
+
+        await lobbyManager.dispatchRoomAction(player, {
+            type: "outcome_ready",
+            outcomeId: data.outcomeId
+        });
+        return;
+    }
+
     if (data.type === "send_quick_chat") {
         if (!player.room) {
             console.log("Player has no room");

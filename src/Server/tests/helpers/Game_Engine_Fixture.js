@@ -48,6 +48,7 @@ const QA_TUNING_BASELINE = Object.freeze({
     placementScorePopupDurationMs: 2500,
     finishScorePopupDurationMs: 3500,
     outcomeMinimumHoldMs: 850,
+    outcomeReadyFallbackMs: 30000,
     levelSummaryDelayMs: 1000,
     impactInterval: 2,
     impactScoreRequirement: 0,

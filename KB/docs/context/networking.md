@@ -195,6 +195,7 @@ alias: game_state
 alias: authoritative snapshot
 source: src/Server/app/Game_Engine.js#buildGameStateSnapshot
 source: src/Server/app/Redis_State.js#stripRuntimeRoom
+source: src/Server/app/Game_Engine.js#beginOutcomeSynchronization
 adjacent: backend.engine.lifecycle
 adjacent: hud.controller.state-application
 -->
@@ -211,6 +212,10 @@ full round duration, so READY countdown presentation and the paused round clock 
 the same value. A completed outcome additionally carries its persisted `roundEndRemainingMs`;
 that frozen gameplay value survives room restoration and remains distinct from lifecycle time
 until the next level starts.
+During an outcome, `outcomeId` and `resultsReady` synchronize the presentation handoff. Connected
+human participants may acknowledge only that current server identity after their local gate; the
+server starts the Summary window once all are ready or its bounded fallback expires. Bots,
+spectators, disconnected, and left players never gate this room lifecycle.
 
 <!-- kb
 id: network.state.grid-site

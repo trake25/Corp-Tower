@@ -37,6 +37,7 @@ var resume_only_request := false
 var connection_purpose := "gameplay"
 var profile_snapshot: Dictionary = {}
 var profile_handshake_pending := false
+var outcome_ready_sent: Dictionary = {}
 
 var player_id := ""
 var reconnect_token := ""
@@ -558,6 +559,14 @@ func place_block(block_index, column := -1, origin_y := -1, placement_request_id
 
 	ws.send_text(JSON.stringify(data))
 
+func send_outcome_ready(outcome_id: String) -> void:
+	if outcome_id == "" or spectator_active or not is_conn_estab or is_recovering():
+		return
+	if outcome_ready_sent.has(outcome_id):
+		return
+	outcome_ready_sent[outcome_id] = true
+	ws.send_text(JSON.stringify({"type": "outcome_ready", "outcomeId": outcome_id}))
+
 func send_ready():
 	if spectator_active or not is_conn_estab or is_recovering():
 		return
@@ -710,6 +719,7 @@ func reset_match_tracking() -> void:
 	last_state_revision = -1
 	last_game_state_msec = -1
 	latest_match_state = ""
+	outcome_ready_sent.clear()
 	reset_recovery_state()
 
 func _clear_room_identity() -> void:
@@ -893,6 +903,8 @@ func accept_game_state(data) -> bool:
 
 	last_game_state_msec = Time.get_ticks_msec()
 	match_active = true
+	if bool(data.get("snapshot", false)):
+		outcome_ready_sent.clear()
 	if bool(data.get("spectator", false)):
 		spectator_active = true
 	return true

@@ -115,9 +115,9 @@ Owner: `KB/docs/context/ui-hud.md:113-125` → **Summary overlay**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn` | `LevelSummaryOverlay` | 3 | `sed -n 1,23p src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 279 | `sed -n 267,299p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `queue_level_summary_after_score_popups` | 79 | `sed -n 67,99p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
-| `src/Server/app/Game_Engine.js` | `getPostLevelTransitionDelayMs` | 656 | `sed -n 644,676p src/Server/app/Game_Engine.js` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 302 | `sed -n 290,322p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `queue_level_summary_after_score_popups` | 81 | `sed -n 69,101p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
+| `src/Server/app/Game_Engine.js` | `beginResultsWindow` | 759 | `sed -n 747,779p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: none
 
@@ -220,10 +220,10 @@ Owner: `KB/docs/context/ui-hud.md:68-71` → **Spectator presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 586 | `sed -n 574,606p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 609 | `sed -n 597,629p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 593 | `sed -n 581,613p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 616 | `sed -n 604,636p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `set_spectator_mode` | 595 | `sed -n 583,615p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 279 | `sed -n 267,299p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 302 | `sed -n 290,322p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
 
 Adjacent concepts: `network.room.bot-spectator`, `hud.navigation.drop-top`, `hud.overlays.summary`
 

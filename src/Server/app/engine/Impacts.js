@@ -377,7 +377,7 @@ function scheduleCheckpointRecovery(engine, delayMs = null) {
     if (!engine.room || engine.room.state !== "failed") return;
 
     const delay = delayMs === null
-        ? engine.getPostLevelTransitionDelayMs()
+        ? Math.max(0, Number(GameConfig.levelSummaryDelayMs) || 0)
         : Math.max(0, number(delayMs));
 
     engine.nextLevelTimer = setTimeout(() => {
@@ -424,8 +424,6 @@ function resolveCheckpointFailure(engine, options = {}) {
     const failureStatus = engine.getImpactFailureStatus();
     const mvp = engine.getLevelMVP();
     const previousTotalScores = engine.getPlayerScoreMap();
-    const transitionDelay = engine.getPostLevelTransitionDelayMs();
-
     engine.recordLevelOutcome("failed");
     queueFailureEvents(engine, {
         reason,
@@ -439,7 +437,7 @@ function resolveCheckpointFailure(engine, options = {}) {
         engine.room.state = "game_over";
         engine.room.freezeEndsAt = 0;
         engine.room.terminalFailureReason = reason;
-        engine.room.terminalCloseAt = Date.now() + transitionDelay;
+        engine.room.terminalCloseAt = 0;
         engine.room.terminalCloseRequested = false;
         engine.restoreImpactScores();
         engine.restoreImpactPowers();
@@ -456,14 +454,12 @@ function resolveCheckpointFailure(engine, options = {}) {
             mvp,
             previousTotalScores: engine.getPlayerScoreMap()
         });
-        engine.persistRoom();
-        engine.broadcastGameState();
-        scheduleTerminalRoomClose(engine);
+        engine.beginOutcomeSynchronization();
         return true;
     }
 
     engine.room.state = "failed";
-    engine.room.freezeEndsAt = Date.now() + transitionDelay;
+    engine.room.freezeEndsAt = 0;
     engine.room.lastLevelSummary = buildFailureSummary(engine, {
         result: "failed",
         reason,
@@ -474,9 +470,7 @@ function resolveCheckpointFailure(engine, options = {}) {
         mvp,
         previousTotalScores
     });
-    engine.persistRoom();
-    engine.broadcastGameState();
-    scheduleCheckpointRecovery(engine);
+    engine.beginOutcomeSynchronization();
 
     return true;
 }

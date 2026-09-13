@@ -49,6 +49,29 @@ func after_each() -> void:
 	NetworkManager._clear_private_lobby_tracking()
 	NetworkManager.player_id = ""
 
+func test_outcome_ready_is_idempotent_until_a_resync_snapshot() -> void:
+	var original_socket = NetworkManager.ws
+	var original_connected = NetworkManager.is_conn_estab
+	var original_spectator = NetworkManager.spectator_active
+	var socket := FakeSocket.new()
+	NetworkManager.ws = socket
+	NetworkManager.is_conn_estab = true
+	NetworkManager.spectator_active = false
+	NetworkManager.outcome_ready_sent.clear()
+
+	NetworkManager.send_outcome_ready("4:failed:outcome")
+	NetworkManager.send_outcome_ready("4:failed:outcome")
+	assert_eq(socket.sent_messages.size(), 1, "Repeated broadcasts cannot resend the same outcome acknowledgement.")
+	assert_eq(socket.sent_messages[0].get("type"), "outcome_ready")
+
+	NetworkManager.accept_game_state({"snapshot": true, "stateRevision": 1, "state": "failed"})
+	NetworkManager.send_outcome_ready("4:failed:outcome")
+	assert_eq(socket.sent_messages.size(), 2, "A resync snapshot allows the active outcome acknowledgement to be retried.")
+
+	NetworkManager.ws = original_socket
+	NetworkManager.is_conn_estab = original_connected
+	NetworkManager.spectator_active = original_spectator
+
 func private_lobby_payload(roster: Array, ready_ids: Array = [], countdown := false, password := "7007") -> Dictionary:
 	return {
 		"roomMode": "private",
