@@ -122,7 +122,7 @@ func refresh() -> void:
 	var playing: bool = str(match_state.current_match_state) == "playing"
 	if !playing:
 		_cancel_pan()
-		if was_playing:
+		if was_playing and !tower_stack.is_collapse_input_blocked():
 			tower_stack.reset_navigation()
 		selected_block_id = ""
 		was_playing = false

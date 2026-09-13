@@ -24,6 +24,7 @@ var last_level_summary_key: String = ""
 var pending_level_summary: Dictionary = {}
 var pending_level_summary_state: String = ""
 var pending_level_summary_key: String = ""
+var pending_outcome_ready: Callable = Callable()
 var summary_show_timer: Timer
 var summary_hide_timer: Timer
 var summary_deadline_ms: int = 0
@@ -78,7 +79,8 @@ func set_spectator_mode(enabled: bool) -> void:
 func queue_level_summary_after_score_popups(
 	summary_value: Variant,
 	state: String,
-	score_popup_wait_seconds: float
+	score_popup_wait_seconds: float,
+	outcome_ready: Callable = Callable()
 ) -> void:
 	if level_summary_overlay == null or typeof(summary_value) != TYPE_DICTIONARY:
 		return
@@ -103,6 +105,7 @@ func queue_level_summary_after_score_popups(
 	pending_level_summary = summary.duplicate(true)
 	pending_level_summary_state = state
 	pending_level_summary_key = summary_key
+	pending_outcome_ready = outcome_ready
 
 	if score_popup_wait_seconds > 0.0:
 		if summary_hide_timer != null:
@@ -123,6 +126,12 @@ func queue_level_summary_after_score_popups(
 func show_pending_level_summary() -> void:
 	if pending_level_summary.is_empty():
 		return
+	if pending_outcome_ready.is_valid() and !bool(pending_outcome_ready.call()):
+		if summary_show_timer != null:
+			summary_show_timer.stop()
+			summary_show_timer.wait_time = 0.05
+			summary_show_timer.start()
+		return
 
 	var summary: Dictionary = pending_level_summary
 	var state: String = pending_level_summary_state
@@ -130,6 +139,7 @@ func show_pending_level_summary() -> void:
 	pending_level_summary = {}
 	pending_level_summary_state = ""
 	pending_level_summary_key = ""
+	pending_outcome_ready = Callable()
 
 	show_level_summary(summary, state)
 
@@ -140,6 +150,7 @@ func cancel_pending_level_summary() -> void:
 	pending_level_summary = {}
 	pending_level_summary_state = ""
 	pending_level_summary_key = ""
+	pending_outcome_ready = Callable()
 
 func show_level_summary(summary_value: Variant, state: String) -> void:
 	if level_summary_overlay == null or typeof(summary_value) != TYPE_DICTIONARY:

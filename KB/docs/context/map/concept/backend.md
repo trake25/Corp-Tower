@@ -30,7 +30,7 @@ Owner: `KB/docs/context/backend.md:11-14` → **Server authority**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `buildGameState` | 46 | `sed -n 34,66p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `buildGameState` | 64 | `sed -n 52,84p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.adapters.boundaries`
 
@@ -71,7 +71,7 @@ Owner: `KB/docs/context/backend.md:200-203` → **Engine lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `startLevel` | 658 | `sed -n 646,678p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `startLevel` | 680 | `sed -n 668,700p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.snapshot`
 
@@ -91,7 +91,7 @@ Owner: `KB/docs/context/backend.md:246-249` → **Power events**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `activatePower` | 596 | `sed -n 584,616p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `activatePower` | 618 | `sed -n 606,638p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.transient-events`
 
@@ -101,7 +101,7 @@ Owner: `KB/docs/context/backend.md:211-214` → **Engine timers**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 325 | `sed -n 313,345p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `restoreTimersFromState` | 347 | `sed -n 335,367p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.progression.timing`
 
@@ -147,7 +147,7 @@ Owner: `KB/docs/context/backend.md:289-292` → **Impact rollback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Impacts.js` | `rollbackToImpact` | 491 | `sed -n 479,511p src/Server/app/engine/Impacts.js` |
+| `src/Server/app/engine/Impacts.js` | `rollbackToImpact` | 492 | `sed -n 480,512p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.progression.rollback`
 

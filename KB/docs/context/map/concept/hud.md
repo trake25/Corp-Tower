@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## hud.constraint.rendered-verification
 
-Owner: `KB/docs/context/ui-hud.md:323-326` → **Rendered verification**
+Owner: `KB/docs/context/ui-hud.md:342-345` → **Rendered verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,50 +15,52 @@ Adjacent concepts: `testing.client.rendered`
 
 ## hud.controller.architecture
 
-Owner: `KB/docs/context/ui-hud.md:27-37` → **Controller architecture**
+Owner: `KB/docs/context/ui-hud.md:34-44` → **Controller architecture**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_ready` | 75 | `sed -n 63,95p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `bind_ui_nodes` | 231 | `sed -n 219,251p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_ready` | 76 | `sed -n 64,96p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `bind_ui_nodes` | 232 | `sed -n 220,252p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` | `require_node` | 9 | `sed -n 1,22p src/Client/App/corp-tower/Cor/Scripts/GameUi/UiNodeBinder.gd` |
 
 Adjacent concepts: `hud.controller.state-application`
 
 ## hud.controller.parallel-placement
 
-Owner: `KB/docs/context/ui-hud.md:45-48` → **Parallel placement**
+Owner: `KB/docs/context/ui-hud.md:52-55` → **Parallel placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_aim_or_place` | 742 | `sed -n 730,762p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_aim_or_place` | 756 | `sed -n 744,776p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `hud.placement.armed`
 
 ## hud.controller.state-application
 
-Owner: `KB/docs/context/ui-hud.md:13-16` → **State application**
+Owner: `KB/docs/context/ui-hud.md:14-23` → **State application**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 403 | `sed -n 391,423p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_game_state` | 404 | `sed -n 392,424p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Server/app/Game_Engine.js` | `captureRoundEndRemainingMs` | 46 | `sed -n 34,66p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `network.state.snapshot`, `hud.controller.architecture`
 
 ## hud.inventory.cooldown
 
-Owner: `KB/docs/context/ui-hud.md:131-142` → **Inventory cooldown**
+Owner: `KB/docs/context/ui-hud.md:147-160` → **Inventory cooldown**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `update_placement_cooldown_overlays` | 416 | `sed -n 404,436p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `update_placement_cooldown_overlays` | 430 | `sed -n 418,450p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `clear_for_play_exit` | 188 | `sed -n 176,208p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 | `src/Client/App/corp-tower/Cor/Scripts/CooldownOverlay.gd` | `set_remaining_ratio` | 18 | `sed -n 6,38p src/Client/App/corp-tower/Cor/Scripts/CooldownOverlay.gd` |
 
 Adjacent concepts: `gameplay.progression.timing`, `hud.round-start.ready`
 
 ## hud.navigation.auto-follow
 
-Owner: `KB/docs/context/ui-hud.md:231-234` → **Automatic follow**
+Owner: `KB/docs/context/ui-hud.md:250-253` → **Automatic follow**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -68,7 +70,7 @@ Adjacent concepts: none
 
 ## hud.navigation.drop-top
 
-Owner: `KB/docs/context/ui-hud.md:253-256` → **Drop and Top**
+Owner: `KB/docs/context/ui-hud.md:272-275` → **Drop and Top**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -78,7 +80,7 @@ Adjacent concepts: `hud.tower.weak-support`
 
 ## hud.navigation.manual-inspection
 
-Owner: `KB/docs/context/ui-hud.md:241-244` → **Manual inspection**
+Owner: `KB/docs/context/ui-hud.md:260-263` → **Manual inspection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -88,7 +90,7 @@ Adjacent concepts: none
 
 ## hud.overlays.popovers
 
-Owner: `KB/docs/context/ui-hud.md:162-165` → **Shared popovers**
+Owner: `KB/docs/context/ui-hud.md:181-184` → **Shared popovers**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -98,7 +100,7 @@ Adjacent concepts: none
 
 ## hud.overlays.score-popups
 
-Owner: `KB/docs/context/ui-hud.md:114-121` → **Score popups**
+Owner: `KB/docs/context/ui-hud.md:129-136` → **Score popups**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -108,28 +110,29 @@ Adjacent concepts: `network.state.transient-events`
 
 ## hud.overlays.summary
 
-Owner: `KB/docs/context/ui-hud.md:104-107` → **Summary overlay**
+Owner: `KB/docs/context/ui-hud.md:112-122` → **Summary overlay**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn` | `LevelSummaryOverlay` | 3 | `sed -n 1,23p src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 268 | `sed -n 256,288p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 279 | `sed -n 267,299p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `queue_level_summary_after_score_popups` | 79 | `sed -n 67,99p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
 
 Adjacent concepts: none
 
 ## hud.placement.armed
 
-Owner: `KB/docs/context/ui-hud.md:290-293` → **Armed placement**
+Owner: `KB/docs/context/ui-hud.md:309-312` → **Armed placement**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `revalidate_armed_placement` | 777 | `sed -n 765,797p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `revalidate_armed_placement` | 791 | `sed -n 779,811p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `hud.controller.parallel-placement`
 
 ## hud.placement.coordinates
 
-Owner: `KB/docs/context/ui-hud.md:312-315` → **Rendered coordinate boundary**
+Owner: `KB/docs/context/ui-hud.md:331-334` → **Rendered coordinate boundary**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -139,7 +142,7 @@ Adjacent concepts: `gameplay.tower.pose`
 
 ## hud.placement.ghost
 
-Owner: `KB/docs/context/ui-hud.md:301-304` → **Ghost and contact marker**
+Owner: `KB/docs/context/ui-hud.md:320-323` → **Ghost and contact marker**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -149,7 +152,7 @@ Adjacent concepts: `network.placement.contract`
 
 ## hud.placement.snapping
 
-Owner: `KB/docs/context/ui-hud.md:279-282` → **Snapping**
+Owner: `KB/docs/context/ui-hud.md:298-301` → **Snapping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -160,7 +163,7 @@ Adjacent concepts: `gameplay.tower.placement`, `network.placement.contract`
 
 ## hud.players.impact-bars
 
-Owner: `KB/docs/context/ui-hud.md:83-86` → **Impact bars**
+Owner: `KB/docs/context/ui-hud.md:90-93` → **Impact bars**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -170,7 +173,7 @@ Adjacent concepts: `network.state.impact-status`
 
 ## hud.players.latency
 
-Owner: `KB/docs/context/ui-hud.md:93-96` → **Latency presentation**
+Owner: `KB/docs/context/ui-hud.md:100-103` → **Latency presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -180,7 +183,7 @@ Adjacent concepts: `network.messages.latency`
 
 ## hud.players.presence
 
-Owner: `KB/docs/context/ui-hud.md:72-75` → **Player presence**
+Owner: `KB/docs/context/ui-hud.md:79-82` → **Player presence**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -190,41 +193,42 @@ Adjacent concepts: `network.room.active-leave`
 
 ## hud.round-start.ready
 
-Owner: `KB/docs/context/ui-hud.md:337-342` → **Round start READY**
+Owner: `KB/docs/context/ui-hud.md:356-361` → **Round start READY**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd` | `apply_state` | 71 | `sed -n 59,91p src/Client/App/corp-tower/Cor/Scripts/GameUi/RoundStartOverlayController.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_on_inventory_card_gui_input` | 241 | `sed -n 229,261p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `_on_inventory_card_gui_input` | 255 | `sed -n 243,275p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
 
 Adjacent concepts: `gameplay.progression.timing`, `backend.engine.timers`
 
 ## hud.round-timer.urgency
 
-Owner: `KB/docs/context/ui-hud.md:150-153` → **Play timer urgency**
+Owner: `KB/docs/context/ui-hud.md:169-172` → **Play timer urgency**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd` | `tick_round_timer` | 65 | `sed -n 53,85p src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd` | `update_top_bar_display` | 132 | `sed -n 120,152p src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd` |
 
 Adjacent concepts: `gameplay.progression.timing`, `hud.round-start.ready`
 
 ## hud.spectator.presentation
 
-Owner: `KB/docs/context/ui-hud.md:61-64` → **Spectator presentation**
+Owner: `KB/docs/context/ui-hud.md:68-71` → **Spectator presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 567 | `sed -n 555,587p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 590 | `sed -n 578,610p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `set_spectator_mode` | 581 | `sed -n 569,601p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
-| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 268 | `sed -n 256,288p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `_apply_spectator_mode` | 583 | `sed -n 571,603p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/Main.gd` | `update_bot_insight` | 606 | `sed -n 594,626p src/Client/App/corp-tower/Cor/Scripts/Main.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` | `set_spectator_mode` | 595 | `sed -n 583,615p src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd` |
+| `src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` | `update_level_summary_bot_behavior` | 279 | `sed -n 267,299p src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd` |
 
 Adjacent concepts: `network.room.bot-spectator`, `hud.navigation.drop-top`, `hud.overlays.summary`
 
 ## hud.tower.collapse.presentation
 
-Owner: `KB/docs/context/ui-hud.md:201-204` → **Collapse presentation**
+Owner: `KB/docs/context/ui-hud.md:220-223` → **Collapse presentation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -234,7 +238,7 @@ Adjacent concepts: `backend.stability.collapse`, `hud.tower.collapse.recovery`
 
 ## hud.tower.collapse.recovery
 
-Owner: `KB/docs/context/ui-hud.md:265-268` → **Collapse recovery**
+Owner: `KB/docs/context/ui-hud.md:284-287` → **Collapse recovery**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -244,7 +248,7 @@ Adjacent concepts: `hud.tower.collapse.presentation`, `hud.navigation.auto-follo
 
 ## hud.tower.fallen
 
-Owner: `KB/docs/context/ui-hud.md:212-215` → **Fallen bricks**
+Owner: `KB/docs/context/ui-hud.md:231-234` → **Fallen bricks**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -254,7 +258,7 @@ Adjacent concepts: `network.state.snapshot`
 
 ## hud.tower.impact-beat
 
-Owner: `KB/docs/context/ui-hud.md:221-224` → **Impact Beat**
+Owner: `KB/docs/context/ui-hud.md:240-243` → **Impact Beat**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -264,7 +268,7 @@ Adjacent concepts: none
 
 ## hud.tower.pose
 
-Owner: `KB/docs/context/ui-hud.md:174-177` → **Structural pose**
+Owner: `KB/docs/context/ui-hud.md:193-196` → **Structural pose**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -274,7 +278,7 @@ Adjacent concepts: `gameplay.tower.pose`, `backend.stability.pose`
 
 ## hud.tower.weak-support
 
-Owner: `KB/docs/context/ui-hud.md:189-192` → **Weak-support feedback**
+Owner: `KB/docs/context/ui-hud.md:208-211` → **Weak-support feedback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

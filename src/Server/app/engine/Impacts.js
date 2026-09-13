@@ -408,6 +408,7 @@ function resolveCheckpointFailure(engine, options = {}) {
 
     if (!validState) return false;
 
+    engine.captureRoundEndRemainingMs();
     engine.room.failureTransitionCommitted = true;
     engine.room.impactFailureCount = Math.min(
         getImpactRecoverableFailureLimit() + 1,

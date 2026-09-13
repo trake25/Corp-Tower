@@ -52,7 +52,7 @@ Owner: `KB/docs/context/gameplay.md:13-18` → **Core loop**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `startLevel` | 658 | `sed -n 646,678p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `startLevel` | 680 | `sed -n 668,700p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `gameplay.impact.requirement`, `gameplay.progression.failure`
 
@@ -115,7 +115,7 @@ Owner: `KB/docs/context/gameplay.md:73-76` → **Power inventory**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `clonePowerInventory` | 565 | `sed -n 553,585p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `clonePowerInventory` | 587 | `sed -n 575,607p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Impacts.js` | `saveImpactPowers` | 16 | `sed -n 4,36p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.progression.rollback`
@@ -126,7 +126,7 @@ Owner: `KB/docs/context/gameplay.md:85-88` → **Replenish**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `activatePower` | 596 | `sed -n 584,616p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `activatePower` | 618 | `sed -n 606,638p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Block_Supply.js` | `generateReplenishBlocks` | 424 | `sed -n 412,444p src/Server/app/engine/Block_Supply.js` |
 
 Adjacent concepts: `gameplay.supply.reserve`
@@ -137,7 +137,7 @@ Owner: `KB/docs/context/gameplay.md:166-169` → **Failure rules**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Game_Engine.js` | `failLevel` | 1061 | `sed -n 1049,1081p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `failLevel` | 1085 | `sed -n 1073,1105p src/Server/app/Game_Engine.js` |
 | `src/Server/app/engine/Placement.js` | `checkFailCondition` | 416 | `sed -n 404,436p src/Server/app/engine/Placement.js` |
 | `src/Server/app/engine/Impacts.js` | `resolveCheckpointFailure` | 400 | `sed -n 388,420p src/Server/app/engine/Impacts.js` |
 
@@ -149,7 +149,7 @@ Owner: `KB/docs/context/gameplay.md:178-181` → **Impact rollback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/engine/Impacts.js` | `rollbackToImpact` | 491 | `sed -n 479,511p src/Server/app/engine/Impacts.js` |
+| `src/Server/app/engine/Impacts.js` | `rollbackToImpact` | 492 | `sed -n 480,512p src/Server/app/engine/Impacts.js` |
 
 Adjacent concepts: `gameplay.impact.requirement`, `backend.impacts.rollback`
 
@@ -160,7 +160,7 @@ Owner: `KB/docs/context/gameplay.md:151-154` → **Round timing**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Game_Config.js` | `GameConfig` | 1 | `sed -n 1,21p src/Server/app/Game_Config.js` |
-| `src/Server/app/Game_Engine.js` | `getLevelTimeLimitMs` | 834 | `sed -n 822,854p src/Server/app/Game_Engine.js` |
+| `src/Server/app/Game_Engine.js` | `getLevelTimeLimitMs` | 857 | `sed -n 845,877p src/Server/app/Game_Engine.js` |
 
 Adjacent concepts: `backend.engine.timers`, `network.session.recovery`
 

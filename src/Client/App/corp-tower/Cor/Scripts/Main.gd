@@ -29,6 +29,7 @@ const TutorialMenuControllerScript = preload("res://Cor/Scripts/GameUi/Tutorial/
 
 # Temporary presentation disable pending the Top/Drop navigation popup redesign.
 const TOP_DROP_NAVIGATION_POPUP_AVAILABLE := false
+const OUTCOME_MINIMUM_HOLD_SECONDS := 0.85
 
 signal tutorial_requested(lesson_id: StringName)
 signal tutorial_exited
@@ -416,12 +417,19 @@ func update_game_state(data) -> void:
 	var state: String = str(data.get("state", "playing"))
 	match_state.current_match_state = state
 
-	if state != "playing" and inventory.is_block_dragging:
-		inventory.cancel_block_drag()
+	var is_outcome_state := state == "finished" or state == "failed" or state == "game_over"
+	if is_outcome_state and popovers != null:
+		popovers.close_active()
 
 	var seconds_remaining: int = int(data.get("secondsRemaining", 0))
 	var state_remaining_ms: int = int(data.get("stateRemainingMs", seconds_remaining * 1000))
 	var level_duration_ms: int = int(data.get("levelDurationMs", 0))
+	var raw_round_end_remaining_ms: Variant = data.get("roundEndRemainingMs", -1)
+	var round_end_remaining_ms: int = (
+		int(raw_round_end_remaining_ms)
+		if typeof(raw_round_end_remaining_ms) == TYPE_INT or typeof(raw_round_end_remaining_ms) == TYPE_FLOAT
+		else -1
+	)
 	var current_height: int = int(data.get("currentHeight", 0))
 	var target_height: int = int(data.get("targetHeight", 0))
 	var incoming_level: int = int(data.get("level", 0))
@@ -466,7 +474,8 @@ func update_game_state(data) -> void:
 		state,
 		seconds_remaining,
 		state_remaining_ms,
-		level_duration_ms
+		level_duration_ms,
+		round_end_remaining_ms
 	)
 	top_bar.set_top_indicator_progress(current_height, target_height)
 	var stability_warning_threshold: int = int(data.get("towerStabilityWarningThreshold", 75))
@@ -554,11 +563,18 @@ func update_game_state(data) -> void:
 
 	var score_popup_wait_seconds: float = score_popups.process_score_events(data.get("scoreEvents", []), players)
 
-	if state == "finished" or state == "failed" or state == "game_over":
+	if is_outcome_state:
+		var outcome_wait_seconds := maxf(
+			OUTCOME_MINIMUM_HOLD_SECONDS,
+			score_popup_wait_seconds,
+			visual_fx.on_level_result(data, state)
+		)
 		summary.queue_level_summary_after_score_popups(
 			data.get("lastLevelSummary", {}),
 			state,
-			score_popup_wait_seconds + visual_fx.on_level_result(data, state)
+			outcome_wait_seconds,
+			func() -> bool:
+				return tower_stack == null or !tower_stack.is_collapse_input_blocked()
 		)
 	else:
 		summary.cancel_pending_level_summary()

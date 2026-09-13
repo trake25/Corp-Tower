@@ -43,6 +43,24 @@ class GameEngine {
         return Math.max(0, this.room.endsAt - Date.now());
     }
 
+    captureRoundEndRemainingMs() {
+        if (!this.room || Number.isFinite(this.room.roundEndRemainingMs)) {
+            return;
+        }
+
+        if (this.room.state === "playing") {
+            this.room.roundEndRemainingMs = this.getRemainingMs();
+            return;
+        }
+
+        if (this.room.state === "starting") {
+            this.room.roundEndRemainingMs = Math.max(
+                0,
+                Number(this.room.levelDurationMs) || 0
+            );
+        }
+    }
+
     buildGameState(options = {}) {
         if (!this.room) {
             return null;
@@ -82,6 +100,9 @@ class GameEngine {
             powerEvents: options.powerEvents || [],
             towerStabilityFeedbackMode: GameConfig.towerStabilityFeedbackMode,
             stateRemainingMs, levelDurationMs: Math.max(0, Number(this.room.levelDurationMs) || 0), secondsRemaining: Math.ceil(stateRemainingMs / 1000),
+            roundEndRemainingMs: Number.isFinite(this.room.roundEndRemainingMs)
+                ? Math.max(0, Number(this.room.roundEndRemainingMs))
+                : null,
             lastLevelSummary: this.room.lastLevelSummary,
             scoreEvents: options.scoreEvents || [],
             quickChatEvents: options.quickChatEvents || [],
@@ -205,6 +226,7 @@ class GameEngine {
             startsAt: 0,
             endsAt: 0,
             freezeEndsAt: 0,
+            roundEndRemainingMs: null,
             lastLevelSummary: null,
             pendingScoreEvents: [],
             pendingQuickChatEvents: [],
@@ -663,6 +685,7 @@ class GameEngine {
         this.clearTimers();
 
         this.room.failureTransitionCommitted = false;
+        this.room.roundEndRemainingMs = null;
         this.room.state = "starting";
         this.room.currentHeight = 0;
         this.room.towerBlocks = [];
@@ -966,6 +989,7 @@ class GameEngine {
     tryActivateBotReplenish() { return BotManager.tryActivateReplenish(this); }
 
     completeLevel(finisher, finishingBlock) {
+        this.captureRoundEndRemainingMs();
         this.room.state = "finished";
         this.room.freezeEndsAt =
             Date.now() + this.getPostLevelTransitionDelayMs() + GameConfig.startDelayMs;

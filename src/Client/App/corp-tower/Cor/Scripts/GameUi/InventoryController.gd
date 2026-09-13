@@ -76,6 +76,7 @@ var clear_ready_rejection_feedback: Callable = Callable()
 var cooling_feedback_deadline_ms := 0
 var cooling_feedback_last_at_ms := -COOLING_FEEDBACK_THROTTLE_MS
 var selection_response_tween: Tween
+var finished_placement_inactive := false
 
 func bind_nodes(binder) -> void:
 	draw_pile_name_label = binder.require_node("DrawPileNameLabel") as Label
@@ -158,6 +159,8 @@ func apply_authoritative_state(state: String, level: int, force_round_cleanup: b
 	)
 	if is_new_ready_round:
 		clear_for_new_round()
+	elif state == "finished" or state == "failed" or state == "game_over":
+		clear_for_play_exit()
 	elif state != "playing":
 		clear_cooldown_reconciliation()
 
@@ -173,6 +176,7 @@ func apply_authoritative_state(state: String, level: int, force_round_cleanup: b
 func clear_for_new_round() -> void:
 	cancel_block_drag()
 	clear_cooldown_reconciliation()
+	finished_placement_inactive = false
 	last_tap_ms = 0
 	cooling_feedback_deadline_ms = 0
 	cooling_feedback_last_at_ms = -COOLING_FEEDBACK_THROTTLE_MS
@@ -180,6 +184,16 @@ func clear_for_new_round() -> void:
 		cooling_feedback_label.visible = false
 	if clear_ready_rejection_feedback.is_valid():
 		clear_ready_rejection_feedback.call()
+
+func clear_for_play_exit() -> void:
+	cancel_block_drag()
+	clear_cooldown_reconciliation()
+	finished_placement_inactive = true
+	last_tap_ms = 0
+	cooling_feedback_deadline_ms = 0
+	cooling_feedback_last_at_ms = -COOLING_FEEDBACK_THROTTLE_MS
+	if cooling_feedback_label != null:
+		cooling_feedback_label.visible = false
 
 func clear_cooldown_reconciliation() -> void:
 	optimistic_placement_started_at_ms = 0
@@ -844,6 +858,10 @@ func _apply_selection_visuals() -> void:
 				button.add_theme_stylebox_override("hover", normal_style)
 				button.add_theme_stylebox_override("pressed", normal_style)
 			button.modulate = Color.WHITE
+			continue
+
+		if finished_placement_inactive:
+			button.modulate = Color(1.0, 1.0, 1.0, UNSELECTED_CARD_ALPHA)
 			continue
 
 		if i == selected_slot_index and selected_card_style != null:

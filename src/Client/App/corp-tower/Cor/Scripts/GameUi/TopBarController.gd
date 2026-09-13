@@ -135,7 +135,8 @@ func update_top_bar_display(
 	state: String,
 	seconds_remaining: int,
 	state_remaining_ms: int = -1,
-	level_duration_ms: int = 0
+	level_duration_ms: int = 0,
+	round_end_remaining_ms: int = -1
 ) -> void:
 	var is_impact_level: bool = level > 1 and (level - 1) % match_state.impact_interval == 0
 	var lifecycle_remaining_ms: int = state_remaining_ms
@@ -165,12 +166,23 @@ func update_top_bar_display(
 	timer_is_playing = state == "playing"
 	if !timer_is_playing:
 		_reset_timer_urgency()
+		timer_deadline_ms = 0
+		var frozen_round_seconds := timer_shown_seconds
+		if round_end_remaining_ms >= 0:
+			frozen_round_seconds = int(ceil(float(round_end_remaining_ms) / 1000.0))
+		elif frozen_round_seconds < 0 and known_round_duration_level == level:
+			frozen_round_seconds = known_round_duration_seconds
+		timer_shown_seconds = frozen_round_seconds
+		timer_label.text = format_clock(frozen_round_seconds) if frozen_round_seconds >= 0 else "—"
+		if round_time_texture != null:
+			round_time_texture.texture = RoundTimeFreezeTexture
+		return
+
 	timer_deadline_ms = Time.get_ticks_msec() + lifecycle_remaining_ms
 	timer_shown_seconds = lifecycle_seconds
 	timer_label.text = format_clock(lifecycle_seconds)
-	var is_frozen: bool = state != "playing"
 	if round_time_texture != null:
-		round_time_texture.texture = RoundTimeFreezeTexture if is_frozen else RoundTimeNormalTexture
+		round_time_texture.texture = RoundTimeNormalTexture
 	_apply_timer_urgency(lifecycle_seconds)
 
 func update_tower_stability_ui(stability: int, diagnostics: Variant, components: Variant = []) -> void:

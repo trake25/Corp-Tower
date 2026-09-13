@@ -7,12 +7,19 @@ id: hud.controller.state-application
 alias: Game UI controller
 alias: Main.gd
 source: src/Client/App/corp-tower/Cor/Scripts/Main.gd#update_game_state
+source: src/Server/app/Game_Engine.js#captureRoundEndRemainingMs
 adjacent: network.state.snapshot
 adjacent: hud.controller.architecture
 -->
 ## State application
 
-The Game UI controller family stores the latest authoritative state and delegates roster, top bar, inventory, quest, popup, Power, summary, debug, and visual-hook presentation. Broadcasts update grid/site, roster and Impact state, redraw tower/inventory, consume transient events, then present overlays. The round clock interpolates from the latest server deadline, while `placementCooldownMs` is an ordinary gameplay-state contract that updates client input/presentation tuning before inventory is evaluated.
+The Game UI controller family stores the latest authoritative state and delegates roster, top
+bar, inventory, quest, popup, Power, summary, debug, and visual-hook presentation. Broadcasts
+update grid/site, roster and Impact state, redraw tower/inventory, consume transient events,
+then present overlays. The round clock interpolates only during PLAY; an outcome instead uses
+the server-captured `roundEndRemainingMs` so lifecycle transition time never replaces the final
+gameplay value, including on a resync. `placementCooldownMs` is an ordinary gameplay-state
+contract that updates client input/presentation tuning before inventory is evaluated.
 
 <!-- kb
 id: hud.controller.architecture
@@ -100,10 +107,18 @@ alias: Level Summary
 alias: failure summary
 source: src/Client/App/corp-tower/Cor/Scenes/LevelSummary.tscn#LevelSummaryOverlay
 source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#update_level_summary_bot_behavior
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/LevelSummaryController.gd#queue_level_summary_after_score_popups
 -->
 ## Summary overlay
 
-Level Summary is a centered state overlay for completed, failed, and terminal outcomes. It composes player results, quest outcome, authoritative transition countdown, retry state on recoverable failure, and terminal return-to-Home countdown. Spectator summaries may additionally render the server's per-bot personality, scoring, height, repair/recovery, Impact, risk/mistake, collapse, wait, and Power totals. Exact copy and measurements remain scene/controller details.
+Level Summary is a centered state overlay for completed, failed, and terminal outcomes. It
+composes player results, quest outcome, authoritative transition countdown, retry state on
+recoverable failure, and terminal return-to-Home countdown. Its handoff waits for the longest
+applicable finishing presentation and a short outcome hold, then defers only for active
+collapse/recovery; persistent Impact Beat is cancelled by Summary takeover rather than becoming
+an unbounded gate. Spectator summaries may additionally render the server's per-bot personality,
+scoring, height, repair/recovery, Impact, risk/mistake, collapse, wait, and Power totals. Exact
+copy and measurements remain scene/controller details.
 
 <!-- kb
 id: hud.overlays.score-popups
@@ -124,6 +139,7 @@ id: hud.inventory.cooldown
 alias: placement card cooldown
 alias: cooling cards
 source: src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd#update_placement_cooldown_overlays
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/InventoryController.gd#clear_for_play_exit
 source: src/Client/App/corp-tower/Cor/Scripts/CooldownOverlay.gd#set_remaining_ratio
 adjacent: gameplay.progression.timing
 adjacent: hud.round-start.ready
@@ -138,18 +154,21 @@ advertise readiness while a request is unresolved. Cooling uses a translucent cy
 veil and completion rail rather than the READY lock treatment; a cooling interaction gives
 one throttled local cue and non-blocking Action Row feedback. Input unlocks at the same
 authoritative zero boundary as the rendered cooldown, and any brief ready edge confirmation
-is strictly presentation after usability returns.
+is strictly presentation after usability returns. An outcome exit clears every drag, armed
+selection, snap ghost, cooldown reconciliation, and cooling cue immediately; cards remain
+readable in a neutral inactive presentation that is neither READY nor cooling.
 
 <!-- kb
 id: hud.round-timer.urgency
 alias: play timer urgency
 source: src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd#tick_round_timer
+source: src/Client/App/corp-tower/Cor/Scripts/GameUi/TopBarController.gd#update_top_bar_display
 adjacent: gameplay.progression.timing
 adjacent: hud.round-start.ready
 -->
 ## Play timer urgency
 
-The round timer is normal above 15 seconds, restrained amber from 15 through 6 seconds, and coral with a slow pulse at 5 seconds and below. Urgency belongs only to authoritative PLAY; READY's paused full-round clock and frozen/outcome states reset to their normal styling.
+The round timer is normal above 15 seconds, restrained amber from 15 through 6 seconds, and coral with a slow pulse at 5 seconds and below. Urgency belongs only to authoritative PLAY; READY's paused full-round clock and frozen/outcome states reset to their normal styling. Finished outcomes render the server's captured final round value statically, never `stateRemainingMs`, which remains lifecycle timing.
 
 <!-- kb
 id: hud.overlays.popovers
