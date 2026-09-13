@@ -7,6 +7,7 @@ var players_ctx
 var match_state
 var tuning
 var level_summary_overlay: Control
+var level_summary_dim: ColorRect
 var level_summary_panel: PanelContainer
 var level_summary_title_label: Label
 var level_summary_team_label: Label
@@ -71,6 +72,7 @@ func _process(_delta: float) -> void:
 
 func bind_nodes(binder) -> void:
 	level_summary_overlay = binder.require_node("LevelSummaryOverlay") as Control
+	level_summary_dim = binder.require_node("LevelSummaryDim") as ColorRect
 	level_summary_panel = binder.require_node("LevelSummaryPanel") as PanelContainer
 	level_summary_title_label = binder.require_node("LevelSummaryTitleLabel") as Label
 	level_summary_team_label = binder.require_node("LevelSummaryTeamLabel") as Label
@@ -239,6 +241,10 @@ func show_level_summary(summary_value: Variant, state: String, results_remaining
 	level_summary_overlay.visible = true
 	level_summary_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	level_summary_overlay.modulate.a = 0.0
+	if level_summary_dim != null:
+		level_summary_dim.visible = true
+	if level_summary_panel != null:
+		level_summary_panel.visible = true
 
 	var level_number: int = int(summary.get("level", match_state.current_level))
 	var failure_status: Dictionary = get_failure_status(summary)
@@ -308,8 +314,13 @@ func show_run_over(summary: Dictionary, results_remaining_ms: int) -> void:
 	summary_deadline_ms = 0
 	summary_countdown_last = -1
 	if level_summary_overlay != null:
-		level_summary_overlay.visible = false
+		level_summary_overlay.visible = true
+		level_summary_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		level_summary_overlay.modulate.a = 1.0
+	if level_summary_dim != null:
+		level_summary_dim.visible = false
+	if level_summary_panel != null:
+		level_summary_panel.visible = false
 
 	terminal_failure_title_label.text = "RUN OVER"
 	terminal_failure_body_label.text = get_run_over_failure_reason(summary)
@@ -477,6 +488,10 @@ func hide_level_summary() -> void:
 	if level_summary_overlay != null:
 		level_summary_overlay.visible = false
 		level_summary_overlay.modulate.a = 1.0
+	if level_summary_dim != null:
+		level_summary_dim.visible = true
+	if level_summary_panel != null:
+		level_summary_panel.visible = true
 
 	hide_terminal_failure_popup()
 

@@ -267,8 +267,14 @@ func test_run_over_bypasses_results_and_uses_restored_standings() -> void:
 	var summary = harness.main.summary
 	summary.show_level_summary(terminal_fixture(), "game_over", 1800)
 	await get_tree().process_frame
-	assert_false((harness.find("LevelSummaryOverlay") as Control).visible)
-	assert_true((harness.find("TerminalFailureOverlay") as Control).visible)
+	var root := harness.find("LevelSummaryOverlay") as Control
+	var normal_dim := harness.find("LevelSummaryDim") as ColorRect
+	var normal_panel := harness.find("LevelSummaryPanel") as PanelContainer
+	var terminal_overlay := harness.find("TerminalFailureOverlay") as Control
+	assert_true(root.is_visible_in_tree(), "The parent presentation surface remains renderable for Run Over.")
+	assert_false(normal_dim.visible, "Run Over uses only its terminal dim treatment.")
+	assert_false(normal_panel.visible, "The Stage #4 sheet is hidden rather than layered beneath Run Over.")
+	assert_true(terminal_overlay.is_visible_in_tree())
 	assert_eq((harness.find("TerminalFailureTitleLabel") as Label).text, "RUN OVER")
 	assert_eq((harness.find("TerminalFailureBodyLabel") as Label).text, "TIME EXPIRED")
 	assert_eq((harness.find("TerminalFailureStatusLabel") as Label).text, "NO RETRIES REMAINING")
@@ -283,7 +289,18 @@ func test_run_over_bypasses_results_and_uses_restored_standings() -> void:
 	assert_null(harness.find("RunOverMvpTag_P2"), "Run Over does not reuse MVP.")
 	var panel := harness.find("TerminalFailurePanel") as PanelContainer
 	var overlay := harness.find("TerminalFailureOverlay") as Control
+	assert_true(panel.is_visible_in_tree())
+	assert_true((harness.find("TerminalFailureReturnButton") as Button).is_visible_in_tree())
+	assert_true(rows.get_child(0).is_visible_in_tree())
 	assert_lte(panel.get_global_rect().end.y, overlay.get_global_rect().end.y)
+	summary.hide_level_summary()
+	assert_false(root.visible)
+	assert_false(terminal_overlay.visible)
+	summary.show_level_summary(SUMMARY_FIXTURE, "finished", 1200)
+	assert_true(root.visible)
+	assert_true(normal_dim.visible)
+	assert_true(normal_panel.visible)
+	assert_false(terminal_overlay.visible)
 
 func test_run_over_resync_and_return_home_keep_server_authority() -> void:
 	var harness = HarnessScript.new()
