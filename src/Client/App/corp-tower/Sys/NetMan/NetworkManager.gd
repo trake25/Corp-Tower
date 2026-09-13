@@ -38,6 +38,7 @@ var connection_purpose := "gameplay"
 var profile_snapshot: Dictionary = {}
 var profile_handshake_pending := false
 var outcome_ready_sent: Dictionary = {}
+var pending_outcome_ready_id := ""
 
 var player_id := ""
 var reconnect_token := ""
@@ -560,12 +561,30 @@ func place_block(block_index, column := -1, origin_y := -1, placement_request_id
 	ws.send_text(JSON.stringify(data))
 
 func send_outcome_ready(outcome_id: String) -> void:
-	if outcome_id == "" or spectator_active or not is_conn_estab or is_recovering():
+	if outcome_id == "" or spectator_active or recovery_state == "unavailable":
 		return
 	if outcome_ready_sent.has(outcome_id):
+		if pending_outcome_ready_id == outcome_id:
+			pending_outcome_ready_id = ""
+		return
+	if not is_conn_estab or is_recovering() or ws.get_ready_state() != WebSocketPeer.STATE_OPEN:
+		pending_outcome_ready_id = outcome_id
+		return
+	var send_result := ws.send_text(JSON.stringify({
+		"type": "outcome_ready",
+		"outcomeId": outcome_id
+	}))
+	if send_result != OK:
+		pending_outcome_ready_id = outcome_id
 		return
 	outcome_ready_sent[outcome_id] = true
-	ws.send_text(JSON.stringify({"type": "outcome_ready", "outcomeId": outcome_id}))
+	if pending_outcome_ready_id == outcome_id:
+		pending_outcome_ready_id = ""
+
+func flush_pending_outcome_ready() -> void:
+	if pending_outcome_ready_id == "":
+		return
+	send_outcome_ready(pending_outcome_ready_id)
 
 func send_ready():
 	if spectator_active or not is_conn_estab or is_recovering():
@@ -720,11 +739,14 @@ func reset_match_tracking() -> void:
 	last_game_state_msec = -1
 	latest_match_state = ""
 	outcome_ready_sent.clear()
+	pending_outcome_ready_id = ""
 	reset_recovery_state()
 
 func _clear_room_identity() -> void:
 	player_id = ""
 	reconnect_token = ""
+	outcome_ready_sent.clear()
+	pending_outcome_ready_id = ""
 
 	if FileAccess.file_exists(PLAYER_ID_FILE):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(PLAYER_ID_FILE))
@@ -837,6 +859,7 @@ func settle_recovery(data) -> void:
 		return
 
 	reset_recovery_state()
+	flush_pending_outcome_ready()
 	recovery_recovered.emit()
 
 func mark_recovery_unavailable(reason: String, resume_unavailable := false) -> void:

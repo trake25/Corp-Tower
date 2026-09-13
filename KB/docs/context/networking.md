@@ -196,6 +196,7 @@ alias: authoritative snapshot
 source: src/Server/app/Game_Engine.js#buildGameStateSnapshot
 source: src/Server/app/Redis_State.js#stripRuntimeRoom
 source: src/Server/app/Game_Engine.js#beginOutcomeSynchronization
+source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#send_outcome_ready
 adjacent: backend.engine.lifecycle
 adjacent: hud.controller.state-application
 -->
@@ -214,8 +215,10 @@ that frozen gameplay value survives room restoration and remains distinct from l
 until the next level starts.
 During an outcome, `outcomeId` and `resultsReady` synchronize the presentation handoff. Connected
 human participants may acknowledge only that current server identity after their local gate; the
-server starts the Summary window once all are ready or its bounded fallback expires. Bots,
-spectators, disconnected, and left players never gate this room lifecycle.
+server starts the Summary window once all are ready or its bounded fallback expires. A local
+acknowledgement held during recovery is retained and sent once a healthy recovery settles; only a
+successful socket write marks it sent, and a match reset clears both pending and sent tracking.
+Bots, spectators, disconnected, and left players never gate this room lifecycle.
 
 <!-- kb
 id: network.state.grid-site

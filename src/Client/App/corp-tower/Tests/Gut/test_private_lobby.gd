@@ -14,11 +14,14 @@ class FakeSocket:
 	var ready_state := WebSocketPeer.STATE_OPEN
 	var close_count := 0
 	var connect_result := OK
+	var send_result := OK
 
 	func connect_to_url(_url: String) -> Error:
 		return connect_result
 
 	func send_text(raw: String) -> Error:
+		if send_result != OK:
+			return send_result
 		sent_messages.append(JSON.parse_string(raw))
 		return OK
 
@@ -58,6 +61,7 @@ func test_outcome_ready_is_idempotent_until_a_resync_snapshot() -> void:
 	NetworkManager.is_conn_estab = true
 	NetworkManager.spectator_active = false
 	NetworkManager.outcome_ready_sent.clear()
+	NetworkManager.pending_outcome_ready_id = ""
 
 	NetworkManager.send_outcome_ready("4:failed:outcome")
 	NetworkManager.send_outcome_ready("4:failed:outcome")
@@ -71,6 +75,53 @@ func test_outcome_ready_is_idempotent_until_a_resync_snapshot() -> void:
 	NetworkManager.ws = original_socket
 	NetworkManager.is_conn_estab = original_connected
 	NetworkManager.spectator_active = original_spectator
+
+func test_outcome_ready_flushes_once_after_recovery_and_retries_failed_send() -> void:
+	var network := NetworkManagerScript.new()
+	var socket := FakeSocket.new()
+	network.ws = socket
+	network.is_conn_estab = true
+	network.recovery_state = "resyncing"
+	network.recovery_request_id = "resync-1"
+	network.recovery_start_revision = 4
+
+	network.send_outcome_ready("OUTCOME-A")
+	assert_eq(socket.sent_messages.size(), 0, "Recovery retains a local acknowledgement instead of dropping it.")
+	assert_eq(network.pending_outcome_ready_id, "OUTCOME-A")
+
+	network.settle_recovery({
+		"snapshot": true,
+		"resyncRequestId": "resync-1",
+		"stateRevision": 4
+	})
+	assert_eq(socket.sent_messages.size(), 1, "A settled recovery flushes the pending acknowledgement without another state broadcast.")
+	assert_eq(socket.sent_messages[0].get("outcomeId"), "OUTCOME-A")
+	assert_eq(network.pending_outcome_ready_id, "")
+	assert_true(network.outcome_ready_sent.has("OUTCOME-A"))
+	network.send_outcome_ready("OUTCOME-A")
+	assert_eq(socket.sent_messages.size(), 1, "A successful recovery flush remains idempotent.")
+
+	socket.send_result = ERR_CONNECTION_ERROR
+	network.send_outcome_ready("OUTCOME-B")
+	assert_false(network.outcome_ready_sent.has("OUTCOME-B"), "A failed write must not be marked sent.")
+	assert_eq(network.pending_outcome_ready_id, "OUTCOME-B")
+	socket.send_result = OK
+	network.flush_pending_outcome_ready()
+	assert_eq(socket.sent_messages.size(), 2, "A failed write remains retryable once the socket is healthy.")
+	assert_true(network.outcome_ready_sent.has("OUTCOME-B"))
+
+	network.pending_outcome_ready_id = "OUTCOME-C"
+	network.outcome_ready_sent["OUTCOME-C"] = true
+	network.reset_match_tracking()
+	assert_eq(network.pending_outcome_ready_id, "", "Match tracking reset cannot leak a pending acknowledgement into a new room.")
+	assert_eq(network.outcome_ready_sent.size(), 0)
+
+	network.pending_outcome_ready_id = "OUTCOME-D"
+	network.outcome_ready_sent["OUTCOME-D"] = true
+	network._clear_room_identity()
+	assert_eq(network.pending_outcome_ready_id, "", "Room identity reset cannot leak a pending acknowledgement into a new room.")
+	assert_eq(network.outcome_ready_sent.size(), 0)
+	network.free()
 
 func private_lobby_payload(roster: Array, ready_ids: Array = [], countdown := false, password := "7007") -> Dictionary:
 	return {
