@@ -383,9 +383,6 @@ func configure_run_over_layout() -> void:
 		viewport_size = terminal_failure_overlay.get_viewport_rect().size
 	var compact := viewport_size.y <= 700.0 and viewport_size.y > viewport_size.x
 	var width := minf(460.0, maxf(292.0, viewport_size.x - 24.0))
-	var height := minf(viewport_size.y - 24.0, 470.0 if compact else 540.0)
-	terminal_failure_panel.size = Vector2(width, height)
-	terminal_failure_panel.position = (viewport_size - terminal_failure_panel.size) * 0.5
 	if terminal_failure_players_box != null:
 		terminal_failure_players_box.custom_minimum_size = Vector2(0, 114 if compact else 150)
 		terminal_failure_players_box.add_theme_constant_override("separation", 3 if compact else 6)
@@ -402,6 +399,11 @@ func configure_run_over_layout() -> void:
 		terminal_failure_title_label.add_theme_font_size_override("font_size", 22 if compact else 28)
 	if terminal_failure_body_label != null:
 		terminal_failure_body_label.add_theme_font_size_override("font_size", 14 if compact else 17)
+	terminal_failure_panel.custom_minimum_size = Vector2(width, 0)
+	var content_height := terminal_failure_panel.get_combined_minimum_size().y
+	var height := minf(content_height, viewport_size.y - 24.0)
+	terminal_failure_panel.size = Vector2(width, height)
+	terminal_failure_panel.position = (viewport_size - terminal_failure_panel.size) * 0.5
 
 func create_run_over_player_row(player_summary: Dictionary, rank: int) -> Control:
 	var player_id := str(player_summary.get("id", ""))
@@ -411,7 +413,7 @@ func create_run_over_player_row(player_summary: Dictionary, rank: int) -> Contro
 	row_panel.name = "RunOverPlayerRow_" + player_id
 	row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row_panel.custom_minimum_size = Vector2(0, 46)
-	row_panel.add_theme_stylebox_override("panel", make_summary_row_style(player_color, false, is_local, true))
+	row_panel.add_theme_stylebox_override("panel", make_run_over_row_style(player_color, is_local))
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 7)
 	margin.add_theme_constant_override("margin_top", 4)
@@ -425,6 +427,7 @@ func create_run_over_player_row(player_summary: Dictionary, rank: int) -> Contro
 	rank_label.custom_minimum_size = Vector2(26, 0)
 	rank_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	rank_label.add_theme_font_override("font", PoppinsBoldFont)
+	rank_label.add_theme_color_override("font_color", Color(0.055, 0.075, 0.09, 1.0))
 	rank_label.add_theme_font_size_override("font_size", 13)
 	var avatar_wrap := Control.new()
 	avatar_wrap.custom_minimum_size = Vector2(34, 34)
@@ -454,6 +457,7 @@ func create_run_over_player_row(player_summary: Dictionary, rank: int) -> Contro
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.clip_text = true
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_label.add_theme_color_override("font_color", Color(0.055, 0.075, 0.09, 1.0))
 	name_label.add_theme_font_size_override("font_size", 14)
 	var you_label := make_results_tag("YOU", player_color)
 	you_label.name = "RunOverYouTag_" + player_id
@@ -472,6 +476,7 @@ func create_run_over_player_row(player_summary: Dictionary, rank: int) -> Contro
 	score_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	score_label.custom_minimum_size = Vector2(82, 0)
 	score_label.add_theme_font_override("font", PoppinsBoldFont)
+	score_label.add_theme_color_override("font_color", Color(0.055, 0.075, 0.09, 1.0))
 	score_label.add_theme_font_size_override("font_size", 12)
 	row.add_child(rank_label)
 	row.add_child(avatar_wrap)
@@ -480,6 +485,27 @@ func create_run_over_player_row(player_summary: Dictionary, rank: int) -> Contro
 	margin.add_child(row)
 	row_panel.add_child(margin)
 	return row_panel
+
+func make_run_over_row_style(player_color: Color, is_local: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = (
+		Color(player_color.r, player_color.g, player_color.b, 0.92)
+		if is_local
+		else Color(1.0, 1.0, 1.0, 0.96)
+	)
+	style.border_color = player_color if is_local else Color(0.78, 0.84, 0.88, 1.0)
+	style.border_width_left = 4 if is_local else 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 14
+	style.corner_radius_top_right = 14
+	style.corner_radius_bottom_left = 14
+	style.corner_radius_bottom_right = 14
+	style.shadow_color = Color(0.04, 0.12, 0.18, 0.12)
+	style.shadow_size = 3
+	style.shadow_offset = Vector2(0, 2)
+	return style
 
 func hide_level_summary() -> void:
 	if summary_hide_timer != null:

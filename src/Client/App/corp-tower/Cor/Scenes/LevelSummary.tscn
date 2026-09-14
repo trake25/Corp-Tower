@@ -1,5 +1,20 @@
 [gd_scene format=3]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TerminalSurface"]
+bg_color = Color(0.9, 0.965, 1, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.98)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.03, 0.12, 0.2, 0.3)
+shadow_size = 14
+shadow_offset = Vector2(0, 6)
+
 [node name="LevelSummaryOverlay" type="Control" unique_id=959750494]
 unique_name_in_owner = true
 visible = false
@@ -139,7 +154,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.025, 0.055, 0.09, 0.42)
+color = Color(0.015, 0.04, 0.07, 0.56)
 
 [node name="TerminalFailurePanel" type="PanelContainer" parent="TerminalFailureOverlay" unique_id=1730044992]
 unique_name_in_owner = true
@@ -157,7 +172,7 @@ offset_bottom = 260.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_type_variation = &"GlassPanel"
+theme_override_styles/panel = SubResource("StyleBoxFlat_TerminalSurface")
 
 [node name="TerminalFailureMargin" type="MarginContainer" parent="TerminalFailureOverlay/TerminalFailurePanel" unique_id=1730044993]
 layout_mode = 2
@@ -233,6 +248,8 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
-theme_type_variation = &"BoldButton"
+theme_type_variation = &"PrimaryButton"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.78, 0.84, 0.92, 1)
 theme_override_font_sizes/font_size = 16
 text = "RETURN HOME"
