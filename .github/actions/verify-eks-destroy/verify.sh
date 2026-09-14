@@ -27,7 +27,7 @@ aws_verification_error() {
 
 has_expected_not_found() {
   local error_code="$1"
-  [[ "$AWS_OUTPUT" == *"$error_code"* ]]
+  [[ "$AWS_OUTPUT" == *"(${error_code})"* ]]
 }
 
 if ! run_aws resourcegroupstaggingapi get-resources \
@@ -61,7 +61,8 @@ for arn in "${ARNS[@]}"; do
         if [[ -n "$state" && "$state" != 'deleted' && "$state" != 'None' ]]; then
           STILL_LIVE+=("$arn (state: $state)")
         fi
-      elif ! has_expected_not_found 'InvalidNatGatewayID.NotFound'; then
+      elif ! has_expected_not_found 'NatGatewayNotFound' \
+        && ! has_expected_not_found 'InvalidNatGatewayID.NotFound'; then
         aws_verification_error "NAT gateway ${rid} describe-nat-gateways"
       fi
       ;;

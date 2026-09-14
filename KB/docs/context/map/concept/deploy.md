@@ -135,28 +135,28 @@ Adjacent concepts: none
 
 ## deploy.eks.applied-tree
 
-Owner: `KB/docs/context/deployment-eks.md:56-59` → **Applied-tree guard**
+Owner: `KB/docs/context/deployment-eks.md:57-60` → **Applied-tree guard**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Infra-Apply.yml` | `Record applied infra tree` | 84 | `sed -n 72,94p .github/workflows/EKS-Infra-Apply.yml` |
+| `.github/workflows/EKS-Infra-Apply.yml` | `Record applied infra tree` | 85 | `sed -n 73,95p .github/workflows/EKS-Infra-Apply.yml` |
 | `.github/workflows/EKS-Deploy-Game-Server.yml` | `verify-infra` | 49 | `sed -n 37,69p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: none
 
 ## deploy.eks.destroy-verification
 
-Owner: `KB/docs/context/deployment-eks.md:66-69` → **Destroy verification**
+Owner: `KB/docs/context/deployment-eks.md:67-70` → **Destroy verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Infra-Destroy.yml` | `Check for orphaned billable resources` | 60 | `sed -n 48,62p .github/workflows/EKS-Infra-Destroy.yml` |
+| `.github/workflows/EKS-Infra-Destroy.yml` | `Check for orphaned billable resources` | 61 | `sed -n 49,63p .github/workflows/EKS-Infra-Destroy.yml` |
 
 Adjacent concepts: none
 
 ## deploy.eks.dns
 
-Owner: `KB/docs/context/deployment-eks.md:86-89` → **DNS update**
+Owner: `KB/docs/context/deployment-eks.md:91-94` → **DNS update**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -166,22 +166,23 @@ Adjacent concepts: none
 
 ## deploy.eks.lifecycle
 
-Owner: `KB/docs/context/deployment-eks.md:39-48` → **Infrastructure lifecycle**
+Owner: `KB/docs/context/deployment-eks.md:40-49` → **Infrastructure lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Infra-Apply.yml` | `apply` | 23 | `sed -n 11,43p .github/workflows/EKS-Infra-Apply.yml` |
-| `.github/workflows/EKS-Infra-Plan.yml` | `plan` | 19 | `sed -n 7,39p .github/workflows/EKS-Infra-Plan.yml` |
-| `.github/workflows/EKS-Infra-Destroy.yml` | `destroy` | 23 | `sed -n 11,43p .github/workflows/EKS-Infra-Destroy.yml` |
-| `.github/workflows/EKS-Infra-Auto-Destroy.yml` | `auto-destroy` | 24 | `sed -n 12,44p .github/workflows/EKS-Infra-Auto-Destroy.yml` |
+| `.github/workflows/EKS-Infra-Apply.yml` | `apply` | 24 | `sed -n 12,44p .github/workflows/EKS-Infra-Apply.yml` |
+| `.github/workflows/EKS-Infra-Plan.yml` | `plan` | 20 | `sed -n 8,40p .github/workflows/EKS-Infra-Plan.yml` |
+| `.github/workflows/EKS-Infra-Destroy.yml` | `destroy` | 24 | `sed -n 12,44p .github/workflows/EKS-Infra-Destroy.yml` |
+| `.github/workflows/EKS-Infra-Auto-Destroy.yml` | `auto-destroy` | 25 | `sed -n 13,45p .github/workflows/EKS-Infra-Auto-Destroy.yml` |
+| `infra/eks/terraform/access.tf` | `aws_eks_access_entry.automation` | 19 | `sed -n 7,39p infra/eks/terraform/access.tf` |
 | `infra/eks/terraform/eks.tf` | `aws_eks_cluster.main` | 8 | `sed -n 1,28p infra/eks/terraform/eks.tf` |
-| `scripts/eks-access-state-reconcile.sh` | `read_state_resource` | 38 | `sed -n 26,58p scripts/eks-access-state-reconcile.sh` |
+| `scripts/eks-access-state-reconcile.sh` | `read_state_resource` | 55 | `sed -n 43,75p scripts/eks-access-state-reconcile.sh` |
 
 Adjacent concepts: `deploy.shared.terraform-roots`
 
 ## deploy.eks.manual-setup
 
-Owner: `KB/docs/context/deployment-eks.md:95-98` → **Operator setup**
+Owner: `KB/docs/context/deployment-eks.md:100-103` → **Operator setup**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -212,7 +213,7 @@ Adjacent concepts: none
 
 ## deploy.eks.workflows
 
-Owner: `KB/docs/context/deployment-eks.md:76-79` → **Deployment workflows**
+Owner: `KB/docs/context/deployment-eks.md:77-84` → **Deployment workflows**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -276,7 +277,7 @@ Owner: `KB/docs/context/deployment.md:60-67` → **Terraform roots**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Infra-Apply.yml` | `apply` | 23 | `sed -n 11,43p .github/workflows/EKS-Infra-Apply.yml` |
+| `.github/workflows/EKS-Infra-Apply.yml` | `apply` | 24 | `sed -n 12,44p .github/workflows/EKS-Infra-Apply.yml` |
 | `.github/workflows/EKS-Shared-Infra-Apply.yml` | `apply` | 28 | `sed -n 16,48p .github/workflows/EKS-Shared-Infra-Apply.yml` |
 | `.github/actions/terraform-validate-plan/action.yml` | `Terraform Validate And Plan` | 1 | `sed -n 1,21p .github/actions/terraform-validate-plan/action.yml` |
 

@@ -57,6 +57,16 @@ variable "operator_principal_arn" {
   type        = string
 }
 
+variable "ci_principal_arn" {
+  description = "IAM role ARN used by GitHub CI for EKS Kubernetes deployment, cleanup, and diagnostics."
+  type        = string
+
+  validation {
+    condition     = can(regex("^arn:aws:iam::[0-9]{12}:role/.+$", var.ci_principal_arn))
+    error_message = "ci_principal_arn must be a base IAM role ARN in the standard AWS partition, not an STS assumed-role ARN."
+  }
+}
+
 variable "node_instance_types" {
   description = "EC2 instance types for the EKS managed node group."
   type        = list(string)
@@ -92,4 +102,3 @@ variable "redis_engine_version" {
   type        = string
   default     = "7.1"
 }
-

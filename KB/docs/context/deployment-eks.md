@@ -32,6 +32,7 @@ source: .github/workflows/EKS-Infra-Apply.yml#apply
 source: .github/workflows/EKS-Infra-Plan.yml#plan
 source: .github/workflows/EKS-Infra-Destroy.yml#destroy
 source: .github/workflows/EKS-Infra-Auto-Destroy.yml#auto-destroy
+source: infra/eks/terraform/access.tf#aws_eks_access_entry.automation
 source: infra/eks/terraform/eks.tf#aws_eks_cluster.main
 source: scripts/eks-access-state-reconcile.sh#read_state_resource
 adjacent: deploy.shared.terraform-roots
@@ -40,11 +41,11 @@ adjacent: deploy.shared.terraform-roots
 
 The EKS application stack is session-scoped and incurs real hourly cost. Apply/destroy operations are
 explicit, and scheduled auto-destroy is the control that bounds unattended cost. Future session
-clusters disable cluster-creator bootstrap admin; configured operator cluster-admin access is instead
-explicitly owned by Terraform through the EKS access-entry and cluster-admin policy-association
-resources. Plan and Apply may reconcile only those exact configured operator resources when matching
-AWS objects pre-exist state, never unrelated access objects. Deployment workflows do not implicitly
-apply Terraform.
+clusters disable cluster-creator bootstrap admin; configured operator and GitHub CI cluster-admin
+access are instead explicitly owned by Terraform through EKS access-entry and cluster-admin
+policy-association resources. Equal principal ARNs are represented by one access object. Plan and
+Apply may reconcile only those configured principals when matching AWS objects pre-exist state,
+never unrelated access objects. Deployment workflows do not implicitly apply Terraform.
 
 <!-- kb
 id: deploy.eks.applied-tree
@@ -75,7 +76,11 @@ adjacent: testing.release.gates
 -->
 ## Deployment workflows
 
-EKS deploy verifies infrastructure, runs the target's release tests, builds/pushes artifacts, updates cluster credentials, applies runtime manifests, updates DNS, and performs target smoke checks. Game deployment additionally verifies Redis transport/connection health and long-lived WebSocket behavior.
+EKS deploy verifies infrastructure, runs the target's release tests, builds/pushes artifacts, updates
+cluster credentials, applies runtime manifests, updates DNS, and performs target smoke checks. Deploy,
+cleanup, and diagnose use the GitHub CI role's explicit EKS access rather than creator-bootstrap
+access. Game deployment additionally verifies Redis transport/connection health and long-lived
+WebSocket behavior.
 
 <!-- kb
 id: deploy.eks.dns

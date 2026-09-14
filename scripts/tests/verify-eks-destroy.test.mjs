@@ -17,7 +17,7 @@ resource_arn() {
 
 if [[ "$1" == resourcegroupstaggingapi ]]; then
   case "$scenario" in
-    live|nat-not-found) arn="$(resource_arn natgateway nat-123)" ;;
+    live|nat-not-found|nat-gateway-not-found) arn="$(resource_arn natgateway nat-123)" ;;
     subnet-not-found|access-denied) arn="$(resource_arn subnet subnet-123)" ;;
     security-group-rule-not-found) arn="$(resource_arn security-group-rule sgr-123)" ;;
   esac
@@ -31,6 +31,10 @@ case "$scenario" in
     ;;
   nat-not-found)
     printf 'An error occurred (InvalidNatGatewayID.NotFound) when calling the DescribeNatGateways operation: The natGateway ID does not exist\n' >&2
+    exit 254
+    ;;
+  nat-gateway-not-found)
+    printf 'An error occurred (NatGatewayNotFound) when calling the DescribeNatGateways operation: The natGateway ID does not exist\n' >&2
     exit 254
     ;;
   subnet-not-found)
@@ -78,6 +82,13 @@ test('confirmed live tagged resources remain a hard failure', () => {
 
 test('stale NAT gateway tag entries with the expected not-found error pass', () => {
   const result = verify('nat-not-found');
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Tagging-API index still lists 1 resource/);
+});
+
+test('stale NAT gateway tag entries with the observed NatGatewayNotFound error pass', () => {
+  const result = verify('nat-gateway-not-found');
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Tagging-API index still lists 1 resource/);
