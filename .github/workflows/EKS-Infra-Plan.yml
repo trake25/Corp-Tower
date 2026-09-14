@@ -37,7 +37,31 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Reconcile EKS operator access state
+        working-directory: infra/eks/terraform
+        run: bash ../../../scripts/eks-access-state-reconcile.sh
+
       - name: Terraform validate and plan
         uses: ./.github/actions/terraform-validate-plan
         with:
           working-directory: infra/eks/terraform
+
+      - name: Reject EKS cluster replacement or deletion
+        working-directory: infra/eks/terraform
+        run: |
+          set -euo pipefail
+          cluster_actions="$(terraform show -json tfplan | jq -cer '
+            [.resource_changes[]? | select(.address == "aws_eks_cluster.main") | .change.actions] as $matches
+            | if ($matches | length) > 1 then error("multiple cluster changes")
+              elif ($matches | length) == 1 then $matches[0]
+              else []
+              end
+          ')" || {
+            echo "::error::Could not determine aws_eks_cluster.main plan actions."
+            exit 1
+          }
+          if jq -e 'index("delete") != null' <<<"$cluster_actions" >/dev/null; then
+            echo "::error::Rejected EKS cluster plan containing delete action(s): ${cluster_actions}"
+            exit 1
+          fi
+          echo "EKS cluster plan actions: ${cluster_actions}"

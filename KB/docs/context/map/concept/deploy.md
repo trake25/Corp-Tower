@@ -135,18 +135,18 @@ Adjacent concepts: none
 
 ## deploy.eks.applied-tree
 
-Owner: `KB/docs/context/deployment-eks.md:47-50` → **Applied-tree guard**
+Owner: `KB/docs/context/deployment-eks.md:56-59` → **Applied-tree guard**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `.github/workflows/EKS-Infra-Apply.yml` | `Record applied infra tree` | 62 | `sed -n 50,72p .github/workflows/EKS-Infra-Apply.yml` |
+| `.github/workflows/EKS-Infra-Apply.yml` | `Record applied infra tree` | 84 | `sed -n 72,94p .github/workflows/EKS-Infra-Apply.yml` |
 | `.github/workflows/EKS-Deploy-Game-Server.yml` | `verify-infra` | 49 | `sed -n 37,69p .github/workflows/EKS-Deploy-Game-Server.yml` |
 
 Adjacent concepts: none
 
 ## deploy.eks.destroy-verification
 
-Owner: `KB/docs/context/deployment-eks.md:57-60` → **Destroy verification**
+Owner: `KB/docs/context/deployment-eks.md:66-69` → **Destroy verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -156,7 +156,7 @@ Adjacent concepts: none
 
 ## deploy.eks.dns
 
-Owner: `KB/docs/context/deployment-eks.md:77-80` → **DNS update**
+Owner: `KB/docs/context/deployment-eks.md:86-89` → **DNS update**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -166,19 +166,22 @@ Adjacent concepts: none
 
 ## deploy.eks.lifecycle
 
-Owner: `KB/docs/context/deployment-eks.md:36-39` → **Infrastructure lifecycle**
+Owner: `KB/docs/context/deployment-eks.md:39-48` → **Infrastructure lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `.github/workflows/EKS-Infra-Apply.yml` | `apply` | 23 | `sed -n 11,43p .github/workflows/EKS-Infra-Apply.yml` |
+| `.github/workflows/EKS-Infra-Plan.yml` | `plan` | 19 | `sed -n 7,39p .github/workflows/EKS-Infra-Plan.yml` |
 | `.github/workflows/EKS-Infra-Destroy.yml` | `destroy` | 23 | `sed -n 11,43p .github/workflows/EKS-Infra-Destroy.yml` |
 | `.github/workflows/EKS-Infra-Auto-Destroy.yml` | `auto-destroy` | 24 | `sed -n 12,44p .github/workflows/EKS-Infra-Auto-Destroy.yml` |
+| `infra/eks/terraform/eks.tf` | `aws_eks_cluster.main` | 8 | `sed -n 1,28p infra/eks/terraform/eks.tf` |
+| `scripts/eks-access-state-reconcile.sh` | `read_state_resource` | 38 | `sed -n 26,58p scripts/eks-access-state-reconcile.sh` |
 
 Adjacent concepts: `deploy.shared.terraform-roots`
 
 ## deploy.eks.manual-setup
 
-Owner: `KB/docs/context/deployment-eks.md:86-89` → **Operator setup**
+Owner: `KB/docs/context/deployment-eks.md:95-98` → **Operator setup**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -203,13 +206,13 @@ Owner: `KB/docs/context/deployment-eks.md:12-15` → **Topology**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `infra/eks/terraform/load_balancer.tf` | `aws_lb.main` | 7 | `sed -n 1,27p infra/eks/terraform/load_balancer.tf` |
-| `infra/eks/terraform/eks.tf` | `aws_eks_node_group.server` | 50 | `sed -n 38,70p infra/eks/terraform/eks.tf` |
+| `infra/eks/terraform/eks.tf` | `aws_eks_node_group.server` | 57 | `sed -n 45,77p infra/eks/terraform/eks.tf` |
 
 Adjacent concepts: none
 
 ## deploy.eks.workflows
 
-Owner: `KB/docs/context/deployment-eks.md:67-70` → **Deployment workflows**
+Owner: `KB/docs/context/deployment-eks.md:76-79` → **Deployment workflows**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

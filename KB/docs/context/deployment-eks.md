@@ -29,13 +29,22 @@ alias: EKS apply
 alias: EKS destroy
 alias: auto destroy
 source: .github/workflows/EKS-Infra-Apply.yml#apply
+source: .github/workflows/EKS-Infra-Plan.yml#plan
 source: .github/workflows/EKS-Infra-Destroy.yml#destroy
 source: .github/workflows/EKS-Infra-Auto-Destroy.yml#auto-destroy
+source: infra/eks/terraform/eks.tf#aws_eks_cluster.main
+source: scripts/eks-access-state-reconcile.sh#read_state_resource
 adjacent: deploy.shared.terraform-roots
 -->
 ## Infrastructure lifecycle
 
-The EKS application stack is session-scoped and incurs real hourly cost. Apply/destroy operations are explicit, and scheduled auto-destroy is the control that bounds unattended cost. Deployment workflows do not implicitly apply Terraform.
+The EKS application stack is session-scoped and incurs real hourly cost. Apply/destroy operations are
+explicit, and scheduled auto-destroy is the control that bounds unattended cost. Future session
+clusters disable cluster-creator bootstrap admin; configured operator cluster-admin access is instead
+explicitly owned by Terraform through the EKS access-entry and cluster-admin policy-association
+resources. Plan and Apply may reconcile only those exact configured operator resources when matching
+AWS objects pre-exist state, never unrelated access objects. Deployment workflows do not implicitly
+apply Terraform.
 
 <!-- kb
 id: deploy.eks.applied-tree

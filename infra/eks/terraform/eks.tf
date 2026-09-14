@@ -19,7 +19,14 @@ resource "aws_eks_cluster" "main" {
 
   access_config {
     authentication_mode                         = "API_AND_CONFIG_MAP"
-    bootstrap_cluster_creator_admin_permissions = true
+    bootstrap_cluster_creator_admin_permissions = false
+  }
+
+  # Existing clusters were created with bootstrap access enabled. Keep that
+  # create-only legacy value from forcing replacement while new clusters use
+  # the explicit access-entry resources instead.
+  lifecycle {
+    ignore_changes = [access_config[0].bootstrap_cluster_creator_admin_permissions]
   }
 
   enabled_cluster_log_types = var.eks_cluster_log_types
