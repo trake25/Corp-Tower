@@ -45,6 +45,7 @@ const automationTests = Object.freeze({
   planArchive: 'scripts/tests/plan-archive.test.mjs',
   orchestrationScope: 'scripts/tests/orchestration-scope.test.mjs',
   gitSync: 'scripts/tests/git-sync-commit-push.test.mjs',
+  taskIntegrate: 'scripts/tests/task-integrate.test.mjs',
   codexTaskRun: 'scripts/tests/codex-task-run.test.mjs',
   taskReceipt: 'scripts/tests/task-receipt.test.mjs',
   qaGate: 'scripts/tests/qa-gate.test.mjs',
