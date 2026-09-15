@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## automation.docs.maps
 
-Owner: `KB/docs/context/automation.md:604-612` → **Map regeneration**
+Owner: `KB/docs/context/automation.md:610-618` → **Map regeneration**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -15,7 +15,7 @@ Adjacent concepts: `automation.docs.validation`
 
 ## automation.docs.retrieval-repair
 
-Owner: `KB/docs/context/automation.md:649-654` → **Retrieval repair**
+Owner: `KB/docs/context/automation.md:655-660` → **Retrieval repair**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -25,7 +25,7 @@ Adjacent concepts: `automation.retrieval.fallback`
 
 ## automation.docs.scope
 
-Owner: `KB/docs/context/automation.md:637-642` → **Docs scoping**
+Owner: `KB/docs/context/automation.md:643-648` → **Docs scoping**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -35,7 +35,7 @@ Adjacent concepts: none
 
 ## automation.docs.validation
 
-Owner: `KB/docs/context/automation.md:619-630` → **KB validation**
+Owner: `KB/docs/context/automation.md:625-636` → **KB validation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -46,7 +46,7 @@ Adjacent concepts: none
 
 ## automation.execution.io-discipline
 
-Owner: `KB/docs/context/automation.md:227-255` → **Provider-visible I/O discipline**
+Owner: `KB/docs/context/automation.md:233-261` → **Provider-visible I/O discipline**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -58,7 +58,7 @@ Adjacent concepts: `automation.observability.usage`, `automation.retrieval.sourc
 
 ## automation.git.inspection
 
-Owner: `KB/docs/context/automation.md:726-736` → **Compact Git inspection**
+Owner: `KB/docs/context/automation.md:732-742` → **Compact Git inspection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -69,7 +69,7 @@ Adjacent concepts: `automation.execution.io-discipline`, `automation.git.publish
 
 ## automation.git.publish
 
-Owner: `KB/docs/context/automation.md:748-809` → **Authorized Git publication**
+Owner: `KB/docs/context/automation.md:754-815` → **Authorized Git publication**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -81,7 +81,7 @@ Adjacent concepts: `automation.integration.lifecycle`, `automation.git.inspectio
 
 ## automation.integration.conflicts
 
-Owner: `KB/docs/context/automation.md:329-346` → **Integration conflict handling**
+Owner: `KB/docs/context/automation.md:335-352` → **Integration conflict handling**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -93,7 +93,7 @@ Adjacent concepts: `automation.integration.lifecycle`, `automation.integration.q
 
 ## automation.integration.lifecycle
 
-Owner: `KB/docs/context/automation.md:270-293` → **Task integration lifecycle**
+Owner: `KB/docs/context/automation.md:276-299` → **Task integration lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -105,7 +105,7 @@ Adjacent concepts: `automation.integration.queue`, `automation.integration.confl
 
 ## automation.integration.queue
 
-Owner: `KB/docs/context/automation.md:304-317` → **Integration queue**
+Owner: `KB/docs/context/automation.md:310-323` → **Integration queue**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -116,7 +116,7 @@ Adjacent concepts: `automation.integration.lifecycle`, `automation.integration.c
 
 ## automation.integration.storage
 
-Owner: `KB/docs/context/automation.md:356-369` → **Integration state and storage**
+Owner: `KB/docs/context/automation.md:362-375` → **Integration state and storage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -127,7 +127,7 @@ Adjacent concepts: `automation.integration.lifecycle`, `automation.integration.q
 
 ## automation.observability.binding
 
-Owner: `KB/docs/context/automation.md:664-675` → **Observability binding**
+Owner: `KB/docs/context/automation.md:670-681` → **Observability binding**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -140,7 +140,7 @@ Adjacent concepts: none
 
 ## automation.observability.flags
 
-Owner: `KB/docs/context/automation.md:706-715` → **Workflow inefficiency flags**
+Owner: `KB/docs/context/automation.md:712-721` → **Workflow inefficiency flags**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -153,7 +153,7 @@ Adjacent concepts: none
 
 ## automation.observability.usage
 
-Owner: `KB/docs/context/automation.md:688-696` → **Observability usage**
+Owner: `KB/docs/context/automation.md:694-702` → **Observability usage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -169,7 +169,7 @@ Adjacent concepts: none
 
 ## automation.orchestration.execution
 
-Owner: `KB/docs/context/automation.md:404-423` → **Orchestrated execution**
+Owner: `KB/docs/context/automation.md:410-429` → **Orchestrated execution**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -181,7 +181,7 @@ Adjacent concepts: `automation.planning.phase2`, `automation.orchestration.owner
 
 ## automation.orchestration.ownership
 
-Owner: `KB/docs/context/automation.md:435-448` → **Orchestration coordination**
+Owner: `KB/docs/context/automation.md:441-454` → **Orchestration coordination**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -194,7 +194,7 @@ Adjacent concepts: `automation.orchestration.execution`, `automation.task-close.
 
 ## automation.planning.phase2
 
-Owner: `KB/docs/context/automation.md:52-110` → **Phase 2 execution handoff**
+Owner: `KB/docs/context/automation.md:53-111` → **Phase 2 execution handoff**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -209,7 +209,7 @@ Adjacent concepts: `automation.retrieval.direct`, `automation.orchestration.exec
 
 ## automation.retrieval.aliases
 
-Owner: `KB/docs/context/automation.md:177-181` → **Retrieval aliases**
+Owner: `KB/docs/context/automation.md:183-187` → **Retrieval aliases**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -219,7 +219,7 @@ Adjacent concepts: none
 
 ## automation.retrieval.bundle
 
-Owner: `KB/docs/context/automation.md:210-215` → **Context bundles**
+Owner: `KB/docs/context/automation.md:216-221` → **Context bundles**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -229,7 +229,7 @@ Adjacent concepts: none
 
 ## automation.retrieval.direct
 
-Owner: `KB/docs/context/automation.md:17-37` → **Direct retrieval discipline**
+Owner: `KB/docs/context/automation.md:17-38` → **Direct retrieval discipline**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -241,7 +241,7 @@ Adjacent concepts: `automation.planning.phase2`, `automation.retrieval.protocol`
 
 ## automation.retrieval.fallback
 
-Owner: `KB/docs/context/automation.md:191-204` → **Retrieval fallback**
+Owner: `KB/docs/context/automation.md:197-210` → **Retrieval fallback**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -253,7 +253,7 @@ Adjacent concepts: `automation.docs.retrieval-repair`
 
 ## automation.retrieval.protocol
 
-Owner: `KB/docs/context/automation.md:122-130` → **Concept retrieval protocol**
+Owner: `KB/docs/context/automation.md:123-131` → **Concept retrieval protocol**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -267,19 +267,19 @@ Adjacent concepts: `testing.automation.protocol`
 
 ## automation.retrieval.source
 
-Owner: `KB/docs/context/automation.md:142-158` → **Bounded source search and anchor reads**
+Owner: `KB/docs/context/automation.md:143-164` → **Bounded source search and anchor reads**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/source-context.mjs` | `searchSource` | 94 | `sed -n 82,114p scripts/source-context.mjs` |
-| `scripts/source-context.mjs` | `readAnchors` | 146 | `sed -n 134,166p scripts/source-context.mjs` |
-| `scripts/source-context.mjs` | `readSource` | 203 | `sed -n 191,223p scripts/source-context.mjs` |
+| `scripts/source-context.mjs` | `searchSource` | 125 | `sed -n 113,145p scripts/source-context.mjs` |
+| `scripts/source-context.mjs` | `readAnchors` | 177 | `sed -n 165,197p scripts/source-context.mjs` |
+| `scripts/source-context.mjs` | `readSource` | 235 | `sed -n 223,255p scripts/source-context.mjs` |
 
 Adjacent concepts: `automation.retrieval.direct`, `automation.retrieval.protocol`
 
 ## automation.retrieval.states
 
-Owner: `KB/docs/context/automation.md:166-171` → **Retrieval result states**
+Owner: `KB/docs/context/automation.md:172-177` → **Retrieval result states**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -289,7 +289,7 @@ Adjacent concepts: none
 
 ## automation.task-close.lifecycle
 
-Owner: `KB/docs/context/automation.md:458-469` → **Task-close lifecycle**
+Owner: `KB/docs/context/automation.md:464-475` → **Task-close lifecycle**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -299,7 +299,7 @@ Adjacent concepts: `automation.task-close.scope`, `automation.task-close.receipt
 
 ## automation.task-close.plan-archive
 
-Owner: `KB/docs/context/automation.md:575-597` → **Plan archival**
+Owner: `KB/docs/context/automation.md:581-603` → **Plan archival**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -311,7 +311,7 @@ Adjacent concepts: none
 
 ## automation.task-close.process-controls
 
-Owner: `KB/docs/context/automation.md:483-507` → **Task process controls**
+Owner: `KB/docs/context/automation.md:489-513` → **Task process controls**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -324,7 +324,7 @@ Adjacent concepts: `automation.planning.phase2`, `automation.task-close.lifecycl
 
 ## automation.task-close.receipt
 
-Owner: `KB/docs/context/automation.md:557-566` → **Public receipt**
+Owner: `KB/docs/context/automation.md:563-572` → **Public receipt**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -335,7 +335,7 @@ Adjacent concepts: none
 
 ## automation.task-close.scope
 
-Owner: `KB/docs/context/automation.md:517-530` → **Task-close scope**
+Owner: `KB/docs/context/automation.md:523-536` → **Task-close scope**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -347,7 +347,7 @@ Adjacent concepts: `automation.orchestration.ownership`
 
 ## automation.task-close.verification
 
-Owner: `KB/docs/context/automation.md:538-549` → **Task-close verification**
+Owner: `KB/docs/context/automation.md:544-555` → **Task-close verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -357,7 +357,7 @@ Adjacent concepts: `testing.selection.local`
 
 ## automation.task-ownership.lifecycle
 
-Owner: `KB/docs/context/automation.md:380-392` → **Task ownership**
+Owner: `KB/docs/context/automation.md:386-398` → **Task ownership**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

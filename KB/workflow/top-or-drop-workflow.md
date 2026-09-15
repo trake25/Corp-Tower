@@ -99,8 +99,8 @@ task-close tooling.
 
 Current source establishes implementation facts. Durable intended behavior, architecture,
 ownership, terminology, and related semantic contracts belong in the KB Tree. Planner resolves
-only the material concepts, compacts their durable contracts into the plan, and supplies exact
-bounded source context.
+only the material concepts and supplies exact KB concept IDs and Source locators — never compacted
+KB prose or copied/bounded source text — for the Implementor to fetch itself.
 
 Client, server, QA, infra, web, editorial, and coordination knowledge are not loaded through role
 skills.

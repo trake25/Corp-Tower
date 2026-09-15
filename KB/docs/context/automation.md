@@ -30,10 +30,11 @@ architecture, ownership, terminology, or another semantic contract is materially
 an access-control gate for source discovery, and adjacency remains unloaded until deliberately
 selected. Contextualization stops once the evidence is sufficient for the current decision.
 
-The Phase 2 plan gives the Implementor compacted KB context when used, bounded source context, and
-exact KB retrieval inputs only where deeper semantic detail may be material. The Implementor normally
-consumes that handoff instead of rediscovering context; bounded runtime retrieval remains governed by
-`AGENTS.md`.
+The Phase 2 plan gives the Implementor exact KB concept IDs and Source locators — never compacted KB
+prose or copied/bounded source text — only where deeper semantic detail may be material. The
+Implementor starts from those retrieval inputs and fetches current KB/source content itself through
+`concept-route`/`concept-read` and `scripts/source-context.mjs`; bounded runtime retrieval remains
+governed by `AGENTS.md`.
 
 <!-- kb
 id: automation.planning.phase2
@@ -151,6 +152,11 @@ missing or ambiguous anchor fails closed as `source-anchor-missing` or `anchor-a
 target is resolved through the same repository-relative path/symlink-traversal protection used
 elsewhere in this Automation domain.
 
+Every result, matched or failed, is measured against that command's byte ceiling in both text and
+JSON mode before it is returned; a failure never echoes an unbounded query, scope, path, anchor, or
+tool/filesystem error, and a bounded failure envelope that still cannot fit falls back to a minimal
+`budget-exceeded` result.
+
 This mirrors the bounded-window behavior `concept-kb` uses to resolve a stable source anchor, without
 coupling ordinary source discovery to KB concept authority: a source-context read needs no concept
 grant, and it does not stand in for `concept-route`/`concept-read` when durable semantic authority is
@@ -234,10 +240,10 @@ are the preferred compact source/Git tools; the Implementor does not run a bare 
 `git status`, `git diff`, `git log`, or `git show` when the narrower bounded tool answers the same
 question.
 
-Plan-selected KB retrieval is demand-driven. The Implementor starts from the compacted KB/source
-handoff and uses an exact plan-supplied retrieval input only when deeper detail is materially
-required. It does not rediscover policy, domain context, optional processes, or repository structure
-already supplied by Planner.
+Plan-selected KB retrieval is demand-driven. The Implementor starts from the plan's exact KB concept
+IDs and Source locators — never compacted KB prose or copied/bounded source text — and uses an exact
+plan-supplied retrieval input only when deeper detail is materially required. It does not rediscover
+policy, domain context, optional processes, or repository structure already supplied by Planner.
 
 Detailed deterministic logs/state remain private. Selected task tooling keeps compact success output
 and progressively bounded failure evidence. `scripts/lib/git-publication.mjs#runGit` always captures
