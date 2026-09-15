@@ -52,7 +52,7 @@ Owner: `KB/docs/context/automation.md:188-206` → **Provider-visible I/O discip
 |---|---|---:|---|
 | `AGENTS.md` | `Implementor universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
 | `scripts/task-close.mjs` | `compactOutput` | 936 | `sed -n 924,956p scripts/task-close.mjs` |
-| `scripts/qa-gate.mjs` | `fail` | 195 | `sed -n 183,215p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `fail` | 196 | `sed -n 184,216p scripts/qa-gate.mjs` |
 
 Adjacent concepts: `automation.observability.usage`
 
@@ -62,8 +62,8 @@ Owner: `KB/docs/context/automation.md:677-733` → **Authorized Git publication*
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/git-sync-commit-push.mjs` | `requireManifest` | 161 | `sed -n 149,181p scripts/git-sync-commit-push.mjs` |
-| `scripts/git-sync-commit-push.mjs` | `explicitPathScope` | 127 | `sed -n 115,147p scripts/git-sync-commit-push.mjs` |
+| `scripts/git-sync-commit-push.mjs` | `requireManifest` | 24 | `sed -n 12,44p scripts/git-sync-commit-push.mjs` |
+| `scripts/git-sync-commit-push.mjs` | `explicitPathScope` | 22 | `sed -n 10,42p scripts/git-sync-commit-push.mjs` |
 | `AGENTS.md` | `Implementor universal policy` | 1 | `sed -n 1,21p AGENTS.md` |
 
 Adjacent concepts: `automation.integration.lifecycle`

@@ -3,20 +3,25 @@ import { execFileSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  explicitPathScope,
-  manifestScope,
+  explicitPathScope as libraryExplicitPathScope,
+  manifestScope as libraryManifestScope,
   publishScopedTask,
   pushExistingBranch,
-  requireManifest,
+  requireManifest as libraryRequireManifest,
   runGit,
   safeBranchName,
   scopeFromManifest,
-  validatePublicReceiptEvidence,
+  validatePublicReceiptEvidence as libraryValidatePublicReceiptEvidence,
 } from './lib/git-publication.mjs';
 import { createTaskIdentity } from './lib/task-identity.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export { explicitPathScope, manifestScope, requireManifest, validatePublicReceiptEvidence } from './lib/git-publication.mjs';
+
+// Compatibility exports retain the historical stable source anchors used by KB grants.
+export function manifestScope(manifest) { return libraryManifestScope(manifest); }
+export function explicitPathScope(options) { return libraryExplicitPathScope(options); }
+export function validatePublicReceiptEvidence(manifest, root = ROOT) { return libraryValidatePublicReceiptEvidence(manifest, root); }
+export function requireManifest(manifestInput) { return libraryRequireManifest(manifestInput); }
 
 function fail(message) { console.error(`FAIL — ${message}`); process.exit(2); }
 function usage() {

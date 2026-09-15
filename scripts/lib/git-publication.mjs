@@ -11,12 +11,12 @@ export function safeBranchName(input, label = 'branch') {
   return input;
 }
 
-export function runGit(root, args, { quiet = true } = {}) {
+export function runGit(root, args, { quiet = true, trim = true } = {}) {
   try {
     const output = execFileSync('git', ['-C', resolve(root), ...args], {
       encoding: 'utf8', stdio: quiet ? ['ignore', 'pipe', 'pipe'] : 'inherit',
     });
-    return typeof output === 'string' ? output.trim() : '';
+    return typeof output === 'string' && trim ? output.trim() : output || '';
   } catch (error) {
     const detail = error.stderr?.toString().trim() || error.message;
     throw new Error(`git ${args.join(' ')} failed${detail ? `: ${detail}` : ''}`);
@@ -86,7 +86,7 @@ export function scopeFromManifest(manifestInput, { root = process.cwd() } = {}) 
 }
 
 function statusPaths(root) {
-  const output = runGit(root, ['status', '--porcelain=v1', '-z']);
+  const output = runGit(root, ['status', '--porcelain=v1', '-z'], { trim: false });
   const paths = [];
   for (const entry of output.split('\0').filter(Boolean)) {
     const raw = entry.slice(3);
