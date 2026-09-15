@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { createIntegrationService } from '../lib/task-integration.mjs';
-import { createFilesystemIntegrationStore, integrationTargetKey } from '../lib/task-integration-state.mjs';
+import { appendHistory, createFilesystemIntegrationStore, integrationTargetKey } from '../lib/task-integration-state.mjs';
 import * as taskIntegrationGit from '../lib/task-integration-git.mjs';
 import { normalizeRepositoryRemote } from '../lib/task-integration-git.mjs';
+import * as taskIntegrateCli from '../task-integrate.mjs';
 
 function git(root, args) { return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim(); }
 function commitFile(worktree, file, content, message = file) {
@@ -359,7 +360,7 @@ test('successful integration deletes exact candidate/task refs and worktrees, ve
     const taskHead = headOf(started.worktree);
 
     let cleanupAttempts = 0;
-    const flakyCleanup = { ...taskIntegrationGit, cleanupIntegrated(args) { cleanupAttempts += 1; return cleanupAttempts === 1 ? ['simulated cleanup failure'] : taskIntegrationGit.cleanupIntegrated(args); } };
+    const flakyCleanup = { ...taskIntegrationGit, cleanupIntegrated(args) { cleanupAttempts += 1; return cleanupAttempts === 1 ? { errors: ['simulated cleanup failure'], progress: args.progress || {} } : taskIntegrationGit.cleanupIntegrated(args); } };
     const taskService = createIntegrationService({ root: started.worktree, git: flakyCleanup });
     const registered = taskService.register({ task: 'Full cleanup', taskBranch: 'task/full-cleanup', taskBaseline: started.task_baseline, expectedTaskHead: taskHead });
     const ready = taskService.advance();
@@ -758,10 +759,393 @@ test('cleanup records a genuine ls-remote/ref-verification failure as its own er
     const gitRoot = taskIntegrationGit.commonGitDir(started.worktree);
     const realRemoteUrl = git(gitRoot, ['config', '--get', 'remote.origin.url']);
     git(gitRoot, ['config', 'remote.origin.url', join(env.base, 'does-not-exist.git')]);
-    let errors;
-    try { errors = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/cleanup-verify-failure', taskWorktree: started.worktree }); }
+    let result;
+    try { result = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/cleanup-verify-failure', taskWorktree: started.worktree }); }
     finally { git(gitRoot, ['config', 'remote.origin.url', realRemoteUrl]); }
+    const { errors } = result;
     assert.ok(errors.some(message => /candidate ref absence unverified/.test(message)), errors.join(' | '));
     assert.ok(errors.some(message => /task ref absence unverified/.test(message)), errors.join(' | '));
   } finally { env.close(); }
+});
+
+test('a PUSH_REJECTED retry with an unchanged candidate at the recorded base retries the exact verified head without re-finalization or QA', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Push retry unchanged', taskId: 'push-retry-unchanged', taskBranch: 'task/push-retry-unchanged' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/push-retry-unchanged');
+    let attempts = 0; let finalizeCalls = 0; let qaCalls = 0;
+    const flaky = {
+      ...taskIntegrationGit,
+      commitCandidateFinalization(args) { finalizeCalls += 1; return taskIntegrationGit.commitCandidateFinalization(args); },
+      runCandidateQa(args) { qaCalls += 1; return taskIntegrationGit.runCandidateQa(args); },
+      publishCandidateMain(args) { attempts += 1; return attempts === 1 ? { state: 'PUSH_REJECTED', detail: 'simulated non-fast-forward rejection' } : taskIntegrationGit.publishCandidateMain(args); },
+    };
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky });
+    const registered = taskService.register({ task: 'Push retry unchanged', taskBranch: 'task/push-retry-unchanged', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    taskService.advance();
+    const rejected = taskService.finish({ requestId: registered.request_id });
+    assert.equal(rejected.state, 'PUSH_REJECTED');
+    assert.equal(finalizeCalls, 1); assert.equal(qaCalls, 1);
+
+    const integrated = taskService.finish({ requestId: registered.request_id });
+    assert.equal(integrated.state, 'INTEGRATED');
+    assert.equal(finalizeCalls, 1, 'an unchanged candidate retry must not re-run finalization');
+    assert.equal(qaCalls, 1, 'an unchanged candidate retry must not re-run QA');
+    assert.equal(attempts, 2);
+  } finally { env.close(); }
+});
+
+test('a PUSH_REJECTED retry becomes STALE_MAIN immediately on incompatible remote movement, before any finalization commit or QA, even with a dirty out-of-scope candidate file', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Push retry stale dirty', taskId: 'push-retry-stale-dirty', taskBranch: 'task/push-retry-stale-dirty' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/push-retry-stale-dirty');
+    let attempts = 0; let finalizeCalls = 0; let qaCalls = 0;
+    const flaky = {
+      ...taskIntegrationGit,
+      commitCandidateFinalization(args) { finalizeCalls += 1; return taskIntegrationGit.commitCandidateFinalization(args); },
+      runCandidateQa(args) { qaCalls += 1; return taskIntegrationGit.runCandidateQa(args); },
+      publishCandidateMain(args) { attempts += 1; return attempts === 1 ? { state: 'PUSH_REJECTED', detail: 'simulated non-fast-forward rejection' } : taskIntegrationGit.publishCandidateMain(args); },
+    };
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky });
+    const registered = taskService.register({ task: 'Push retry stale dirty', taskBranch: 'task/push-retry-stale-dirty', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    const ready = taskService.advance();
+    const rejected = taskService.finish({ requestId: registered.request_id });
+    assert.equal(rejected.state, 'PUSH_REJECTED');
+    assert.equal(finalizeCalls, 1); assert.equal(qaCalls, 1);
+
+    commitFile(env.clone, 'other.txt', 'other\n', 'independent main advance'); git(env.clone, ['push', 'origin', 'main']);
+    const movedMain = git(env.clone, ['rev-parse', 'origin/main']);
+    writeFileSync(join(ready.candidate.worktree, 'unapproved-out-of-scope.txt'), 'dirty out of scope\n');
+
+    const result = taskService.finish({ requestId: registered.request_id });
+    assert.equal(result.state, 'STALE_MAIN');
+    assert.equal(result.actual_main, movedMain);
+    assert.equal(finalizeCalls, 1, 'STALE_MAIN must be recognized before any finalization commit ever runs again');
+    assert.equal(qaCalls, 1, 'STALE_MAIN must be recognized before QA ever runs again');
+    assert.equal(readFileSync(join(ready.candidate.worktree, 'unapproved-out-of-scope.txt'), 'utf8'), 'dirty out of scope\n', 'the dirty out-of-scope file must be left untouched, never committed');
+  } finally { env.close(); }
+});
+
+test('a PUSH_REJECTED retry with an unreadable remote main is retained as a recoverable result without candidate mutation or a new push attempt', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Push retry unreadable remote', taskId: 'push-retry-unreadable', taskBranch: 'task/push-retry-unreadable' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/push-retry-unreadable');
+    let attempts = 0; let failNextMainFetch = false;
+    const flaky = {
+      ...taskIntegrationGit,
+      fetchBranch(root, branch) {
+        if (branch === 'main' && failNextMainFetch) { failNextMainFetch = false; throw new Error('simulated network failure reading remote main'); }
+        return taskIntegrationGit.fetchBranch(root, branch);
+      },
+      publishCandidateMain(args) { attempts += 1; return attempts === 1 ? { state: 'PUSH_REJECTED', detail: 'simulated non-fast-forward rejection' } : taskIntegrationGit.publishCandidateMain(args); },
+    };
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky });
+    const registered = taskService.register({ task: 'Push retry unreadable remote', taskBranch: 'task/push-retry-unreadable', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    taskService.advance();
+    const rejected = taskService.finish({ requestId: registered.request_id });
+    assert.equal(rejected.state, 'PUSH_REJECTED');
+
+    failNextMainFetch = true;
+    const result = taskService.finish({ requestId: registered.request_id });
+    assert.match(result.recovery, /remote main could not be verified/);
+    assert.equal(result.state, 'PUSH_REJECTED', 'the request must stay retained, not silently advance');
+    assert.equal(attempts, 1, 'an unreadable remote must never trigger another publish attempt');
+    assert.equal(taskService.status().active_request_id, registered.request_id);
+  } finally { env.close(); }
+});
+
+test('cleanupIntegrated preserves the candidate and reports it when the candidate worktree is unexpectedly missing before proof', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Missing candidate', taskId: 'missing-candidate', taskBranch: 'task/missing-candidate' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/missing-candidate');
+    const taskService = createIntegrationService({ root: started.worktree });
+    const registered = taskService.register({ task: 'Missing candidate', taskBranch: 'task/missing-candidate', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    const ready = taskService.advance();
+    const verifiedHead = headOf(ready.candidate.worktree);
+    const gitRoot = taskIntegrationGit.commonGitDir(started.worktree);
+    rmSync(ready.candidate.worktree, { recursive: true, force: true }); // simulate an external/unexpected deletion, bypassing normal cleanup
+
+    const result = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/missing-candidate', taskWorktree: started.worktree, verifiedHead });
+    assert.equal(result.preserved, true);
+    assert.ok(result.errors.some(message => /unexpectedly missing/.test(message)), result.errors.join(' | '));
+    assert.notEqual(result.progress.candidateWorktreeRemoved, true, 'an unproven-missing worktree must never be marked as a proven removal');
+    assert.equal(existsSync(started.worktree), false, 'task cleanup is independent of candidate preservation and must still proceed');
+    assert.equal(git(env.clone, ['branch', '--list', 'task/missing-candidate']), '');
+  } finally { env.close(); }
+});
+
+test('cleanupIntegrated preserves the candidate and reports it when its state cannot be read before proof', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Unreadable candidate', taskId: 'unreadable-candidate', taskBranch: 'task/unreadable-candidate' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/unreadable-candidate');
+    const taskService = createIntegrationService({ root: started.worktree });
+    const registered = taskService.register({ task: 'Unreadable candidate', taskBranch: 'task/unreadable-candidate', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    const ready = taskService.advance();
+    const verifiedHead = headOf(ready.candidate.worktree);
+    const gitRoot = taskIntegrationGit.commonGitDir(started.worktree);
+    writeFileSync(join(ready.candidate.worktree, '.git'), 'gitdir: /nonexistent/broken/path\n');
+
+    const result = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/unreadable-candidate', taskWorktree: started.worktree, verifiedHead });
+    assert.equal(result.preserved, true);
+    assert.ok(result.errors.some(message => /state unverified/.test(message)), result.errors.join(' | '));
+  } finally { env.close(); }
+});
+
+test('cleanup is idempotent across repeated calls once fully successful', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Idempotent cleanup', taskId: 'idempotent-cleanup', taskBranch: 'task/idempotent-cleanup' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/idempotent-cleanup');
+    const taskService = createIntegrationService({ root: started.worktree });
+    const registered = taskService.register({ task: 'Idempotent cleanup', taskBranch: 'task/idempotent-cleanup', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    const ready = taskService.advance();
+    const verifiedHead = headOf(ready.candidate.worktree);
+    const gitRoot = taskIntegrationGit.commonGitDir(started.worktree);
+
+    const first = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/idempotent-cleanup', taskWorktree: started.worktree, verifiedHead });
+    assert.deepEqual(first.errors, []);
+    assert.equal(first.progress.candidateWorktreeRemoved, true);
+
+    const second = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/idempotent-cleanup', taskWorktree: started.worktree, verifiedHead, progress: first.progress });
+    assert.deepEqual(second.errors, []);
+
+    const third = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/idempotent-cleanup', taskWorktree: started.worktree, verifiedHead, progress: second.progress });
+    assert.deepEqual(third.errors, [], 'repeated retries carrying the saved journal forward must keep succeeding');
+  } finally { env.close(); }
+});
+
+test('a partial cleanup failure (remote unreachable) followed by a retry with the saved journal succeeds without redoing already-completed local removals', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Partial cleanup retry', taskId: 'partial-cleanup-retry', taskBranch: 'task/partial-cleanup-retry' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/partial-cleanup-retry');
+    const taskService = createIntegrationService({ root: started.worktree });
+    const registered = taskService.register({ task: 'Partial cleanup retry', taskBranch: 'task/partial-cleanup-retry', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    const ready = taskService.advance();
+    const verifiedHead = headOf(ready.candidate.worktree);
+    const gitRoot = taskIntegrationGit.commonGitDir(started.worktree);
+
+    const realRemoteUrl = git(gitRoot, ['config', '--get', 'remote.origin.url']);
+    git(gitRoot, ['config', 'remote.origin.url', join(env.base, 'does-not-exist.git')]);
+    const first = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/partial-cleanup-retry', taskWorktree: started.worktree, verifiedHead });
+    git(gitRoot, ['config', 'remote.origin.url', realRemoteUrl]);
+
+    assert.ok(first.errors.length, 'the broken remote must surface real errors');
+    assert.equal(first.progress.candidateWorktreeRemoved, true, 'local worktree removal must still succeed despite the broken remote');
+    assert.equal(existsSync(ready.candidate.worktree), false);
+
+    const second = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/partial-cleanup-retry', taskWorktree: started.worktree, verifiedHead, progress: first.progress });
+    assert.deepEqual(second.errors, []);
+    assert.equal(git(env.remote, ['branch', '--list', ready.candidate.branch]), '');
+    assert.equal(git(env.remote, ['branch', '--list', 'task/partial-cleanup-retry']), '');
+  } finally { env.close(); }
+});
+
+test('a task branch unexpectedly checked out elsewhere at cleanup time is reported, not silently tolerated', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Checked out task branch', taskId: 'checked-out-task-branch', taskBranch: 'task/checked-out-task-branch' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/checked-out-task-branch');
+    const taskService = createIntegrationService({ root: started.worktree });
+    const registered = taskService.register({ task: 'Checked out task branch', taskBranch: 'task/checked-out-task-branch', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    const ready = taskService.advance();
+    const verifiedHead = headOf(ready.candidate.worktree);
+    const gitRoot = taskIntegrationGit.commonGitDir(started.worktree);
+
+    git(gitRoot, ['worktree', 'remove', '--force', started.worktree]);
+    const otherWorktree = join(env.base, 'other-checkout');
+    git(gitRoot, ['worktree', 'add', otherWorktree, 'task/checked-out-task-branch']);
+
+    const result = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/checked-out-task-branch', taskWorktree: started.worktree, verifiedHead });
+    assert.ok(result.errors.some(message => /local task branch/.test(message)), result.errors.join(' | '));
+    assert.notEqual(result.progress.taskBranchLocalRemoved, true);
+
+    git(gitRoot, ['worktree', 'remove', '--force', otherWorktree]);
+  } finally { env.close(); }
+});
+
+test('successful integration cleanup removes stale local remote-tracking refs for the deleted candidate/task branches', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Tracking ref cleanup', taskId: 'tracking-ref-cleanup', taskBranch: 'task/tracking-ref-cleanup' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/tracking-ref-cleanup');
+    const taskService = createIntegrationService({ root: started.worktree });
+    const registered = taskService.register({ task: 'Tracking ref cleanup', taskBranch: 'task/tracking-ref-cleanup', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    const ready = taskService.advance();
+    const gitRoot = taskIntegrationGit.commonGitDir(started.worktree);
+    git(gitRoot, ['fetch', 'origin', `refs/heads/${ready.candidate.branch}:refs/remotes/origin/${ready.candidate.branch}`]);
+    git(gitRoot, ['fetch', 'origin', 'refs/heads/task/tracking-ref-cleanup:refs/remotes/origin/task/tracking-ref-cleanup']);
+
+    const integrated = taskService.finish({ requestId: registered.request_id });
+    assert.equal(integrated.state, 'INTEGRATED');
+    assert.throws(() => git(gitRoot, ['rev-parse', '--verify', `refs/remotes/origin/${ready.candidate.branch}`]));
+    assert.throws(() => git(gitRoot, ['rev-parse', '--verify', 'refs/remotes/origin/task/tracking-ref-cleanup']));
+  } finally { env.close(); }
+});
+
+test('v1 state migrates to v2 in place: terminal requests compact, live/caller-action requests and starts are fully preserved', () => {
+  const env = fixture();
+  try {
+    const store = createFilesystemIntegrationStore({ root: env.clone });
+    const repository = 'git://local/migration-test';
+    const key = `${repository}::main`;
+    const stamp = new Date().toISOString();
+    const v1 = {
+      schema_version: 1,
+      targets: {
+        [key]: {
+          repository, target: 'main', created_at: stamp, queue: ['r-live', 'r-terminal'], active_request_id: 'r-live',
+          requests: {
+            'r-live': {
+              schema_version: 1, request_id: 'r-live', repository, target: 'main', task: 'Live', task_branch: 'task/live',
+              task_baseline: '0'.repeat(40), expected_task_head: '1'.repeat(40), state: 'READY_FOR_FINALIZATION', queue_order: 0,
+              finalization_paths: [], verification_checks: [], timestamps: { submitted_at: stamp, updated_at: stamp }, history: [{ at: stamp, event: 'submitted' }],
+            },
+            'r-terminal': {
+              schema_version: 1, request_id: 'r-terminal', repository, target: 'main', task: 'Terminal', task_branch: 'task/terminal',
+              task_baseline: '0'.repeat(40), expected_task_head: '2'.repeat(40), state: 'INTEGRATED', queue_order: 1, main_after: '3'.repeat(40),
+              finalization_paths: [], verification_checks: [], timestamps: { submitted_at: stamp, updated_at: stamp }, history: [{ at: stamp, event: 'integrated' }],
+            },
+          },
+        },
+      },
+      starts: {
+        [`${repository}::live-task`]: {
+          schema_version: 1, repository, task_id: 'live-task', task: 'Live', task_branch: 'task/live', target: 'main',
+          task_baseline: '0'.repeat(40), finalization_paths: [], worktree: '/tmp/does-not-matter', timestamps: { started_at: stamp, updated_at: stamp },
+        },
+      },
+    };
+    mkdirSync(dirname(store.statePath), { recursive: true });
+    writeFileSync(store.statePath, JSON.stringify(v1, null, 2));
+
+    const migrated = createFilesystemIntegrationStore({ root: env.clone });
+    const state = migrated.read();
+    assert.equal(state.schema_version, 2);
+    const record = state.targets[key];
+    assert.equal(record.requests['r-live'].state, 'READY_FOR_FINALIZATION');
+    assert.equal(record.requests['r-live'].compacted, undefined, 'a live caller-action request must never be compacted');
+    assert.equal(record.requests['r-terminal'].compacted, true);
+    assert.equal(record.requests['r-terminal'].state, 'INTEGRATED');
+    assert.equal(record.requests['r-terminal'].main_after, '3'.repeat(40));
+    assert.ok(Number.isInteger(record.next_queue_seq) && record.next_queue_seq >= 2);
+    assert.deepEqual(record.recent_order, ['r-terminal']);
+    assert.ok(state.starts[`${repository}::live-task`]);
+  } finally { env.close(); }
+});
+
+test('recent summaries never exceed 32 per target and evict oldest-first, and monotonic queue_order stays unique across many cycles', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    for (let i = 0; i < 35; i++) {
+      const started = service.start({ task: `Bounded ${i}`, taskId: `bounded-${i}`, taskBranch: `task/bounded-${i}` });
+      commitFile(started.worktree, 'task.txt', `rev ${i}\n`, `rev ${i}`);
+      const first = headOf(started.worktree);
+      commitFile(started.worktree, 'task.txt', `rev ${i}-b\n`, `rev ${i}-b`);
+      pushBranch(started.worktree, `task/bounded-${i}`);
+      const taskService = createIntegrationService({ root: started.worktree });
+      const registered = taskService.register({ task: `Bounded ${i}`, taskBranch: `task/bounded-${i}`, taskBaseline: started.task_baseline, expectedTaskHead: first });
+      const stale = taskService.advance();
+      assert.equal(stale.state, 'STALE_HEAD');
+    }
+    const store = createFilesystemIntegrationStore({ root: env.clone });
+    const state = store.read();
+    const record = Object.values(state.targets)[0];
+    assert.ok(record.recent_order.length <= 32, `recent_order grew unbounded: ${record.recent_order.length}`);
+    const compactedCount = Object.values(record.requests).filter(request => request.compacted).length;
+    assert.equal(compactedCount, record.recent_order.length);
+    const orders = Object.values(record.requests).map(request => request.queue_order).sort((a, b) => a - b);
+    for (let i = 1; i < orders.length; i++) assert.ok(orders[i] > orders[i - 1], 'queue_order must remain unique and increasing even after compaction');
+    assert.ok(record.next_queue_seq >= 35);
+    const sizeBytes = statSync(store.statePath).size;
+    assert.ok(sizeBytes < 60_000, `state.json grew unexpectedly large after 35 cycles: ${sizeBytes} bytes`);
+  } finally { env.close(); }
+});
+
+test('appendHistory caps per-request lifecycle history at 32 events, dropping the oldest first', () => {
+  const request = { history: [], timestamps: { updated_at: new Date().toISOString() } };
+  for (let i = 0; i < 40; i++) appendHistory(request, `event-${i}`);
+  assert.equal(request.history.length, 32);
+  assert.equal(request.history[0].event, 'event-8');
+  assert.equal(request.history[31].event, 'event-39');
+});
+
+test('orphan atomic state-write temp files are reclaimed only when no live mutation lock exists', () => {
+  const env = fixture();
+  try {
+    const store = createFilesystemIntegrationStore({ root: env.clone });
+    mkdirSync(store.base, { recursive: true });
+    const tempName = 'state.json.99999.deadbeef-cafebabe.tmp';
+    const tempPath = join(store.base, tempName);
+    writeFileSync(tempPath, '{}');
+    const lockPath = join(store.base, 'state.lock');
+    writeFileSync(lockPath, JSON.stringify({ pid: process.pid, owner: 'live' }));
+
+    const blocked = store.pruneOrphanArtifacts();
+    assert.deepEqual(blocked.removed, []);
+    assert.equal(existsSync(tempPath), true, 'a live lock must never let its temp file be raced or stolen');
+
+    rmSync(lockPath, { force: true });
+    const cleared = store.pruneOrphanArtifacts();
+    assert.deepEqual(cleared.removed, [tempName]);
+    assert.equal(existsSync(tempPath), false);
+  } finally { env.close(); }
+});
+
+test('gc removes only proven-disposable integration-owned artifacts: empty orphan directories and stale worktree metadata, never dirty/unproven orphan work or remote branches by prefix', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const gitRoot = taskIntegrationGit.commonGitDir(env.clone);
+
+    const emptyOrphan = join(gitRoot, 'task-integration', 'candidates', 'empty-orphan');
+    mkdirSync(emptyOrphan, { recursive: true });
+
+    const dirtyOrphan = join(gitRoot, 'task-integration', 'tasks', 'dirty-orphan');
+    mkdirSync(dirtyOrphan, { recursive: true });
+    writeFileSync(join(dirtyOrphan, 'unsaved-work.txt'), 'unproven orphan content\n');
+
+    const started = service.start({ task: 'GC worktree prune', taskId: 'gc-worktree-prune', taskBranch: 'task/gc-worktree-prune' });
+    const worktreePattern = new RegExp(started.worktree.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    rmSync(started.worktree, { recursive: true, force: true });
+    assert.match(git(gitRoot, ['worktree', 'list']), worktreePattern);
+
+    const unrelatedRemote = 'task/gc-unrelated';
+    writeFileSync(join(env.clone, 'unrelated-gc.txt'), 'unrelated\n');
+    git(env.clone, ['checkout', '-b', unrelatedRemote]); git(env.clone, ['add', 'unrelated-gc.txt']); git(env.clone, ['commit', '-m', 'unrelated']); pushBranch(env.clone, unrelatedRemote); git(env.clone, ['checkout', 'main']);
+
+    const result = service.gc();
+    assert.ok(result.removed_directories.includes(emptyOrphan));
+    assert.ok(result.preserved_orphans.includes(dirtyOrphan));
+    assert.equal(existsSync(dirtyOrphan), true, 'a non-empty orphan must never be deleted automatically');
+    assert.equal(readFileSync(join(dirtyOrphan, 'unsaved-work.txt'), 'utf8'), 'unproven orphan content\n');
+    assert.doesNotMatch(git(gitRoot, ['worktree', 'list']), worktreePattern, 'stale worktree metadata must be pruned');
+    assert.notEqual(git(env.remote, ['branch', '--list', unrelatedRemote]), '', 'gc must never sweep remote branches by prefix');
+  } finally { env.close(); }
+});
+
+test('CLI compact output is short and state-oriented by default and never includes full history/timestamps/paths; formatFailure is compact by default and structured JSON only when requested', () => {
+  assert.equal(taskIntegrateCli.compactLine('finish', { request_id: 'integration-x', state: 'INTEGRATED', main_after: 'a'.repeat(40) }), `integration-x INTEGRATED main=${'a'.repeat(12)}`);
+  assert.match(taskIntegrateCli.compactLine('finish', { request_id: 'integration-x', state: 'QA_FAILED', qa: { check: 'changed-path', detail: 'x'.repeat(500) } }), /^integration-x QA_FAILED check=changed-path detail=.{1,205}$/);
+  assert.match(taskIntegrateCli.compactLine('finish', { request_id: 'integration-x', state: 'STALE_MAIN', actual_main: 'b'.repeat(40) }), new RegExp(`^integration-x STALE_MAIN actual_main=b{12}$`));
+  assert.match(taskIntegrateCli.compactLine('status', { repository: 'git://x', target: 'main', active_request_id: 'integration-y', requests: [{ state: 'QUEUED' }, { state: 'INTEGRATED' }] }), /active=integration-y/);
+  assert.match(taskIntegrateCli.compactLine('start', { task_id: 'task-1', reused: false, task_branch: 'task/x', task_baseline: 'c'.repeat(40) }), new RegExp(`^task-1 started on task/x baseline=c{12}$`));
+  assert.equal(taskIntegrateCli.formatFailure('boom', false), 'boom');
+  assert.equal(taskIntegrateCli.formatFailure('boom', true), JSON.stringify({ ok: false, error: 'boom' }));
+  const compact = taskIntegrateCli.compactLine('finish', { request_id: 'integration-x', state: 'INTEGRATED', main_after: 'a'.repeat(40) });
+  assert.ok(!compact.includes('timestamps') && !compact.includes('worktree'), 'default output must never include full history/timestamps/paths');
 });
