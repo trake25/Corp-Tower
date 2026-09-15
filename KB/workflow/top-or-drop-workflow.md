@@ -24,28 +24,26 @@ reasoning.
 ## C. Phase 2 handoff
 
 The Phase 2 plan is a compact retrieval handoff, not a copy of source or repeated universal policy.
-Every Phase 2 plan contains four required sections plus one selected only when execution is
-non-default:
+Filename and title use at most 3 meaningful keywords. Every plan uses:
 
-1. `## 1. Behavior` — the approved intended behavior and any task-specific policy.
-2. `## 2. Retrieval` — a `Source` block of locators, searches, filters, and anchors the Implementor
-   starts from (not copied source), plus `Intersections` naming the cross-cutting invariants those
-   locators must jointly satisfy; exact KB concept IDs appear only where deeper semantics are
-   materially needed.
-3. `## 3. Changes` — `Direct` (task-branch edit scope), `Finalization` (integration-candidate-only
-   scope such as shared authored KB prose and generated maps), `Generated` (deterministic outputs and
-   their owning generator), and `Invariants` the implementation must preserve.
-4. `## 4. Verification` — the minimum task-branch and candidate/finalization checks that prove the
-   behavior and its material risks; a Planner/Reviewer-selected policy note belongs here rather than
-   in a separate policy section.
-5. `## Overrides` appears only when execution differs from defaults (for example
-   `Execution shape: ORCHESTRATED`, or a non-default `publication`/`plan_archival` value); a task
-   using every default omits it.
+1. `## 1. Behavior` — approved behavior only.
+2. `## 2. Retrieval` — `KB:` exact concept IDs only when deeper semantic retrieval may be needed;
+   `Source:` `path — anchor/search/filter — short reason` locators the Implementor starts from,
+   never copied source excerpts; `Intersections:` feature/boundary and what must be preserved or
+   checked.
+3. `## 3. Changes` — only the needed labels: `Direct:` likely task-branch authored changes;
+   `Finalization:` shared authored changes allowed only after `READY_FOR_FINALIZATION`; `Generated:`
+   deterministic outputs; `Invariants:` cross-boundary rules the Implementor must preserve. No
+   feasibility reasoning narrative.
+4. `## 4. Verification` — the minimum proof of approved behavior plus every material risk found
+   during feasibility, distinguishing task-branch and candidate checks only when needed.
+5. `## 5. Overrides` — omitted entirely when defaults apply; included only for non-default
+   process/execution settings (for example `Execution shape: ORCHESTRATED`, or a non-default
+   `publication`/`plan_archival` value).
 
-Repeated universal policy, feasibility narrative already proven during planning, and empty sections
-are removed rather than carried into Phase 2 for completeness. A section may state `None required`
-only when that is itself the material fact (no deeper KB authority is needed, no Finalization scope
-applies); it is not restated boilerplate.
+An empty label or section is omitted rather than written as `None required`. Each requirement is
+stated once, in short wording, with no repeated universal policy or feasibility narrative already
+proven during planning.
 
 A default-OFF optional process is not named in the plan. Planner compiles its policy only when the
 process is selected ON or otherwise made non-default. Normal single-run execution is implicit.

@@ -51,12 +51,15 @@ adjacent: automation.task-close.process-controls
 -->
 ## Phase 2 execution handoff
 
-Phase 2 is the Implementor's self-contained task execution contract. Before the handoff is ready,
-Planner checks every approved behavior against current source and establishes what already supports
-it, what is incomplete, the complete material source/state path needed to guarantee it, the task-
-branch direct-edit boundaries implied by that path, any authored/shared artifacts that must be
-deferred until integration finalization against latest `main`, and the minimum task-branch and
-candidate verification that proves both the behavior and its material risks.
+Phase 2 is the Implementor's self-contained task execution contract, in the compact 5-section format
+at `policy/PLANNER.md#Standard Phase 2 format`: `## 1. Behavior`, `## 2. Retrieval`, `## 3. Changes`,
+`## 4. Verification`, and `## 5. Overrides` only when execution is non-default. Before the handoff is
+ready, Planner checks every approved behavior against current source and establishes what already
+supports it, what is incomplete, the complete material source/state path needed to guarantee it, the
+task-branch `Changes > Direct` edit boundaries implied by that path, any authored/shared artifacts
+that belong under `Changes > Finalization` because their correct content depends on already-integrated
+`main`, and the minimum task-branch and candidate `Verification` that proves both the behavior and its
+material risks.
 
 Feasibility is behavioral rather than file-level. Finding an obvious owner file or showing that an
 implementation appears possible is insufficient. When approved behavior materially crosses
@@ -69,33 +72,34 @@ completion must have either a proved deterministic authoritative bound or explic
 synchronization with an authoritative fallback; approximate animation or tuning durations are not
 treated as completion bounds without source proof.
 
-For integration-heavy work, the Phase 2 Context contains a compact feasibility/dependency trace that
-maps each material approved behavior to its current source/state path, identified support or gap,
-required task-branch and integration-finalization boundaries/files, and verification proof. Expected
-write scope is derived from that assessment rather than from obvious ownership alone. Shared authored
-KB prose, generated KB maps/routers, and other high-contention artifacts whose correct content
-depends on already-integrated repository state are listed under `Integration Finalization`, not task-
-branch `Direct Edits`. Verification is the minimum proof of every approved behavior and every
-material feasibility risk Planner identified, including narrow candidate verification when stale-main
-or silent semantic integration can materially invalidate correctness. An unresolved material
-dependency means Phase 2 is not ready; Planner continues source analysis when the approved outcome
-already determines the answer, or returns to design only when a genuinely new product/workflow
-decision is required.
+For integration-heavy work, Planner's feasibility/dependency trace maps each material approved
+behavior to its current source/state path, identified support or gap, required `Direct`/`Finalization`
+boundaries/files, and verification proof; that trace is not copied into the plan verbatim. The
+resulting `Changes > Direct`/`Changes > Finalization` split is derived from that assessment rather than
+from obvious ownership alone. Shared authored KB prose, generated KB maps/routers, and other
+high-contention artifacts whose correct content depends on already-integrated repository state belong
+under `Changes > Finalization`, never `Changes > Direct`. `Verification` is the minimum proof of every
+approved behavior and every material feasibility risk Planner identified, including narrow candidate
+verification when stale-main or silent semantic integration can materially invalidate correctness. An
+unresolved material dependency means Phase 2 is not ready; Planner continues source analysis when the
+approved outcome already determines the answer, or returns to design only when a genuinely new
+product/workflow decision is required.
 
-Planner then compiles the approved intended behavior, only task policy selected for this
-implementation, current source evidence, KB context only where semantic authority is material, exact
-retrieval inputs for optional deeper semantic detail, bounded source context, evidence-based task-
-branch and integration-finalization write scope, ordered implementation requirements, verification,
-and done criteria. The Implementor treats the Planner-supplied feasibility/dependency trace and cross-
-boundary invariants as part of the task contract, implements the complete material dependency path
-rather than only the nearest happy path, and stops if current source materially contradicts the
-assessment or exposes a missing dependency required for correctness. Reviewer verifies the declared
-feasibility boundaries and material risks before relying on the implementation as complete.
+Planner then compiles the approved `Behavior`, a `Retrieval` section (KB concept IDs only where
+semantic authority is materially needed, source locators/searches/filters/anchors, and
+intersections), a `Changes` section (`Direct`/`Finalization`/`Generated`/`Invariants`), and
+`Verification` proving the behavior and its material risks. The Implementor treats the
+Planner-supplied feasibility/dependency trace and cross-boundary invariants as part of the task
+contract, implements the complete material dependency path rather than only the nearest happy path,
+and stops if current source materially contradicts the assessment or exposes a missing dependency
+required for correctness. Reviewer verifies the declared feasibility boundaries and material risks
+before relying on the implementation as complete.
 
-A source-grounded task may state `None required` for compacted KB context and KB retrieval inputs.
-The execution architecture has three layers: `AGENTS.md` contains only universal Implementor policy;
-the Phase 2 plan contains only task-selected policy; the KB/source handoff contains domain and task-
-scope knowledge. Runtime skills are not an authority layer.
+A source-grounded task simply omits the `KB:` label under `Retrieval` when no deeper semantic
+retrieval is materially needed; an empty label or section is never written as `None required`. The
+execution architecture has three layers: `AGENTS.md` contains only universal Implementor policy; the
+Phase 2 plan contains only task-selected policy; the KB/source handoff contains domain and task-scope
+knowledge. Runtime skills are not an authority layer.
 
 Default-OFF agent-supported processes are absent from the plan and Implementor runtime context.
 Planner includes an optional process or execution policy only when it is enabled or otherwise
@@ -268,8 +272,8 @@ adjacent: automation.task-close.plan-archive
 With publication enabled, normal independent task completion uses a deterministic integration
 lifecycle rather than pushing a completed local checkout directly to `main`. Task start records the
 exact current `origin/main` baseline and a dedicated task branch. Ordinary implementation and task-
-branch verification operate only on the plan's `Direct Edits`; authored KB prose, generated KB
-maps/routers, and any other explicitly deferred high-contention artifacts stay untouched until the
+branch verification operate only on the plan's `Changes > Direct` scope; authored KB prose, generated
+KB maps/routers, and any other explicitly deferred high-contention artifacts stay untouched until the
 integration candidate is based on the then-current `main`.
 
 A completed task revision is published to a remote task branch and identified by its exact head SHA.
@@ -757,8 +761,8 @@ text, and a failure surfaces a bounded headline with the complete detail saved p
 would not already fit. See `Provider-visible I/O discipline` and `Compact Git inspection` above.
 
 Normal publication scope is never inferred from the dirty working tree. The task branch may publish
-only the plan's current task-owned `Direct Edits`; paths under `Integration Finalization` are not
-committed on the original task branch. Once the integration system reports `READY_FOR_FINALIZATION`,
+only the plan's current task-owned `Changes > Direct` scope; paths under `Changes > Finalization` are
+not committed on the original task branch. Once the integration system reports `READY_FOR_FINALIZATION`,
 only that request's authorized finalization paths and deterministic generated outputs may change in the
 candidate. `plan/` remains ignored working material and must never appear in task-branch or candidate
 publication scope.
