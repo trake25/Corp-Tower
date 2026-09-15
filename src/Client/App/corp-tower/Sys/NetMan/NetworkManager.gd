@@ -22,6 +22,9 @@ var latest_match_state := ""
 var last_latency_rtt_ms := -1
 var match_active := false
 var room_mode := "public"
+var lobby_active := false
+var lobby_leave_pending := false
+var lobby_recovery_pending := false
 var private_lobby_active := false
 var private_lobby_is_host := false
 var private_lobby_reconnect_deadline_msec := -1
@@ -50,6 +53,10 @@ var latency_probe_elapsed := 0.0
 var latency_probe_nonce := ""
 var latency_probe_sent_at_msec := -1
 var latency_probe_sequence := 0
+var transport_health_elapsed := 0.0
+var transport_health_nonce := ""
+var transport_health_sent_at_msec := -1
+var transport_health_sequence := 0
 
 const PLAYER_ID_FILE := "user://corp_tower_player_id.save"
 const RECONNECT_TOKEN_FILE := "user://corp_tower_reconnect_token.save"
@@ -65,6 +72,8 @@ const RECOVERY_TOTAL_TIMEOUT_MS := 10000
 const PRIVATE_LOBBY_RECONNECT_WINDOW_MS := 20000
 const LATENCY_PROBE_INTERVAL_SECONDS := 1.0
 const LATENCY_PROBE_TIMEOUT_MS := 5000
+const TRANSPORT_HEALTH_INTERVAL_SECONDS := 10.0
+const TRANSPORT_HEALTH_TIMEOUT_MS := 30000
 const SERVER_URL := EndpointConfig.PRIMARY
 const STREAMING_MATCH_STATES := ["starting", "playing"]
 const SPECTATOR_ENTRY_MODE := "bot_spectator"
@@ -81,6 +90,7 @@ signal game_state_updated(data)
 signal client_status(status)
 signal debug_config_updated(config)
 signal latency_rtt_updated(rtt_ms: int)
+signal lobby_left(data)
 signal recovery_started
 signal recovery_recovered
 signal recovery_unavailable(data)
@@ -111,7 +121,7 @@ func connect_server(is_auto_reconnect := false, preserve_entry := false, resume_
 		resume_only_request = true
 	elif not is_auto_reconnect:
 		resume_only_request = false
-	elif match_active or private_lobby_active or recovery_state == "reconnecting":
+	elif match_active or lobby_active or recovery_state == "reconnecting":
 		resume_only_request = true
 
 	if is_auto_reconnect:
@@ -170,9 +180,10 @@ func disconnect_server(clear_private_entry := true, clear_spectator_entry := tru
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
 	resume_only_request = false
-	_clear_private_lobby_tracking()
+	_clear_lobby_tracking()
 	reset_match_tracking()
 	reset_latency_probe()
+	reset_transport_health()
 	if clear_private_entry:
 		_clear_pending_private_entry()
 	if clear_spectator_entry:
@@ -374,7 +385,7 @@ func start_bot_spectator_match(bot_profiles: Array) -> bool:
 		return false
 
 	abandon_room_identity()
-	_clear_private_lobby_tracking()
+	_clear_lobby_tracking()
 	reset_match_tracking()
 	auto_reconnect_enabled = false
 	auto_reconnect_delay_remaining = -1.0
@@ -518,9 +529,17 @@ func _clear_private_lobby_tracking() -> void:
 	private_lobby_is_host = false
 	private_lobby_reconnect_deadline_msec = -1
 
+func _clear_lobby_tracking() -> void:
+	lobby_active = false
+	lobby_leave_pending = false
+	lobby_recovery_pending = false
+	_clear_private_lobby_tracking()
+
 func _update_private_lobby_tracking(data) -> void:
 	room_mode = str(data.get("roomMode", room_mode))
-	private_lobby_active = room_mode == "private" and not bool(data.get("matchStarted", false))
+	lobby_active = not bool(data.get("matchStarted", false))
+	lobby_recovery_pending = false
+	private_lobby_active = room_mode == "private" and lobby_active
 
 	if not private_lobby_active:
 		private_lobby_is_host = false
@@ -533,6 +552,19 @@ func _update_private_lobby_tracking(data) -> void:
 
 func is_private_lobby_active() -> bool:
 	return private_lobby_active
+
+func can_change_lobby_state() -> bool:
+	return (
+		lobby_active
+		and not lobby_leave_pending
+		and not lobby_recovery_pending
+		and is_conn_estab
+		and not manual_disconnect_requested
+		and ws.get_ready_state() == WebSocketPeer.STATE_OPEN
+	)
+
+func lobby_controls_blocked() -> bool:
+	return lobby_active and not can_change_lobby_state()
 
 func kick_private_player(target_player_id: String) -> void:
 	if spectator_active or not is_conn_estab or is_recovering():
@@ -586,17 +618,20 @@ func flush_pending_outcome_ready() -> void:
 		return
 	send_outcome_ready(pending_outcome_ready_id)
 
-func send_ready():
-	if spectator_active or not is_conn_estab or is_recovering():
-		return
+func send_ready() -> bool:
+	if spectator_active or not can_change_lobby_state():
+		return false
 
-	ws.send_text(JSON.stringify({"type": "ready"}))
+	return ws.send_text(JSON.stringify({"type": "ready"})) == OK
 
-func leave_lobby():
-	if spectator_active or not is_conn_estab or is_recovering():
-		return
+func leave_lobby() -> bool:
+	if spectator_active or not can_change_lobby_state():
+		return false
 
-	ws.send_text(JSON.stringify({"type": "leave_lobby"}))
+	if ws.send_text(JSON.stringify({"type": "leave_lobby"})) != OK:
+		return false
+	lobby_leave_pending = true
+	return true
 
 func leave_game() -> bool:
 	if not is_conn_estab or is_recovering():
@@ -714,8 +749,12 @@ func schedule_auto_reconnect():
 	)
 
 func schedule_private_lobby_reconnect() -> void:
-	if manual_disconnect_requested or not private_lobby_active:
+	schedule_lobby_reconnect()
+
+func schedule_lobby_reconnect() -> void:
+	if manual_disconnect_requested or not lobby_active:
 		return
+	lobby_recovery_pending = true
 
 	var now_msec := Time.get_ticks_msec()
 
@@ -723,9 +762,9 @@ func schedule_private_lobby_reconnect() -> void:
 		private_lobby_reconnect_deadline_msec = now_msec + PRIVATE_LOBBY_RECONNECT_WINDOW_MS
 
 	if now_msec >= private_lobby_reconnect_deadline_msec:
-		status_changed.emit("Waiting for private lobby state")
+		status_changed.emit("Waiting for lobby state")
 	else:
-		status_changed.emit("Reconnecting private lobby")
+		status_changed.emit("Reconnecting lobby")
 
 	auto_reconnect_attempts += 1
 	auto_reconnect_delay_remaining = AUTO_RECONNECT_DELAY_SECONDS
@@ -761,7 +800,7 @@ func abandon_room_identity() -> void:
 func accept_game_left(data) -> void:
 	_clear_spectator_state()
 	reset_match_tracking()
-	_clear_private_lobby_tracking()
+	_clear_lobby_tracking()
 	_clear_room_identity()
 	resume_only_request = false
 	auto_reconnect_enabled = false
@@ -969,6 +1008,7 @@ func _process(delta: float) -> void:
 			connect_server(true)
 
 	process_latency_probe(delta)
+	process_transport_health(delta)
 	ws.poll()
 
 	while ws.get_available_packet_count():
@@ -1048,11 +1088,19 @@ func _process(delta: float) -> void:
 				room_joined.emit(data)
 			"match_started":
 				match_active = true
-				_clear_private_lobby_tracking()
+				_clear_lobby_tracking()
 				match_started.emit(data)
 			"lobby_update":
 				_update_private_lobby_tracking(data)
 				lobby_updated.emit(data)
+			"transport_health_ping":
+				if is_conn_estab:
+					ws.send_text(JSON.stringify({
+						"type": "transport_health_ack",
+						"nonce": str(data.get("nonce", ""))
+					}))
+			"transport_health_ack":
+				accept_transport_health_ack(data)
 			"game_state":
 				if accept_game_state(data):
 					update_auto_reconnect_state(data)
@@ -1066,7 +1114,7 @@ func _process(delta: float) -> void:
 				resume_only_request = false
 				if str(data.get("destination", "")) != "":
 					match_active = false
-					_clear_private_lobby_tracking()
+					_clear_lobby_tracking()
 					_clear_room_identity()
 					room_closed.emit({
 						"type": "room_closed",
@@ -1086,13 +1134,18 @@ func _process(delta: float) -> void:
 					data["destination"] = str(destination_by_player[player_id])
 				reset_match_tracking()
 				_clear_spectator_state()
-				_clear_private_lobby_tracking()
+				_clear_lobby_tracking()
 				_clear_room_identity()
 				auto_reconnect_enabled = false
 				auto_reconnect_delay_remaining = -1.0
 				room_closed.emit(data)
 			"game_left":
 				accept_game_left(data)
+			"lobby_left":
+				_clear_lobby_tracking()
+				_clear_room_identity()
+				resume_only_request = false
+				lobby_left.emit(data)
 			"spectator_start_rejected":
 				_reject_spectator_start(str(data.get("reason", "rejected")))
 			"private_join_rejected":
@@ -1143,6 +1196,7 @@ func _process(delta: float) -> void:
 			is_connecting = false
 			profile_handshake_pending = false
 			reset_latency_probe()
+			reset_transport_health()
 
 			if profile_connect_after_close:
 				profile_connect_after_close = false
@@ -1169,8 +1223,8 @@ func _process(delta: float) -> void:
 					_fail_private_entry("transport_closed")
 					status_changed.emit("Disconnected")
 					client_status.emit("[Connect]")
-				elif private_lobby_active and not manual_disconnect_requested:
-					schedule_private_lobby_reconnect()
+				elif lobby_active and not manual_disconnect_requested:
+					schedule_lobby_reconnect()
 				elif match_active and recovery_state == "healthy" and not manual_disconnect_requested:
 					begin_recovery(true)
 				elif resume_only_request and not manual_disconnect_requested:
@@ -1201,6 +1255,37 @@ func reset_latency_probe() -> void:
 	latency_probe_elapsed = 0.0
 	latency_probe_nonce = ""
 	latency_probe_sent_at_msec = -1
+
+func reset_transport_health() -> void:
+	transport_health_elapsed = 0.0
+	transport_health_nonce = ""
+	transport_health_sent_at_msec = -1
+
+func process_transport_health(delta: float) -> void:
+	if not is_conn_estab or ws.get_ready_state() != WebSocketPeer.STATE_OPEN:
+		return
+	if transport_health_nonce != "":
+		if Time.get_ticks_msec() - transport_health_sent_at_msec >= TRANSPORT_HEALTH_TIMEOUT_MS:
+			ws.close()
+		return
+	transport_health_elapsed += delta
+	if transport_health_elapsed < TRANSPORT_HEALTH_INTERVAL_SECONDS:
+		return
+	transport_health_elapsed = 0.0
+	transport_health_sequence += 1
+	var nonce := str(Time.get_ticks_usec()) + ":" + str(transport_health_sequence)
+	if ws.send_text(JSON.stringify({"type": "transport_health_ping", "nonce": nonce})) != OK:
+		ws.close()
+		return
+	transport_health_nonce = nonce
+	transport_health_sent_at_msec = Time.get_ticks_msec()
+
+func accept_transport_health_ack(data) -> void:
+	if transport_health_nonce == "":
+		return
+	if str(data.get("nonce", "")) != transport_health_nonce:
+		return
+	reset_transport_health()
 
 func process_latency_probe(delta: float) -> void:
 	if not latency_probe_enabled or not is_conn_estab:

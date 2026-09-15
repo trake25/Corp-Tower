@@ -31,7 +31,6 @@ const QA_TUNING_BASELINE = Object.freeze({
     targetHeightStepGrowth: 5,
     targetHeightStepGrowthEvery: 3,
     startDelayMs: 0,
-    lobbyReadyTimeoutMs: 60000,
     publicLobbyBotFillEnabled: true,
     publicLobbyBotFillDelayMs: 120000,
     publicLobbyBotReadyDelayMs: 2000,

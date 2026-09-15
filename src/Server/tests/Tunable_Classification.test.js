@@ -72,7 +72,6 @@ test("current omitted calibrations and private lobby timings are designer-only",
         "levelTimeSlackMin",
         "levelTimeSlackFullLevel",
         "impactRecoverableFailures",
-        "lobbyReadyTimeoutMs",
         "privateLobbyStartCountdownMs",
         "privateLobbyReconnectPhaseMs",
         "privateLobbyGracePhaseMs"
@@ -143,14 +142,12 @@ test("playing fixtures preserve current keys and install deterministic values", 
     const expectedKeys = Object.keys(originalGameConfig).sort();
     const expectedPaths = configLeafPaths(originalGameConfig).sort();
     GameConfig.targetHeightBase = QA_TUNING_BASELINE.targetHeightBase + 100;
-    GameConfig.lobbyReadyTimeoutMs = QA_TUNING_BASELINE.lobbyReadyTimeoutMs + 100;
 
     createPlayingEngine(1, 8);
 
     assert.deepEqual(Object.keys(GameConfig).sort(), expectedKeys);
     assert.deepEqual(configLeafPaths(GameConfig).sort(), expectedPaths);
     assert.equal(GameConfig.targetHeightBase, QA_TUNING_BASELINE.targetHeightBase);
-    assert.equal(GameConfig.lobbyReadyTimeoutMs, QA_TUNING_BASELINE.lobbyReadyTimeoutMs);
     for (const path of expectedPaths) {
         assert.notEqual(valueAtPath(GameConfig, path), undefined);
     }
@@ -176,7 +173,6 @@ test("fixture reset restores the original real Game Config state", () => {
             targetHeightBase: QA_TUNING_BASELINE.targetHeightBase + 10
         }
     });
-    delete GameConfig.lobbyReadyTimeoutMs;
     GameConfig.fixtureOnlyKey = true;
 
     resetFixtures();

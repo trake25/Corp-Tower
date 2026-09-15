@@ -35,7 +35,7 @@ adjacent: network.session.recovery
 -->
 ## Reconnect coverage
 
-Reconnect regression coverage protects superseded-socket behavior and targeted recovery snapshots that do not consume transient events. Broader gateway/cross-pod recovery remains an integration gap until dedicated coverage exists.
+Reconnect regression coverage protects superseded-socket behavior, targeted recovery snapshots that do not consume transient events, Public/Private pre-match seat recovery, authoritative Public leave acknowledgement, and current-session transport-health renewal. Cross-pod lobby actions continue to prove owner-authoritative convergence.
 
 <!-- kb
 id: testing.client.coverage

@@ -97,6 +97,25 @@ func test_public_matchmaking_routes_through_public_lobby_then_play() -> void:
 	await get_tree().process_frame
 	assert_not_null(screen_manager.play_instance)
 
+func test_public_lobby_ready_and_leave_wait_for_server_authority() -> void:
+	var network := NetworkManagerScript.new()
+	var socket := FakeSocket.new()
+	network.ws = socket
+	network.is_conn_estab = true
+	network.manual_disconnect_requested = false
+	network.player_id = "public-player"
+	network._update_private_lobby_tracking({"roomMode": "public", "matchStarted": false})
+
+	assert_true(network.send_ready())
+	assert_eq(socket.sent_messages.size(), 1)
+	assert_eq(socket.sent_messages[0].get("type"), "ready")
+	assert_true(network.leave_lobby())
+	assert_eq(socket.sent_messages.size(), 2)
+	assert_true(network.lobby_leave_pending)
+	network._clear_lobby_tracking()
+	assert_false(network.lobby_leave_pending, "Only the authoritative leave lifecycle clears the pending state.")
+	network.free()
+
 func test_private_entry_uses_the_authoritative_private_room_wire_contract() -> void:
 	var network = NetworkManagerScript.new()
 	var socket = FakeSocket.new()

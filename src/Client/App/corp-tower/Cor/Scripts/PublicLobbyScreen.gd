@@ -5,17 +5,14 @@ signal leave_lobby_requested
 const CHECK_READY := preload("res://Cor/Art/8-Public-lobby/ic-colored-checkmark-green.png")
 const CHECK_WAITING := preload("res://Cor/Art/8-Public-lobby/ic-colored-checkmark-grey.png")
 const WAITING_NAME := "Waiting for player..."
-const READY_COUNTDOWN_FORMAT := "Ready (%ds)"
 const READY_LABEL := "Ready"
 const CANCEL_LABEL := "Cancel"
 const SEAT_COUNT := 3
 const DISABLED_MODULATE := Color("#cccccc")
 
 var roster_ids: Array = []
-var ready_deadline_ms: int = 0
-var shown_seconds: int = -1
-var timer_active := false
 var is_locally_ready := false
+var ready_pending := false
 
 func _ready() -> void:
 	%BackButton.pressed.connect(_on_back_pressed)
@@ -54,7 +51,7 @@ func _apply_roster(roster: Array) -> void:
 	_set_room_full(roster.size() >= SEAT_COUNT)
 
 func _set_room_full(is_room_full: bool) -> void:
-	%ReadyButton.disabled = not is_room_full
+	%ReadyButton.disabled = not is_room_full or ready_pending
 	%ReadyButton.modulate = Color.WHITE if is_room_full else DISABLED_MODULATE
 
 func _apply_lobby_state(lobby_data) -> void:
@@ -69,47 +66,31 @@ func _apply_lobby_state(lobby_data) -> void:
 		var check: TextureRect = get_node("%%PlayerRow%dCheck" % seat)
 		check.texture = CHECK_READY if is_ready else CHECK_WAITING
 
-	timer_active = bool(lobby_data.get("timerActive", false))
-	ready_deadline_ms = (
-		Time.get_ticks_msec()
-		+ int(lobby_data.get("readySecondsRemaining", 0)) * 1000
-	)
-	shown_seconds = -1
-
 	is_locally_ready = ready_ids.has(str(NetworkManager.player_id))
+	ready_pending = false
+	_set_room_full(not roster_ids.has(""))
 	_apply_local_ready_style()
 
 func _process(_delta: float) -> void:
-	if not timer_active:
-		return
-
-	var remaining := maxi(
-		0,
-		ceili(float(ready_deadline_ms - Time.get_ticks_msec()) / 1000.0)
-	)
-
-	if remaining == shown_seconds:
-		return
-
-	shown_seconds = remaining
-	_refresh_ready_label()
+	if NetworkManager.lobby_controls_blocked():
+		%ReadyButton.disabled = true
 
 func _refresh_ready_label() -> void:
 	if is_locally_ready:
 		%ReadyLabel.text = CANCEL_LABEL
-	elif not timer_active:
-		%ReadyLabel.text = READY_LABEL
 	else:
-		%ReadyLabel.text = READY_COUNTDOWN_FORMAT % shown_seconds
+		%ReadyLabel.text = READY_LABEL
 
 func _apply_local_ready_style() -> void:
 	%ReadyGradientFill.visible = is_locally_ready
 	_refresh_ready_label()
 
 func _on_ready_pressed() -> void:
-	is_locally_ready = !is_locally_ready
-	_apply_local_ready_style()
-	NetworkManager.send_ready()
+	if ready_pending or not NetworkManager.can_change_lobby_state():
+		return
+	if NetworkManager.send_ready():
+		ready_pending = true
+		_set_room_full(not roster_ids.has(""))
 
 func _on_back_pressed() -> void:
 	%LeaveLobbyModal.open_leave_lobby()

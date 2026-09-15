@@ -220,6 +220,46 @@ func test_private_lobby_renders_authoritative_roster_ready_and_grace_state() -> 
 	screen._on_copy_toast_timeout()
 	assert_false(toast.visible)
 
+func test_ready_stays_authoritative_while_the_lobby_request_is_pending() -> void:
+	var original_socket = NetworkManager.ws
+	var original_connected = NetworkManager.is_conn_estab
+	var original_lobby_active = NetworkManager.lobby_active
+	var original_leave_pending = NetworkManager.lobby_leave_pending
+	var socket := FakeSocket.new()
+	NetworkManager.ws = socket
+	NetworkManager.is_conn_estab = true
+	NetworkManager.lobby_active = true
+	NetworkManager.lobby_leave_pending = false
+	NetworkManager.manual_disconnect_requested = false
+	NetworkManager.player_id = "host"
+
+	var screen = PrivateLobbyScene.instantiate()
+	add_child_autofree(screen)
+	await get_tree().process_frame
+	screen.apply_lobby_data(private_lobby_payload([
+		{"id": "host", "displayName": "Host", "connectionPhase": "connected"},
+		{"id": "guest", "displayName": "Guest", "connectionPhase": "connected"},
+		{"id": "third", "displayName": "Third", "connectionPhase": "connected"}
+	]))
+	screen._on_ready_pressed()
+	screen._on_ready_pressed()
+	assert_false(screen.is_locally_ready, "Ready state cannot commit before the server update.")
+	assert_true(screen.ready_pending)
+	assert_eq(socket.sent_messages.size(), 1, "A pending Ready action blocks duplicate toggles.")
+
+	screen.apply_lobby_data(private_lobby_payload([
+		{"id": "host", "displayName": "Host", "connectionPhase": "connected"},
+		{"id": "guest", "displayName": "Guest", "connectionPhase": "connected"},
+		{"id": "third", "displayName": "Third", "connectionPhase": "connected"}
+	], ["host"]))
+	assert_true(screen.is_locally_ready, "Only the authoritative Ready roster commits the visual state.")
+	assert_false(screen.ready_pending)
+
+	NetworkManager.ws = original_socket
+	NetworkManager.is_conn_estab = original_connected
+	NetworkManager.lobby_active = original_lobby_active
+	NetworkManager.lobby_leave_pending = original_leave_pending
+
 func test_private_lobby_reuses_confirmation_modals_for_leave_and_kick() -> void:
 	NetworkManager.player_id = "host"
 	var screen = PrivateLobbyScene.instantiate()

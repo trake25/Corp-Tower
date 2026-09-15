@@ -14,6 +14,8 @@ const port = Number(process.env.PORT) || 3000;
 const FACEBOOK_EXCHANGE_PATH = "/api/auth/facebook/exchange";
 const FACEBOOK_EXCHANGE_BODY_LIMIT = 16 * 1024;
 const FACEBOOK_WEB_ORIGIN = normalizedWebOrigin(process.env.FACEBOOK_WEB_ORIGIN);
+const TRANSPORT_HEALTH_INTERVAL_MS = 10000;
+const TRANSPORT_HEALTH_TIMEOUT_MS = 30000;
 
 function safeJson(message) {
     try {
@@ -378,10 +380,41 @@ function wireConnection(ws, dependencies = {}) {
     let handshakeInProgress = false;
     let cleanedPlayer = null;
     let cleanupPromise = null;
+    let transportHealthTimer = null;
+    let transportHealthSequence = 0;
+
+    const stopTransportHealth = () => {
+        if (transportHealthTimer) {
+            clearInterval(transportHealthTimer);
+            transportHealthTimer = null;
+        }
+    };
+
+    const startTransportHealth = () => {
+        stopTransportHealth();
+        player.transportHealthAckAt = Date.now();
+        transportHealthTimer = setInterval(() => {
+            if (!player || retired || !isOpenSocket(ws)) {
+                stopTransportHealth();
+                return;
+            }
+            if (Date.now() - player.transportHealthAckAt >= TRANSPORT_HEALTH_TIMEOUT_MS) {
+                void retireConnection("Transport health timed out", null, 4001, "transport_health_timeout");
+                return;
+            }
+            transportHealthSequence += 1;
+            safeSendJson(ws, {
+                type: "transport_health_ping",
+                nonce: String(transportHealthSequence)
+            }, "Transport health ping send");
+        }, TRANSPORT_HEALTH_INTERVAL_MS);
+        transportHealthTimer.unref?.();
+    };
 
     const isLive = () => !retired && isOpenSocket(ws);
 
     const cleanupPlayer = () => {
+        stopTransportHealth();
         const currentPlayer = player;
 
         if (handshakeInProgress) {
@@ -529,6 +562,7 @@ function wireConnection(ws, dependencies = {}) {
             }
 
             console.log(`${player.id} connected${identity ? " (verified)" : ""}`);
+            startTransportHealth();
 
             if (
                 reconnectRequest.resumeOnly !== true &&
@@ -607,6 +641,29 @@ async function handleMessage(player, message, dependencies = {}) {
     }
 
     console.log(`${player.id} sent:`, data.type);
+
+    if (data.type === "transport_health_ping") {
+        const current = manager.refreshPlayerSession
+            ? await manager.refreshPlayerSession(player)
+            : await manager.isCurrentPlayerConnection(player);
+        if (current) {
+            safeSendJson(player.ws, {
+                type: "transport_health_ack",
+                nonce: typeof data.nonce === "string" ? data.nonce : ""
+            }, "Transport health acknowledgement send");
+        }
+        return;
+    }
+
+    if (data.type === "transport_health_ack") {
+        const current = manager.refreshPlayerSession
+            ? await manager.refreshPlayerSession(player)
+            : await manager.isCurrentPlayerConnection(player);
+        if (current) {
+            player.transportHealthAckAt = Date.now();
+        }
+        return;
+    }
 
     if (data.type === "latency_ping") {
         if (

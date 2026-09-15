@@ -71,7 +71,7 @@ const SERVER_DESIGNER_ONLY_PATHS = Object.freeze([
     "debugBotStabilityTolerance", "failRestartDelayMs", "impactRecoverableFailures",
     "inventoryScaling.1", "levelSupplyCoverageEnd", "levelSupplyCoverageFullLevel",
     "levelSupplyCoverageStart", "levelSupplyMaxSurplusShare", "levelTimePlannedEfficiency",
-    "levelTimePerLevelMs", "levelTimeSlack", "levelTimeSlackFullLevel", "levelTimeSlackMin", "lobbyReadyTimeoutMs",
+    "levelTimePerLevelMs", "levelTimeSlack", "levelTimeSlackFullLevel", "levelTimeSlackMin",
     "maxActiveBlocks", "maxGeneratedDrawPileBlocks", "maxLevel", "nextLevelDelayMs",
     "openingHandGenerationAttempts", "outcomeMinimumHoldMs", "outcomeReadyFallbackMs",
     "placeableColumnMax", "placeableColumnMin",

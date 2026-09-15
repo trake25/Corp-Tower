@@ -95,6 +95,7 @@ func _ready() -> void:
 	NetworkManager.match_started.connect(_on_match_started)
 	NetworkManager.room_closed.connect(_on_room_closed)
 	NetworkManager.game_left.connect(_on_game_left)
+	NetworkManager.lobby_left.connect(_on_lobby_left)
 	NetworkManager.private_join_failed.connect(_on_private_join_failed)
 	NetworkManager.private_entry_failed.connect(_on_private_entry_failed)
 	NetworkManager.status_changed.connect(_on_status_changed)
@@ -251,6 +252,17 @@ func _on_game_left(data) -> void:
 	resume_unavailable_active = false
 	auto_dismiss_modal.dismiss_recovery()
 	_clear_overlay()
+	NetworkManager.disconnect_server()
+	_teardown_play_instance()
+	show_home_screen()
+
+func _on_lobby_left(data) -> void:
+	if str(data.get("destination", "home")) != "home":
+		return
+	find_match_active = false
+	startup_resume_pending = false
+	resume_unavailable_active = false
+	auto_dismiss_modal.dismiss_recovery()
 	NetworkManager.disconnect_server()
 	_teardown_play_instance()
 	show_home_screen()
@@ -1077,8 +1089,11 @@ func show_find_match_screen() -> void:
 	find_match_active = true
 
 func _on_find_match_requested() -> void:
-	NetworkManager.abandon_room_identity()
-	NetworkManager.connect_server()
+	if NetworkManager.has_saved_room_identity():
+		startup_resume_pending = true
+		NetworkManager.connect_server(false, false, true)
+	else:
+		NetworkManager.connect_server()
 	show_find_match_screen()
 
 func _on_cancel_requested() -> void:
@@ -1107,10 +1122,6 @@ func _on_private_leave_lobby_requested() -> void:
 
 func _on_leave_lobby_requested() -> void:
 	NetworkManager.leave_lobby()
-	NetworkManager.abandon_room_identity()
-	NetworkManager.disconnect_server()
-	_teardown_play_instance()
-	show_home_screen()
 
 func _ensure_play_instance() -> void:
 	if play_instance != null and is_instance_valid(play_instance):

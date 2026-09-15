@@ -138,6 +138,47 @@ function openLobbyConnection(lobby, socket, request = {}) {
     return connection;
 }
 
+test("transport health refreshes only the current connected session", async () => {
+    const stateStore = new RedisState();
+    stateStore.enabled = false;
+    await stateStore.saveSession({
+        sessionId: "health-session",
+        playerId: "P-health",
+        roomId: "R-health",
+        connectionId: "current-connection",
+        connected: true
+    });
+
+    assert.equal(
+        await stateStore.refreshCurrentSession("health-session", "current-connection"),
+        true
+    );
+    assert.equal(
+        (await stateStore.getSession("health-session")).connected,
+        true
+    );
+    assert.equal(
+        await stateStore.refreshCurrentSession("health-session", "superseded-connection"),
+        false,
+        "a stale socket cannot extend the current session"
+    );
+
+    const socket = new FakeSocket();
+    let refreshes = 0;
+    await handleMessage({ id: "P-health", ws: socket }, JSON.stringify({
+        type: "transport_health_ping", nonce: "health-1"
+    }), {
+        lobbyManager: {
+            refreshPlayerSession: async () => {
+                refreshes += 1;
+                return true;
+            }
+        }
+    });
+    assert.equal(refreshes, 1);
+    assert.deepEqual(socket.sent, [{ type: "transport_health_ack", nonce: "health-1" }]);
+});
+
 test("accepted sockets install an immediate error boundary", async () => {
     const { calls, socket } = openGameplayConnection();
 

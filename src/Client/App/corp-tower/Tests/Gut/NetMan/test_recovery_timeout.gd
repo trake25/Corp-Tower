@@ -309,6 +309,16 @@ func test_private_lobby_foreground_does_not_enter_play_resync() -> void:
 	assert_true(socket.sent_messages.is_empty(), "Private-lobby foregrounding never sends Play resync_state.")
 	network.free()
 
+func test_public_lobby_transport_loss_uses_same_identity_recovery() -> void:
+	var network = NetworkManagerScript.new()
+	network.lobby_active = true
+	network.room_mode = "public"
+	network.manual_disconnect_requested = false
+	network.schedule_lobby_reconnect()
+	assert_gt(network.auto_reconnect_delay_remaining, 0.0)
+	assert_eq(network.recovery_state, "healthy", "Lobby recovery does not enter active-match resync.")
+	network.free()
+
 func test_resume_only_transport_exhaustion_is_bounded_and_reported() -> void:
 	var network = NetworkManagerScript.new()
 	var failures: Array = []

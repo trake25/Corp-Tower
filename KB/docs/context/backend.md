@@ -27,11 +27,12 @@ alias: Redis ownership
 alias: room persistence authority
 source: src/Server/app/Lobby_Manager.js#hydrateRoom
 source: src/Server/app/Redis_State.js#saveRoom
+source: src/Server/app/Redis_State.js#refreshCurrentSession
 adjacent: backend.redis.leases
 -->
 ## Persistence ownership
 
-Lobby Manager is the server layer allowed to persist and restore room state. Redis State supplies shared storage and routing, while Game Engine remains free of Redis knowledge. Only the lease owner mutates authoritative room state or runs authoritative timers.
+Lobby Manager is the server layer allowed to persist and restore room state. Redis State supplies shared storage and routing, while Game Engine remains free of Redis knowledge. A validated transport-health acknowledgement renews the current connected session lease; disconnected sessions remain bounded by reconnect expiry. Only the lease owner mutates authoritative room state or runs authoritative timers.
 
 <!-- kb
 id: backend.lobby.connection
@@ -43,7 +44,7 @@ adjacent: network.session.supersession
 -->
 ## Session connection ownership
 
-Actions and disconnect cleanup are accepted only from the session's current opaque connection id. A superseded socket cannot invalidate or clear a resumed seat.
+Actions, connected-session refresh, and disconnect cleanup are accepted only from the session's current opaque connection id. A superseded socket cannot invalidate, prolong, or clear a resumed seat.
 
 <!-- kb
 id: backend.lobby.public
@@ -95,7 +96,7 @@ adjacent: network.room.cross-pod
 -->
 ## Cross-pod ownership
 
-Only the Redis lease owner mutates a room, recomputes authoritative state, runs timers, or persists. Other pods may hydrate a frozen presentation replica and relay broadcasts, while gameplay actions are republished to the live owner.
+Only the Redis lease owner mutates a room, recomputes authoritative state, runs timers, or persists. Other pods may hydrate a frozen presentation replica and relay broadcasts, while gameplay actions are republished to the live owner. A non-owner refreshes persisted pre-match lobby state before answering a resumed or resync snapshot.
 
 <!-- kb
 id: backend.lobby.close

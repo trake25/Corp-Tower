@@ -159,7 +159,7 @@ adjacent: network.room.private
 -->
 ## Private Lobby presentation
 
-Private Lobby renders server identity, fixed seats, host-only kick, readiness, countdown, and presence. Disconnected players are shown distinctly while reserved seat recovery remains in the lobby rather than presenting the active-match recovery modal. Leave and kick use the shared confirmation pattern.
+Private Lobby renders server identity, fixed seats, host-only kick, readiness, countdown, and presence. Ready changes remain pending until authoritative lobby data confirms them. Disconnected players are shown distinctly while reserved-seat recovery remains in the lobby and blocks state-changing controls until a fresh lobby snapshot arrives. Leave and kick use the shared confirmation pattern.
 
 <!-- kb
 id: ui.settings.presentation
@@ -201,7 +201,7 @@ adjacent: network.room.public
 -->
 ## Public matchmaking and lobby
 
-Find Match has no retained gameplay view. Public Lobby may retain the gameplay root only for its debug layer while suppressing gameplay presentation; entering Play or tutorial restores the gameplay layers. Unexpected matchmaking disconnect and lobby timeout use shell-level failure presentation.
+Find Match has no retained gameplay view. Public Lobby may retain the gameplay root only for its debug layer while suppressing gameplay presentation; entering Play or tutorial restores the gameplay layers. Public Lobby has no Ready countdown or timeout failure path: readiness display is authoritative and an unexpected transport loss recovers the saved lobby identity before fresh matchmaking is allowed. Leave remains in place until the server acknowledges it.
 
 <!-- kb
 id: ui.play.menu

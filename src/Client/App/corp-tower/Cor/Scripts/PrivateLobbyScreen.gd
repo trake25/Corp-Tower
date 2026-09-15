@@ -19,6 +19,7 @@ var roster_ids: Array = []
 var host_player_id := ""
 var pending_kick_player_id := ""
 var is_locally_ready := false
+var ready_pending := false
 var start_countdown_active := false
 var start_deadline_msec := 0
 var shown_seconds := -1
@@ -132,7 +133,7 @@ func _strikethrough(value: String) -> String:
 	return result
 
 func _set_room_full(is_room_full: bool) -> void:
-	%ReadyButton.disabled = not is_room_full
+	%ReadyButton.disabled = not is_room_full or ready_pending
 	%ReadyButton.modulate = NORMAL_MODULATE if is_room_full else DISABLED_MODULATE
 
 func _apply_lobby_state(lobby_data) -> void:
@@ -147,6 +148,8 @@ func _apply_lobby_state(lobby_data) -> void:
 		check.texture = CHECK_READY if seat_id != "" and ready_ids.has(seat_id) else CHECK_WAITING
 
 	is_locally_ready = ready_ids.has(str(NetworkManager.player_id))
+	ready_pending = false
+	_set_room_full(not roster_ids.has(""))
 	start_countdown_active = bool(lobby_data.get("startCountdownActive", false))
 	start_deadline_msec = (
 		Time.get_ticks_msec()
@@ -159,6 +162,8 @@ func _apply_lobby_state(lobby_data) -> void:
 	_apply_ready_style()
 
 func _process(_delta: float) -> void:
+	if NetworkManager.lobby_controls_blocked():
+		%ReadyButton.disabled = true
 	if not start_countdown_active:
 		return
 
@@ -186,12 +191,12 @@ func _refresh_ready_label() -> void:
 		%ReadyLabel.text = "Cancel"
 
 func _on_ready_pressed() -> void:
-	if %ReadyButton.disabled:
+	if %ReadyButton.disabled or ready_pending or not NetworkManager.can_change_lobby_state():
 		return
 
-	is_locally_ready = not is_locally_ready
-	_apply_ready_style()
-	NetworkManager.send_ready()
+	if NetworkManager.send_ready():
+		ready_pending = true
+		_set_room_full(not roster_ids.has(""))
 
 func _on_back_pressed() -> void:
 	%LeaveLobbyModal.open_leave_lobby()

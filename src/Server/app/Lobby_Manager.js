@@ -223,6 +223,20 @@ class LobbyManager {
         );
     }
 
+    async refreshPlayerSession(player) {
+        if (!await this.isCurrentPlayerConnection(player)) {
+            return false;
+        }
+
+        if (!this.stateStore.refreshCurrentSession) {
+            return true;
+        }
+
+        return await this.stateStore.refreshCurrentSession(
+            player.sessionId, player.connectionId
+        );
+    }
+
     async createPlayer(ws, reconnectRequest = {}, identity = null) {
         const identityFields = this.resolveIdentityFields(reconnectRequest, identity);
         const privateEntry = this.privateEntryFor(reconnectRequest);
@@ -381,11 +395,11 @@ class LobbyManager {
 
         if (
             room &&
-            this.isPrivateRoom(room) &&
+            (this.isPrivateRoom(room) || this.isPublicRoom(room)) &&
             !room.matchStarted &&
             !this.isRoomOwner(room)
         ) {
-            room = await this.refreshPrivateLobbyReplica(room);
+            room = await this.refreshLobbyReplica(room);
         }
 
         if (!room) {
@@ -507,14 +521,19 @@ class LobbyManager {
         }
     }
 
-    async refreshPrivateLobbyReplica(room) {
-        if (!room || this.isRoomOwner(room) || !this.isPrivateRoom(room)) {
+    async refreshLobbyReplica(room) {
+        if (
+            !room ||
+            this.isRoomOwner(room) ||
+            room.matchStarted ||
+            (!this.isPrivateRoom(room) && !this.isPublicRoom(room))
+        ) {
             return room;
         }
 
         const snapshot = await this.stateStore.getRoom(room.id);
 
-        if (!snapshot || !this.isPrivateRoom(snapshot)) {
+        if (!snapshot || snapshot.roomMode !== room.roomMode) {
             return null;
         }
 
@@ -536,8 +555,13 @@ class LobbyManager {
         room.hostPlayerId = snapshot.hostPlayerId || null;
         room.privateStartDeadlineAt = snapshot.privateStartDeadlineAt || 0;
         room.readyPlayerIds = new Set(snapshot.readyPlayerIds || []);
-        room.lobbyDeadlineAt = snapshot.lobbyDeadlineAt || 0;
+        room.lobbyDeadlineAt = 0;
+        room.publicLobbyBotFillDeadlineAt = snapshot.publicLobbyBotFillDeadlineAt || 0;
         return room;
+    }
+
+    async refreshPrivateLobbyReplica(room) {
+        return await this.refreshLobbyReplica(room);
     }
 
     async removePlayer(player) {
@@ -838,11 +862,9 @@ class LobbyManager {
         player.publicLobbyReconnectExpiresAt = Date.now() +
             this.stateStore.getReconnectTtlSeconds() * 1000;
         room.readyPlayerIds.delete(player.id);
-        this.cancelLobbyReadyTimeout(room.id);
-        room.lobbyDeadlineAt = 0;
         this.schedulePublicLobbyReconnectExpiry(room, player);
 
-        await this.reconcilePublicLobby(room, { deferReadyWindow: true });
+        await this.reconcilePublicLobby(room);
     }
 
     async restorePublicLobbyPlayer(room, player) {
@@ -1854,20 +1876,6 @@ class LobbyManager {
         }
     }
 
-    reconcilePublicReadyWindow(room, rosterChanged = false) {
-        if (room.players.length >= GameConfig.playersPerRoom) {
-            if (rosterChanged || !room.lobbyDeadlineAt) {
-                this.cancelLobbyReadyTimeout(room.id);
-                room.lobbyDeadlineAt = Date.now() + GameConfig.lobbyReadyTimeoutMs;
-            }
-            this.scheduleLobbyReadyTimeout(room);
-            return;
-        }
-
-        this.cancelLobbyReadyTimeout(room.id);
-        room.lobbyDeadlineAt = 0;
-    }
-
     async tryStartPublicMatch(room) {
         const allReady =
             this.isPublicRoom(room) &&
@@ -1903,9 +1911,9 @@ class LobbyManager {
             this.resetPublicHumanReadiness(room);
         }
 
-        if (!options.deferReadyWindow) {
-            this.reconcilePublicReadyWindow(room, rosterChanged);
-        }
+        // Public lobbies deliberately have no readiness deadline.  Keep the
+        // legacy persisted field inert while older snapshots are hydrated.
+        room.lobbyDeadlineAt = 0;
 
         await this.reconcilePublicMatchmakingAvailability(room);
         await this.stateStore.saveRoom(room, true);
@@ -1950,7 +1958,6 @@ class LobbyManager {
         }
 
         this.cancelRoomReconnectExpiry(room.id);
-        this.cancelLobbyReadyTimeout(room.id);
         this.cancelPublicLobbyBotFill(room.id);
         this.cancelAllProductionPublicBotReady(room.id);
         this.cancelAllPublicLobbyReconnectExpiries(room.id);
@@ -2884,10 +2891,10 @@ class LobbyManager {
             return;
         }
 
-        await this.leaveLobbyForRoom(room, player);
+        await this.leaveLobbyForRoom(room, player, player.connectionId);
     }
 
-    async leaveLobbyForRoom(room, player) {
+    async leaveLobbyForRoom(room, player, connectionId = null) {
         if (!room || room.matchStarted || !player) {
             return;
         }
@@ -2908,7 +2915,44 @@ class LobbyManager {
             return;
         }
 
-        await this.evictLobbyPlayer(room, player, "player_left_lobby");
+        await this.leavePublicLobbyWithAcknowledgement(room, player, connectionId);
+    }
+
+    async leavePublicLobbyWithAcknowledgement(room, player, connectionId) {
+        const targetConnectionId = connectionId || player.connectionId;
+        const connectedPlayer = this.connectedPlayers.get(player.id);
+        const acknowledgement = { type: "lobby_left", destination: "home" };
+
+        this.cancelPublicLobbyReconnectExpiry(room.id, player.id);
+        this.cancelProductionPublicBotReady(room.id, player.id);
+        room.engine.removePlayerFromRoom(player.id);
+        room.readyPlayerIds.delete(player.id);
+        await Promise.resolve(
+            this.stateStore.clearSessionRoom
+                ? this.stateStore.clearSessionRoom(player.sessionId, "home", "player_left_lobby")
+                : null
+        );
+        this.resetParticipantState(player);
+
+        if (connectedPlayer?.connectionId === targetConnectionId) {
+            this.sendPlayer(connectedPlayer, acknowledgement);
+        }
+        await this.stateStore.publishRoom(room.id, {
+            ...acknowledgement,
+            targetPlayerId: player.id,
+            targetConnectionId
+        });
+
+        if (!this.hasValidPublicRealSeat(room)) {
+            await this.closeRoom(room, "player_left_lobby");
+            return;
+        }
+
+        await this.reconcilePublicLobby(room, {
+            rosterChanged: true,
+            resetHumanReadiness: true,
+            closeReason: "player_left_lobby"
+        });
     }
 
     async leaveSpectatorRoom(observer) {
@@ -3108,8 +3152,6 @@ class LobbyManager {
             return;
         }
 
-        this.cancelLobbyReadyTimeout(room.id);
-        room.lobbyDeadlineAt = 0;
         await this.reconcilePublicLobby(room, {
             rosterChanged: true,
             resetHumanReadiness: true,
@@ -3117,55 +3159,13 @@ class LobbyManager {
         });
     }
 
-    scheduleLobbyReadyTimeout(room) {
-        if (!room || this.roomLobbyTimers.has(room.id)) {
-            return;
-        }
-
-        const remainingMs = room.lobbyDeadlineAt
-            ? Math.max(0, room.lobbyDeadlineAt - Date.now())
-            : GameConfig.lobbyReadyTimeoutMs;
-
-        const timer = setTimeout(() => {
-            this.handleLobbyReadyTimeout(room.id).catch(error => {
-                console.error("Lobby ready timeout handling failed:", error.message);
-            });
-        }, remainingMs);
-
-        if (timer.unref) {
-            timer.unref();
-        }
-
-        this.roomLobbyTimers.set(room.id, timer);
-    }
-
+    // Retained only to cancel timers left by an older in-process deployment.
+    // New Public Lobby lifecycles never create a readiness timer.
     cancelLobbyReadyTimeout(roomId) {
         const timer = this.roomLobbyTimers.get(roomId);
-
-        if (!timer) {
-            return;
-        }
-
-        clearTimeout(timer);
-        this.roomLobbyTimers.delete(roomId);
-    }
-
-    async handleLobbyReadyTimeout(roomId) {
-        this.roomLobbyTimers.delete(roomId);
-
-        const room =
-            this.rooms.find(activeRoom => activeRoom.id === roomId);
-
-        if (!room || room.matchStarted || (this.isPublicRoom(room) && !room.lobbyDeadlineAt)) {
-            return;
-        }
-
-        const notReadyPlayers = room.players.filter(
-            roomPlayer => !room.readyPlayerIds.has(roomPlayer.id)
-        );
-
-        for (const notReadyPlayer of notReadyPlayers) {
-            await this.evictLobbyPlayer(room, notReadyPlayer, "lobby_timeout", true);
+        if (timer) {
+            clearTimeout(timer);
+            this.roomLobbyTimers.delete(roomId);
         }
     }
 
@@ -3333,7 +3333,7 @@ class LobbyManager {
             hostPlayerId: snapshot.hostPlayerId || null,
             privateStartDeadlineAt: snapshot.privateStartDeadlineAt || 0,
             readyPlayerIds: new Set(snapshot.readyPlayerIds || []),
-            lobbyDeadlineAt: snapshot.lobbyDeadlineAt || 0,
+            lobbyDeadlineAt: 0,
             publicLobbyBotFillDeadlineAt: snapshot.publicLobbyBotFillDeadlineAt || 0
         };
 
@@ -3345,9 +3345,6 @@ class LobbyManager {
             if (this.isPrivateRoom(room)) {
                 this.schedulePrivateLobbyTimers(room);
             } else {
-                if (room.lobbyDeadlineAt) {
-                    this.scheduleLobbyReadyTimeout(room);
-                }
                 this.schedulePublicLobbyBotFill(room);
                 room.players.forEach(player => {
                     if (player.publicLobbyReconnectExpiresAt) {
@@ -3632,11 +3629,11 @@ class LobbyManager {
 
         if (
             player.room &&
-            this.isPrivateRoom(player.room) &&
+            (this.isPrivateRoom(player.room) || this.isPublicRoom(player.room)) &&
             !player.room.matchStarted &&
             !this.isRoomOwner(player.room)
         ) {
-            player.room = await this.refreshPrivateLobbyReplica(player.room);
+            player.room = await this.refreshLobbyReplica(player.room);
         }
 
         if (!player.room) {
@@ -3728,7 +3725,7 @@ class LobbyManager {
                 return;
 
             case "leave_lobby":
-                await this.leaveLobbyForRoom(room, player);
+                await this.leaveLobbyForRoom(room, player, action.connectionId);
                 return;
 
             case "leave_game":

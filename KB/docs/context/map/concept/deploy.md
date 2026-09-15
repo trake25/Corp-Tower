@@ -232,8 +232,8 @@ Owner: `KB/docs/context/deployment.md:82-106` → **Authentication environment**
 | `scripts/verify-supabase-environment.sh` | `verify_supabase_environment() {` | 44 | `sed -n 32,64p scripts/verify-supabase-environment.sh` |
 | `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `_recover_existing_google_link` | 1956 | `sed -n 1944,1976p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
 | `src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` | `link_with_provider` | 1676 | `sed -n 1664,1696p src/Client/App/corp-tower/Sys/Auth/Auth_Manager.gd` |
-| `src/Server/app/Server.js` | `handleProfileMessage` | 54 | `sed -n 42,74p src/Server/app/Server.js` |
-| `src/Server/app/Server.js` | `redirectOriginMatchesRequest` | 258 | `sed -n 246,278p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleProfileMessage` | 56 | `sed -n 44,76p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `redirectOriginMatchesRequest` | 260 | `sed -n 248,280p src/Server/app/Server.js` |
 
 Adjacent concepts: `backend.identity.auth`, `build.endpoint-auth.injection`
 

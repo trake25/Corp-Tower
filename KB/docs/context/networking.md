@@ -85,7 +85,7 @@ adjacent: backend.lobby.public
 Public seats fill incrementally and assignment arrives as soon as a real seat is owned. The first real player establishes a two-minute production-bot threshold.
 When production Public Lobby bot fill is enabled and the threshold has matured, cooperative bots fill only remaining capacity; each such bot becomes ready only after its two-second join delay has elapsed while at least one real player is connected. Bot seats remain replaceable by real matchmaking entrants until match start.
 The dedicated debug toggle may disable production fill in waiting public rooms, removing production bots and reopening their seats while preserving the original threshold for later re-enable; it never removes bots from a match already in progress and is independent of the existing debug-bot controls.
-A full current roster uses the normal ready window and every participant must be ready before the match starts. A public transport disconnect preserves the real seat through reconnect eligibility, clears that human's ready state, and prevents bot-only start; reconnect restores the seat, while intentional leave or reconnect expiry removes it.
+A full current roster waits without a readiness eviction deadline and every participant must be ready before the match starts. Ready presentation is committed only by the authoritative lobby roster/update. A public transport disconnect preserves the real seat through reconnect eligibility, clears that human's ready state, and prevents bot-only start; reconnect restores the seat, while intentional leave or reconnect expiry removes it.
 When no real or reconnect-eligible seat remains, the room closes instead of leaving a bot-only public room alive.
 
 <!-- kb
@@ -98,7 +98,7 @@ adjacent: ui.private-lobby.presentation
 -->
 ## Private lobby
 
-Private-lobby transport loss unreaddies and reserves the seat through recovery/grace rather than replacing the player. Lobby state, deadlines, invite, host, and reserved-seat phases persist so the live owner can restore the lobby after hydration.
+Private-lobby transport loss unreaddies and reserves the seat through recovery/grace rather than replacing the player. Public and Private pre-match recovery resumes the saved room identity and complete authoritative roster before controls are re-enabled. Lobby state, deadlines, invite, host, and reserved-seat phases persist so the live owner can restore the lobby after hydration.
 
 <!-- kb
 id: network.room.bot-spectator
@@ -135,7 +135,7 @@ adjacent: ui.navigation.server-routes
 -->
 ## Room close
 
-`room_closed` carries the terminal reason and optional global/per-player destination. The owner publishes it before deletion; replicas forward it once and discard their local copy.
+`room_closed` carries the terminal reason and optional global/per-player destination. The owner publishes it before deletion; replicas forward it once and discard their local copy. A non-terminal Public Lobby leave instead returns targeted `lobby_left` after the seat and session-room binding are removed.
 
 <!-- kb
 id: network.room.active-leave
@@ -158,7 +158,7 @@ source: src/Server/app/Server.js#handleMessage
 -->
 ## Message families
 
-Server traffic is organized into session assignment, lobby lifecycle, complete `game_state`, validated `debug_config`, targeted spectator launch rejection, targeted `game_left`, and terminal `room_closed`. Client actions include reconnect/resync, explicit bot-spectator launch, lobby/leave actions, private host kick, placement, Power, quick chat, and debug update.
+Server traffic is organized into session assignment, lobby lifecycle, complete `game_state`, validated `debug_config`, targeted spectator launch rejection, targeted `game_left`/`lobby_left`, and terminal `room_closed`. Client actions include reconnect/resync, explicit bot-spectator launch, lobby/leave actions, private host kick, placement, Power, quick chat, and debug update. Established sockets also exchange transport-health ping/ack messages; they are connection lifecycle traffic rather than game state.
 
 Stateful actions are validated against room, identity, current connection, lifecycle, cooldown, and domain rules.
 
@@ -172,7 +172,7 @@ source: src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd#process_latency_p
 -->
 ## Latency diagnostics
 
-Latency probes are device-local telemetry. A client nonce is echoed on the same socket; the server does not persist or broadcast RTT. Latency never becomes shared game state.
+Latency probes are device-local telemetry. A client nonce is echoed on the same socket; the server does not persist or broadcast RTT. Latency never becomes shared game state. Always-on transport health separately detects dead peers and renews the current connected session; disabling RTT presentation never disables connection liveness.
 
 <!-- kb
 id: network.placement.contract

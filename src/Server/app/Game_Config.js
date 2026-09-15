@@ -16,7 +16,6 @@ const GameConfig = {
     targetHeightStepGrowth: 5,
     targetHeightStepGrowthEvery: 3,
     startDelayMs: 4000,
-    lobbyReadyTimeoutMs: 60000,
     publicLobbyBotFillEnabled: false,
     publicLobbyBotFillDelayMs: 120000,
     publicLobbyBotReadyDelayMs: 2000,

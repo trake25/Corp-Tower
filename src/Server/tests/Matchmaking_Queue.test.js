@@ -299,11 +299,8 @@ test("a formed room waits in the lobby instead of starting the match", async () 
     assert.equal(created.length, 1);
     assert.equal(created[0].matchStarted, false);
     assert.deepEqual(created[0].lobby.readyPlayerIds, []);
-    assert.equal(created[0].lobby.timerActive, true, "the timer starts the moment the room fills");
-    assert.ok(
-        created[0].lobby.readySecondsRemaining > 0,
-        "the lobby should ship a positive ready countdown"
-    );
+    assert.equal(created[0].lobby.timerActive, false, "Public readiness has no eviction timer");
+    assert.equal(created[0].lobby.readySecondsRemaining, 0);
 
     sockets.forEach(ws => {
         assert.equal(
@@ -359,58 +356,30 @@ test("readying up twice unreadies, and does not start the match early", async ()
     assert.equal(room.matchStarted, false);
 });
 
-test("a lobby timeout only sends the not-ready players home", async () => {
+test("a full public lobby keeps healthy non-ready players indefinitely", async () => {
     const { lobby, players, sockets, room } = await createLobbyOfThree();
 
     await lobby.toggleLobbyReady(players[0]);
+    room.lobbyDeadlineAt = Date.now() - 61000;
+    await lobby.reconcilePublicLobby(room);
 
-    await lobby.handleLobbyReadyTimeout(room.id);
-
-    const closed = messagesOfType(sockets[0], "room_closed");
-    assert.equal(closed.length, 0, "a ready player is not evicted by the timeout");
-
-    [sockets[1], sockets[2]].forEach(ws => {
-        const closedMessages = messagesOfType(ws, "room_closed");
-        assert.equal(closedMessages.length, 1);
-        assert.equal(closedMessages[0].reason, "lobby_timeout");
-    });
-
-    assert.equal(lobby.rooms.length, 1, "the ready player's room must survive");
-    assert.equal(room.players.length, 1);
-    assert.equal(room.players[0].id, players[0].id);
-    assert.equal(
-        room.readyPlayerIds.has(players[0].id),
-        false,
-        "the survivor's ready state resets and must be re-armed once the room refills"
-    );
+    assert.equal(lobby.rooms.length, 1);
+    assert.equal(room.players.length, 3);
+    assert.equal(room.readyPlayerIds.has(players[0].id), true);
+    sockets.forEach(ws => assert.equal(messagesOfType(ws, "room_closed").length, 0));
     assert.equal(room.lobbyDeadlineAt, 0);
     assert.equal(lobby.roomLobbyTimers.has(room.id), false);
 });
 
-test("a lobby timeout with no one ready closes the room entirely", async () => {
-    const { lobby, sockets, room } = await createLobbyOfThree();
-
-    await lobby.handleLobbyReadyTimeout(room.id);
-
-    sockets.forEach(ws => {
-        const closed = messagesOfType(ws, "room_closed");
-        assert.equal(closed.length, 1);
-        assert.equal(closed[0].reason, "lobby_timeout");
-    });
-
-    assert.equal(lobby.rooms.length, 0);
-    assert.equal(lobby.roomLobbyTimers.has(room.id), false);
-});
-
-test("leaving the lobby keeps the room alive for the other two, silently", async () => {
+test("public lobby leave acknowledges only after removing the authoritative seat", async () => {
     const { lobby, players, sockets, room } = await createLobbyOfThree();
 
     await lobby.leaveLobby(players[0]);
 
     assert.equal(
-        messagesOfType(sockets[0], "room_closed").length,
-        0,
-        "the leaver navigates locally and gets no room_closed"
+        messagesOfType(sockets[0], "lobby_left").length,
+        1,
+        "the leaver receives the non-terminal authoritative acknowledgement"
     );
 
     [sockets[1], sockets[2]].forEach(ws => {
@@ -769,6 +738,33 @@ test("remote-owner leave_game returns only a targeted acknowledgement", async ()
     assert.equal(lobbyB.rooms.length, 1);
 });
 
+test("cross-pod public leave acknowledges only the initiating current connection", async () => {
+    const { cluster, lobby: lobbyA, players, room } = await createLobbyOfThree();
+    const lobbyB = new LobbyManager(cluster.makeStore("podB"));
+    activeLobbies.push(lobbyB);
+    await lobbyB.start();
+    const remoteRoom = await lobbyB.hydrateRoom(room.id);
+    const remotePlayer = remoteRoom.players.find(player => player.id === players[0].id);
+    const remoteWs = createFakeWs();
+
+    lobbyA.connectedPlayers.delete(players[0].id);
+    room.players[0].ws = null;
+    remotePlayer.ws = remoteWs;
+    remotePlayer.connectionId = players[0].connectionId;
+    lobbyB.connectedPlayers.set(remotePlayer.id, remotePlayer);
+
+    await lobbyB.dispatchRoomAction(remotePlayer, { type: "leave_lobby" });
+    for (let index = 0; index < 8; index++) {
+        await tick();
+    }
+
+    assert.deepEqual(messagesOfType(remoteWs, "lobby_left"), [{
+        type: "lobby_left", destination: "home"
+    }]);
+    assert.equal(room.players.length, 2);
+    assert.equal(cluster.shared.sessions.get(remotePlayer.sessionId).roomId, null);
+});
+
 test("dropping the socket during ready-up reserves the public seat through reconnect TTL", async () => {
     const { lobby, players, sockets, room } = await createLobbyOfThree();
 
@@ -991,7 +987,6 @@ test("real matchmaking replaces a provisional production bot without exceeding t
     lobby.cancelProductionPublicBotReady(room.id, remainingBot.id);
     await lobby.handleProductionPublicBotReady(room.id, remainingBot.id, remainingBotReadyAt);
     room.readyPlayerIds.add(first.id);
-    room.lobbyDeadlineAt = 1;
 
     const entrant = await lobby.createPlayer(createFakeWs(), {});
     await lobby.addPlayer(entrant);
@@ -1010,7 +1005,7 @@ test("real matchmaking replaces a provisional production bot without exceeding t
     assert.equal(room.readyPlayerIds.has(first.id), false);
     assert.equal(room.readyPlayerIds.has(entrant.id), false);
     assert.equal(room.readyPlayerIds.has(remainingBot.id), true);
-    assert.ok(room.lobbyDeadlineAt > Date.now());
+    assert.equal(room.lobbyDeadlineAt, 0);
     assert.equal(room.matchStarted, false);
 
     await lobby.toggleLobbyReady(first);

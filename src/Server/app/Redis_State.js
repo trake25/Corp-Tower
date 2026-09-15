@@ -494,6 +494,23 @@ class RedisState {
         return true;
     }
 
+    // A transport-health acknowledgement is the connected-session lease renewal.
+    // Never let a superseded socket prolong the current player's recovery record.
+    async refreshCurrentSession(sessionId, connectionId) {
+        const session = await this.getSession(sessionId);
+
+        if (!session || !connectionId || session.connectionId !== connectionId) {
+            return false;
+        }
+
+        await this.saveSession({
+            ...session,
+            connected: true,
+            connectionId
+        });
+        return true;
+    }
+
     async clearSessionRoom(sessionId, resumeDestination = null, resumeReason = null) {
         const session = await this.getSession(sessionId);
 

@@ -9,9 +9,9 @@ Owner: `KB/docs/context/networking.md:279-282` → **Adapter boundaries**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 601 | `sed -n 589,621p src/Server/app/Server.js` |
-| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3585 | `sed -n 3573,3605p src/Server/app/Lobby_Manager.js` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `accept_game_state` | 913 | `sed -n 901,933p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Server/app/Server.js` | `handleMessage` | 635 | `sed -n 623,655p src/Server/app/Server.js` |
+| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3582 | `sed -n 3570,3602p src/Server/app/Lobby_Manager.js` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `accept_game_state` | 952 | `sed -n 940,972p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.authority.server`
 
@@ -32,7 +32,7 @@ Owner: `KB/docs/context/networking.md:159-164` → **Message families**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 601 | `sed -n 589,621p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleMessage` | 635 | `sed -n 623,655p src/Server/app/Server.js` |
 
 Adjacent concepts: none
 
@@ -42,8 +42,8 @@ Owner: `KB/docs/context/networking.md:173-176` → **Latency diagnostics**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 601 | `sed -n 589,621p src/Server/app/Server.js` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `process_latency_probe` | 1205 | `sed -n 1193,1225p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Server/app/Server.js` | `handleMessage` | 635 | `sed -n 623,655p src/Server/app/Server.js` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `process_latency_probe` | 1290 | `sed -n 1278,1310p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: none
 
@@ -53,7 +53,7 @@ Owner: `KB/docs/context/networking.md:186-191` → **Placement contract**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 601 | `sed -n 589,621p src/Server/app/Server.js` |
+| `src/Server/app/Server.js` | `handleMessage` | 635 | `sed -n 623,655p src/Server/app/Server.js` |
 | `src/Server/app/engine/Placement.js` | `resolvePlacementOrigin` | 95 | `sed -n 83,115p src/Server/app/engine/Placement.js` |
 
 Adjacent concepts: `gameplay.tower.placement`, `hud.placement.snapping`
@@ -64,8 +64,8 @@ Owner: `KB/docs/context/networking.md:26-37` → **Profile session**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `connect_profile_server` | 183 | `sed -n 171,203p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
-| `src/Server/app/Server.js` | `handleProfileMessage` | 54 | `sed -n 42,74p src/Server/app/Server.js` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `connect_profile_server` | 194 | `sed -n 182,214p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Server/app/Server.js` | `handleProfileMessage` | 56 | `sed -n 44,76p src/Server/app/Server.js` |
 
 Adjacent concepts: `backend.identity.profile`, `ui.profile.presentation`
 
@@ -75,8 +75,8 @@ Owner: `KB/docs/context/networking.md:149-152` → **Active leave**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 2930 | `sed -n 2918,2950p src/Server/app/Lobby_Manager.js` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `leave_game` | 601 | `sed -n 589,621p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Server/app/Lobby_Manager.js` | `leaveGameForRoom` | 2974 | `sed -n 2962,2994p src/Server/app/Lobby_Manager.js` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `leave_game` | 636 | `sed -n 624,656p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.lobby.active-leave`, `hud.players.presence`
 
@@ -86,10 +86,10 @@ Owner: `KB/docs/context/networking.md:114-117` → **Bot spectator launch**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 601 | `sed -n 589,621p src/Server/app/Server.js` |
-| `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2580 | `sed -n 2568,2600p src/Server/app/Lobby_Manager.js` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `start_bot_spectator_match` | 368 | `sed -n 356,388p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `update_config` | 1184 | `sed -n 1172,1204p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Server/app/Server.js` | `handleMessage` | 635 | `sed -n 623,655p src/Server/app/Server.js` |
+| `src/Server/app/Lobby_Manager.js` | `createBotSpectatorRoom` | 2587 | `sed -n 2575,2607p src/Server/app/Lobby_Manager.js` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `start_bot_spectator_match` | 379 | `sed -n 367,399p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `update_config` | 1238 | `sed -n 1226,1258p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.lobby.bot-spectator`, `ui.debug.entry`
 
@@ -99,7 +99,7 @@ Owner: `KB/docs/context/networking.md:136-139` → **Room close**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `closeRoom` | 1349 | `sed -n 1337,1369p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `closeRoom` | 1371 | `sed -n 1359,1391p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `backend.lobby.close`, `ui.navigation.server-routes`
 
@@ -109,8 +109,8 @@ Owner: `KB/docs/context/networking.md:125-128` → **Cross-pod room routing**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3585 | `sed -n 3573,3605p src/Server/app/Lobby_Manager.js` |
-| `src/Server/app/Redis_State.js` | `publishRoomAction` | 692 | `sed -n 680,712p src/Server/app/Redis_State.js` |
+| `src/Server/app/Lobby_Manager.js` | `dispatchRoomAction` | 3582 | `sed -n 3570,3602p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Redis_State.js` | `publishRoomAction` | 709 | `sed -n 697,729p src/Server/app/Redis_State.js` |
 
 Adjacent concepts: `backend.lobby.cross-pod`
 
@@ -120,7 +120,7 @@ Owner: `KB/docs/context/networking.md:99-102` → **Private lobby**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `joinPrivateRoom` | 2083 | `sed -n 2071,2103p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `joinPrivateRoom` | 2090 | `sed -n 2078,2110p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `backend.lobby.private`, `ui.private-lobby.presentation`
 
@@ -130,7 +130,7 @@ Owner: `KB/docs/context/networking.md:83-90` → **Public lobby**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `toggleLobbyReady` | 2740 | `sed -n 2728,2760p src/Server/app/Lobby_Manager.js` |
+| `src/Server/app/Lobby_Manager.js` | `toggleLobbyReady` | 2747 | `sed -n 2735,2767p src/Server/app/Lobby_Manager.js` |
 
 Adjacent concepts: `backend.lobby.public`
 
@@ -140,8 +140,8 @@ Owner: `KB/docs/context/networking.md:13-16` → **Startup identity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Server.js` | `handleMessage` | 601 | `sed -n 589,621p src/Server/app/Server.js` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `connect_server` | 99 | `sed -n 87,119p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Server/app/Server.js` | `handleMessage` | 635 | `sed -n 623,655p src/Server/app/Server.js` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `connect_server` | 109 | `sed -n 97,129p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.identity.auth`
 
@@ -151,7 +151,7 @@ Owner: `KB/docs/context/networking.md:60-63` → **Active stream recovery**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `begin_recovery` | 789 | `sed -n 777,809p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `begin_recovery` | 828 | `sed -n 816,848p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `ui.play.recovery`, `backend.lobby.connection`
 
@@ -161,8 +161,8 @@ Owner: `KB/docs/context/networking.md:47-50` → **Resume-only startup**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `src/Server/app/Lobby_Manager.js` | `resumePlayer` | 364 | `sed -n 352,384p src/Server/app/Lobby_Manager.js` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `send_reconnect_request` | 654 | `sed -n 642,674p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Server/app/Lobby_Manager.js` | `resumePlayer` | 378 | `sed -n 366,398p src/Server/app/Lobby_Manager.js` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `send_reconnect_request` | 689 | `sed -n 677,709p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `ui.startup.restoration`, `backend.lobby.connection`
 
@@ -204,7 +204,7 @@ Owner: `KB/docs/context/networking.md:266-269` → **State revision and resync**
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 151 | `sed -n 139,171p src/Server/app/Game_Engine.js` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `accept_game_state` | 913 | `sed -n 901,933p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `accept_game_state` | 952 | `sed -n 940,972p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `network.session.recovery`
 
@@ -217,7 +217,7 @@ Owner: `KB/docs/context/networking.md:203-222` → **Snapshot contract**
 | `src/Server/app/Game_Engine.js` | `buildGameStateSnapshot` | 151 | `sed -n 139,171p src/Server/app/Game_Engine.js` |
 | `src/Server/app/Redis_State.js` | `stripRuntimeRoom` | 88 | `sed -n 76,108p src/Server/app/Redis_State.js` |
 | `src/Server/app/Game_Engine.js` | `beginOutcomeSynchronization` | 712 | `sed -n 700,732p src/Server/app/Game_Engine.js` |
-| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `send_outcome_ready` | 563 | `sed -n 551,583p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
+| `src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` | `send_outcome_ready` | 595 | `sed -n 583,615p src/Client/App/corp-tower/Sys/NetMan/NetworkManager.gd` |
 
 Adjacent concepts: `backend.engine.lifecycle`, `hud.controller.state-application`
 

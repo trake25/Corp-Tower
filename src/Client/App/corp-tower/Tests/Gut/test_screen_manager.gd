@@ -110,6 +110,17 @@ func test_ordinary_room_close_still_routes_join() -> void:
 		"Non-terminal close reasons must retain the Join fallback."
 	)
 
+func test_public_lobby_leave_routes_only_after_authoritative_acknowledgement() -> void:
+	NetworkManager.player_id = "lobby-player"
+	NetworkManager.reconnect_token = "lobby-token"
+	screen_manager.show_public_lobby_screen({"roster": [], "lobby": {}})
+	screen_manager._on_leave_lobby_requested()
+	assert_eq(NetworkManager.player_id, "lobby-player", "Requesting leave keeps resumable identity.")
+	NetworkManager._clear_room_identity()
+	screen_manager._on_lobby_left({"destination": "home"})
+	assert_eq(NetworkManager.player_id, "")
+	assert_true(screen_manager.current_overlay.scene_file_path.ends_with("/HomeScreen.tscn"))
+
 func test_terminal_recovery_returns_home_after_countdown() -> void:
 	screen_manager._on_recovery_unavailable({"reason": "recovery_timed_out"})
 	assert_true(
