@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -405,5 +405,246 @@ test('await resolves immediately on a caller-action-required state and never cre
     assert.equal(awaited.state, 'QA_FAILED');
     const duplicate = taskService.register({ task: 'Await caller action', taskBranch: 'task/await-caller-action', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
     assert.equal(duplicate.request_id, registered.request_id);
+  } finally { env.close(); }
+});
+
+test('a crash left before the merge ever ran (worktree checked out bare at mainBase) is never accepted as a resumed candidate', () => {
+  const env = fixture();
+  try {
+    git(env.clone, ['checkout', '-b', 'task/crash-before-merge']);
+    commitFile(env.clone, 'task.txt', 'task\n', 'task change');
+    const taskHead = headOf(env.clone);
+    pushBranch(env.clone, 'task/crash-before-merge');
+    git(env.clone, ['checkout', 'main']);
+    const mainBase = git(env.clone, ['rev-parse', 'origin/main']);
+
+    const gitRoot = taskIntegrationGit.commonGitDir(env.clone);
+    const requestId = 'crash-before-merge-request';
+    const branch = `task-integrate/candidate/${requestId}`;
+    const worktree = join(gitRoot, 'task-integration', 'candidates', requestId);
+    mkdirSync(join(gitRoot, 'task-integration', 'candidates'), { recursive: true });
+    git(env.clone, ['worktree', 'add', '-b', branch, worktree, mainBase]); // crash happens here, before the merge ever runs
+
+    const candidate = taskIntegrationGit.createCandidate({ root: gitRoot, requestId, mainBase, taskHead, taskLabel: 'Crash before merge' });
+    assert.equal(candidate.conflict, false);
+    assert.notEqual(candidate.head, mainBase, 'a worktree left checked out bare at mainBase must never be accepted as a merged candidate');
+    assert.ok(taskIntegrationGit.isAncestor({ root: gitRoot, ancestor: taskHead, ref: candidate.head }), 'the rebuilt candidate must actually contain the task head');
+  } finally { env.close(); }
+});
+
+test('a crash left after a completed merge resumes it only when it proves the recorded base and exact task head; a merge built from a stale base is rejected and rebuilt', () => {
+  const env = fixture();
+  try {
+    git(env.clone, ['checkout', '-b', 'task/crash-after-merge']);
+    commitFile(env.clone, 'task.txt', 'task\n', 'task change');
+    const taskHead = headOf(env.clone);
+    pushBranch(env.clone, 'task/crash-after-merge');
+    git(env.clone, ['checkout', 'main']);
+    const mainBase = git(env.clone, ['rev-parse', 'origin/main']);
+    const gitRoot = taskIntegrationGit.commonGitDir(env.clone);
+
+    // Scenario 1: a genuinely completed merge (crash after merge, before push) must be resumed as-is.
+    const requestId = 'crash-after-merge-request';
+    const branch = `task-integrate/candidate/${requestId}`;
+    const worktree = join(gitRoot, 'task-integration', 'candidates', requestId);
+    mkdirSync(join(gitRoot, 'task-integration', 'candidates'), { recursive: true });
+    git(env.clone, ['worktree', 'add', '-b', branch, worktree, mainBase]);
+    git(worktree, ['merge', '--no-ff', '-m', 'Integrate crash after merge', taskHead]);
+    const mergedHead = headOf(worktree);
+
+    const resumed = taskIntegrationGit.createCandidate({ root: gitRoot, requestId, mainBase, taskHead, taskLabel: 'Crash after merge' });
+    assert.equal(resumed.head, mergedHead, 'a proven-valid completed merge must be resumed as-is, not rebuilt');
+
+    // Scenario 2: main advances past the recorded base; a leftover merge built from the old base
+    // is not a valid candidate for the new base and must be rejected and rebuilt.
+    commitFile(env.clone, 'advance.txt', 'advance\n', 'advance main independently'); git(env.clone, ['push', 'origin', 'main']);
+    const newerMainBase = git(env.clone, ['rev-parse', 'origin/main']);
+
+    const staleRequestId = 'crash-after-merge-stale-base';
+    const staleBranch = `task-integrate/candidate/${staleRequestId}`;
+    const staleWorktree = join(gitRoot, 'task-integration', 'candidates', staleRequestId);
+    git(env.clone, ['worktree', 'add', '-b', staleBranch, staleWorktree, mainBase]);
+    git(staleWorktree, ['merge', '--no-ff', '-m', 'Integrate stale base', taskHead]);
+    const staleMergedHead = headOf(staleWorktree);
+
+    const rebuilt = taskIntegrationGit.createCandidate({ root: gitRoot, requestId: staleRequestId, mainBase: newerMainBase, taskHead, taskLabel: 'Crash after merge stale base' });
+    assert.notEqual(rebuilt.head, staleMergedHead, 'a merge proven based on a stale main must never be resumed as-is');
+    assert.ok(taskIntegrationGit.isAncestor({ root: gitRoot, ancestor: newerMainBase, ref: rebuilt.head }));
+    assert.ok(taskIntegrationGit.isAncestor({ root: gitRoot, ancestor: taskHead, ref: rebuilt.head }));
+  } finally { env.close(); }
+});
+
+test('RECOVERY_REQUIRED recognizes an already-published exact verified candidate and proceeds to cleanup without republishing', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Recovery already integrated', taskId: 'recovery-already-integrated', taskBranch: 'task/recovery-already-integrated' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/recovery-already-integrated');
+    let calls = 0;
+    const flaky = { ...taskIntegrationGit, publishCandidateMain(args) { calls += 1; const real = taskIntegrationGit.publishCandidateMain(args); return calls === 1 ? { state: 'RECOVERY_REQUIRED', detail: 'simulated verify-after-push failure' } : real; } };
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky });
+    const registered = taskService.register({ task: 'Recovery already integrated', taskBranch: 'task/recovery-already-integrated', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    taskService.advance();
+    const stuck = taskService.finish({ requestId: registered.request_id });
+    assert.equal(stuck.state, 'RECOVERY_REQUIRED');
+    assert.ok(stuck.verified_candidate_head, 'the QA-passed head must be persisted before the push attempt');
+    assert.equal(taskService.status().active_request_id, registered.request_id, 'RECOVERY_REQUIRED must retain the active slot');
+    assert.equal(git(env.remote, ['rev-parse', 'refs/heads/main']), stuck.verified_candidate_head, 'the push actually landed even though the process could not confirm it');
+
+    const recovered = taskService.recover({ requestId: registered.request_id });
+    assert.equal(recovered.state, 'INTEGRATED');
+    assert.equal(recovered.main_after, stuck.verified_candidate_head);
+    assert.equal(git(env.remote, ['rev-parse', 'refs/heads/main']), stuck.verified_candidate_head, 'recovery must never republish or move main');
+    assert.equal(existsSync(started.worktree), false);
+  } finally { env.close(); }
+});
+
+test('RECOVERY_REQUIRED safely retries the exact verified candidate when remote main is still the recorded base', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Recovery safe retry', taskId: 'recovery-safe-retry', taskBranch: 'task/recovery-safe-retry' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/recovery-safe-retry');
+    let calls = 0;
+    const flaky = { ...taskIntegrationGit, publishCandidateMain(args) { calls += 1; return calls === 1 ? { state: 'RECOVERY_REQUIRED', detail: 'simulated crash before push' } : taskIntegrationGit.publishCandidateMain(args); } };
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky });
+    const registered = taskService.register({ task: 'Recovery safe retry', taskBranch: 'task/recovery-safe-retry', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    taskService.advance();
+    const stuck = taskService.finish({ requestId: registered.request_id });
+    assert.equal(stuck.state, 'RECOVERY_REQUIRED');
+    assert.notEqual(git(env.remote, ['rev-parse', 'refs/heads/main']), stuck.verified_candidate_head, 'main must not have moved yet in this scenario');
+
+    const recovered = taskService.recover({ requestId: registered.request_id });
+    assert.equal(recovered.state, 'INTEGRATED');
+    assert.equal(git(env.remote, ['rev-parse', 'refs/heads/main']), stuck.verified_candidate_head);
+    assert.equal(calls, 2);
+  } finally { env.close(); }
+});
+
+test('RECOVERY_REQUIRED refuses publication when remote main moved incompatibly', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Recovery stale main', taskId: 'recovery-stale-main', taskBranch: 'task/recovery-stale-main' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/recovery-stale-main');
+    let calls = 0;
+    const flaky = { ...taskIntegrationGit, publishCandidateMain(args) { calls += 1; return calls === 1 ? { state: 'RECOVERY_REQUIRED', detail: 'simulated crash before push' } : taskIntegrationGit.publishCandidateMain(args); } };
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky });
+    const registered = taskService.register({ task: 'Recovery stale main', taskBranch: 'task/recovery-stale-main', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    taskService.advance();
+    const stuck = taskService.finish({ requestId: registered.request_id });
+    assert.equal(stuck.state, 'RECOVERY_REQUIRED');
+
+    commitFile(env.clone, 'other.txt', 'other\n', 'independent main advance'); git(env.clone, ['push', 'origin', 'main']);
+    const movedMain = git(env.clone, ['rev-parse', 'origin/main']);
+
+    const recovered = taskService.recover({ requestId: registered.request_id });
+    assert.equal(recovered.state, 'STALE_MAIN');
+    assert.equal(recovered.actual_main, movedMain);
+    assert.equal(taskService.status().active_request_id, null, 'STALE_MAIN releases the queue slot');
+  } finally { env.close(); }
+});
+
+test('a PUSH_REJECTED retry that mutates the candidate before retrying produces and persists a new verified head, never republishing the stale one', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Push retry mutation', taskId: 'push-retry-mutation', taskBranch: 'task/push-retry-mutation' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/push-retry-mutation');
+    let attempts = 0;
+    const flaky = { ...taskIntegrationGit, publishCandidateMain(args) { attempts += 1; return attempts === 1 ? { state: 'PUSH_REJECTED', detail: 'simulated non-fast-forward rejection' } : taskIntegrationGit.publishCandidateMain(args); } };
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky });
+    const registered = taskService.register({ task: 'Push retry mutation', taskBranch: 'task/push-retry-mutation', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree), finalizationPaths: ['generated.txt'] });
+    const ready = taskService.advance();
+    const rejected = taskService.finish({ requestId: registered.request_id });
+    assert.equal(rejected.state, 'PUSH_REJECTED');
+    const firstVerifiedHead = rejected.verified_candidate_head;
+    assert.ok(firstVerifiedHead, 'the QA-passed head must be persisted before the push attempt');
+    assert.equal(git(ready.candidate.worktree, ['rev-parse', 'HEAD']), firstVerifiedHead);
+
+    writeFileSync(join(ready.candidate.worktree, 'generated.txt'), 'generated content\n');
+    const integrated = taskService.finish({ requestId: registered.request_id });
+    assert.equal(integrated.state, 'INTEGRATED');
+    assert.notEqual(integrated.candidate.head, firstVerifiedHead, 'a candidate mutation before retry must produce a new verified head, never reuse the stale one');
+    assert.equal(integrated.main_after, integrated.candidate.head);
+    assert.equal(attempts, 2, 'a mutated retry must go through a fresh publish attempt, not skip straight through');
+  } finally { env.close(); }
+});
+
+test('verification check cwd rejects absolute, drive-letter, UNC, and traversal forms on either separator before registration', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const baseArgs = { task: 'Cwd unsafe forms', taskBranch: 'task/cwd-unsafe-forms', taskBaseline: '0'.repeat(40), expectedTaskHead: '1'.repeat(40) };
+    const unsafe = ['/etc/passwd', '../escape', 'sub/../../escape', 'C:\\Windows', 'C:evil', '\\\\server\\share', '//server/share', '..\\escape', 'sub\\..\\..\\escape'];
+    for (const cwd of unsafe) {
+      assert.throws(() => service.register({ ...baseArgs, verificationChecks: [{ argv: [process.execPath, 'scripts/extra-check.mjs'], cwd }] }), /cwd/, `expected rejection for cwd: ${JSON.stringify(cwd)}`);
+    }
+    assert.doesNotThrow(() => service.register({ ...baseArgs, verificationChecks: [{ argv: [process.execPath, 'scripts/extra-check.mjs'], cwd: 'sub/dir' }] }));
+  } finally { env.close(); }
+});
+
+test('runCandidateQa resolves each check cwd against the worktree and proves containment via realpath: a nested subdirectory is honored, and a symlink escape is rejected before the process ever runs', () => {
+  const worktreeDir = mkdtempSync(join(tmpdir(), 'corp-task-integrate-qa-'));
+  const outsideDir = mkdtempSync(join(tmpdir(), 'corp-task-integrate-outside-'));
+  try {
+    mkdirSync(join(worktreeDir, 'scripts'), { recursive: true });
+    writeFileSync(join(worktreeDir, 'scripts', 'qa-gate.mjs'), 'process.exitCode = 0;\n');
+    mkdirSync(join(worktreeDir, 'sub'), { recursive: true });
+    execFileSync('ln', ['-s', outsideDir, join(worktreeDir, 'evil-link')]);
+
+    const symlinkResult = taskIntegrationGit.runCandidateQa({ worktree: worktreeDir, changed: [], checks: [{ argv: [process.execPath, '-e', 'process.exit(0)'], cwd: 'evil-link', label: 'symlink escape' }] });
+    assert.equal(symlinkResult.ok, false);
+    assert.equal(symlinkResult.check, 'symlink escape');
+    assert.match(symlinkResult.detail, /escapes the candidate root/);
+
+    const expectedSub = JSON.stringify(realpathSync(join(worktreeDir, 'sub')));
+    const subResult = taskIntegrationGit.runCandidateQa({ worktree: worktreeDir, changed: [], checks: [{ argv: [process.execPath, '-e', `process.exit(process.cwd() === ${expectedSub} ? 0 : 1)`], cwd: 'sub', label: 'contained subdirectory' }] });
+    assert.equal(subResult.ok, true, subResult.detail);
+  } finally { rmSync(worktreeDir, { recursive: true, force: true }); rmSync(outsideDir, { recursive: true, force: true }); }
+});
+
+test('starting a task accepts a pre-existing local branch only when its HEAD exactly equals the freshly fetched baseline, and never persists a false baseline start record otherwise', () => {
+  const env = fixture();
+  try {
+    const mainHead = git(env.clone, ['rev-parse', 'origin/main']);
+    git(env.clone, ['branch', 'task/preexisting-baseline', mainHead]);
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Preexisting baseline', taskId: 'preexisting-baseline', taskBranch: 'task/preexisting-baseline' });
+    assert.equal(started.reused, false);
+    assert.equal(started.task_baseline, mainHead);
+    assert.equal(git(started.worktree, ['rev-parse', 'HEAD']), mainHead);
+
+    const mismatchSource = join(env.base, 'mismatch-src');
+    git(env.clone, ['branch', 'task/preexisting-mismatch', mainHead]);
+    git(env.clone, ['worktree', 'add', mismatchSource, 'task/preexisting-mismatch']);
+    commitFile(mismatchSource, 'extra.txt', 'extra\n', 'unrelated pre-existing commit');
+    git(env.clone, ['worktree', 'remove', '--force', mismatchSource]);
+
+    assert.throws(() => service.start({ task: 'Preexisting mismatch', taskId: 'preexisting-mismatch', taskBranch: 'task/preexisting-mismatch' }), /differs from the freshly fetched task baseline/);
+    const store = createFilesystemIntegrationStore({ root: env.clone }).read();
+    const repository = service.status().repository;
+    assert.equal(store.starts[`${repository}::preexisting-mismatch`], undefined, 'a rejected start must never persist a false baseline start record');
+  } finally { env.close(); }
+});
+
+test('cleanup records a genuine ls-remote/ref-verification failure as its own error, never silently treating it as confirmed absence', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Cleanup verify failure', taskId: 'cleanup-verify-failure', taskBranch: 'task/cleanup-verify-failure' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/cleanup-verify-failure');
+    const taskService = createIntegrationService({ root: started.worktree });
+    const registered = taskService.register({ task: 'Cleanup verify failure', taskBranch: 'task/cleanup-verify-failure', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    const ready = taskService.advance();
+
+    const gitRoot = taskIntegrationGit.commonGitDir(started.worktree);
+    const realRemoteUrl = git(gitRoot, ['config', '--get', 'remote.origin.url']);
+    git(gitRoot, ['config', 'remote.origin.url', join(env.base, 'does-not-exist.git')]);
+    let errors;
+    try { errors = taskIntegrationGit.cleanupIntegrated({ root: gitRoot, candidate: ready.candidate, taskBranch: 'task/cleanup-verify-failure', taskWorktree: started.worktree }); }
+    finally { git(gitRoot, ['config', 'remote.origin.url', realRemoteUrl]); }
+    assert.ok(errors.some(message => /candidate ref absence unverified/.test(message)), errors.join(' | '));
+    assert.ok(errors.some(message => /task ref absence unverified/.test(message)), errors.join(' | '));
   } finally { env.close(); }
 });

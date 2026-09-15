@@ -117,6 +117,7 @@ export function publicRequest(request) {
     task: request.task, task_id: request.task_id || null, task_label: request.task_label || request.task,
     task_branch: request.task_branch, task_worktree: request.task_worktree || null,
     task_baseline: request.task_baseline, expected_task_head: request.expected_task_head, actual_task_head: request.actual_task_head || null,
+    verified_candidate_head: request.verified_candidate_head || null,
     state: request.state, queue_disposition: queueDisposition(request.state), queue_order: request.queue_order,
     main_base: request.main_base || null, actual_main: request.actual_main || null,
     candidate: request.candidate ? { branch: request.candidate.branch, worktree: request.candidate.worktree, head: request.candidate.head || null } : null,
