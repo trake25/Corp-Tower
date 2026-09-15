@@ -3,8 +3,8 @@ import {
   createFilesystemIntegrationStore, integrationTargetKey, isCallerAction, isTerminal, publicRequest, targetRecord,
 } from './task-integration-state.mjs';
 import {
-  candidateHead, changedPaths, cleanupCandidate, cleanupIntegrated, commitCandidateFinalization, commonGitDir, createCandidate,
-  fetchBranch, isAncestor, publishCandidateMain, remoteHead, repositoryIdentity, runCandidateQa, startTaskGit, validateTaskGit,
+  candidateDirtyPaths, candidateHead, changedPaths, cleanupCandidate, cleanupIntegrated, commitCandidateFinalization, commonGitDir,
+  createCandidate, fetchBranch, isAncestor, publishCandidateMain, remoteHead, repositoryIdentity, runCandidateQa, startTaskGit, validateTaskGit,
 } from './task-integration-git.mjs';
 import { publishScopedTask, safeBranchName } from './git-publication.mjs';
 import { boundedDisplayLabel } from './task-identity.mjs';
@@ -60,7 +60,7 @@ function findStartRecord(state, repository, branch, taskId = null) {
 export function createIntegrationService({ root = process.cwd(), store = createFilesystemIntegrationStore({ root }), git = null } = {}) {
   const gitRoot = commonGitDir(root);
   const adapter = git || {
-    fetchBranch, remoteHead, changedPaths, createCandidate, candidateHead, commitCandidateFinalization, runCandidateQa,
+    fetchBranch, remoteHead, changedPaths, createCandidate, candidateHead, candidateDirtyPaths, commitCandidateFinalization, runCandidateQa,
     publishCandidateMain, cleanupCandidate, cleanupIntegrated, startTaskGit, validateTaskGit, isAncestor,
   };
   function findRequest(id, target = 'main') {
@@ -206,7 +206,7 @@ export function createIntegrationService({ root = process.cwd(), store = createF
       return failed;
     }
     const request = findRequest(id, target);
-    const cleanupErrors = adapter.cleanupIntegrated({ root: gitRoot, candidate: request.candidate, taskBranch: request.task_branch, taskWorktree: request.task_worktree });
+    const cleanupErrors = adapter.cleanupIntegrated({ root: gitRoot, candidate: request.candidate, taskBranch: request.task_branch, taskWorktree: request.task_worktree, verifiedHead: head });
     const finalState = cleanupErrors.length ? 'INTEGRATED_CLEANUP_REQUIRED' : 'INTEGRATED';
     const integrated = transition(id, target, (request, record) => {
       request.state = finalState; request.main_before = request.main_base; request.main_after = published.main_after; request.candidate.head = head;
@@ -218,10 +218,32 @@ export function createIntegrationService({ root = process.cwd(), store = createF
     return integrated;
   }
 
+  /**
+   * A `PUSH_REJECTED` retry must not treat the earlier verified head as if it never left: the push
+   * itself may have actually landed on remote main despite an ambiguous/error response. Reconcile
+   * against that exact SHA before any new commit/QA/publish cycle touches the candidate, so a push
+   * that truly landed is recognized as integrated (via `applyPublishResult`'s own divergence-aware
+   * cleanup) instead of the retry racing ahead and turning later candidate edits into `STALE_MAIN`.
+   * Returns null when remote main does not yet contain the verified head, meaning a fresh cycle
+   * (unchanged base) or an incompatible move (handled by the existing `STALE_MAIN` path) applies.
+   */
+  function reconcilePushRejected(id, target, request) {
+    const verifiedHead = request.verified_candidate_head;
+    if (!verifiedHead) return null;
+    const remoteMain = adapter.fetchBranch(gitRoot, request.target);
+    const reached = adapter.isAncestor({ root: gitRoot, ancestor: verifiedHead, ref: `refs/remotes/origin/${request.target}` });
+    if (!reached) return null;
+    return applyPublishResult(id, target, verifiedHead, { state: 'INTEGRATED', main_after: remoteMain });
+  }
+
   function finish({ requestId: id, target = 'main' }) {
     const current = findRequest(id, target);
     if (!current) throw new Error(`unknown integration request: ${id}`);
     if (!['READY_FOR_FINALIZATION', 'QA_FAILED', 'PUSH_REJECTED', 'VERIFYING'].includes(current.state)) return current;
+    if (current.state === 'PUSH_REJECTED') {
+      const reconciled = reconcilePushRejected(id, target, current);
+      if (reconciled) return reconciled;
+    }
     if (current.state !== 'VERIFYING') transition(id, target, request => { request.state = 'VERIFYING'; history(request, 'verification-started'); });
     const request = findRequest(id, target);
     let head;
@@ -267,7 +289,7 @@ export function createIntegrationService({ root = process.cwd(), store = createF
       adapter.fetchBranch(gitRoot, request.target);
       if (!adapter.isAncestor({ root: gitRoot, ancestor: request.expected_task_head, ref: `refs/remotes/origin/${request.target}` }))
         return { ...request, recovery: 'recorded task head is not proven contained in current main; refusing bounded stale-branch cleanup' };
-      const cleanupErrors = adapter.cleanupIntegrated({ root: gitRoot, candidate: request.candidate, taskBranch: request.task_branch, taskWorktree: request.task_worktree });
+      const cleanupErrors = adapter.cleanupIntegrated({ root: gitRoot, candidate: request.candidate, taskBranch: request.task_branch, taskWorktree: request.task_worktree, verifiedHead: request.candidate?.head || request.verified_candidate_head || null });
       const recovered = transition(id, target, request => {
         request.cleanup_error = cleanupErrors.length ? cleanupErrors.join('; ') : null;
         request.state = cleanupErrors.length ? 'INTEGRATED_CLEANUP_REQUIRED' : 'INTEGRATED';

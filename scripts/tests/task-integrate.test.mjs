@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -625,6 +625,123 @@ test('starting a task accepts a pre-existing local branch only when its HEAD exa
     const store = createFilesystemIntegrationStore({ root: env.clone }).read();
     const repository = service.status().repository;
     assert.equal(store.starts[`${repository}::preexisting-mismatch`], undefined, 'a rejected start must never persist a false baseline start record');
+  } finally { env.close(); }
+});
+
+function flakyPushLanded() {
+  let realPublishCalls = 0;
+  const git = {
+    ...taskIntegrationGit,
+    publishCandidateMain(args) {
+      realPublishCalls += 1;
+      const real = taskIntegrationGit.publishCandidateMain(args); // actually pushes, regardless of what is reported below
+      return realPublishCalls === 1 ? { state: 'PUSH_REJECTED', detail: 'simulated ambiguous network response after an actual push' } : real;
+    },
+  };
+  return { git, calls: () => realPublishCalls };
+}
+
+test('a PUSH_REJECTED retry reconciles a push that actually landed and never attempts a second publication', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Push actually landed', taskId: 'push-actually-landed', taskBranch: 'task/push-actually-landed' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/push-actually-landed');
+    const flaky = flakyPushLanded();
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky.git });
+    const registered = taskService.register({ task: 'Push actually landed', taskBranch: 'task/push-actually-landed', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    taskService.advance();
+    const rejected = taskService.finish({ requestId: registered.request_id });
+    assert.equal(rejected.state, 'PUSH_REJECTED');
+    const verifiedHead = rejected.verified_candidate_head;
+    assert.equal(git(env.remote, ['rev-parse', 'refs/heads/main']), verifiedHead, 'the push actually landed despite the reported rejection');
+
+    const integrated = taskService.finish({ requestId: registered.request_id });
+    assert.equal(integrated.state, 'INTEGRATED');
+    assert.equal(integrated.main_after, verifiedHead);
+    assert.equal(flaky.calls(), 1, 'the retry must reconcile the already-landed push instead of attempting a second publication');
+  } finally { env.close(); }
+});
+
+test('a PUSH_REJECTED retry with a dirty candidate after a push that actually landed preserves the candidate and reports cleanup-required', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Push landed dirty candidate', taskId: 'push-landed-dirty', taskBranch: 'task/push-landed-dirty' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/push-landed-dirty');
+    const flaky = flakyPushLanded();
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky.git });
+    const registered = taskService.register({ task: 'Push landed dirty candidate', taskBranch: 'task/push-landed-dirty', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree), finalizationPaths: ['generated.txt'] });
+    const ready = taskService.advance();
+    const rejected = taskService.finish({ requestId: registered.request_id });
+    assert.equal(rejected.state, 'PUSH_REJECTED');
+    const verifiedHead = rejected.verified_candidate_head;
+    assert.equal(git(env.remote, ['rev-parse', 'refs/heads/main']), verifiedHead);
+
+    writeFileSync(join(ready.candidate.worktree, 'generated.txt'), 'newer candidate edits\n'); // dirty, never committed
+
+    const result = taskService.finish({ requestId: registered.request_id });
+    assert.equal(result.state, 'INTEGRATED_CLEANUP_REQUIRED');
+    assert.match(result.cleanup_error, /diverged from the verified head/);
+    assert.equal(result.main_after, verifiedHead);
+    assert.equal(flaky.calls(), 1, 'dirty candidate edits must never trigger a second publication attempt');
+    assert.equal(existsSync(ready.candidate.worktree), true, 'the candidate worktree must be preserved, not deleted');
+    assert.equal(readFileSync(join(ready.candidate.worktree, 'generated.txt'), 'utf8'), 'newer candidate edits\n', 'dirty edits must survive');
+    assert.notEqual(git(env.clone, ['branch', '--list', ready.candidate.branch]), '', 'the local candidate branch must be preserved');
+  } finally { env.close(); }
+});
+
+test('a PUSH_REJECTED retry with a candidate HEAD committed past the verified head after a push that actually landed preserves the divergent candidate', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Push landed committed divergence', taskId: 'push-landed-committed', taskBranch: 'task/push-landed-committed' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/push-landed-committed');
+    const flaky = flakyPushLanded();
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky.git });
+    const registered = taskService.register({ task: 'Push landed committed divergence', taskBranch: 'task/push-landed-committed', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree), finalizationPaths: ['generated.txt'] });
+    const ready = taskService.advance();
+    const rejected = taskService.finish({ requestId: registered.request_id });
+    assert.equal(rejected.state, 'PUSH_REJECTED');
+    const verifiedHead = rejected.verified_candidate_head;
+    assert.equal(git(env.remote, ['rev-parse', 'refs/heads/main']), verifiedHead);
+
+    writeFileSync(join(ready.candidate.worktree, 'generated.txt'), 'newer candidate edits\n');
+    git(ready.candidate.worktree, ['add', 'generated.txt']);
+    git(ready.candidate.worktree, ['commit', '-m', 'candidate edits committed after the ambiguous push']);
+    const divergedHead = git(ready.candidate.worktree, ['rev-parse', 'HEAD']);
+    assert.notEqual(divergedHead, verifiedHead);
+
+    const result = taskService.finish({ requestId: registered.request_id });
+    assert.equal(result.state, 'INTEGRATED_CLEANUP_REQUIRED');
+    assert.match(result.cleanup_error, /diverged from the verified head/);
+    assert.equal(flaky.calls(), 1, 'a committed divergent candidate must never trigger a second publication attempt');
+    assert.equal(existsSync(ready.candidate.worktree), true);
+    assert.equal(git(ready.candidate.worktree, ['rev-parse', 'HEAD']), divergedHead, 'the committed divergent head must be preserved untouched');
+  } finally { env.close(); }
+});
+
+test('a PUSH_REJECTED retry becomes STALE_MAIN and releases the slot when remote main moved incompatibly (the rejected push never actually landed)', () => {
+  const env = fixture();
+  try {
+    const service = createIntegrationService({ root: env.clone });
+    const started = service.start({ task: 'Push retry stale main', taskId: 'push-retry-stale-main', taskBranch: 'task/push-retry-stale-main' });
+    commitFile(started.worktree, 'task.txt', 'task\n', 'task change'); pushBranch(started.worktree, 'task/push-retry-stale-main');
+    let attempts = 0;
+    const flaky = { ...taskIntegrationGit, publishCandidateMain(args) { attempts += 1; return attempts === 1 ? { state: 'PUSH_REJECTED', detail: 'simulated non-fast-forward rejection' } : taskIntegrationGit.publishCandidateMain(args); } };
+    const taskService = createIntegrationService({ root: started.worktree, git: flaky });
+    const registered = taskService.register({ task: 'Push retry stale main', taskBranch: 'task/push-retry-stale-main', taskBaseline: started.task_baseline, expectedTaskHead: headOf(started.worktree) });
+    taskService.advance();
+    const rejected = taskService.finish({ requestId: registered.request_id });
+    assert.equal(rejected.state, 'PUSH_REJECTED');
+
+    commitFile(env.clone, 'other.txt', 'other\n', 'independent main advance'); git(env.clone, ['push', 'origin', 'main']);
+    const movedMain = git(env.clone, ['rev-parse', 'origin/main']);
+
+    const result = taskService.finish({ requestId: registered.request_id });
+    assert.equal(result.state, 'STALE_MAIN');
+    assert.equal(result.actual_main, movedMain);
+    assert.equal(taskService.status().active_request_id, null, 'STALE_MAIN releases the queue slot');
   } finally { env.close(); }
 });
 

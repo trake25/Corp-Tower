@@ -214,20 +214,40 @@ export function cleanupCandidate({ root = process.cwd(), candidate, taskBranch =
   void taskBranch;
   return errors;
 }
-/** Full post-integration cleanup: candidate refs plus the exact recorded task worktree/branch, never a name sweep. */
-export function cleanupIntegrated({ root = process.cwd(), candidate, taskBranch = null, taskWorktree = null }) {
+/**
+ * Full post-integration cleanup: candidate refs plus the exact recorded task worktree/branch, never
+ * a name sweep. When `verifiedHead` is supplied, the candidate worktree's actual on-disk state is
+ * proven clean and exactly at that head before it is force-removed; any dirty file or a HEAD that
+ * has advanced past the verified/published head means real work is sitting there, so the candidate
+ * (worktree + local/remote branch) is preserved instead of destroyed, and the divergence is recorded
+ * as bounded evidence for the caller to reconcile manually.
+ */
+export function cleanupIntegrated({ root = process.cwd(), candidate, taskBranch = null, taskWorktree = null, verifiedHead = null }) {
   const errors = [];
-  try { if (candidate?.branch) runGit(root, ['push', 'origin', `:refs/heads/${candidate.branch}`]); } catch (error) { errors.push(`remote candidate branch: ${error.message}`); }
-  try { if (candidate?.worktree && existsSync(candidate.worktree)) runGit(root, ['worktree', 'remove', '--force', candidate.worktree]); } catch (error) { errors.push(`candidate worktree: ${error.message}`); }
-  try { if (candidate?.branch) runGit(root, ['branch', '-D', candidate.branch]); } catch (error) { errors.push(`local candidate branch: ${error.message}`); }
+  let candidatePreserved = false;
+  if (verifiedHead && candidate?.worktree && existsSync(candidate.worktree)) {
+    let actualHead = null; let dirty = [];
+    try { actualHead = candidateHead(root, candidate.worktree); dirty = candidateDirtyPaths(candidate.worktree); }
+    catch (error) { errors.push(`candidate worktree state unverified: ${error.message}`); }
+    if (actualHead !== null && (actualHead !== verifiedHead || dirty.length)) {
+      candidatePreserved = true;
+      errors.push(`candidate worktree diverged from the verified head (verified: ${verifiedHead}, candidate head: ${actualHead}, dirty: ${dirty.join(', ') || 'none'}); preserved without cleanup`);
+    }
+  }
+  if (!candidatePreserved) {
+    try { if (candidate?.branch) runGit(root, ['push', 'origin', `:refs/heads/${candidate.branch}`]); } catch (error) { errors.push(`remote candidate branch: ${error.message}`); }
+    try { if (candidate?.worktree && existsSync(candidate.worktree)) runGit(root, ['worktree', 'remove', '--force', candidate.worktree]); } catch (error) { errors.push(`candidate worktree: ${error.message}`); }
+    try { if (candidate?.branch) runGit(root, ['branch', '-D', candidate.branch]); } catch (error) { errors.push(`local candidate branch: ${error.message}`); }
+  }
   try { if (taskWorktree && existsSync(taskWorktree)) runGit(root, ['worktree', 'remove', '--force', taskWorktree]); } catch (error) { errors.push(`task worktree: ${error.message}`); }
   try { if (taskBranch) runGit(root, ['branch', '-D', taskBranch]); }
   catch (error) { if (!/not fully merged|checked out|not found|cannot delete/i.test(error.message)) errors.push(`local task branch: ${error.message}`); }
   try { if (taskBranch) runGit(root, ['push', 'origin', `:refs/heads/${taskBranch}`]); } catch (error) { errors.push(`remote task branch: ${error.message}`); }
   // Absence must be positively proven: an ls-remote failure is not proof of deletion either, so it
-  // is recorded as its own error (never silently treated as a confirmed-clean ref).
+  // is recorded as its own error (never silently treated as a confirmed-clean ref). A preserved
+  // candidate was never asked to disappear, so its ref is not checked for absence here.
   const remaining = [];
-  if (candidate?.branch) { try { if (remoteHead(root, candidate.branch)) remaining.push(`remote ${candidate.branch}`); } catch (error) { errors.push(`candidate ref absence unverified: ${error.message}`); } }
+  if (candidate?.branch && !candidatePreserved) { try { if (remoteHead(root, candidate.branch)) remaining.push(`remote ${candidate.branch}`); } catch (error) { errors.push(`candidate ref absence unverified: ${error.message}`); } }
   if (taskBranch) { try { if (remoteHead(root, taskBranch)) remaining.push(`remote ${taskBranch}`); } catch (error) { errors.push(`task ref absence unverified: ${error.message}`); } }
   if (remaining.length) errors.push(`refs still present after cleanup: ${remaining.join(', ')}`);
   return errors;
