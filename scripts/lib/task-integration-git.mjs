@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { existsSync, mkdirSync, realpathSync } from 'node:fs';
+import { dirname, join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { runGit, safeBranchName } from './git-publication.mjs';
 import { boundedDisplayLabel } from './task-identity.mjs';
@@ -71,6 +71,8 @@ export function startTaskGit({ root = process.cwd(), taskBranch, taskId }) {
   mkdirSync(dirname(worktree), { recursive: true, mode: 0o700 });
   let local = null;
   try { local = runGit(root, ['rev-parse', '--verify', `refs/heads/${branch}`]); } catch { /* branch will be created */ }
+  if (local && local !== baseline)
+    throw new Error(`local branch ${branch} already exists at ${local}, which differs from the freshly fetched task baseline ${baseline}; remove or rename the existing branch, or resume the correct task, before starting`);
   if (!local) runGit(root, ['branch', branch, baseline]);
   runGit(root, ['worktree', 'add', worktree, branch]);
   return { baseline, branch, worktree };
@@ -81,8 +83,13 @@ function candidatePaths(root, requestId) {
   return { id, branch: `task-integrate/candidate/${id}`, worktree: join(commonGitDir(root), 'task-integration', 'candidates', id) };
 }
 
-/** Resumes a candidate left behind by a crash between `worktree add` and the completed merge, if it is cleanly reusable. */
-function resumableCandidate(worktree, branch) {
+/**
+ * Resumes a candidate left behind by a crash between `worktree add` and the completed merge.
+ * A resumed head must be proven to already contain both the recorded merge base and the exact
+ * task head; anything else (e.g. a worktree left checked out at bare `mainBase` before the merge
+ * ever ran) is a main-only candidate and must never be accepted as if it were merged.
+ */
+function resumableCandidate(worktree, branch, mainBase, taskHead) {
   if (!existsSync(worktree)) return null;
   try {
     const gitDir = runGit(worktree, ['rev-parse', '--git-dir']);
@@ -93,12 +100,15 @@ function resumableCandidate(worktree, branch) {
   if (checkedOutBranch !== branch) return null;
   const conflicted = runGit(worktree, ['diff', '--name-only', '--diff-filter=U']).split('\n').filter(Boolean);
   if (conflicted.length) return null;
-  return runGit(worktree, ['rev-parse', 'HEAD']);
+  let head;
+  try { head = runGit(worktree, ['rev-parse', 'HEAD']); } catch { return null; }
+  if (!isAncestor({ root: worktree, ancestor: mainBase, ref: head }) || !isAncestor({ root: worktree, ancestor: taskHead, ref: head })) return null;
+  return head;
 }
 
 export function createCandidate({ root = process.cwd(), requestId, mainBase, taskHead, taskLabel = 'task' }) {
   const { id, branch, worktree } = candidatePaths(root, requestId);
-  let head = existsSync(worktree) ? resumableCandidate(worktree, branch) : null;
+  let head = existsSync(worktree) ? resumableCandidate(worktree, branch, mainBase, taskHead) : null;
   if (existsSync(worktree) && head === null) {
     try { runGit(root, ['worktree', 'remove', '--force', worktree]); } catch { /* caller will report recovery evidence if this leaves state behind */ }
     try { runGit(root, ['branch', '-D', branch]); } catch { /* no branch after a failed add is fine */ }
@@ -144,6 +154,21 @@ function runProcess(cwd, argv) {
   return { ok: !result.error && result.status === 0, detail: output.replace(/\s+/g, ' ').slice(0, 600), error: result.error?.message || null };
 }
 /**
+ * Resolves a verification check's declared cwd against the candidate worktree and proves the
+ * result stays inside it (via realpath, so a symlink cannot walk it out) before any process runs.
+ * `check.cwd` already passed the platform-neutral string checks in `safeVerificationCheck`
+ * (no absolute/drive-letter/UNC form, no `..` segment on either separator); this is the second,
+ * filesystem-aware gate that must hold on every supported platform.
+ */
+function resolveContainedCwd(worktree, relative) {
+  const root = existsSync(worktree) ? realpathSync(worktree) : resolve(worktree);
+  if (!relative) return root;
+  const candidate = resolve(root, relative);
+  const real = existsSync(candidate) ? realpathSync(candidate) : candidate;
+  if (real !== root && !real.startsWith(root + sep)) throw new Error(`verification check cwd escapes the candidate root: ${relative}`);
+  return real;
+}
+/**
  * Always runs the mandatory changed-path gate, then any immutable plan-selected structured checks
  * (argv + optional bounded cwd only — never a shell string, never request-provided env replacement).
  */
@@ -151,15 +176,28 @@ export function runCandidateQa({ root = process.cwd(), worktree, changed, checks
   const primary = runProcess(worktree, [process.execPath, 'scripts/qa-gate.mjs', '--changed', ...changed]);
   if (!primary.ok) return { ...primary, check: 'changed-path' };
   for (const check of checks) {
-    const cwd = check.cwd ? resolve(worktree, check.cwd) : worktree;
+    const label = check.label || check.argv.join(' ');
+    let cwd;
+    try { cwd = resolveContainedCwd(worktree, check.cwd); }
+    catch (error) { return { ok: false, detail: error.message, error: error.message, check: label }; }
     const result = runProcess(cwd, check.argv);
-    if (!result.ok) return { ...result, check: check.label || check.argv.join(' ') };
+    if (!result.ok) return { ...result, check: label };
   }
   return { ok: true, detail: primary.detail, error: null };
 }
+/**
+ * `mainBase`/`head` are the verified-exact candidate identity: the recorded pre-publish main and
+ * the QA-passed candidate SHA. A retry (PUSH_REJECTED or RECOVERY_REQUIRED recovery) must always
+ * re-enter here rather than blindly re-pushing, so an already-published exact result (the push
+ * actually landed despite a rejected/unconfirmed response) is recognized and never republished.
+ */
 export function publishCandidateMain({ root = process.cwd(), mainBase, candidateHead: head }) {
   const current = fetchBranch(root, 'main');
-  if (current !== mainBase) return { state: 'STALE_MAIN', current };
+  if (current === head) return { state: 'INTEGRATED', main_after: current };
+  if (current !== mainBase) {
+    if (isAncestor({ root, ancestor: head, ref: 'refs/remotes/origin/main' })) return { state: 'INTEGRATED', main_after: current };
+    return { state: 'STALE_MAIN', current };
+  }
   try { runGit(root, ['push', 'origin', `${head}:refs/heads/main`]); }
   catch (error) { return { state: 'PUSH_REJECTED', detail: error.message }; }
   const verified = fetchBranch(root, 'main');
@@ -186,9 +224,11 @@ export function cleanupIntegrated({ root = process.cwd(), candidate, taskBranch 
   try { if (taskBranch) runGit(root, ['branch', '-D', taskBranch]); }
   catch (error) { if (!/not fully merged|checked out|not found|cannot delete/i.test(error.message)) errors.push(`local task branch: ${error.message}`); }
   try { if (taskBranch) runGit(root, ['push', 'origin', `:refs/heads/${taskBranch}`]); } catch (error) { errors.push(`remote task branch: ${error.message}`); }
+  // Absence must be positively proven: an ls-remote failure is not proof of deletion either, so it
+  // is recorded as its own error (never silently treated as a confirmed-clean ref).
   const remaining = [];
-  if (candidate?.branch) { try { if (remoteHead(root, candidate.branch)) remaining.push(`remote ${candidate.branch}`); } catch { /* an ls-remote failure is not proof the ref remains */ } }
-  if (taskBranch) { try { if (remoteHead(root, taskBranch)) remaining.push(`remote ${taskBranch}`); } catch { /* an ls-remote failure is not proof the ref remains */ } }
+  if (candidate?.branch) { try { if (remoteHead(root, candidate.branch)) remaining.push(`remote ${candidate.branch}`); } catch (error) { errors.push(`candidate ref absence unverified: ${error.message}`); } }
+  if (taskBranch) { try { if (remoteHead(root, taskBranch)) remaining.push(`remote ${taskBranch}`); } catch (error) { errors.push(`task ref absence unverified: ${error.message}`); } }
   if (remaining.length) errors.push(`refs still present after cleanup: ${remaining.join(', ')}`);
   return errors;
 }

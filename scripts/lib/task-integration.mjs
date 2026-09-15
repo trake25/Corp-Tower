@@ -18,13 +18,26 @@ const safePaths = paths => {
   if (!Array.isArray(paths)) throw new Error('paths must be an array');
   return [...new Set(paths)].sort();
 };
+/**
+ * Platform-neutral string gate: rejects any absolute, drive-letter, UNC, or traversal form on
+ * either separator, independent of the OS this validation happens to run on. `runCandidateQa`'s
+ * `resolveContainedCwd` is the second, filesystem-aware gate that proves containment (including
+ * against a symlink escape) once the candidate worktree actually exists.
+ */
+function safeRelativeCwd(cwd) {
+  if (typeof cwd !== 'string' || !cwd.length || /[\x00-\x1f]/.test(cwd)) throw new Error('verification check cwd must be a non-empty bounded repository-relative path');
+  if (/^[A-Za-z]:/.test(cwd)) throw new Error('verification check cwd must not be a drive-letter path');
+  if (/^[\\/]{2}/.test(cwd)) throw new Error('verification check cwd must not be a UNC path');
+  if (/^[\\/]/.test(cwd)) throw new Error('verification check cwd must not be an absolute path');
+  if (cwd.split(/[\\/]+/).some(part => part === '..')) throw new Error('verification check cwd must not traverse outside its root');
+  return cwd;
+}
 function safeVerificationCheck(check) {
   if (!check || typeof check !== 'object' || Array.isArray(check)) throw new Error('verification check must be an object');
   const { argv, cwd = null, label = null } = check;
   if (!Array.isArray(argv) || !argv.length || argv.some(part => typeof part !== 'string' || !part.length))
     throw new Error('verification check argv must be a non-empty array of strings');
-  if (cwd !== null && (typeof cwd !== 'string' || cwd.startsWith('/') || cwd.split('/').includes('..')))
-    throw new Error('verification check cwd must be a bounded repository-relative path');
+  if (cwd !== null) safeRelativeCwd(cwd);
   if (label !== null && (typeof label !== 'string' || !label.trim())) throw new Error('verification check label must be a non-empty string');
   return { argv: [...argv], cwd, label };
 }
@@ -181,6 +194,30 @@ export function createIntegrationService({ root = process.cwd(), store = createF
     store.mutate(state => { delete state.starts[`${request.repository}::${request.task_id}`]; return null; });
   }
 
+  /** Shared by `finish()`'s own publish attempt and `recover()`'s RECOVERY_REQUIRED reconciliation. */
+  function applyPublishResult(id, target, head, published) {
+    if (published.state !== 'INTEGRATED') {
+      const failed = transition(id, target, (request, record) => {
+        request.state = published.state; request.error = published.detail || null; request.actual_main = published.current || null;
+        history(request, published.state.toLowerCase());
+        if (isTerminal(request.state)) release(record, request);
+      });
+      if (isTerminal(failed.state)) advance({ target });
+      return failed;
+    }
+    const request = findRequest(id, target);
+    const cleanupErrors = adapter.cleanupIntegrated({ root: gitRoot, candidate: request.candidate, taskBranch: request.task_branch, taskWorktree: request.task_worktree });
+    const finalState = cleanupErrors.length ? 'INTEGRATED_CLEANUP_REQUIRED' : 'INTEGRATED';
+    const integrated = transition(id, target, (request, record) => {
+      request.state = finalState; request.main_before = request.main_base; request.main_after = published.main_after; request.candidate.head = head;
+      request.cleanup_error = cleanupErrors.length ? cleanupErrors.join('; ') : null;
+      history(request, finalState.toLowerCase()); release(record, request);
+    });
+    if (!cleanupErrors.length) clearStartRecord(integrated);
+    advance({ target });
+    return integrated;
+  }
+
   function finish({ requestId: id, target = 'main' }) {
     const current = findRequest(id, target);
     if (!current) throw new Error(`unknown integration request: ${id}`);
@@ -193,26 +230,11 @@ export function createIntegrationService({ root = process.cwd(), store = createF
     const changed = adapter.changedPaths(gitRoot, request.main_base, head);
     const qa = adapter.runCandidateQa({ root: gitRoot, worktree: request.candidate.worktree, changed, checks: request.verification_checks || [] });
     if (!qa.ok) return transition(id, target, request => { request.state = 'QA_FAILED'; request.qa = qa; history(request, 'candidate-qa-failed'); });
+    // Persist the exact QA-passed head before any push attempt: publication and later recovery
+    // must use this immutable SHA, never the candidate worktree's current mutable HEAD.
+    transition(id, target, request => { request.verified_candidate_head = head; history(request, 'candidate-verified'); });
     const published = adapter.publishCandidateMain({ root: gitRoot, mainBase: request.main_base, candidateHead: head });
-    if (published.state !== 'INTEGRATED') {
-      const failed = transition(id, target, (request, record) => {
-        request.state = published.state; request.error = published.detail || null; request.actual_main = published.current || null;
-        history(request, published.state.toLowerCase());
-        if (isTerminal(request.state)) release(record, request);
-      });
-      if (isTerminal(failed.state)) advance({ target });
-      return failed;
-    }
-    const cleanupErrors = adapter.cleanupIntegrated({ root: gitRoot, candidate: request.candidate, taskBranch: request.task_branch, taskWorktree: request.task_worktree });
-    const finalState = cleanupErrors.length ? 'INTEGRATED_CLEANUP_REQUIRED' : 'INTEGRATED';
-    const integrated = transition(id, target, (request, record) => {
-      request.state = finalState; request.main_before = request.main_base; request.main_after = published.main_after; request.candidate.head = head;
-      request.cleanup_error = cleanupErrors.length ? cleanupErrors.join('; ') : null;
-      history(request, finalState.toLowerCase()); release(record, request);
-    });
-    if (!cleanupErrors.length) clearStartRecord(integrated);
-    advance({ target });
-    return integrated;
+    return applyPublishResult(id, target, head, published);
   }
 
   function status({ requestId: id = null, target = 'main' } = {}) {
@@ -253,6 +275,19 @@ export function createIntegrationService({ root = process.cwd(), store = createF
       });
       if (!cleanupErrors.length) clearStartRecord(recovered);
       return recovered;
+    }
+    if (request.state === 'RECOVERY_REQUIRED') {
+      // Reconcile deterministically against the verified-exact candidate identity: already
+      // published -> integrated/cleanup; remote still at recorded base -> safe exact-head retry;
+      // remote moved elsewhere -> STALE_MAIN. `publishCandidateMain` distinguishes all three.
+      // Evidence that cannot be read (network/ref failure) must never advance or blindly republish,
+      // so the request is left exactly as-is, still RECOVERY_REQUIRED.
+      const head = request.verified_candidate_head;
+      if (!head) return { ...request, recovery: 'no verified candidate head is recorded; explicit repair then finish is required' };
+      let published;
+      try { published = adapter.publishCandidateMain({ root: gitRoot, mainBase: request.main_base, candidateHead: head }); }
+      catch (error) { return { ...request, recovery: `remote main could not be verified: ${error.message}` }; }
+      return applyPublishResult(id, target, head, published);
     }
     if (isCallerAction(request.state)) return { ...request, recovery: 'explicit repair then finish (or abort) is required; the active candidate was not stolen' };
     return request;
