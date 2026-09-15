@@ -1,117 +1,75 @@
 #ENTRY#
 
-Identify review context:
+Identify context:
+- CONTINUED — this session already has the approved behavior/plan.
+- FRESH — reconstruct the contract from current repository evidence.
 
-- CONTINUED — this session already contains the approved intended behavior and implementation plan for the work being reviewed.
-- FRESH — that planning context is not available in this session.
+Identify type:
+- QA — review completed or exact pre-integration work.
+- BUG — investigate a defect/regression.
 
-If uncertain, use FRESH.
-
-Identify review type:
-
-- QA — completed Implementor work is ready for review, either as an integrated result or as an exact remote task/candidate revision surfaced by the deterministic integration lifecycle for bounded semantic-risk review.
-- BUG — a bug or regression has been reported or discovered.
-
-Read only:
-1. the matching context section; and
-2. the matching review-type section.
-
-If the task fits neither QA nor BUG, stop and tell the user why.
+Read the matching context and type sections.
 
 #CONTINUED#
 
-Use the approved intended behavior and implementation plan already present in this session.
+Use the approved behavior/plan already present.
 
-For orchestrated work, the approved parent plan is the implementation contract. Worker assignments and handoffs are supporting execution evidence, not separate behavior authorities.
+For orchestrated work, the approved parent plan is the implementation contract.
 
-For independent task integration, the approved task plan remains the behavior contract. Queue order, another agent's plan, or another agent's transcript does not become behavior authority merely because current `main` contains earlier integrated work.
-
-Do not reread or reconstruct planning decisions already established in the conversation.
+For independent integration, the task plan remains behavior authority. Other agents' plans/transcripts do not.
 
 #FRESH#
 
-Reconstruct only the minimum review contract needed.
+Reconstruct the behavior contract from current source, plan, exact revision, receipts, KB/maps, history, and other evidence as needed. Do not optimize Reviewer contextualization for provider-token savings.
 
-Follow `policy/CHATGPT.md`'s repository-contextualization contract. Inspect current source, the relevant plan, exact remote task/candidate/integrated revision, QA receipt, and KB evidence only where materially needed.
+## QA
 
-Do not assume intended behavior from conversation memory that is not present in this session.
+Inspect actual repository evidence, not Implementor summaries.
 
-#QA#
+Review surface:
+- INTEGRATED — verify current integrated state.
+- PRE-INTEGRATION — verify the exact task/candidate revision against current `main`.
 
-QA:
-
-Inspect actual current repository evidence, not Implementor summaries.
-
-First identify the review surface:
-- INTEGRATED — the task has reached the integrated repository state and normal post-implementation QA applies; or
-- PRE-INTEGRATION — the deterministic integration lifecycle has surfaced a concrete merge/overlap/QA/semantic-risk condition and an exact remote task branch or candidate SHA is available for bounded review before `main` advances.
-
-For INTEGRATED review, compare the integrated implementation against the approved or reconstructed contract.
-
-For PRE-INTEGRATION review, compare only the exact task/candidate revision against the current authoritative `main` and the approved or reconstructed task contract. Treat already integrated work as repository state. Do not load previous agents' plans, transcripts, or summaries unless the bounded evidence proves that broader semantic context is materially required.
+Use whatever repository context is needed for confidence. Inspect intersecting features and relevant edge cases, including failure/recovery, stale/duplicate state, timing, compatibility, integration overlap, persistence, reconnect/resync, and lifecycle boundaries.
 
 When the plan contains a feasibility/dependency trace or explicit cross-boundary invariants, verify those declared boundaries first:
-- confirm the implementation covers the complete material source/state path the plan identified;
-- confirm required persistence, hydration, reconnect/resync, timing, synchronization, membership, idempotency, fallback, and recovery invariants where applicable;
-- confirm the selected verification actually exercises the material feasibility risks identified by Planner;
-- when review is PRE-INTEGRATION, confirm the candidate preserves current-main behavior outside the approved task boundary and that any deferred integration-finalization artifacts match the candidate's actual integrated state.
+- confirm the complete material path is implemented;
+- confirm affected intersections still hold;
+- confirm verification exercises material risks;
+- for PRE-INTEGRATION, confirm current-main behavior outside scope is preserved and finalization matches the candidate.
 
-Planner-declared feasibility does not prevent Reviewer from finding additional integration defects, but Reviewer should not silently reconstruct missing Planner analysis as proof that the implementation is complete.
+Also inspect additional dependencies the Planner may have missed. Do not treat Planner feasibility as proof.
 
-Inspect only relevant:
-- changed source;
-- exact task/candidate/integrated diff or commit;
-- current-main source touched by a reported overlap/semantic risk;
-- affected docs/maps;
-- required verification evidence;
-- integration-tool conflict/overlap/failure evidence when material;
-- worker handoffs when material to ORCHESTRATED execution;
-- permanent QA changes introduced by the task.
+Classify findings:
+- implementation defect
+- integration defect
+- verification/tooling issue
+- unrelated maintenance
 
-Classify material findings as:
-- implementation defect;
-- integration defect;
-- verification/tooling issue;
-- unrelated maintenance.
+Permanent QA should protect durable behavior, not tunables, copy, pixels, calibration, or private implementation detail.
 
-Permanent QA should protect a durable product contract or meaningful regression, not tunables, defaults, copy, pixels, calibration, or private implementation detail.
-
-Report:
+Report one:
 - PASS
 - FIX REQUIRED
 - MAINTENANCE
 - BLOCKED
 
-If PASS on PRE-INTEGRATION review, state that no review blocker remains for the exact reviewed revision and let the deterministic integration lifecycle continue. Do not treat that as proof that later candidate state or final `main` has already passed post-integration QA.
-
-If PASS on INTEGRATED review, let the user manually test.
-
-If FIX REQUIRED, continue to `#BUG#`.
-
-If only unrelated maintenance remains, route it to `MAINTENANCE.md`.
+PRE-INTEGRATION PASS clears only the reviewed revision. INTEGRATED PASS proceeds to user manual testing. FIX REQUIRED continues to BUG. Unrelated maintenance routes to `MAINTENANCE.md`.
 
 #BUG#
 
-Inspect only the evidence needed to establish:
+Use broad enough current evidence to establish:
 - observed behavior;
 - intended behavior;
-- affected boundary;
-- issue classification.
+- full affected/intersecting boundary;
+- issue classification and edge cases.
 
-For player-facing bugs, describe intended player-observable behavior.
+For player bugs, state player-observable behavior. For workflow bugs, state technical behavior.
 
-For workflow/tooling bugs, describe intended technical behavior.
+For orchestrated work, identify whether the repair is worker-local or cross-unit. For independent integration, compare the task revision, current `main`, and affected intersections.
 
-For defects following orchestrated work, use the parent contract as behavior authority and identify whether the repair is worker-local or cross-unit.
+If the defect exposes incomplete Planner feasibility, make that lapse explicit so the repair closes the full boundary.
 
-For defects following independent task integration, use the affected task contract plus exact task/candidate/current-main revisions as authority. Distinguish an Implementor-local defect from a cross-task integration defect; do not reconstruct unrelated agents' reasoning unless bounded source evidence cannot resolve the issue.
+If a new decision is needed, present only material numbered decisions. Otherwise route through `PLANNER.md#ENTRY#` for a focused fix plan.
 
-If a defect exposes a missing or incomplete feasibility/dependency assessment in the approved plan, make that planning lapse explicit in the focused repair context so the next plan closes the whole affected boundary rather than only the observed symptom.
-
-If intended behavior requires user decisions, present only material decisions as numbered items.
-
-Once the defect and intended behavior are established, search `PLANNER.md` for `#ENTRY#` and create a focused fix plan through the normal planning route.
-
-After the Implementor completes the fix and the user reports `Done. QA.` or equivalent, return to `#QA#`.
-
-After integrated QA passes, have the user retest the originally reported behavior. Repeat the BUG → plan → QA → retest loop if necessary.
+After implementation and `Done. QA.`, return to QA.

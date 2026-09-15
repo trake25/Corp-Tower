@@ -1,38 +1,26 @@
 #ENTRY#
 
-This is a Planner-side policy source. Normal Implementor execution does not read this file. `AGENTS.md` supplies universal execution policy; the approved Phase 2 plan contains only the task policy selected here.
+Planner-side policy source only. Implementor reads `AGENTS.md` plus the approved Phase 2 plan.
 
-Classify the implementation:
-- IMPLEMENT — create or modify approved repository behavior/deliverables.
-- FIX — restore confirmed intended existing behavior.
-
-Read only the matching policy entry:
+Classify:
 - IMPLEMENT → `policy/IMPLEMENT.md#ENTRY#`
 - FIX → `policy/FIX.md#ENTRY#`
 
-Domain/task-scope knowledge comes from Planner-selected current source plus KB context only where semantic or durable-contract evidence is materially needed, not skills.
+Default execution is one provider-neutral Implementor. Domain knowledge comes from Planner-selected retrieval inputs, not runtime skills.
 
-Normal single-Implementor execution with repository-default process values is the provider-neutral BARE path. It requires no provider-specific launcher. Delegation, subagents, and worker agents are not part of BARE execution and are permitted only when ORCHESTRATED is explicitly selected. The deterministic task-integration queue coordinates completion of independent task runs and does not itself make those tasks ORCHESTRATED.
+Load a conditional section only when non-default:
+- `#PROCESS-ROUTER#`
+- `#TELEMETRY#`
+- `#WORKFLOW-INEFFICIENCY#`
+- `#QA#`
+- `#QA-COVERAGE#`
+- `#QA-RECEIPT#`
+- `#PLAN-ARCHIVAL#`
+- `#PUBLICATION#`
+- `#ORCHESTRATION#`
+- `#STRICT-EXECUTION#`
 
-Load a conditional section below only when that non-default policy actually applies. Default-OFF processes must not be compiled into the plan or exposed to Implementor runtime context.
-
-Conditional sections:
-- `#PROCESS-ROUTER#` — when any agent-supported process differs from its default, the user requests process customization, or everything ON is selected.
-- `#TELEMETRY#` — only when telemetry is ON.
-- `#WORKFLOW-INEFFICIENCY#` — only when workflow inefficiency flagging is ON.
-- `#QA#` — only when executable QA is ON.
-- `#QA-COVERAGE#` — only when permanent QA coverage is ON.
-- `#QA-RECEIPT#` — only when public QA receipt is ON.
-- `#PLAN-ARCHIVAL#` — only when plan archival is explicitly OFF.
-- `#PUBLICATION#` — only when publication is explicitly OFF.
-- `#ORCHESTRATION#` — only when ORCHESTRATED execution is selected.
-- `#STRICT-EXECUTION#` — only when strict execution is selected.
-
-Do not copy universal `AGENTS.md` rules into the task plan.
-
-#PROCESS-ROUTER#
-
-PROCESS-ROUTER:
+## PROCESS-ROUTER
 
 Agent-supported repository process defaults:
 - `telemetry=OFF`
@@ -43,101 +31,64 @@ Agent-supported repository process defaults:
 - `plan_archival=ON`
 - `publication=ON`
 
-Dependencies:
-- `workflow_inefficiency_flagging=ON` requires `telemetry=ON`.
+`workflow_inefficiency_flagging=ON` requires `telemetry=ON`. Invalid combinations fail closed.
 
-Invalid combinations fail closed rather than silently enabling another process.
+In `## 5. Overrides`, emit only values differing from defaults as exact `<process>=ON|OFF` assignments. "Everything ON" emits the five default-OFF controls as ON. Do not emit default values.
 
-`publication=ON` means normal completion uses the deterministic task-integration lifecycle: exact-current-main task start, scoped remote task-branch publication, serialized candidate integration/finalization, candidate verification, verified `main` publication, and eligible cleanup. It does not authorize deployment, force-push, unrelated Git changes, or bypass of integration state.
-
-"Everything ON" enables the five default-OFF processes above. `plan_archival=ON` and `publication=ON` remain implicit because they are already repository defaults. Everything ON never authorizes deployment or unrelated/destructive Git operations.
-
-## Task-plan process encoding
-
-Default values are omitted completely.
-
-Every agent-supported process whose effective value differs from its repository default must appear exactly once under `## Execution Overrides` using the exact case-sensitive assignment:
-
-`<process_name>=ON` or `<process_name>=OFF`
-
-Examples:
-- telemetry selected ON → `telemetry=ON`
-- plan archival explicitly disabled → `plan_archival=OFF`
-- publication explicitly disabled → `publication=OFF`
-
-For "Everything ON", emit the five default-OFF agent-supported controls as exact `=ON` assignments:
-- `telemetry=ON`
-- `workflow_inefficiency_flagging=ON`
-- `qa=ON`
-- `qa_coverage=ON`
-- `qa_receipt=ON`
-
-Resolve dependencies before encoding. Never emit duplicate assignments for the same process. After resolving requested controls, read only the exact ON/non-default process sections needed for the task.
+`publication=ON` uses the deterministic task-integration lifecycle. It never authorizes deployment, force-push, unrelated changes, or bypassing integration state.
 
 #TELEMETRY#
 
-Compile only when `telemetry=ON`.
+Only for `telemetry=ON`.
 
-The plan must contain exactly one `telemetry=ON` assignment under `## Execution Overrides`.
+For Codex, tell the user outside the plan to launch with:
 
-Corp Tower observability hooks are not auto-discovered by default. Current telemetry support remains the existing Codex compatibility path: Planner tells the user outside the plan to start that implementation session through `node scripts/codex-task-run.mjs <phase-2-plan-path>`, which injects the repository telemetry hook template only for that session and fails before launch if activation cannot be resolved.
+`node scripts/codex-task-run.mjs <phase-2-plan-path>`
 
-A non-Codex Implementor must not invent or silently substitute another telemetry path; if telemetry is required and the selected runtime has no supported path, stop and report the unsupported process. Telemetry does not alter QA, coverage, receipt, archival, publication, integration, or Git/deployment safety boundaries.
+Unsupported providers must not invent a telemetry substitute.
 
 #WORKFLOW-INEFFICIENCY#
 
-Compile only when workflow inefficiency flagging is ON. Telemetry must also be ON.
-
-Use only bounded current-task telemetry/evidence for candidate/flag processing. Do not broaden runtime context solely to search for inefficiencies.
+Only with telemetry ON. Use bounded current-task evidence; do not widen runtime context to hunt for inefficiency.
 
 #QA#
 
-Compile only when executable QA is ON.
+Only for `qa=ON`.
 
-Run only the task-selected executable verification using compact repository tooling where available. Selected headless/client verification is required when the Phase 2 plan includes it. Rendered/visual verification is not implicit; run it only when the Phase 2 plan explicitly selects it.
+Run only plan-selected verification using compact tooling. Successful detailed child output stays private; expose bounded actionable failure evidence.
 
-Run task-branch verification before integration submission. When publication is enabled, the deterministic integration lifecycle also verifies the assembled candidate using the plan-selected checks and consistency mechanics required by the actual candidate scope. Do not load previous agents' plans or transcripts merely because candidate verification runs against newer `main`; expand context only when a concrete conflict, overlap risk, or failed check requires it.
-
-A tooling/environment-only inability to run selected verification is reported as `maintenance-blocked`, not as a pass. It does not suppress default plan archival/publication unless the integration tool or approved plan has a stricter deterministic requirement for that check, and it does not require a second user approval. Any task-caused implementation, assertion, or behavioral failure still blocks closeout until repaired.
-
-Successful detailed child output remains private; expand only actionable failure diagnostics. Executable QA does not automatically authorize permanent coverage.
+Task-caused failures block completion. Tooling/environment-only inability is `maintenance-blocked`, not a pass.
 
 #QA-COVERAGE#
 
-Compile only when permanent QA coverage is ON.
+Only for `qa_coverage=ON`.
 
-Add/update durable automated coverage only for the approved behavior and direct regression/invariant boundary. Do not turn tunables, exact copy/pixels, or private implementation details into permanent assertions unless they are contractual.
+Add durable coverage only for approved behavior or a meaningful regression/invariant. Avoid tunables, copy/pixels, calibration, and private implementation detail.
 
 #QA-RECEIPT#
 
-Compile only when public QA receipt is ON.
+Only for `qa_receipt=ON`.
 
-Generate only sanitized structured task/verification evidence. Receipt generation is independent from executable QA; when QA was not run, the receipt must state that rather than fabricate proof.
+Generate sanitized task/verification evidence. Never fabricate QA that did not run.
 
 #PLAN-ARCHIVAL#
 
-Read only when plan archival is explicitly OFF.
-
-Emit exactly one `plan_archival=OFF` assignment under `## Execution Overrides`. The successful task leaves its active plan in place after local completion when publication is OFF or after verified integration when publication is ON; no other process behavior changes.
+Only when disabled. Emit `plan_archival=OFF`.
 
 #PUBLICATION#
 
-Read only when publication is explicitly OFF.
-
-Emit exactly one `publication=OFF` assignment under `## Execution Overrides`. The successful task does not create/submit a normal integration request, publish a task branch through the integration lifecycle, or advance `main`; implementation changes remain local. Plan archival and all other selected processes keep their own settings.
+Only when disabled. Emit `publication=OFF`; keep implementation local.
 
 #ORCHESTRATION#
 
-Compile only when ORCHESTRATED execution is selected.
+Only when ORCHESTRATED is selected.
 
-Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria. Parallel workers may share reads but the parent must assign non-overlapping concurrent writes. Shared writable paths use one worker or serialized execution.
+Define bounded worker units, dependencies, shared invariants, planned write responsibilities, dependency-aware waves, worker verification, and parent integration criteria.
 
-Each worker receives only the context needed for its unit and returns only a compact integration summary to the parent: completion status, files changed, verification performed and result, material interface/invariant notes, and blockers. Workers do not return full transcripts, duplicated task/source context, or long logs unless the parent explicitly requests the minimum additional detail needed to resolve an integration problem.
-
-The parent coordinates worker sequencing, handoffs, overlap avoidance, and internal task integration through its reasoning and remains responsible for one completed task result. If publication is enabled, that completed parent task then enters the same deterministic cross-task integration lifecycle as any single-Implementor task; the repository integration queue is not a substitute for parent orchestration.
+Workers receive only unit context and return only status, changed files, verification, material invariant/interface notes, and blockers. Shared writable paths are serialized. Parent owns integration.
 
 #STRICT-EXECUTION#
 
-Compile only when strict execution is selected.
+Only when selected.
 
-The plan must specify the prescribed implementation approach and direct-write boundary precisely. The Implementor follows that path instead of substituting refactors or extra write dependencies. If current source proves the prescribed path impossible, unsafe, or materially incorrect, report the conflict rather than deviating.
+Put `Strict execution: ON` in Overrides and prescribe the implementation/write boundary. If current source proves it wrong or unsafe, stop instead of deviating.

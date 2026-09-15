@@ -1,6 +1,6 @@
 #ENTRY#
 
-Identify the task role that best matches the user's requested outcome:
+Identify the role that matches the user's outcome:
 
 - PLANNER
 - REVIEWER
@@ -9,89 +9,56 @@ Identify the task role that best matches the user's requested outcome:
 - MAINTENANCE
 - RESEARCH
 
-Search this file for the matching role section and read only that section.
-
-If the task does not fit any listed role, stop and immediately tell the user why no role matches.
+Read only that role section. If none fits, stop and explain why.
 
 ## Repository contextualization
 
-Reuse current repository evidence already sufficient for the next decision.
+Current repository source, KB, maps, policy, and remote state override conversation memory for repository facts.
 
-When new repository context is needed:
-- Prefer direct local/workspace repository search and bounded reads when available.
-- Read known exact paths, symbols, or bounded sections directly. Use bounded repository search to discover unknown task-relevant locations.
-- ChatGPT may directly list or search `KB/`, search `KB/docs/context/index.md`, and read bounded relevant KB/domain sections. The KB index/router is a discovery aid, not an access-control gate.
-- Read only source or semantic evidence materially needed for the current decision. ChatGPT may move directly between clearly relevant KB sections without returning to the index after every concept.
-- Use current source for current implementation facts. Use KB/policy for durable intended behavior, architecture, ownership, terminology, or other semantic contracts when that distinction matters.
-- Stop contextualizing once evidence is sufficient.
+Use current source for implementation facts. Use KB/policy for durable behavior, architecture, ownership, terminology, and workflow contracts.
 
-Do not duplicate the same evidence through multiple transports for reassurance. If direct local/workspace repository access is available, do not also use GitHub for the same file or fact. Use the repository/GitHub connector when local access is unavailable, evidence is remote-only, or GitHub-specific state such as commits, branches, pull requests, or remote metadata is required.
+For PLANNER and REVIEWER:
+- Use any repository search, bounded or broad search, source reads, KB/maps, diffs, commits, branches, history, or remote evidence needed for a correct result.
+- Do not reduce contextualization to save provider tokens.
+- Check task intersections with other features and relevant normal, failure, stale/duplicate, timing, disconnect/recovery, compatibility, and integration edge cases.
+- Avoid exact duplicate reads through another transport unless resolving conflicting evidence.
 
-Fail closed only when authority materially required for the task cannot be established.
+For other roles, prefer bounded evidence and stop when authority is sufficient.
+
+Use local/workspace access when available. Use GitHub for remote-only state or when local access is unavailable. Fail closed only when required authority cannot be established.
 
 #PLANNER#
 
-Use for:
+Use for product/technical design, implementation planning, or plan refinement.
 
-- designing intended product or technical behavior;
-- creating an implementation plan;
-- refining or narrowing an existing task or plan.
-
-Search `policy/PLANNER.md` for `#ENTRY#` and read only that entry section.
+Read `policy/PLANNER.md#ENTRY#`.
 
 #REVIEWER#
 
-Use for:
+Use for post-implementation QA, regressions, actual-change review, QA evidence, or manual-test follow-up.
 
-- post-implementation QA;
-- reviewing actual repository changes;
-- investigating bugs or regressions;
-- reviewing executable proof or QA receipts;
-- manual-test follow-up.
-
-Search `policy/REVIEWER.md` for `#ENTRY#` and read only that entry section.
+Read `policy/REVIEWER.md#ENTRY#`.
 
 #QUESTION#
 
-Use when the user wants:
+Use for explanations, current behavior, exact locations/values, or procedures that do not require planning.
 
-- an explanation;
-- current repository behavior;
-- an exact file, location, value, or procedure;
-- an answer that does not require planning or implementation.
-
-Search `policy/QUESTION.md` for `#ENTRY#` and read only that entry section.
+Read `policy/QUESTION.md#ENTRY#`.
 
 #VISUAL#
 
-Use for:
+Use for UI/UX design, visual critique, assets, or player-facing visual treatment.
 
-- UI/UX design;
-- visual critique;
-- image or asset generation;
-- visual treatment of player-facing behavior.
-
-Search `policy/VISUAL.md` for `#ENTRY#` and read only that entry section.
+Read `policy/VISUAL.md#ENTRY#`.
 
 #MAINTENANCE#
 
-Use for:
+Use for `/repair`, tooling, KB/maps, validators, workflow, or agent-policy maintenance.
 
-- `/repair` items;
-- broken QA or repository tooling;
-- KB, map, retrieval, validator, workflow, or agent-policy maintenance;
-- maintenance triage that should remain separate from product implementation.
-
-Search `policy/MAINTENANCE.md` for `#ENTRY#` and read only that entry section.
+Read `policy/MAINTENANCE.md#ENTRY#`.
 
 #RESEARCH#
 
-Use when the task depends primarily on current external authoritative information such as:
+Use when current external authority is primary: platform requirements, SDK/engine versions, APIs, regulations, or vendor docs.
 
-- platform requirements;
-- SDK or engine versions;
-- external APIs;
-- regulations;
-- service or vendor documentation.
-
-Search `policy/RESEARCH.md` for `#ENTRY#` and read only that entry section.
+Read `policy/RESEARCH.md#ENTRY#`.
