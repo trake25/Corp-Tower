@@ -6,15 +6,24 @@ import { createIntegrationService } from './lib/task-integration.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 function fail(message) { console.error(JSON.stringify({ ok: false, error: message })); process.exitCode = 2; }
 function parse(argv) {
-  const [command, ...args] = argv; const values = { paths: [], finalizationPaths: [] };
+  const [command, ...args] = argv; const values = { paths: [], finalizationPaths: [], verificationChecks: [] };
   for (let index = 0; index < args.length; index++) {
     const key = args[index];
     if (key === '--json') { values.json = true; continue; }
-    const name = { '--task': 'task', '--task-branch': 'taskBranch', '--task-id': 'taskId', '--baseline': 'taskBaseline', '--head': 'expectedTaskHead', '--target': 'target', '--request': 'requestId', '--timeout-ms': 'timeoutMs', '--path': 'paths', '--finalization-path': 'finalizationPaths', '--abort': 'abort' }[key];
+    const name = {
+      '--task': 'task', '--task-branch': 'taskBranch', '--task-id': 'taskId', '--task-label': 'taskLabel',
+      '--baseline': 'taskBaseline', '--head': 'expectedTaskHead', '--target': 'target', '--request': 'requestId',
+      '--timeout-ms': 'timeoutMs', '--path': 'paths', '--finalization-path': 'finalizationPaths',
+      '--verification-check': 'verificationChecks', '--abort': 'abort',
+    }[key];
     if (!name) throw new Error(`unknown argument: ${key}`);
     if (name === 'abort') { values.abort = true; continue; }
     const value = args[++index]; if (!value || value.startsWith('--')) throw new Error(`${key} needs a value`);
-    if (name === 'paths' || name === 'finalizationPaths') values[name].push(value); else values[name] = value;
+    if (name === 'paths' || name === 'finalizationPaths') values[name].push(value);
+    else if (name === 'verificationChecks') {
+      let parsed; try { parsed = JSON.parse(value); } catch { throw new Error('--verification-check needs a JSON object like {"argv":["node","script.mjs"]}'); }
+      values[name].push(parsed);
+    } else values[name] = value;
   }
   return { command, values };
 }
@@ -29,8 +38,9 @@ async function main() {
   else if (command === 'status') result = service.status(values);
   else if (command === 'abort') { required(values, ['requestId']); result = service.abort(values); }
   else if (command === 'recover') { required(values, ['requestId']); result = service.recover(values); }
+  else if (command === 'recover-lock') result = service.recoverLock();
   else if (command === 'await') { required(values, ['requestId']); result = await service.await({ ...values, timeoutMs: Number(values.timeoutMs || 30_000) }); }
-  else throw new Error('usage: task-integrate <start|submit|register|advance|finish|status|abort|recover|await> [options]');
+  else throw new Error('usage: task-integrate <start|submit|register|advance|finish|status|abort|recover|recover-lock|await> [options]');
   console.log(JSON.stringify({ ok: true, result }, null, 2));
 }
 main().catch(error => fail(error.message));
