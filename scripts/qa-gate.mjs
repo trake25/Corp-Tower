@@ -75,6 +75,9 @@ export const EKS_DESTROY_VERIFIER_TEST = 'scripts/tests/verify-eks-destroy.test.
 export const SUPABASE_ENVIRONMENT_GUARD_TEST = 'scripts/tests/verify-supabase-environment.test.mjs';
 export const PRODUCTION_ENVIRONMENT_PREFLIGHT_TEST = 'scripts/tests/verify-production-environment.test.mjs';
 export const TASK_INTEGRATION_TEST = 'scripts/tests/task-integrate.test.mjs';
+export const GIT_PUBLICATION_TEST = automationTests.gitSync;
+export const GIT_STATE_TEST = 'scripts/tests/git-state.test.mjs';
+export const SOURCE_CONTEXT_TEST = 'scripts/tests/source-context.test.mjs';
 const contractRules = [
   [/^scripts\/lib\/tutorial-defaults-parity\.mjs$/, [TUTORIAL_PARITY_TEST]],
   [/^scripts\/tests\/tutorial-defaults-parity\.test\.mjs$/, [TUTORIAL_PARITY_TEST]],
@@ -83,6 +86,10 @@ const contractRules = [
   [/^scripts\/(?:verify-supabase-environment\.sh|tests\/verify-supabase-environment\.test\.mjs)$/, [SUPABASE_ENVIRONMENT_GUARD_TEST]],
   [/^(?:\.github\/workflows\/Production-Environment-Preflight\.yml|scripts\/(?:verify-production-environment\.mjs|tests\/verify-production-environment\.test\.mjs))$/, [PRODUCTION_ENVIRONMENT_PREFLIGHT_TEST]],
   [/^scripts\/(?:task-integrate\.mjs|lib\/(?:task-integration|task-integration-state|task-integration-git)\.mjs|tests\/task-integrate\.test\.mjs)$/, [TASK_INTEGRATION_TEST]],
+  [/^scripts\/lib\/git-publication\.mjs$/, [GIT_PUBLICATION_TEST, TASK_INTEGRATION_TEST]],
+  [/^scripts\/(?:git-sync-commit-push\.mjs|tests\/git-sync-commit-push\.test\.mjs)$/, [GIT_PUBLICATION_TEST]],
+  [/^scripts\/(?:git-state\.mjs|tests\/git-state\.test\.mjs)$/, [GIT_STATE_TEST]],
+  [/^scripts\/(?:source-context\.mjs|tests\/source-context\.test\.mjs)$/, [SOURCE_CONTEXT_TEST]],
 ];
 
 function addMatches(path, rules, destination) {

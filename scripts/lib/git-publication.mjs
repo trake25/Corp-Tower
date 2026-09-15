@@ -1,9 +1,13 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { relative, resolve } from 'node:path';
 import { publicQaReceiptPath } from './qa-receipt.mjs';
 import { createTaskIdentity, taskIdentityForManifest } from './task-identity.mjs';
 import { repositoryRelativePath, resolveTaskOwnership } from './task-ownership.mjs';
+
+export const GIT_FAILURE_LOG_DIRECTORY = '.agent-state/automation/git-failures';
+export const GIT_FAILURE_DETAIL_CAP = 600;
 
 export function safeBranchName(input, label = 'branch') {
   if (!input || !/^[A-Za-z0-9._/-]+$/.test(input) || input.startsWith('/') || input.startsWith('.') || input.endsWith('/') || input.endsWith('.') || input.includes('..') || input.includes('@{'))
@@ -11,15 +15,30 @@ export function safeBranchName(input, label = 'branch') {
   return input;
 }
 
-export function runGit(root, args, { quiet = true, trim = true } = {}) {
+/** Keeps large/noisy Git failure output out of provider-visible text: the bounded headline is always returned, the full text is saved privately only when it would not already fit. */
+export function boundedGitFailureDetail(root, output) {
+  const normalized = output.replace(/\s+/g, ' ').trim();
+  if (!normalized) return { detail: '', logPath: null };
+  if (normalized.length <= GIT_FAILURE_DETAIL_CAP) return { detail: normalized, logPath: null };
+  const base = resolve(root);
+  const directory = resolve(base, GIT_FAILURE_LOG_DIRECTORY);
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const logPath = resolve(directory, `${randomUUID()}.log`);
+  writeFileSync(logPath, output, { mode: 0o600 });
+  return { detail: `${normalized.slice(0, GIT_FAILURE_DETAIL_CAP - 1)}…`, logPath: relative(base, logPath).replaceAll('\\', '/') };
+}
+
+/** Success output is always captured, never inherited to the caller's stdio, so normal Git progress never leaks into provider-visible text. */
+export function runGit(root, args, { trim = true } = {}) {
   try {
     const output = execFileSync('git', ['-C', resolve(root), ...args], {
-      encoding: 'utf8', stdio: quiet ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
     });
     return typeof output === 'string' && trim ? output.trim() : output || '';
   } catch (error) {
-    const detail = error.stderr?.toString().trim() || error.message;
-    throw new Error(`git ${args.join(' ')} failed${detail ? `: ${detail}` : ''}`);
+    const raw = [error.stdout, error.stderr].filter(Boolean).join('\n').trim() || error.message;
+    const { detail, logPath } = boundedGitFailureDetail(root, raw);
+    throw new Error(`git ${args.join(' ')} failed${detail ? `: ${detail}` : ''}${logPath ? ` (full output: ${logPath})` : ''}`);
   }
 }
 
@@ -112,8 +131,8 @@ export function publishScopedTask({ root = process.cwd(), task, paths, branch, i
   const selectedIdentity = identity || createTaskIdentity(scope.task, { root });
   runGit(root, ['add', '--', ...scope.paths]);
   if (!runGit(root, ['diff', '--cached', '--name-only'])) throw new Error('no changes were staged');
-  runGit(root, ['commit', '-m', selectedIdentity.label], { quiet: false });
-  runGit(root, ['push', '-u', 'origin', target], { quiet: false });
+  runGit(root, ['commit', '-m', selectedIdentity.label]);
+  runGit(root, ['push', '-u', 'origin', target]);
   const head = runGit(root, ['rev-parse', 'HEAD']);
   const remote = runGit(root, ['ls-remote', 'origin', `refs/heads/${target}`]).split(/\s+/)[0];
   if (remote !== head) throw new Error('remote task branch does not match the committed task head');
@@ -124,7 +143,7 @@ export function pushExistingBranch({ root = process.cwd(), branch, remoteBranch 
   const local = safeBranchName(branch, '--branch');
   const remote = safeBranchName(remoteBranch, '--remote-branch');
   runGit(root, ['show-ref', '--verify', `refs/heads/${local}`]);
-  runGit(root, ['fetch', 'origin', 'main'], { quiet: false });
-  runGit(root, ['push', 'origin', `refs/heads/${local}:refs/heads/${remote}`], { quiet: false });
+  runGit(root, ['fetch', 'origin', 'main']);
+  runGit(root, ['push', 'origin', `refs/heads/${local}:refs/heads/${remote}`]);
   return { local, remote };
 }

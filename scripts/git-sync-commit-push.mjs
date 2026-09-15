@@ -69,15 +69,15 @@ function main() {
       if (runGit(ROOT, ['status', '--short'])) fail('working tree must be clean before switching branches');
       let exists = true;
       try { runGit(ROOT, ['rev-parse', '--verify', `refs/heads/${requested}`]); } catch { exists = false; }
-      runGit(ROOT, exists ? ['switch', requested] : ['switch', '--track', '-c', requested, `origin/${requested}`], { quiet: false });
+      runGit(ROOT, exists ? ['switch', requested] : ['switch', '--track', '-c', requested, `origin/${requested}`]);
     }
     const scope = values.manifest ? scopeFromManifest(values.manifest, { root: ROOT }) : {
       ...explicitPathScope({ task: values.task, paths: values.paths || [], ownership: values.ownership || null, root: ROOT }),
       identity: createTaskIdentity(values.task, { root: ROOT }),
     };
     if (runGit(ROOT, ['diff', '--cached', '--name-only'])) fail('working tree has pre-staged changes; clear them before using this tool');
-    runGit(ROOT, ['fetch', 'origin', requested], { quiet: false });
-    runGit(ROOT, ['pull', '--ff-only'], { quiet: false });
+    runGit(ROOT, ['fetch', 'origin', requested]);
+    runGit(ROOT, ['pull', '--ff-only']);
     const result = publishScopedTask({ root: ROOT, task: scope.task, paths: scope.paths, branch: requested, identity: scope.identity || null, rejectOutsideDirty: false });
     console.log(`PASS — pushed ${result.identity.label} from ${requested}`);
   } catch (error) { fail(error.message); }

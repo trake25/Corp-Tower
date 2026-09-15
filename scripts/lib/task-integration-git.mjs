@@ -41,7 +41,7 @@ export function remoteHead(root, branch) {
 }
 export function fetchBranch(root, branch) {
   const safe = safeBranchName(branch, 'branch');
-  runGit(root, ['fetch', 'origin', `refs/heads/${safe}:refs/remotes/origin/${safe}`], { quiet: false });
+  runGit(root, ['fetch', 'origin', `refs/heads/${safe}:refs/remotes/origin/${safe}`]);
   return runGit(root, ['rev-parse', `refs/remotes/origin/${safe}`]);
 }
 export function changedPaths(root, from, to) {
@@ -72,7 +72,7 @@ export function startTaskGit({ root = process.cwd(), taskBranch, taskId }) {
   let local = null;
   try { local = runGit(root, ['rev-parse', '--verify', `refs/heads/${branch}`]); } catch { /* branch will be created */ }
   if (!local) runGit(root, ['branch', branch, baseline]);
-  runGit(root, ['worktree', 'add', worktree, branch], { quiet: false });
+  runGit(root, ['worktree', 'add', worktree, branch]);
   return { baseline, branch, worktree };
 }
 
@@ -105,9 +105,9 @@ export function createCandidate({ root = process.cwd(), requestId, mainBase, tas
   }
   if (head === null) {
     mkdirSync(dirname(worktree), { recursive: true, mode: 0o700 });
-    runGit(root, ['worktree', 'add', '-b', branch, worktree, mainBase], { quiet: false });
+    runGit(root, ['worktree', 'add', '-b', branch, worktree, mainBase]);
     try {
-      runGit(worktree, ['merge', '--no-ff', '-m', `Integrate ${boundedDisplayLabel(taskLabel)}`, taskHead], { quiet: false });
+      runGit(worktree, ['merge', '--no-ff', '-m', `Integrate ${boundedDisplayLabel(taskLabel)}`, taskHead]);
     } catch (error) {
       const conflicts = runGit(worktree, ['diff', '--name-only', '--diff-filter=U']).split('\n').filter(Boolean).sort();
       try { runGit(worktree, ['merge', '--abort']); } catch { /* cleanup continues */ }
@@ -117,7 +117,7 @@ export function createCandidate({ root = process.cwd(), requestId, mainBase, tas
     }
     head = runGit(worktree, ['rev-parse', 'HEAD']);
   }
-  runGit(root, ['push', 'origin', `refs/heads/${branch}:refs/heads/${branch}`], { quiet: false });
+  runGit(root, ['push', 'origin', `refs/heads/${branch}:refs/heads/${branch}`]);
   return { conflict: false, branch, worktree, head };
 }
 export function candidateHead(root, worktree) { return runGit(worktree, ['rev-parse', 'HEAD']); }
@@ -132,9 +132,9 @@ export function commitCandidateFinalization({ root = process.cwd(), request, pat
   if (outside.length) throw new Error(`candidate contains changes outside finalization scope: ${outside.join(', ')}`);
   if (!dirty.length) return candidateHead(root, request.candidate.worktree);
   runGit(request.candidate.worktree, ['add', '--', ...dirty]);
-  runGit(request.candidate.worktree, ['commit', '-m', `Finalize ${boundedDisplayLabel(request.task_label || request.task)}`], { quiet: false });
+  runGit(request.candidate.worktree, ['commit', '-m', `Finalize ${boundedDisplayLabel(request.task_label || request.task)}`]);
   const head = candidateHead(root, request.candidate.worktree);
-  runGit(root, ['push', 'origin', `refs/heads/${request.candidate.branch}:refs/heads/${request.candidate.branch}`], { quiet: false });
+  runGit(root, ['push', 'origin', `refs/heads/${request.candidate.branch}:refs/heads/${request.candidate.branch}`]);
   return head;
 }
 function runProcess(cwd, argv) {
@@ -160,7 +160,7 @@ export function runCandidateQa({ root = process.cwd(), worktree, changed, checks
 export function publishCandidateMain({ root = process.cwd(), mainBase, candidateHead: head }) {
   const current = fetchBranch(root, 'main');
   if (current !== mainBase) return { state: 'STALE_MAIN', current };
-  try { runGit(root, ['push', 'origin', `${head}:refs/heads/main`], { quiet: false }); }
+  try { runGit(root, ['push', 'origin', `${head}:refs/heads/main`]); }
   catch (error) { return { state: 'PUSH_REJECTED', detail: error.message }; }
   const verified = fetchBranch(root, 'main');
   if (verified !== head) return { state: 'RECOVERY_REQUIRED', detail: 'remote main did not resolve to the published candidate head' };
