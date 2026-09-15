@@ -12,6 +12,7 @@ source: policy/PLANNER.md#Standard Phase 2 format
 source: policy/CHATGPT.md#Repository contextualization
 adjacent: automation.planning.phase2
 adjacent: automation.retrieval.protocol
+adjacent: automation.retrieval.source
 -->
 ## Direct retrieval discipline
 
@@ -19,6 +20,10 @@ ChatGPT and Planner prefer direct local/workspace repository search and bounded 
 transport is available. They may read known exact paths or symbols directly and use bounded
 task-relevant search to locate unknown implementation evidence. Current source discovered this way
 is ordinary authority for current implementation facts; it does not need a prior KB grant.
+
+The Implementor's own direct transport is `scripts/source-context.mjs`: bounded scoped search, an
+exact-file symbol/anchor listing, and an exact-file anchor/line-bounded read, each with a fixed
+result/byte cap. It does not gate ordinary current-source discovery behind any KB grant.
 
 KB Tree remains the bounded semantic retrieval protocol when durable intended behavior,
 architecture, ownership, terminology, or another semantic contract is materially needed. It is not
@@ -120,6 +125,34 @@ bounded source grants and unloaded adjacency. Resolution never turns adjacency i
 read.
 
 <!-- kb
+id: automation.retrieval.source
+alias: source-context.mjs
+alias: bounded source search
+alias: source anchors
+source: scripts/source-context.mjs#searchSource
+source: scripts/source-context.mjs#readAnchors
+source: scripts/source-context.mjs#readSource
+adjacent: automation.retrieval.direct
+adjacent: automation.retrieval.protocol
+-->
+## Bounded source search and anchor reads
+
+`scripts/source-context.mjs` gives the Implementor a bounded, non-KB local search/read transport for
+plain current source. `search` requires an explicit repository-relative scope and returns a fixed
+result count under a hard output-byte cap; it never enumerates an unscoped tree. `anchors` lists an
+exact file's symbols/headings, capped in count and bytes. `read` returns an exact-file window either
+around a named anchor or an explicit line range, clamped to a hard line/byte cap; a range that would
+exceed the cap fails closed as `budget-exceeded` rather than silently truncating returned code. A
+missing or ambiguous anchor fails closed as `source-anchor-missing` or `anchor-ambiguous`. Every
+target is resolved through the same repository-relative path/symlink-traversal protection used
+elsewhere in this Automation domain.
+
+This mirrors the bounded-window behavior `concept-kb` uses to resolve a stable source anchor, without
+coupling ordinary source discovery to KB concept authority: a source-context read needs no concept
+grant, and it does not stand in for `concept-route`/`concept-read` when durable semantic authority is
+what is actually needed.
+
+<!-- kb
 id: automation.retrieval.states
 alias: needs-anchor
 alias: needs-filter
@@ -184,13 +217,18 @@ source: AGENTS.md#Implementor universal policy
 source: scripts/task-close.mjs#compactOutput
 source: scripts/qa-gate.mjs#fail
 adjacent: automation.observability.usage
+adjacent: automation.retrieval.source
+adjacent: automation.git.inspection
 -->
 ## Provider-visible I/O discipline
 
 The Implementor minimizes provider-visible I/O rather than execution evidence. The universal
 execution kernel uses the smallest bounded reads and compact tool outputs that preserve correctness,
 reuses exact current evidence, and expands diagnostics only when a compact failure result is
-insufficient for the next repair decision.
+insufficient for the next repair decision. `scripts/source-context.mjs` and `scripts/git-state.mjs`
+are the preferred compact source/Git tools; the Implementor does not run a bare repository-wide
+`git status`, `git diff`, `git log`, or `git show` when the narrower bounded tool answers the same
+question.
 
 Plan-selected KB retrieval is demand-driven. The Implementor starts from the compacted KB/source
 handoff and uses an exact plan-supplied retrieval input only when deeper detail is materially
@@ -198,11 +236,18 @@ required. It does not rediscover policy, domain context, optional processes, or 
 already supplied by Planner.
 
 Detailed deterministic logs/state remain private. Selected task tooling keeps compact success output
-and progressively bounded failure evidence. Already integrated tasks are consumed as authoritative
-repository state rather than reconstructed from other agents' plans, transcripts, or summaries. A
-later Implementor receives broader cross-task context only when a concrete conflict, overlap signal,
-failed candidate check, or Reviewer finding proves it is materially required. Efficiency never hides
-a conflict, failed required check, authorization need, safety condition, or correctness evidence.
+and progressively bounded failure evidence. `scripts/lib/git-publication.mjs#runGit` always captures
+child output rather than inheriting it to the caller's stdio, so a normal Git operation never leaks
+raw progress text; a failure returns a headline bounded to a fixed character cap, and only when the
+full detail would not already fit does it save the complete output privately under ignored
+`.agent-state/automation/git-failures/` and reference that path. `scripts/task-integrate.mjs`'s CLI
+result is compact single-line JSON by default and only pretty-printed with an explicit `--json` flag;
+every machine-readable field remains present either way. Already integrated tasks are consumed as
+authoritative repository state rather than reconstructed from other agents' plans, transcripts, or
+summaries. A later Implementor receives broader cross-task context only when a concrete conflict,
+overlap signal, failed candidate check, or Reviewer finding proves it is materially required.
+Efficiency never hides a conflict, failed required check, authorization need, safety condition, or
+correctness evidence.
 
 <!-- kb
 id: automation.integration.lifecycle
@@ -665,6 +710,27 @@ eligible candidate, the telemetry-enabled Codex runtime loads no flagging contex
 formal flag. Public QA receipt correctness remains independent of candidate and hook health.
 
 <!-- kb
+id: automation.git.inspection
+alias: git-state.mjs
+alias: compact git status
+alias: bounded patch
+source: scripts/git-state.mjs#gitStatusSummary
+source: scripts/git-state.mjs#gitPatch
+adjacent: automation.execution.io-discipline
+adjacent: automation.git.publish
+-->
+## Compact Git inspection
+
+`scripts/git-state.mjs` is the Implementor's preferred compact Git inspection tool. `status` returns
+current branch/task identity, upstream ahead/behind when tracked, and staged/unstaged/untracked paths
+with small stat summaries, all bounded to a fixed shown-path count; it never returns patch content.
+`patch` requires one exact repository-relative path and returns a bounded diff under a hard byte cap;
+when the actual diff would exceed that cap, the tool truncates the returned text and saves the
+complete diff privately, returning only its path. Reading Git state through this tool, rather than
+reconstructing it from repeated bare `git status`/`git diff` calls, keeps provider-visible I/O bounded
+without losing the ability to inspect an exact path on demand.
+
+<!-- kb
 id: automation.git.publish
 alias: targeted push
 alias: git sync commit push
@@ -673,6 +739,7 @@ source: scripts/git-sync-commit-push.mjs#requireManifest
 source: scripts/git-sync-commit-push.mjs#explicitPathScope
 source: AGENTS.md#Implementor universal policy
 adjacent: automation.integration.lifecycle
+adjacent: automation.git.inspection
 -->
 ## Authorized Git publication
 
@@ -683,6 +750,11 @@ verification, and eligible cleanup. The approved Phase 2 task supplies that boun
 authorization; do not ask for a second approval merely because the task moves from its task branch into
 integration. Publication never authorizes deployment, unrelated Git changes, force-push, or direct
 manual advancement of `main`.
+
+Every Git operation the integration/publication tooling runs, success or failure, captures its output
+rather than inheriting the caller's stdio: a normal fetch/merge/commit/push never prints raw progress
+text, and a failure surfaces a bounded headline with the complete detail saved privately only when it
+would not already fit. See `Provider-visible I/O discipline` and `Compact Git inspection` above.
 
 Normal publication scope is never inferred from the dirty working tree. The task branch may publish
 only the plan's current task-owned `Direct Edits`; paths under `Integration Finalization` are not

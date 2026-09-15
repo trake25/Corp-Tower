@@ -29,6 +29,7 @@ implicitly widen KB adjacency.
 | `automation.docs.scope` | [automation.md#docs-scoping](./automation.md#docs-scoping) | source concept ownership, documentation ownership |
 | `automation.docs.validation` | [automation.md#kb-validation](./automation.md#kb-validation) | concept KB validator |
 | `automation.execution.io-discipline` | [automation.md#provider-visible-io-discipline](./automation.md#provider-visible-io-discipline) | provider-visible I/O, Implementor I/O discipline |
+| `automation.git.inspection` | [automation.md#compact-git-inspection](./automation.md#compact-git-inspection) | git-state.mjs, compact git status, bounded patch |
 | `automation.git.publish` | [automation.md#authorized-git-publication](./automation.md#authorized-git-publication) | targeted push, git sync commit push, task branch publication |
 | `automation.integration.conflicts` | [automation.md#integration-conflict-handling](./automation.md#integration-conflict-handling) | integration conflict, silent conflict, overlap risk |
 | `automation.integration.lifecycle` | [automation.md#task-integration-lifecycle](./automation.md#task-integration-lifecycle) | task integration, integration candidate, remote task branch |
@@ -45,6 +46,7 @@ implicitly widen KB adjacency.
 | `automation.retrieval.direct` | [automation.md#direct-retrieval-discipline](./automation.md#direct-retrieval-discipline) | agent retrieval, bounded context |
 | `automation.retrieval.fallback` | [automation.md#retrieval-fallback](./automation.md#retrieval-fallback) | source fallback, broad fallback |
 | `automation.retrieval.protocol` | [automation.md#concept-retrieval-protocol](./automation.md#concept-retrieval-protocol) | context.mjs, context query |
+| `automation.retrieval.source` | [automation.md#bounded-source-search-and-anchor-reads](./automation.md#bounded-source-search-and-anchor-reads) | source-context.mjs, bounded source search, source anchors |
 | `automation.retrieval.states` | [automation.md#retrieval-result-states](./automation.md#retrieval-result-states) | needs-anchor, needs-filter, retrieval-defect |
 | `automation.task-close.lifecycle` | [automation.md#task-close-lifecycle](./automation.md#task-close-lifecycle) | task close, task-close |
 | `automation.task-close.plan-archive` | [automation.md#plan-archival](./automation.md#plan-archival) | plan done, archive plan |

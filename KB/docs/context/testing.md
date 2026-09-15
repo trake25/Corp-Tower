@@ -7,11 +7,14 @@ id: testing.selection.local
 alias: qa-gate
 alias: targeted QA
 source: scripts/qa-gate.mjs#selectQa
+source: scripts/qa-gate.mjs#selectContractQa
 -->
 ## Local QA selection
 
 When executable QA is enabled for the task, `qa-gate` selects verification from explicit task-owned paths rather than the dirty tree. A changed test runs itself; shared or unmapped runtime code can widen to the affected domain.
 Server checks include syntax plus mapped Node tests, client checks include host-matching Godot smoke and mapped GUT, and infra/docs/site-only work does not inherit game suites without runtime risk.
+
+`selectContractQa` maps a changed focused-tooling source or its own test to that tool's exact regression suite regardless of whether the path also happens to be an automation-protocol test: `scripts/lib/git-publication.mjs` selects both the Git publication and task-integration suites, `scripts/git-sync-commit-push.mjs` selects the Git publication suite, `scripts/git-state.mjs` and `scripts/source-context.mjs` each select their own focused test. Contract selection is independent from `selectToolingQa`, which never auto-selects an automation-protocol test.
 
 When executable QA is disabled, ordinary completion does not run those selected regression suites solely for closure. Required patch integrity and task-triggered KB/generated consistency remain separate from optional executable QA; valid legacy task-close manifests retain their explicitly selected QA behavior.
 

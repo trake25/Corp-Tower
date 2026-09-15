@@ -5,7 +5,7 @@ Each row is derived from authored concept metadata and a current stable source a
 
 ## testing.automation.protocol
 
-Owner: `KB/docs/context/testing.md:122-139` → **Automation protocol coverage**
+Owner: `KB/docs/context/testing.md:125-142` → **Automation protocol coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -20,14 +20,14 @@ Owner: `KB/docs/context/testing.md:122-139` → **Automation protocol coverage**
 | `scripts/tests/codex-observability-hook.test.mjs` | `production hook smoke keeps observability fail-open and private` | 66 | `sed -n 54,86p scripts/tests/codex-observability-hook.test.mjs` |
 | `scripts/tests/codex-task-run.test.mjs` | `telemetry-enabled launcher establishes an opt-in binding that settles without task-close` | 37 | `sed -n 25,57p scripts/tests/codex-task-run.test.mjs` |
 | `scripts/tests/task-receipt.test.mjs` | `standalone receipt writes only explicit sanitized scope and states skipped QA` | 16 | `sed -n 4,36p scripts/tests/task-receipt.test.mjs` |
-| `scripts/qa-gate.mjs` | `selectToolingQa` | 97 | `sed -n 85,117p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectToolingQa` | 104 | `sed -n 92,124p scripts/qa-gate.mjs` |
 | `scripts/fixtures/agent-observability/provider-events.json` | `events` | 25 | `sed -n 13,45p scripts/fixtures/agent-observability/provider-events.json` |
 
 Adjacent concepts: `automation.retrieval.protocol`, `automation.task-close.lifecycle`, `automation.orchestration.ownership`
 
 ## testing.balance.tools
 
-Owner: `KB/docs/context/testing.md:97-100` → **Balance tools**
+Owner: `KB/docs/context/testing.md:100-103` → **Balance tools**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -40,19 +40,19 @@ Adjacent concepts: `gameplay.bots.calibration`
 
 ## testing.client.coverage
 
-Owner: `KB/docs/context/testing.md:48-53` → **Godot coverage**
+Owner: `KB/docs/context/testing.md:51-56` → **Godot coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
 | `src/Client/App/corp-tower/Tests/CiSmokeTest.gd` | `check_application_scripts` | 41 | `sed -n 29,61p src/Client/App/corp-tower/Tests/CiSmokeTest.gd` |
 | `src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` | `test_game_state_renders_rail_and_top_bar` | 49 | `sed -n 37,69p src/Client/App/corp-tower/Tests/Gut/GameUi/test_game_ui_baseline.gd` |
-| `scripts/qa-gate.mjs` | `main` | 272 | `sed -n 260,292p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `main` | 279 | `sed -n 267,299p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
 ## testing.client.rendered
 
-Owner: `KB/docs/context/testing.md:63-74` → **Rendered client verification**
+Owner: `KB/docs/context/testing.md:66-77` → **Rendered client verification**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -63,7 +63,7 @@ Adjacent concepts: `hud.constraint.rendered-verification`, `ui.constraint.render
 
 ## testing.client.snapgrid-isolation
 
-Owner: `KB/docs/context/testing.md:82-85` → **SnapGrid shared-state isolation**
+Owner: `KB/docs/context/testing.md:85-88` → **SnapGrid shared-state isolation**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -74,7 +74,7 @@ Adjacent concepts: none
 
 ## testing.contract.tutorial-parity
 
-Owner: `KB/docs/context/testing.md:146-152` → **Tutorial parity**
+Owner: `KB/docs/context/testing.md:149-155` → **Tutorial parity**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -84,7 +84,7 @@ Adjacent concepts: `tutorial.defaults.parity`
 
 ## testing.release.gates
 
-Owner: `KB/docs/context/testing.md:162-174` → **Release gates**
+Owner: `KB/docs/context/testing.md:165-177` → **Release gates**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -95,17 +95,18 @@ Adjacent concepts: `build.android.pipeline`, `deploy.eks.workflows`
 
 ## testing.selection.local
 
-Owner: `KB/docs/context/testing.md:11-19` → **Local QA selection**
+Owner: `KB/docs/context/testing.md:12-22` → **Local QA selection**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
-| `scripts/qa-gate.mjs` | `selectQa` | 125 | `sed -n 113,145p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectQa` | 132 | `sed -n 120,152p scripts/qa-gate.mjs` |
+| `scripts/qa-gate.mjs` | `selectContractQa` | 125 | `sed -n 113,145p scripts/qa-gate.mjs` |
 
 Adjacent concepts: none
 
 ## testing.server.coverage
 
-Owner: `KB/docs/context/testing.md:26-29` → **Server coverage**
+Owner: `KB/docs/context/testing.md:29-32` → **Server coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|
@@ -115,7 +116,7 @@ Adjacent concepts: none
 
 ## testing.server.reconnect
 
-Owner: `KB/docs/context/testing.md:36-39` → **Reconnect coverage**
+Owner: `KB/docs/context/testing.md:39-42` → **Reconnect coverage**
 
 | Source | Anchor | Line | Bounded read |
 |---|---|---:|---|

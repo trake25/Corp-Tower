@@ -23,26 +23,43 @@ reasoning.
 
 ## C. Phase 2 handoff
 
-Every Phase 2 plan contains:
+The Phase 2 plan is a compact retrieval handoff, not a copy of source or repeated universal policy.
+Every Phase 2 plan contains four required sections plus one selected only when execution is
+non-default:
 
-1. `## 1. Intended Behavior`
-2. `## 2. Task-Specific Policy`
-3. `## 3. Context`
-   - `### Compacted KB Context`
-   - `### KB Retrieval Inputs`
-   - `### Source Context`
-4. `## 4. Expected Write Scope`
-5. `## 5. Implementation`
-6. `## 6. Verification`
-7. `## 7. Done Criteria`
+1. `## 1. Behavior` — the approved intended behavior and any task-specific policy.
+2. `## 2. Retrieval` — a `Source` block of locators, searches, filters, and anchors the Implementor
+   starts from (not copied source), plus `Intersections` naming the cross-cutting invariants those
+   locators must jointly satisfy; exact KB concept IDs appear only where deeper semantics are
+   materially needed.
+3. `## 3. Changes` — `Direct` (task-branch edit scope), `Finalization` (integration-candidate-only
+   scope such as shared authored KB prose and generated maps), `Generated` (deterministic outputs and
+   their owning generator), and `Invariants` the implementation must preserve.
+4. `## 4. Verification` — the minimum task-branch and candidate/finalization checks that prove the
+   behavior and its material risks; a Planner/Reviewer-selected policy note belongs here rather than
+   in a separate policy section.
+5. `## Overrides` appears only when execution differs from defaults (for example
+   `Execution shape: ORCHESTRATED`, or a non-default `publication`/`plan_archival` value); a task
+   using every default omits it.
 
-`## Execution Overrides` appears only when execution differs from defaults.
-
-`### Compacted KB Context` and `### KB Retrieval Inputs` may each state `None required` when the
-task has sufficient current-source evidence and no deeper semantic KB authority is material.
+Repeated universal policy, feasibility narrative already proven during planning, and empty sections
+are removed rather than carried into Phase 2 for completeness. A section may state `None required`
+only when that is itself the material fact (no deeper KB authority is needed, no Finalization scope
+applies); it is not restated boilerplate.
 
 A default-OFF optional process is not named in the plan. Planner compiles its policy only when the
 process is selected ON or otherwise made non-default. Normal single-run execution is implicit.
+
+### Planner/Reviewer vs Implementor context
+
+Token/context optimization is an Implementor-only constraint. Planner and Reviewer use all repository
+context needed for correctness — they always inspect intersecting features and relevant edge cases,
+and provider-token savings never limit that investigation. The Implementor instead treats Phase 2 as a
+bounded retrieval handoff: it reads current repository files itself from the plan's `Source` locators
+rather than expecting copied source, reconstructs context only when current source contradicts the
+plan or exposes a missing dependency, and prefers compact source/Git tooling over routine broad
+`git status`/`git diff`/`git log`/`git show`. Codex and Claude Code both implement the same
+Implementor contract from `AGENTS.md`; neither gets a provider-specific relaxation of it.
 
 ## D. Codex runtime
 
