@@ -60,7 +60,7 @@ export function createCandidate({ root = process.cwd(), requestId, mainBase, tas
 }
 export function candidateHead(root, worktree) { return runGit(worktree, ['rev-parse', 'HEAD']); }
 export function candidateDirtyPaths(worktree) {
-  const output = runGit(worktree, ['status', '--porcelain=v1', '-z']);
+  const output = runGit(worktree, ['status', '--porcelain=v1', '-z'], { trim: false });
   return [...new Set(output.split('\0').filter(Boolean).map(line => line.slice(3)).filter(Boolean))].sort();
 }
 export function commitCandidateFinalization({ root = process.cwd(), request, paths }) {

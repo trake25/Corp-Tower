@@ -51,10 +51,11 @@ Only at Phase 2, contextualize far enough to establish:
 - feasibility of every approved behavior against current repository source;
 - relevant durable system contracts when material;
 - complete material dependency paths for approved behavior;
-- exact bounded source files/sections Codex should inspect;
-- likely direct-edit files derived from the feasibility assessment;
-- authored KB/docs and generated outputs expected to change;
-- minimum verification needed to prove completion and identified material risks.
+- exact bounded source files/sections the Implementor should inspect;
+- likely task-branch direct-edit files derived from the feasibility assessment;
+- authored KB/docs or other high-contention files that must be deferred to integration finalization;
+- deterministic generated outputs expected to change and the stage that owns their generation;
+- minimum task-branch and candidate verification needed to prove completion and identified material risks.
 
 Do not guess implementation files merely to make a plan look complete.
 
@@ -66,8 +67,9 @@ For each approved Phase 1 behavior, verify against current source:
 - what already supports the behavior;
 - what currently prevents or incompletely supports it;
 - the complete material source/state path required to guarantee it;
-- the expected direct-edit boundaries/files implied by that path;
-- the minimum verification that proves the behavior and its material failure/recovery paths.
+- the expected task-branch direct-edit boundaries/files implied by that path;
+- whether durable KB/docs, shared metadata, generated maps/indexes, or other high-contention artifacts must be deferred to integration finalization against latest `main`;
+- the minimum task-branch and candidate verification that proves the behavior and its material failure/recovery paths.
 
 Finding an obvious owner file or demonstrating that an implementation appears possible is not sufficient. Feasibility means current evidence supports a complete implementation path that can guarantee the approved behavior.
 
@@ -92,25 +94,25 @@ Do not treat an approximate animation/tuning duration as an authoritative comple
 If feasibility exposes an unresolved architectural dependency:
 - continue repository analysis when the approved behavior already determines the required outcome;
 - return to the applicable design section when a new product/workflow decision is actually required;
-- do not defer the unresolved dependency to Codex's current-source judgment.
+- do not defer the unresolved dependency to the Implementor's current-source judgment.
 
 For integration-heavy tasks, include a compact `### Feasibility & Dependency Trace` in Phase 2 Context mapping each material approved behavior to:
 - current source/state path;
 - identified gap or existing support;
-- required boundary/files;
-- verification proof.
+- required task-branch and integration-finalization boundaries/files;
+- verification proof, including candidate verification when stale-main or silent semantic integration can materially invalidate correctness.
 
 Omit that subsection for simple local tasks where no material cross-boundary dependency exists.
 
 ## Policy selection
 
-Read `policy/CODEX.md#ENTRY#` and follow only the implementation and conditional sections it selects for the task.
+Read `policy/IMPLEMENTOR.md#ENTRY#` and follow only the implementation and conditional sections it selects for the task.
 
-Compile only selected task policy into `## 2. Task-Specific Policy` and any exact non-default process assignments required by CODEX policy into `## Execution Overrides`.
+Compile only selected task policy into `## 2. Task-Specific Policy` and any exact non-default process assignments required by IMPLEMENTOR policy into `## Execution Overrides`.
 
-Do not copy universal `AGENTS.md` rules or duplicate CODEX routing/process prose in the plan.
+Do not copy universal `AGENTS.md` rules or duplicate IMPLEMENTOR routing/process prose in the plan.
 
-Repository agent-policy/adapter Markdown is user-owned manual configuration. If approved behavior requires changing `AGENTS.md`, `policy/*.md`, or `CLAUDE.md`, ChatGPT provides complete replacement files for the user to apply before Codex implementation. Never assign those files to Codex write scope.
+Repository agent-policy/adapter Markdown is user-owned manual configuration. If approved behavior requires changing `AGENTS.md`, `policy/*.md`, or `CLAUDE.md`, ChatGPT provides complete replacement files for the user to apply before Implementor execution. Never assign those files to Implementor write scope.
 
 ## PLAN-PHASE-2-B (Scenario based only)
 
@@ -120,23 +122,35 @@ If completing the task requires user manual intervention outside ordinary manual
 
 The plan has exactly three authority layers:
 
-1. `AGENTS.md` — universal Codex execution policy.
+1. `AGENTS.md` — universal Implementor execution policy.
 2. Phase 2 task policy — only policy selected for this task.
 3. Planner-selected repository context — current source plus KB evidence only where semantic or durable-contract context is materially needed.
 
 Do not use or route through agent skills.
 
+The Phase 2 task contract is provider-neutral. Do not add provider-specific execution instructions unless an explicitly selected non-default process has a current provider-specific requirement; otherwise runtime choice does not change intended behavior, task policy, source context, verification, integration-finalization scope, or done criteria.
+
 ## Defaults and selected policy
 
 Normal single-run execution and default process values are implicit.
 
-Follow `policy/CODEX.md` for any non-default process encoding or selected execution shape. Do not restate universal closeout mechanics from `AGENTS.md`.
+Follow `policy/IMPLEMENTOR.md` for any non-default process encoding or selected execution shape. Do not restate universal closeout/integration mechanics from `AGENTS.md`.
 
 ## Execution-shape planning
 
-Use the default single-run shape unless semantic decomposition materially reduces reconstruction/integration risk.
+Use the default single-Implementor shape unless semantic decomposition materially reduces reconstruction/integration risk. Default execution does not authorize delegation, subagents, or worker agents.
 
-If ORCHESTRATED is selected, follow `policy/CODEX.md#ORCHESTRATION#` and state `Execution shape: ORCHESTRATED` exactly once in `## 2. Task-Specific Policy`.
+Independent task branches later serialized by the deterministic integration queue remain separate single-run tasks; cross-task queueing is completion coordination, not ORCHESTRATED execution.
+
+If ORCHESTRATED is selected, follow `policy/IMPLEMENTOR.md#ORCHESTRATION#` and state `Execution shape: ORCHESTRATED` exactly once in `## 2. Task-Specific Policy`.
+
+## Integration planning
+
+When publication remains enabled, plan for the task as an independently reviewable remote task revision that later converges against the then-current `main`.
+
+Keep normal implementation on the task branch. Put shared authored KB prose, generated KB maps/routers, and any other artifact whose correct content depends on the already-integrated repository state under `Integration Finalization`, not `Direct Edits`. Use integration finalization only when latest-main context materially improves correctness or avoids predictable cross-task contention; do not defer ordinary source work merely because another task might exist.
+
+Do not require an Implementor to read prior agents' plans, transcripts, or summaries as routine integration context. Already integrated work is authoritative repository state. When likely overlap, changed interfaces, or cross-task semantic coupling can create a silent conflict that Git alone cannot prove safe, identify the narrow risk boundary and the minimum candidate verification/review evidence needed. Exact remote task/candidate revision versus current `main` is the preferred review surface.
 
 ## Standard Phase 2 format
 
@@ -158,47 +172,59 @@ Include only implementation-relevant KB prose actually used by Planner. If no KB
 
 #### `### KB Retrieval Inputs`
 
-List exact canonical concept IDs and Planner-resolved aliases only when Codex may materially need deeper KB detail during implementation. If none are needed, state `None required`.
+List exact canonical concept IDs and Planner-resolved aliases only when the Implementor may materially need deeper KB detail during implementation. If none are needed, state `None required`.
 
 #### `### Source Context`
 
-List exact current source files plus bounded symbols/sections Codex should inspect and why.
+List exact current source files plus bounded symbols/sections the Implementor should inspect and why.
 
 #### `### Feasibility & Dependency Trace` (integration-heavy tasks only)
 
-Map each material approved behavior to its current source/state path, identified gap or existing support, required boundary/files, and verification proof. Include only material integration dependencies; omit for simple local tasks.
+Map each material approved behavior to its current source/state path, identified gap or existing support, required task-branch/integration-finalization boundary, and verification proof. Include only material integration dependencies; omit for simple local tasks.
 
 ### `## 4. Expected Write Scope`
 
 #### `### Direct Edits`
 
-List likely authored files derived from the feasibility/dependency assessment.
+List likely authored files to be changed on the task branch, derived from the feasibility/dependency assessment.
 
-The expected write scope is the result of the approved-behavior feasibility assessment, not a list of obvious owner files. Include every materially required direct dependency established by current source. If current evidence cannot establish whether a file must change, say so rather than guessing.
+The direct-edit scope is the result of the approved-behavior feasibility assessment, not a list of obvious owner files. Include every materially required source/test/task-owned dependency established by current source. Do not place shared KB prose, generated KB maps/routers, or another explicitly deferred high-contention artifact here. If current evidence cannot establish whether a file must change, say so rather than guessing.
+
+#### `### Integration Finalization`
+
+List authored files that must be changed only after the integration tool reports `READY_FOR_FINALIZATION` and the candidate already contains latest `main` plus the exact task revision. This normally includes task-required authored KB concept prose and may include other shared high-contention metadata/docs whose correct final content depends on integrated repository state. State `None` when no deferred authored finalization is required.
+
+This is a bounded semantic scope, not permission for unrelated feature work or general conflict cleanup.
 
 #### `### Generated Outputs`
 
-List only deterministic generated outputs expected to change.
+List only deterministic generated outputs expected to change and identify whether they are produced from task-branch direct edits or integration-finalization authored changes. Generated KB routers/maps derived from deferred KB prose belong to integration finalization and must never be hand-edited.
 
-This is evidence-based expected scope, not a hard whitelist unless strict execution is selected. Policy/adapter files requiring manual replacement are never Codex direct edits.
+The expected write scope is evidence-based rather than a hard whitelist unless strict execution is selected. Policy/adapter files requiring manual replacement are never Implementor direct edits or integration-finalization edits.
 
 ### `## 5. Implementation`
 
 Provide ordered required outcomes, material interfaces/invariants, compatibility constraints, and exact authored prose when wording carries behavior. Leave low-level code structure to current-source judgment unless strict execution is selected.
 
-For cross-boundary tasks, prescribe semantic interfaces/invariants required to guarantee the approved behavior when the feasibility assessment establishes them. Do not leave unresolved lifecycle ownership, persistence continuity, synchronization, boundedness, idempotency, or fallback behavior for Codex to invent.
+Order task-branch implementation before any deferred integration finalization. When wording carries durable KB/docs behavior, provide the exact intended prose or semantic requirements for the later finalization step rather than instructing the Implementor to author stale shared prose on its original task baseline.
+
+For cross-boundary tasks, prescribe semantic interfaces/invariants required to guarantee the approved behavior when the feasibility assessment establishes them. Do not leave unresolved lifecycle ownership, persistence continuity, synchronization, boundedness, idempotency, or fallback behavior for the Implementor to invent.
 
 ### `## 6. Verification`
 
 Specify only minimum task-required verification plus consistency/generated mechanics required by actual changed scope or selected task policy.
 
-"Minimum" means the minimum proof of every approved behavior plus every material feasibility risk identified during Phase 2. If persistence, reconnect/resync, lifecycle timing, stale/duplicate actions, disconnect membership, fallback, or other failure/recovery paths are material to feasibility, verification must exercise them.
+Separate verification only where the distinction matters:
+- task-branch verification proves the task's own implementation before submission;
+- candidate verification proves the exact integrated candidate after latest-main merge and deferred finalization, including any narrow silent-conflict risk identified during feasibility.
 
-For Godot/client work, select headless smoke/GUT when needed to prove implementation correctness. Rendered/visual verification is optional and must be selected explicitly only when visual judgment materially helps prove the approved behavior. If selected verification later cannot run because of tooling/environment limitations, the implementor reports that limitation; Planner does not pre-disable the required check or change archival/publication defaults.
+"Minimum" means the minimum proof of every approved behavior plus every material feasibility risk identified during Phase 2. If persistence, reconnect/resync, lifecycle timing, stale/duplicate actions, disconnect membership, fallback, semantic cross-task coupling, or other failure/recovery paths are material to feasibility, verification must exercise them.
+
+For Godot/client work, select headless smoke/GUT when needed to prove implementation correctness. Rendered/visual verification is optional and must be selected explicitly only when visual judgment materially helps prove the approved behavior. If selected verification later cannot run because of tooling/environment limitations, the Implementor reports that limitation; Planner does not pre-disable the required check or change archival/publication defaults.
 
 ### `## 7. Done Criteria`
 
-State observable task completion conditions only. Do not repeat universal archival or publication mechanics from `AGENTS.md`.
+State observable task completion conditions only. Do not repeat universal archival, queueing, candidate, or publication mechanics from `AGENTS.md`.
 
 ### `## Execution Overrides`
 
@@ -209,8 +235,8 @@ Append only when required by selected non-default policy.
 Phase 2 is ready only when current evidence supports:
 - feasibility of every approved behavior;
 - complete material dependency paths;
-- source context and expected write scope derived from those paths;
-- verification sufficient to prove the approved behavior and identified material risks;
+- task-branch direct edits and integration-finalization scope derived from those paths;
+- verification sufficient to prove the approved behavior and identified material risks on the relevant task/candidate state;
 - any KB semantic context actually required.
 
 An unresolved material dependency means Phase 2 is not ready.
@@ -219,8 +245,8 @@ Keep unrelated maintenance out of scope and do not repeat requirements across se
 
 Deliver the plan as `[short-task-name].md`.
 
-In the accompanying reply state task complexity, recommended model/effort, and a short reason. Follow any selected CODEX policy that requires an out-of-plan user instruction.
+In the accompanying reply state task complexity, recommended model/effort, and a short reason. Follow any selected IMPLEMENTOR policy that requires an out-of-plan user instruction.
 
-After delivering Phase 2, stop. Implementation belongs to Codex.
+After delivering Phase 2, stop. Implementation belongs to the Implementor.
 
-If the user later requests post-implementation QA, route through `policy/REVIEWER.md#ENTRY#`.
+If the user later requests post-implementation QA or a bounded pre-integration semantic-risk review, route through `policy/REVIEWER.md#ENTRY#`.

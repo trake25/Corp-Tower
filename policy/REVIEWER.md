@@ -9,7 +9,7 @@ If uncertain, use FRESH.
 
 Identify review type:
 
-- QA — completed Codex implementation is ready for review.
+- QA — completed Implementor work is ready for review, either as an integrated result or as an exact remote task/candidate revision surfaced by the deterministic integration lifecycle for bounded semantic-risk review.
 - BUG — a bug or regression has been reported or discovered.
 
 Read only:
@@ -24,35 +24,48 @@ Use the approved intended behavior and implementation plan already present in th
 
 For orchestrated work, the approved parent plan is the implementation contract. Worker assignments and handoffs are supporting execution evidence, not separate behavior authorities.
 
+For independent task integration, the approved task plan remains the behavior contract. Queue order, another agent's plan, or another agent's transcript does not become behavior authority merely because current `main` contains earlier integrated work.
+
 Do not reread or reconstruct planning decisions already established in the conversation.
 
 #FRESH#
 
 Reconstruct only the minimum review contract needed.
 
-Follow `policy/CHATGPT.md`'s repository-contextualization contract. Inspect current source, the relevant plan/diff/commit, QA receipt, and KB evidence only where materially needed.
+Follow `policy/CHATGPT.md`'s repository-contextualization contract. Inspect current source, the relevant plan, exact remote task/candidate/integrated revision, QA receipt, and KB evidence only where materially needed.
 
 Do not assume intended behavior from conversation memory that is not present in this session.
 
 #QA#
 
-Inspect actual current repository evidence, not Codex summaries.
+QA:
 
-Compare the integrated implementation against the approved or reconstructed contract.
+Inspect actual current repository evidence, not Implementor summaries.
+
+First identify the review surface:
+- INTEGRATED — the task has reached the integrated repository state and normal post-implementation QA applies; or
+- PRE-INTEGRATION — the deterministic integration lifecycle has surfaced a concrete merge/overlap/QA/semantic-risk condition and an exact remote task branch or candidate SHA is available for bounded review before `main` advances.
+
+For INTEGRATED review, compare the integrated implementation against the approved or reconstructed contract.
+
+For PRE-INTEGRATION review, compare only the exact task/candidate revision against the current authoritative `main` and the approved or reconstructed task contract. Treat already integrated work as repository state. Do not load previous agents' plans, transcripts, or summaries unless the bounded evidence proves that broader semantic context is materially required.
 
 When the plan contains a feasibility/dependency trace or explicit cross-boundary invariants, verify those declared boundaries first:
 - confirm the implementation covers the complete material source/state path the plan identified;
 - confirm required persistence, hydration, reconnect/resync, timing, synchronization, membership, idempotency, fallback, and recovery invariants where applicable;
-- confirm the selected verification actually exercises the material feasibility risks identified by Planner.
+- confirm the selected verification actually exercises the material feasibility risks identified by Planner;
+- when review is PRE-INTEGRATION, confirm the candidate preserves current-main behavior outside the approved task boundary and that any deferred integration-finalization artifacts match the candidate's actual integrated state.
 
 Planner-declared feasibility does not prevent Reviewer from finding additional integration defects, but Reviewer should not silently reconstruct missing Planner analysis as proof that the implementation is complete.
 
 Inspect only relevant:
 - changed source;
-- diff or commit;
+- exact task/candidate/integrated diff or commit;
+- current-main source touched by a reported overlap/semantic risk;
 - affected docs/maps;
 - required verification evidence;
-- worker handoffs when material to integration;
+- integration-tool conflict/overlap/failure evidence when material;
+- worker handoffs when material to ORCHESTRATED execution;
 - permanent QA changes introduced by the task.
 
 Classify material findings as:
@@ -69,7 +82,9 @@ Report:
 - MAINTENANCE
 - BLOCKED
 
-If PASS, let the user manually test.
+If PASS on PRE-INTEGRATION review, state that no review blocker remains for the exact reviewed revision and let the deterministic integration lifecycle continue. Do not treat that as proof that later candidate state or final `main` has already passed post-integration QA.
+
+If PASS on INTEGRATED review, let the user manually test.
 
 If FIX REQUIRED, continue to `#BUG#`.
 
@@ -89,12 +104,14 @@ For workflow/tooling bugs, describe intended technical behavior.
 
 For defects following orchestrated work, use the parent contract as behavior authority and identify whether the repair is worker-local or cross-unit.
 
+For defects following independent task integration, use the affected task contract plus exact task/candidate/current-main revisions as authority. Distinguish an Implementor-local defect from a cross-task integration defect; do not reconstruct unrelated agents' reasoning unless bounded source evidence cannot resolve the issue.
+
 If a defect exposes a missing or incomplete feasibility/dependency assessment in the approved plan, make that planning lapse explicit in the focused repair context so the next plan closes the whole affected boundary rather than only the observed symptom.
 
 If intended behavior requires user decisions, present only material decisions as numbered items.
 
 Once the defect and intended behavior are established, search `PLANNER.md` for `#ENTRY#` and create a focused fix plan through the normal planning route.
 
-After Codex completes the fix and the user reports `Done. QA.` or equivalent, return to `#QA#`.
+After the Implementor completes the fix and the user reports `Done. QA.` or equivalent, return to `#QA#`.
 
-After QA passes, have the user retest the originally reported behavior. Repeat the BUG → plan → QA → retest loop if necessary.
+After integrated QA passes, have the user retest the originally reported behavior. Repeat the BUG → plan → QA → retest loop if necessary.
