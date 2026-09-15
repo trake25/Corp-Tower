@@ -26,10 +26,6 @@ function fail(message, code = 2) {
   process.exit(code);
 }
 
-function problem(status, message, details = {}) {
-  return { status, message, ...details };
-}
-
 /** Mirrors `context-query.mjs#measured`: converges on the exact pretty-printed JSON byte count actually printed, including its own self-referential `returned_bytes` field. */
 function measuredBytes(value) {
   let bytes = 0;
@@ -47,6 +43,41 @@ function measuredBytes(value) {
 function boundedPreview(value, limit = 200) {
   const text = String(value ?? '');
   return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
+}
+
+/** A minimal, always-fitting budget-exceeded result for when even a bounded failure envelope cannot fit. */
+function minimalProblem(kind, maxBytes) {
+  const result = {
+    schema_version: 1,
+    query: { kind, text: '' },
+    status: 'budget-exceeded',
+    message: `result exceeds the ${maxBytes} byte limit`,
+    limits: { max_bytes: maxBytes, returned_bytes: 0 },
+  };
+  measuredBytes(result);
+  return result;
+}
+
+/**
+ * Single failure-result authority: bounds the message and every string detail before building the
+ * result, then measures the full envelope against maxBytes exactly like a matched result, falling
+ * back to `minimalProblem` if the bounded envelope still cannot fit. No failure path may bypass this.
+ */
+function boundedProblem(kind, maxBytes, status, message, queryText, details = {}) {
+  const bounded = {};
+  for (const [key, value] of Object.entries(details)) {
+    bounded[key] = typeof value === 'string' ? boundedPreview(value) : value;
+  }
+  const result = {
+    schema_version: 1,
+    query: { kind, text: boundedPreview(queryText) },
+    status,
+    message: boundedPreview(message, 300),
+    ...bounded,
+    limits: { max_bytes: maxBytes, returned_bytes: 0 },
+  };
+  if (measuredBytes(result) <= maxBytes) return result;
+  return minimalProblem(kind, maxBytes);
 }
 
 /** Explicit repository-relative directory/file scope with the same traversal/symlink protections as file targets, without requiring a leaf file. */
@@ -93,18 +124,19 @@ function gitGrep(root, pattern, scope, { regex = false } = {}) {
 /** Bounded scoped search: explicit repository path/scope, fixed result count, and a hard output-byte cap. */
 export function searchSource(root, pattern, { scope, regex = false } = {}) {
   const kind = 'search';
-  if (typeof pattern !== 'string' || !pattern.trim()) return problem('bad-query', 'search pattern must be a non-empty string');
+  if (typeof pattern !== 'string' || !pattern.trim())
+    return boundedProblem(kind, MAX_SEARCH_BYTES, 'bad-query', 'search pattern must be a non-empty string', pattern);
   let resolvedScope;
   try {
     resolvedScope = repositoryRelativeScope(root, scope, 'search scope');
   } catch (error) {
-    return problem('access-denied', error.message);
+    return boundedProblem(kind, MAX_SEARCH_BYTES, 'access-denied', error.message, pattern, { scope });
   }
   let raw;
   try {
     raw = gitGrep(root, pattern, resolvedScope.normalized, { regex });
   } catch (error) {
-    return problem('tool-error', error.message);
+    return boundedProblem(kind, MAX_SEARCH_BYTES, 'tool-error', error.message, pattern, { scope: resolvedScope.normalized });
   }
   const allMatches = raw.split(/\r?\n/).filter(Boolean).map(line => {
     const split = /^(.*?):(\d+):(.*)$/.exec(line);
@@ -127,9 +159,8 @@ export function searchSource(root, pattern, { scope, regex = false } = {}) {
     result.limits.truncated = true;
   }
   if (measuredBytes(result) > MAX_SEARCH_BYTES) {
-    return problem('budget-exceeded', `search result exceeds the ${MAX_SEARCH_BYTES} byte limit even with no matches`, {
-      query: { kind, text: boundedPreview(pattern), scope: boundedPreview(resolvedScope.normalized) },
-    });
+    return boundedProblem(kind, MAX_SEARCH_BYTES, 'budget-exceeded',
+      `search result exceeds the ${MAX_SEARCH_BYTES} byte limit even with no matches`, pattern, { scope: resolvedScope.normalized });
   }
   return result;
 }
@@ -138,7 +169,7 @@ function safeFileTarget(root, path, label = 'source path') {
   const normalized = repositoryRelativePath(root, path, label);
   const absolute = resolve(root, normalized);
   if (!existsSync(absolute) || !lstatSync(absolute).isFile())
-    return { error: problem('source-target-missing', `source target does not exist: ${normalized}`, { path: normalized }) };
+    return { error: { message: `source target does not exist: ${normalized}`, path: normalized } };
   return { normalized, absolute };
 }
 
@@ -149,9 +180,10 @@ export function readAnchors(root, path) {
   try {
     target = safeFileTarget(root, path);
   } catch (error) {
-    return problem('access-denied', error.message);
+    return boundedProblem(kind, MAX_ANCHOR_BYTES, 'access-denied', error.message, path);
   }
-  if (target.error) return { ...target.error, query: { kind, text: path } };
+  if (target.error)
+    return boundedProblem(kind, MAX_ANCHOR_BYTES, 'source-target-missing', target.error.message, path, { path: target.error.path });
   const text = readFileSync(target.absolute, 'utf8').replace(/\r\n/g, '\n');
   const { lines, symbols: allSymbols } = extractSourceAnchors(target.normalized, text);
   let symbols = allSymbols.slice(0, MAX_ANCHOR_SYMBOLS);
@@ -172,9 +204,8 @@ export function readAnchors(root, path) {
     result.limits.truncated = true;
   }
   if (measuredBytes(result) > MAX_ANCHOR_BYTES) {
-    return problem('budget-exceeded', `anchor listing exceeds the ${MAX_ANCHOR_BYTES} byte limit even with no symbols`, {
-      query: { kind, text: boundedPreview(path) }, path: boundedPreview(target.normalized),
-    });
+    return boundedProblem(kind, MAX_ANCHOR_BYTES, 'budget-exceeded',
+      `anchor listing exceeds the ${MAX_ANCHOR_BYTES} byte limit even with no symbols`, path, { path: target.normalized });
   }
   return result;
 }
@@ -194,8 +225,9 @@ function anchorLine(path, text, anchor) {
   const symbols = extractSourceAnchors(path, text).symbols.filter(symbol => symbol.name === anchor);
   const matches = symbols.length ? symbols.map(symbol => symbol.ln) : stableTextMatches(lines, anchor);
   const unique = [...new Set(matches)];
-  if (!unique.length) return problem('source-anchor-missing', `source anchor '${anchor}' is missing in ${path}`, { path, anchor });
-  if (unique.length > 1) return problem('anchor-ambiguous', `source anchor '${anchor}' is ambiguous (${unique.length} matches) in ${path}`, { path, anchor, matches: unique });
+  if (!unique.length) return { error: { status: 'source-anchor-missing', message: `source anchor '${anchor}' is missing in ${path}` } };
+  if (unique.length > 1)
+    return { error: { status: 'anchor-ambiguous', message: `source anchor '${anchor}' is ambiguous (${unique.length} matches) in ${path}`, matches: unique } };
   return { line: unique[0] };
 }
 
@@ -206,11 +238,12 @@ export function readSource(root, path, { anchor = null, lines: range = null } = 
   try {
     target = safeFileTarget(root, path);
   } catch (error) {
-    return problem('access-denied', error.message);
+    return boundedProblem(kind, MAX_READ_BYTES, 'access-denied', error.message, path);
   }
-  if (target.error) return { ...target.error, query: { kind, text: path } };
-  if (!anchor && !range) return problem('bad-query', 'read requires either --anchor or --lines');
-  if (anchor && range) return problem('bad-query', 'read accepts either --anchor or --lines, not both');
+  if (target.error)
+    return boundedProblem(kind, MAX_READ_BYTES, 'source-target-missing', target.error.message, path, { path: target.error.path });
+  if (!anchor && !range) return boundedProblem(kind, MAX_READ_BYTES, 'bad-query', 'read requires either --anchor or --lines', path);
+  if (anchor && range) return boundedProblem(kind, MAX_READ_BYTES, 'bad-query', 'read accepts either --anchor or --lines, not both', path);
   const text = readFileSync(target.absolute, 'utf8').replace(/\r\n/g, '\n');
   const fileLines = text.split('\n');
   let start;
@@ -218,20 +251,24 @@ export function readSource(root, path, { anchor = null, lines: range = null } = 
   let resolvedAnchor = null;
   if (anchor) {
     const located = anchorLine(target.normalized, text, anchor);
-    if (located.status) return { ...located, query: { kind, text: path } };
+    if (located.error)
+      return boundedProblem(kind, MAX_READ_BYTES, located.error.status, located.error.message, path,
+        { path: target.normalized, anchor, matches: located.error.matches });
     start = Math.max(1, located.line - READ_WINDOW_BEFORE);
     end = Math.min(fileLines.length, located.line + READ_WINDOW_AFTER);
     resolvedAnchor = anchor;
   } else {
     const match = /^(\d+)-(\d+)$/.exec(String(range));
-    if (!match) return problem('bad-query', '--lines must be A-B');
+    if (!match) return boundedProblem(kind, MAX_READ_BYTES, 'bad-query', '--lines must be A-B', path);
     start = Number(match[1]);
     end = Number(match[2]);
     if (start < 1 || end < start || end > fileLines.length)
-      return problem('bad-query', `--lines must be within 1-${fileLines.length}`, { path: target.normalized, file_lines: fileLines.length });
+      return boundedProblem(kind, MAX_READ_BYTES, 'bad-query', `--lines must be within 1-${fileLines.length}`, path,
+        { path: target.normalized, file_lines: fileLines.length });
   }
   if (end - start + 1 > MAX_READ_LINES)
-    return problem('budget-exceeded', `requested range exceeds the ${MAX_READ_LINES} line limit`, { path: target.normalized, lines: [start, end] });
+    return boundedProblem(kind, MAX_READ_BYTES, 'budget-exceeded', `requested range exceeds the ${MAX_READ_LINES} line limit`, path,
+      { path: target.normalized, lines: [start, end] });
   const slice = fileLines.slice(start - 1, end).join('\n');
   const result = {
     schema_version: 1,
@@ -245,9 +282,8 @@ export function readSource(root, path, { anchor = null, lines: range = null } = 
     limits: { max_lines: MAX_READ_LINES, max_bytes: MAX_READ_BYTES, returned_lines: end - start + 1, returned_bytes: 0 },
   };
   if (measuredBytes(result) > MAX_READ_BYTES)
-    return problem('budget-exceeded', `requested range exceeds the ${MAX_READ_BYTES} byte limit`, {
-      path: boundedPreview(target.normalized), anchor: resolvedAnchor ? boundedPreview(resolvedAnchor) : null, lines: [start, end],
-    });
+    return boundedProblem(kind, MAX_READ_BYTES, 'budget-exceeded', `requested range exceeds the ${MAX_READ_BYTES} byte limit`, path,
+      { path: target.normalized, anchor: resolvedAnchor, lines: [start, end] });
   return result;
 }
 
@@ -287,10 +323,12 @@ function resultLines(result) {
   if (result.message) output.push(`reason: ${result.message}`);
   if (result.query?.kind === 'search') {
     for (const match of result.matches || []) output.push(`${match.path}:${match.line}: ${match.text}`);
-    if (result.limits) output.push(`matches: ${result.limits.returned}/${result.limits.total_found}${result.limits.truncated ? ' (truncated)' : ''}`);
+    if (result.limits?.total_found !== undefined)
+      output.push(`matches: ${result.limits.returned}/${result.limits.total_found}${result.limits.truncated ? ' (truncated)' : ''}`);
   } else if (result.query?.kind === 'anchors') {
     for (const symbol of result.symbols || []) output.push(`${symbol.ln}\t${symbol.kind}\t${symbol.name}`);
-    if (result.limits) output.push(`symbols: ${result.limits.returned}/${result.limits.total_found}${result.limits.truncated ? ' (truncated)' : ''}`);
+    if (result.limits?.total_found !== undefined)
+      output.push(`symbols: ${result.limits.returned}/${result.limits.total_found}${result.limits.truncated ? ' (truncated)' : ''}`);
   } else if (result.query?.kind === 'read') {
     if (result.status === 'matched') {
       output.push(`${result.path}:${result.lines[0]}-${result.lines[1]}${result.anchor ? ` (#${result.anchor})` : ''}`, '', result.text);

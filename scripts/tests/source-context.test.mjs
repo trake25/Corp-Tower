@@ -261,3 +261,103 @@ test('read fails closed when an oversized anchor name alone cannot fit the byte 
     env.close();
   }
 });
+
+test('search fails closed on a huge invalid/nonexistent scope in text and JSON modes', () => {
+  const env = fixture();
+  try {
+    const hugeScope = Array.from({ length: 300 }, (_, index) => `scope-segment-${index}`).join('/');
+
+    const result = searchSource(env.root, 'TOKEN', { scope: hugeScope });
+    assert.equal(result.status, 'access-denied');
+    assert.ok(measuredJsonBytes(result) < MAX_SEARCH_BYTES);
+    assert.ok(result.scope.length < hugeScope.length, 'an oversized scope must not be echoed back verbatim');
+    assert.ok(result.message.length < hugeScope.length, 'an oversized scope must not blow up the failure message');
+
+    const cliText = run(['search', 'TOKEN', '--scope', hugeScope], env.root);
+    assert.equal(cliText.status, 1);
+    assert.match(cliText.stdout, /status: access-denied/);
+    assert.ok(Buffer.byteLength(cliText.stdout) < MAX_SEARCH_BYTES);
+
+    const cliJson = run(['search', 'TOKEN', '--scope', hugeScope, '--json'], env.root);
+    assert.equal(cliJson.status, 1);
+    const payload = JSON.parse(cliJson.stdout);
+    assert.equal(payload.status, 'access-denied');
+    assert.ok(Buffer.byteLength(cliJson.stdout) < MAX_SEARCH_BYTES);
+  } finally {
+    env.close();
+  }
+});
+
+test('anchors and read fail closed on a huge missing path in text and JSON modes', () => {
+  const env = fixture();
+  try {
+    const hugePath = Array.from({ length: 300 }, (_, index) => `path-segment-${index}`).join('/');
+
+    const anchorsResult = readAnchors(env.root, hugePath);
+    assert.equal(anchorsResult.status, 'source-target-missing');
+    assert.ok(measuredJsonBytes(anchorsResult) < MAX_ANCHOR_BYTES);
+    assert.ok(anchorsResult.path.length < hugePath.length, 'an oversized path must not be echoed back verbatim');
+
+    const readResult = readSource(env.root, hugePath, { lines: '1-1' });
+    assert.equal(readResult.status, 'source-target-missing');
+    assert.ok(measuredJsonBytes(readResult) < MAX_READ_BYTES);
+    assert.ok(readResult.path.length < hugePath.length, 'an oversized path must not be echoed back verbatim');
+
+    const anchorsCliText = run(['anchors', hugePath], env.root);
+    assert.equal(anchorsCliText.status, 1);
+    assert.match(anchorsCliText.stdout, /status: source-target-missing/);
+    assert.ok(Buffer.byteLength(anchorsCliText.stdout) < MAX_ANCHOR_BYTES);
+
+    const readCliJson = run(['read', hugePath, '--lines', '1-1', '--json'], env.root);
+    assert.equal(readCliJson.status, 1);
+    assert.equal(JSON.parse(readCliJson.stdout).status, 'source-target-missing');
+    assert.ok(Buffer.byteLength(readCliJson.stdout) < MAX_READ_BYTES);
+  } finally {
+    env.close();
+  }
+});
+
+test('read fails closed on a huge missing anchor in text and JSON modes', () => {
+  const env = fixture();
+  try {
+    const hugeAnchor = Array.from({ length: 2000 }, (_, index) => `q${index}`).join('');
+
+    const result = readSource(env.root, 'scripts/lib/example.mjs', { anchor: hugeAnchor });
+    assert.equal(result.status, 'source-anchor-missing');
+    assert.ok(measuredJsonBytes(result) < MAX_READ_BYTES);
+    assert.ok(result.anchor.length < hugeAnchor.length, 'an oversized missing anchor must not be echoed back verbatim');
+    assert.ok(result.message.length < hugeAnchor.length, 'an oversized missing anchor must not blow up the failure message');
+
+    const cliText = run(['read', 'scripts/lib/example.mjs', '--anchor', hugeAnchor], env.root);
+    assert.equal(cliText.status, 1);
+    assert.match(cliText.stdout, /status: source-anchor-missing/);
+    assert.ok(Buffer.byteLength(cliText.stdout) < MAX_READ_BYTES);
+
+    const cliJson = run(['read', 'scripts/lib/example.mjs', '--anchor', hugeAnchor, '--json'], env.root);
+    assert.equal(cliJson.status, 1);
+    assert.equal(JSON.parse(cliJson.stdout).status, 'source-anchor-missing');
+    assert.ok(Buffer.byteLength(cliJson.stdout) < MAX_READ_BYTES);
+  } finally {
+    env.close();
+  }
+});
+
+test('all failure statuses retain a nonzero exit status and bounded status/reason metadata', () => {
+  const env = fixture();
+  try {
+    const cases = [
+      { args: ['search', 'TOKEN', '--scope', '../outside'], status: 'access-denied' },
+      { args: ['anchors', 'scripts/lib/missing.mjs'], status: 'source-target-missing' },
+      { args: ['read', 'scripts/lib/example.mjs', '--anchor', 'nope'], status: 'source-anchor-missing' },
+      { args: ['read', 'scripts/lib/example.mjs', '--lines', '1-9999'], status: 'bad-query' },
+    ];
+    for (const { args, status } of cases) {
+      const result = run(args, env.root);
+      assert.notEqual(result.status, 0, `expected nonzero exit for ${args.join(' ')}`);
+      assert.match(result.stdout, new RegExp(`^status: ${status}$`, 'm'));
+      assert.match(result.stdout, /^reason: .+$/m);
+    }
+  } finally {
+    env.close();
+  }
+});
