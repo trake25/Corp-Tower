@@ -251,8 +251,10 @@ child output rather than inheriting it to the caller's stdio, so a normal Git op
 raw progress text; a failure returns a headline bounded to a fixed character cap, and only when the
 full detail would not already fit does it save the complete output privately under ignored
 `.agent-state/automation/git-failures/` and reference that path. `scripts/task-integrate.mjs`'s CLI
-result is compact single-line JSON by default and only pretty-printed with an explicit `--json` flag;
-every machine-readable field remains present either way. Already integrated tasks are consumed as
+result is a short state-oriented text line by default — the exact fields a caller needs for its next
+action, never a full history, timestamps, path arrays, or verification descriptors — and the full
+stable structured result is available only with an explicit `--json` flag; a default-mode failure is
+likewise a short actionable line, not a structured object. Already integrated tasks are consumed as
 authoritative repository state rather than reconstructed from other agents' plans, transcripts, or
 summaries. A later Implementor receives broader cross-task context only when a concrete conflict,
 overlap signal, failed candidate check, or Reviewer finding proves it is materially required.
@@ -294,8 +296,16 @@ Final candidate verification applies to the exact repository state proposed for 
 publication the integration system rechecks that remote `main` is still the recorded candidate base;
 a moved base becomes `STALE_MAIN` and is never overwritten by force. Only a complete verified
 candidate advances `main`, after which the remote result is verified and eligible candidate/task
-cleanup runs. Plan archival occurs after verified `INTEGRATED` completion; when publication is OFF,
-no integration request is created and normal local archival follows local completion instead.
+cleanup runs. A rejected-push retry reconciles the persisted verified candidate head against current
+`main` before any further candidate commit, QA, or mutation: an already-landed push is recognized as
+integrated instead of republished, an unchanged candidate at the recorded base retries the exact
+verified head without redundant re-finalization, and an incompatible remote move is recognized as
+`STALE_MAIN` before the candidate is ever touched again. Cleanup itself proves the candidate is clean
+and exactly at that verified head before removing it; a diverged, dirty, or unexpectedly missing
+candidate is preserved and reported rather than destroyed, and a persisted per-request cleanup journal
+makes repeated cleanup/recovery attempts safe and idempotent. Plan archival occurs after verified
+`INTEGRATED` completion; when publication is OFF, no integration request is created and normal local
+archival follows local completion instead.
 
 <!-- kb
 id: automation.integration.queue
@@ -372,6 +382,18 @@ not depend on that filesystem layout. A future PostgreSQL, HTTP, Windmill, Tempo
 plane backend may replace storage/notification adapters without changing request identities, state
 transitions, exact-SHA safety, candidate semantics, or the rule of one active integration per target.
 Callers never manipulate queue files, locks, leases, or candidate metadata directly.
+
+State storage is bounded operational state, not a permanent event log. A live, caller-action-required,
+or otherwise recoverable request keeps its full record; once a request reaches a compactable terminal
+outcome (integrated after cleanup completes, aborted, stale, or conflicted) it compacts to a bounded
+recent summary — identity, final state, the exact relevant revision(s), and completion sequence/time —
+and only a fixed recent count is retained per target, with the oldest evicted first. Per-request
+lifecycle history is likewise capped. A monotonic per-target sequence assigns queue order, so ordering
+stays unique and deterministic even after old requests compact or age out. An orphaned atomic
+state-write temp file is reclaimed only when no live mutation lock is present, and integration
+housekeeping/GC removes only proven-disposable artifacts (empty leftover directories, stale Git
+worktree metadata) — it never deletes dirty or unproven orphan candidate/task work, and it never
+sweeps remote branches by name prefix.
 
 <!-- kb
 id: automation.task-ownership.lifecycle
