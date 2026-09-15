@@ -28,8 +28,12 @@ implicitly widen KB adjacency.
 | `automation.docs.retrieval-repair` | [automation.md#retrieval-repair](./automation.md#retrieval-repair) | retrieval maintenance |
 | `automation.docs.scope` | [automation.md#docs-scoping](./automation.md#docs-scoping) | source concept ownership, documentation ownership |
 | `automation.docs.validation` | [automation.md#kb-validation](./automation.md#kb-validation) | concept KB validator |
-| `automation.execution.io-discipline` | [automation.md#provider-visible-io-discipline](./automation.md#provider-visible-io-discipline) | provider-visible I/O, Codex I/O discipline |
-| `automation.git.publish` | [automation.md#authorized-git-publication](./automation.md#authorized-git-publication) | targeted push, git sync commit push |
+| `automation.execution.io-discipline` | [automation.md#provider-visible-io-discipline](./automation.md#provider-visible-io-discipline) | provider-visible I/O, Implementor I/O discipline |
+| `automation.git.publish` | [automation.md#authorized-git-publication](./automation.md#authorized-git-publication) | targeted push, git sync commit push, task branch publication |
+| `automation.integration.conflicts` | [automation.md#integration-conflict-handling](./automation.md#integration-conflict-handling) | integration conflict, silent conflict, overlap risk |
+| `automation.integration.lifecycle` | [automation.md#task-integration-lifecycle](./automation.md#task-integration-lifecycle) | task integration, integration candidate, remote task branch |
+| `automation.integration.queue` | [automation.md#integration-queue](./automation.md#integration-queue) | integration queue, queued task |
+| `automation.integration.storage` | [automation.md#integration-state-and-storage](./automation.md#integration-state-and-storage) | integration state, integration backend |
 | `automation.observability.binding` | [automation.md#observability-binding](./automation.md#observability-binding) | agent observability, task binding |
 | `automation.observability.flags` | [automation.md#workflow-inefficiency-flags](./automation.md#workflow-inefficiency-flags) | workflow candidate, inefficiency flag |
 | `automation.observability.usage` | [automation.md#observability-usage](./automation.md#observability-usage) | provider tokens, rollout usage |
