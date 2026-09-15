@@ -41,6 +41,6 @@ async function main() {
   else if (command === 'recover-lock') result = service.recoverLock();
   else if (command === 'await') { required(values, ['requestId']); result = await service.await({ ...values, timeoutMs: Number(values.timeoutMs || 30_000) }); }
   else throw new Error('usage: task-integrate <start|submit|register|advance|finish|status|abort|recover|recover-lock|await> [options]');
-  console.log(JSON.stringify({ ok: true, result }, null, 2));
+  console.log(JSON.stringify({ ok: true, result }, null, values.json ? 2 : undefined));
 }
 main().catch(error => fail(error.message));

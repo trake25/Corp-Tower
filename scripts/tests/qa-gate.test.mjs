@@ -8,7 +8,10 @@ import {
   AUTOMATION_PROTOCOL_TESTS,
   CONCEPT_KB_TESTS,
   EKS_DESTROY_VERIFIER_TEST,
+  GIT_PUBLICATION_TEST,
+  GIT_STATE_TEST,
   PRODUCTION_ENVIRONMENT_PREFLIGHT_TEST,
+  SOURCE_CONTEXT_TEST,
   TASK_INTEGRATION_TEST,
   TUTORIAL_PARITY_TEST,
   classifyQaFailure,
@@ -160,7 +163,27 @@ test('task-integration tool changes select only their focused regression suite',
     assert.deepEqual(plan.contract_tests, [TASK_INTEGRATION_TEST]);
     assert.equal(plan.tooling_tests.some(test => AUTOMATION_PROTOCOL_TESTS.includes(test)), false, path);
   }
-  assert.deepEqual(selectContractQa(['scripts/lib/git-publication.mjs']).tests, []);
+});
+
+test('git publication tool changes select their focused regression suites', () => {
+  const gitPublicationPaths = ['scripts/lib/git-publication.mjs'];
+  assert.deepEqual(selectContractQa(gitPublicationPaths).tests, [GIT_PUBLICATION_TEST, TASK_INTEGRATION_TEST].sort());
+
+  const gitSyncPaths = ['scripts/git-sync-commit-push.mjs', 'scripts/tests/git-sync-commit-push.test.mjs'];
+  for (const path of gitSyncPaths) {
+    assert.deepEqual(selectContractQa([path]).tests, [GIT_PUBLICATION_TEST]);
+    assert.equal(selectQa([path]).tooling_tests.some(test => AUTOMATION_PROTOCOL_TESTS.includes(test)), false, path);
+  }
+});
+
+test('bounded source/Git inspection tooling changes select their own focused regression tests', () => {
+  const gitStatePaths = ['scripts/git-state.mjs', 'scripts/tests/git-state.test.mjs'];
+  for (const path of gitStatePaths) assert.deepEqual(selectContractQa([path]).tests, [GIT_STATE_TEST]);
+
+  const sourceContextPaths = ['scripts/source-context.mjs', 'scripts/tests/source-context.test.mjs'];
+  for (const path of sourceContextPaths) assert.deepEqual(selectContractQa([path]).tests, [SOURCE_CONTEXT_TEST]);
+
+  assert.deepEqual(selectContractQa(['scripts/lib/source-anchor-extraction.mjs']).tests, []);
 });
 
 test('Production preflight changes select the strict environment regression test', () => {
