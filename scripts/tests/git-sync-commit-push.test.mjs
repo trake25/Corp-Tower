@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { explicitPathScope, manifestScope, requireManifest, validatePublicReceiptEvidence } from '../git-sync-commit-push.mjs';
+import { GIT_FAILURE_DETAIL_CAP, GIT_FAILURE_LOG_DIRECTORY, boundedGitFailureDetail, runGit } from '../lib/git-publication.mjs';
 import { acquireTaskOwnership, releaseTaskOwnership } from '../lib/task-ownership.mjs';
 
 const IDENTITY = Object.freeze({
@@ -143,6 +144,72 @@ test('explicit authorized publication paths work without task-close and can be b
       paths: ['scripts/example.mjs'],
       ownership: ownership.ownership.path,
     }).ownership.status, 'released');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('boundedGitFailureDetail keeps short Git failure output inline and writes no private log', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-git-failure-detail-'));
+  try {
+    const { detail, logPath } = boundedGitFailureDetail(root, '  short   error   text  ');
+    assert.equal(detail, 'short error text');
+    assert.equal(logPath, null);
+    assert.equal(existsSync(join(root, GIT_FAILURE_LOG_DIRECTORY)), false);
+    assert.deepEqual(boundedGitFailureDetail(root, '   '), { detail: '', logPath: null });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('boundedGitFailureDetail truncates long output to the visible cap and saves the complete text privately', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-git-failure-detail-'));
+  try {
+    const long = `${'z'.repeat(GIT_FAILURE_DETAIL_CAP + 500)}`;
+    const { detail, logPath } = boundedGitFailureDetail(root, long);
+    assert.equal(detail.length, GIT_FAILURE_DETAIL_CAP);
+    assert.ok(detail.endsWith('…'));
+    assert.equal(detail.slice(0, -1), long.slice(0, GIT_FAILURE_DETAIL_CAP - 1));
+    assert.ok(logPath.startsWith(`${GIT_FAILURE_LOG_DIRECTORY}/`));
+    assert.equal(readFileSync(resolve(root, logPath), 'utf8'), long);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runGit on a long real Git failure keeps the thrown detail bounded and saves the complete output privately', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-git-runGit-long-failure-'));
+  try {
+    writeFileSync(join(root, 'a.txt'), '');
+    writeFileSync(join(root, 'b.txt'), Array.from({ length: 200 }, (_, index) => `unique line number ${index} of a large no-index diff`).join('\n') + '\n');
+
+    let caught = null;
+    try { runGit(root, ['diff', '--no-index', 'a.txt', 'b.txt']); } catch (error) { caught = error; }
+    assert.ok(caught, 'runGit must throw on a real Git failure');
+    assert.match(caught.message, /^git diff --no-index a\.txt b\.txt failed: /);
+    assert.ok(Buffer.byteLength(caught.message) < GIT_FAILURE_DETAIL_CAP + 150, 'the thrown message must stay near the bounded cap, not the full diff');
+
+    const logMatch = caught.message.match(/\(full output: (.+)\)$/);
+    assert.ok(logMatch, caught.message);
+    const logPath = resolve(root, logMatch[1]);
+    assert.ok(existsSync(logPath));
+    const full = readFileSync(logPath, 'utf8');
+    assert.ok(full.length > GIT_FAILURE_DETAIL_CAP, 'the private log must retain the complete diff, not the truncated headline');
+    assert.match(full, /unique line number 199/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runGit on a short real Git failure stays inline with no private log', () => {
+  const root = mkdtempSync(join(tmpdir(), 'corp-git-runGit-short-failure-'));
+  try {
+    assert.throws(() => runGit(root, ['show', 'refs/heads/definitely-not-a-real-branch']), error => {
+      assert.match(error.message, /^git show refs\/heads\/definitely-not-a-real-branch failed: /);
+      assert.doesNotMatch(error.message, /full output:/);
+      return true;
+    });
+    assert.equal(existsSync(join(root, GIT_FAILURE_LOG_DIRECTORY)), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

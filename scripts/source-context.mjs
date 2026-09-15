@@ -30,6 +30,25 @@ function problem(status, message, details = {}) {
   return { status, message, ...details };
 }
 
+/** Mirrors `context-query.mjs#measured`: converges on the exact pretty-printed JSON byte count actually printed, including its own self-referential `returned_bytes` field. */
+function measuredBytes(value) {
+  let bytes = 0;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    value.limits.returned_bytes = bytes;
+    const next = Buffer.byteLength(JSON.stringify(value, null, 2)) + 1;
+    if (next === bytes) break;
+    bytes = next;
+  }
+  value.limits.returned_bytes = bytes;
+  return bytes;
+}
+
+/** Bounds a value echoed back into a failure result so an oversized query input cannot itself blow the failure's own byte cap. */
+function boundedPreview(value, limit = 200) {
+  const text = String(value ?? '');
+  return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
+}
+
 /** Explicit repository-relative directory/file scope with the same traversal/symlink protections as file targets, without requiring a leaf file. */
 export function repositoryRelativeScope(root, input, label = 'scope') {
   const base = resolve(root);
@@ -94,18 +113,25 @@ export function searchSource(root, pattern, { scope, regex = false } = {}) {
   }).filter(Boolean);
   let matches = allMatches.slice(0, MAX_SEARCH_RESULTS);
   let truncated = allMatches.length > matches.length;
-  while (matches.length
-    && Buffer.byteLength(JSON.stringify(matches)) > MAX_SEARCH_BYTES) {
-    matches = matches.slice(0, -1);
-    truncated = true;
-  }
-  return {
+  const result = {
     schema_version: 1,
     query: { kind, text: pattern, scope: resolvedScope.normalized },
     status: 'matched',
     matches,
-    limits: { max_results: MAX_SEARCH_RESULTS, max_bytes: MAX_SEARCH_BYTES, returned: matches.length, total_found: allMatches.length, truncated },
+    limits: { max_results: MAX_SEARCH_RESULTS, max_bytes: MAX_SEARCH_BYTES, returned: matches.length, total_found: allMatches.length, truncated, returned_bytes: 0 },
   };
+  while (matches.length && measuredBytes(result) > MAX_SEARCH_BYTES) {
+    matches = matches.slice(0, -1);
+    result.matches = matches;
+    result.limits.returned = matches.length;
+    result.limits.truncated = true;
+  }
+  if (measuredBytes(result) > MAX_SEARCH_BYTES) {
+    return problem('budget-exceeded', `search result exceeds the ${MAX_SEARCH_BYTES} byte limit even with no matches`, {
+      query: { kind, text: boundedPreview(pattern), scope: boundedPreview(resolvedScope.normalized) },
+    });
+  }
+  return result;
 }
 
 function safeFileTarget(root, path, label = 'source path') {
@@ -130,19 +156,27 @@ export function readAnchors(root, path) {
   const { lines, symbols: allSymbols } = extractSourceAnchors(target.normalized, text);
   let symbols = allSymbols.slice(0, MAX_ANCHOR_SYMBOLS);
   let truncated = allSymbols.length > symbols.length;
-  while (symbols.length && Buffer.byteLength(JSON.stringify(symbols)) > MAX_ANCHOR_BYTES) {
-    symbols = symbols.slice(0, -1);
-    truncated = true;
-  }
-  return {
+  const result = {
     schema_version: 1,
     query: { kind, text: path },
     status: 'matched',
     path: target.normalized,
     lines,
     symbols,
-    limits: { max_symbols: MAX_ANCHOR_SYMBOLS, max_bytes: MAX_ANCHOR_BYTES, returned: symbols.length, total_found: allSymbols.length, truncated },
+    limits: { max_symbols: MAX_ANCHOR_SYMBOLS, max_bytes: MAX_ANCHOR_BYTES, returned: symbols.length, total_found: allSymbols.length, truncated, returned_bytes: 0 },
   };
+  while (symbols.length && measuredBytes(result) > MAX_ANCHOR_BYTES) {
+    symbols = symbols.slice(0, -1);
+    result.symbols = symbols;
+    result.limits.returned = symbols.length;
+    result.limits.truncated = true;
+  }
+  if (measuredBytes(result) > MAX_ANCHOR_BYTES) {
+    return problem('budget-exceeded', `anchor listing exceeds the ${MAX_ANCHOR_BYTES} byte limit even with no symbols`, {
+      query: { kind, text: boundedPreview(path) }, path: boundedPreview(target.normalized),
+    });
+  }
+  return result;
 }
 
 function stableTextMatches(lines, anchor) {
@@ -199,10 +233,7 @@ export function readSource(root, path, { anchor = null, lines: range = null } = 
   if (end - start + 1 > MAX_READ_LINES)
     return problem('budget-exceeded', `requested range exceeds the ${MAX_READ_LINES} line limit`, { path: target.normalized, lines: [start, end] });
   const slice = fileLines.slice(start - 1, end).join('\n');
-  const bytes = Buffer.byteLength(slice);
-  if (bytes > MAX_READ_BYTES)
-    return problem('budget-exceeded', `requested range exceeds the ${MAX_READ_BYTES} byte limit`, { path: target.normalized, lines: [start, end] });
-  return {
+  const result = {
     schema_version: 1,
     query: { kind, text: path },
     status: 'matched',
@@ -211,8 +242,13 @@ export function readSource(root, path, { anchor = null, lines: range = null } = 
     lines: [start, end],
     file_lines: fileLines.length,
     text: slice,
-    limits: { max_lines: MAX_READ_LINES, max_bytes: MAX_READ_BYTES, returned_lines: end - start + 1, returned_bytes: bytes },
+    limits: { max_lines: MAX_READ_LINES, max_bytes: MAX_READ_BYTES, returned_lines: end - start + 1, returned_bytes: 0 },
   };
+  if (measuredBytes(result) > MAX_READ_BYTES)
+    return problem('budget-exceeded', `requested range exceeds the ${MAX_READ_BYTES} byte limit`, {
+      path: boundedPreview(target.normalized), anchor: resolvedAnchor ? boundedPreview(resolvedAnchor) : null, lines: [start, end],
+    });
+  return result;
 }
 
 function parseArgs(args) {
@@ -263,9 +299,20 @@ function resultLines(result) {
   return output;
 }
 
-function printResult(options, result) {
-  if (options.has('json')) console.log(JSON.stringify(result, null, 2));
-  else process.stdout.write(measuredText(resultLines(result)).output);
+function printResult(options, result, maxBytes) {
+  if (options.has('json')) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+  const rendered = measuredText(resultLines(result));
+  if (rendered.bytes > maxBytes) {
+    // Defense in depth: the JSON envelope this text mirrors is already bound to maxBytes, so this
+    // should be unreachable, but text rendering never bypasses the same declared byte ceiling.
+    process.stdout.write(measuredText([`status: budget-exceeded`, `reason: rendered result exceeds the ${maxBytes} byte limit`]).output);
+    process.exitCode = 1;
+    return;
+  }
+  process.stdout.write(rendered.output);
 }
 
 function main() {
@@ -282,7 +329,7 @@ function main() {
     const scope = option(options, 'scope');
     if (!scope) fail('--scope is required');
     const result = searchSource(ROOT, pattern, { scope, regex: options.has('regex') });
-    printResult(options, result);
+    printResult(options, result, MAX_SEARCH_BYTES);
     if (result.status !== 'matched') process.exitCode = 1;
     return;
   }
@@ -293,14 +340,14 @@ function main() {
   if (command === 'anchors') {
     checkOptions(options, ['json']);
     const result = readAnchors(ROOT, path);
-    printResult(options, result);
+    printResult(options, result, MAX_ANCHOR_BYTES);
     if (result.status !== 'matched') process.exitCode = 1;
     return;
   }
 
   checkOptions(options, ['json', 'anchor', 'lines']);
   const result = readSource(ROOT, path, { anchor: option(options, 'anchor'), lines: option(options, 'lines') });
-  printResult(options, result);
+  printResult(options, result, MAX_READ_BYTES);
   if (result.status !== 'matched') process.exitCode = 1;
 }
 
