@@ -9,6 +9,7 @@ import {
   CONCEPT_KB_TESTS,
   EKS_DESTROY_VERIFIER_TEST,
   PRODUCTION_ENVIRONMENT_PREFLIGHT_TEST,
+  TASK_INTEGRATION_TEST,
   TUTORIAL_PARITY_TEST,
   classifyQaFailure,
   selectContractQa,
@@ -141,6 +142,25 @@ test('EKS destroy verifier changes select only its focused regression test', () 
     assert.deepEqual(selectQa([path]).contract_tests, [EKS_DESTROY_VERIFIER_TEST]);
   }
   assert.deepEqual(selectContractQa(['.github/actions/aws-terraform-setup/action.yml']).tests, []);
+});
+
+test('task-integration tool changes select only their focused regression suite', () => {
+  const paths = [
+    'scripts/task-integrate.mjs',
+    'scripts/lib/task-integration.mjs',
+    'scripts/lib/task-integration-state.mjs',
+    'scripts/lib/task-integration-git.mjs',
+    TASK_INTEGRATION_TEST,
+  ];
+
+  for (const path of paths) {
+    assert.deepEqual(selectContractQa([path]).tests, [TASK_INTEGRATION_TEST]);
+    assert.deepEqual(selectToolingQa([path]).tests, []);
+    const plan = selectQa([path]);
+    assert.deepEqual(plan.contract_tests, [TASK_INTEGRATION_TEST]);
+    assert.equal(plan.tooling_tests.some(test => AUTOMATION_PROTOCOL_TESTS.includes(test)), false, path);
+  }
+  assert.deepEqual(selectContractQa(['scripts/lib/git-publication.mjs']).tests, []);
 });
 
 test('Production preflight changes select the strict environment regression test', () => {

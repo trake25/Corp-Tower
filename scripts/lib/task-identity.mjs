@@ -109,3 +109,10 @@ export function taskIdentityForManifest(manifest, options = {}) {
   if (manifest.task_identity) return validateTaskIdentity(manifest.task_identity, manifest.task);
   return createTaskIdentity(manifest.task, options);
 }
+
+/** Deterministically compacts a human-visible label (e.g. for a Git commit subject) to a bounded length. */
+export function boundedDisplayLabel(value, max = 60) {
+  const normalized = String(value || '').trim().replace(/\s+/g, ' ');
+  if (!normalized) throw new Error('display label must not be empty');
+  return normalized.length > max ? `${normalized.slice(0, max - 1).trimEnd()}…` : normalized;
+}
