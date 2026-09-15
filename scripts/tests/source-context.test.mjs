@@ -5,13 +5,20 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import {
+  MAX_ANCHOR_BYTES,
+  MAX_READ_BYTES,
   MAX_READ_LINES,
+  MAX_SEARCH_BYTES,
   MAX_SEARCH_RESULTS,
   readAnchors,
   readSource,
   repositoryRelativeScope,
   searchSource,
 } from '../source-context.mjs';
+
+function measuredJsonBytes(value) {
+  return Buffer.byteLength(JSON.stringify(value, null, 2)) + 1;
+}
 
 const CLI = resolve('scripts/source-context.mjs');
 
@@ -176,6 +183,80 @@ test('CLI emits bounded text and JSON output with fail-closed exit codes', () =>
     const failed = run(['read', 'scripts/lib/example.mjs', '--anchor', 'missing-anchor'], env.root);
     assert.equal(failed.status, 1);
     assert.match(failed.stdout, /status: source-anchor-missing/);
+  } finally {
+    env.close();
+  }
+});
+
+test('the full result envelope, not just its content array, is measured against the byte ceiling', () => {
+  const env = fixture();
+  try {
+    const search = searchSource(env.root, 'TOKEN', { scope: 'scripts/lib' });
+    assert.equal(search.limits.returned_bytes, measuredJsonBytes(search));
+    assert.ok(search.limits.returned_bytes <= MAX_SEARCH_BYTES);
+
+    const anchors = readAnchors(env.root, 'scripts/lib/example.mjs');
+    assert.equal(anchors.limits.returned_bytes, measuredJsonBytes(anchors));
+    assert.ok(anchors.limits.returned_bytes <= MAX_ANCHOR_BYTES);
+
+    const read = readSource(env.root, 'scripts/lib/example.mjs', { lines: '1-3' });
+    assert.equal(read.limits.returned_bytes, measuredJsonBytes(read));
+    assert.ok(read.limits.returned_bytes <= MAX_READ_BYTES);
+  } finally {
+    env.close();
+  }
+});
+
+test('search fails closed with bounded failure metadata when even a zero-match envelope cannot fit', () => {
+  const env = fixture();
+  try {
+    const hugePattern = 'x'.repeat(MAX_SEARCH_BYTES);
+    const result = searchSource(env.root, hugePattern, { scope: 'scripts/lib/example.mjs' });
+    assert.equal(result.status, 'budget-exceeded');
+    assert.ok(!('matches' in result));
+    assert.ok(measuredJsonBytes(result) < MAX_SEARCH_BYTES, 'the failure response itself must stay small');
+    assert.ok(result.query.text.length < hugePattern.length, 'an oversized query must not be echoed back verbatim');
+
+    const cliText = run(['search', hugePattern, '--scope', 'scripts/lib/example.mjs'], env.root);
+    assert.equal(cliText.status, 1);
+    assert.match(cliText.stdout, /status: budget-exceeded/);
+    assert.ok(Buffer.byteLength(cliText.stdout) < MAX_SEARCH_BYTES);
+
+    const cliJson = run(['search', hugePattern, '--scope', 'scripts/lib/example.mjs', '--json'], env.root);
+    assert.equal(cliJson.status, 1);
+    assert.equal(JSON.parse(cliJson.stdout).status, 'budget-exceeded');
+  } finally {
+    env.close();
+  }
+});
+
+test('anchors caps symbol count against the full envelope, not just a raw array size, and marks truncation', () => {
+  const env = fixture();
+  try {
+    const manySymbols = Array.from({ length: 600 }, (_, index) => `export function symbolNumber${index}() { return ${index}; }`).join('\n') + '\n';
+    writeFileSync(join(env.root, 'scripts/lib/many-symbols.mjs'), manySymbols);
+
+    const result = readAnchors(env.root, 'scripts/lib/many-symbols.mjs');
+    assert.equal(result.status, 'matched');
+    assert.equal(result.limits.truncated, true);
+    assert.ok(result.limits.returned < result.limits.total_found);
+    assert.equal(result.limits.returned_bytes, measuredJsonBytes(result));
+    assert.ok(result.limits.returned_bytes <= MAX_ANCHOR_BYTES);
+  } finally {
+    env.close();
+  }
+});
+
+test('read fails closed when an oversized anchor name alone cannot fit the byte ceiling', () => {
+  const env = fixture();
+  try {
+    const hugeAnchor = 'y'.repeat(MAX_READ_BYTES);
+    writeFileSync(join(env.root, 'scripts/lib/huge-anchor.mjs'), `${hugeAnchor}\n`);
+
+    const result = readSource(env.root, 'scripts/lib/huge-anchor.mjs', { anchor: hugeAnchor });
+    assert.equal(result.status, 'budget-exceeded');
+    assert.ok(measuredJsonBytes(result) < MAX_READ_BYTES);
+    assert.ok(result.anchor.length < hugeAnchor.length, 'an oversized anchor must not be echoed back verbatim');
   } finally {
     env.close();
   }

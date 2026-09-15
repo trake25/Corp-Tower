@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runGit } from './lib/git-publication.mjs';
+import { createFilesystemIntegrationStore, isTerminal } from './lib/task-integration-state.mjs';
 import { repositoryRelativePath } from './lib/task-ownership.mjs';
 
 const ROOT = resolve(process.env.GIT_STATE_ROOT || process.cwd());
@@ -16,6 +17,44 @@ export const MAX_PATCH_BYTES = 8 * 1024;
 function fail(message, code = 2) {
   console.error(message);
   process.exit(code);
+}
+
+/** A caller may only narrow a bounded limit, never widen or invalidate it. */
+function boundedLimit(value, ceiling, label) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || !Number.isInteger(number) || number <= 0 || number > ceiling)
+    throw new Error(`${label} must be a positive integer up to ${ceiling}`);
+  return number;
+}
+
+/**
+ * Read-only current task/candidate identity: matches the invoking worktree's exact top-level path
+ * against existing task-start/candidate records already persisted by the integration tool. Never
+ * mutates state, never calls the broader integration `status()` query, and never reports a request
+ * whose queue slot has already been released (a stale terminal history is not "current").
+ */
+function currentIntegrationIdentity(root) {
+  let worktree;
+  try { worktree = resolve(runGit(root, ['rev-parse', '--show-toplevel'])); }
+  catch { return null; }
+  let state;
+  try { state = createFilesystemIntegrationStore({ root }).read(); }
+  catch { return null; }
+  for (const start of Object.values(state.starts)) {
+    if (start.worktree && resolve(start.worktree) === worktree)
+      return { kind: 'task', task_id: start.task_id, task: start.task, task_branch: start.task_branch, task_baseline: start.task_baseline };
+  }
+  for (const target of Object.values(state.targets)) {
+    for (const request of Object.values(target.requests)) {
+      if (request.candidate?.worktree && resolve(request.candidate.worktree) === worktree && !isTerminal(request.state)) {
+        return {
+          kind: 'candidate', request_id: request.request_id, task: request.task, task_branch: request.task_branch,
+          state: request.state, candidate_branch: request.candidate.branch,
+        };
+      }
+    }
+  }
+  return null;
 }
 
 function parseStatusEntries(root) {
@@ -58,10 +97,12 @@ function upstreamInfo(root) {
 
 /** Compact Git inspection: branch/task identity, changed/staged paths, and small stats — no patch content by default. */
 export function gitStatusSummary(root, { maxPaths = MAX_STATUS_PATHS } = {}) {
+  const boundedMaxPaths = boundedLimit(maxPaths, MAX_STATUS_PATHS, 'maxPaths');
   let branch = runGit(root, ['branch', '--show-current']);
   let detachedAt = null;
   if (!branch) detachedAt = runGit(root, ['rev-parse', '--short', 'HEAD']);
   const head = runGit(root, ['rev-parse', '--short=12', 'HEAD']);
+  const identity = currentIntegrationIdentity(root);
   const upstream = upstreamInfo(root);
   const entries = parseStatusEntries(root);
   const staged = entries.filter(entry => entry.code[0] !== ' ' && entry.code[0] !== '?');
@@ -72,36 +113,38 @@ export function gitStatusSummary(root, { maxPaths = MAX_STATUS_PATHS } = {}) {
     branch: branch || null,
     detached_at: detachedAt,
     head,
+    identity,
     upstream,
-    staged: { ...bounded(staged, maxPaths), stat: shortstat(root, ['diff', '--cached', '--shortstat']) },
-    unstaged: { ...bounded(unstaged, maxPaths), stat: shortstat(root, ['diff', '--shortstat']) },
-    untracked: bounded(untracked, maxPaths),
-    limits: { max_paths: maxPaths },
+    staged: { ...bounded(staged, boundedMaxPaths), stat: shortstat(root, ['diff', '--cached', '--shortstat']) },
+    unstaged: { ...bounded(unstaged, boundedMaxPaths), stat: shortstat(root, ['diff', '--shortstat']) },
+    untracked: bounded(untracked, boundedMaxPaths),
+    limits: { max_paths: boundedMaxPaths },
   };
 }
 
 /** Bounded exact-path patch: never returned by default from `status`, always capped, overflow saved privately. */
 export function gitPatch(root, path, { staged = false, maxBytes = MAX_PATCH_BYTES } = {}) {
+  const boundedMaxBytes = boundedLimit(maxBytes, MAX_PATCH_BYTES, 'maxBytes');
   const normalized = repositoryRelativePath(root, path, 'patch path', { inspect: false });
   const args = ['diff', ...(staged ? ['--cached'] : []), '--', normalized];
   const full = runGit(root, args, { trim: false });
   if (!full.trim()) {
-    return { schema_version: 1, path: normalized, staged, status: 'no-changes', bytes: 0, truncated: false, patch: '', full_patch_path: null, limits: { max_bytes: maxBytes } };
+    return { schema_version: 1, path: normalized, staged, status: 'no-changes', bytes: 0, truncated: false, patch: '', full_patch_path: null, limits: { max_bytes: boundedMaxBytes } };
   }
   const bytes = Buffer.byteLength(full);
-  if (bytes <= maxBytes) {
-    return { schema_version: 1, path: normalized, staged, status: 'matched', bytes, truncated: false, patch: full, full_patch_path: null, limits: { max_bytes: maxBytes } };
+  if (bytes <= boundedMaxBytes) {
+    return { schema_version: 1, path: normalized, staged, status: 'matched', bytes, truncated: false, patch: full, full_patch_path: null, limits: { max_bytes: boundedMaxBytes } };
   }
   const directory = resolve(root, GIT_PATCH_LOG_DIRECTORY);
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const logPath = resolve(directory, `${randomUUID()}.diff`);
   writeFileSync(logPath, full, { mode: 0o600 });
   let truncatedText = full;
-  while (Buffer.byteLength(truncatedText) > maxBytes) truncatedText = truncatedText.slice(0, -256);
+  while (Buffer.byteLength(truncatedText) > boundedMaxBytes) truncatedText = truncatedText.slice(0, -256);
   return {
     schema_version: 1, path: normalized, staged, status: 'matched', bytes,
     truncated: true, patch: truncatedText, full_patch_path: relative(resolve(root), logPath).replaceAll('\\', '/'),
-    limits: { max_bytes: maxBytes },
+    limits: { max_bytes: boundedMaxBytes },
   };
 }
 
@@ -141,6 +184,8 @@ function statusLines(result) {
     `branch: ${result.branch || `detached@${result.detached_at}`}`,
     `head: ${result.head}`,
   ];
+  if (result.identity?.kind === 'task') output.push(`task: ${result.identity.task} (${result.identity.task_id}) on ${result.identity.task_branch}`);
+  else if (result.identity?.kind === 'candidate') output.push(`candidate: ${result.identity.task} (${result.identity.request_id}) ${result.identity.state} on ${result.identity.candidate_branch}`);
   if (result.upstream) output.push(`upstream: ${result.upstream.ref} (ahead ${result.upstream.ahead}, behind ${result.upstream.behind})`);
   for (const [label, group] of [['staged', result.staged], ['unstaged', result.unstaged], ['untracked', result.untracked]]) {
     output.push(`${label}: ${group.total}${group.truncated ? ` (showing ${group.shown.length})` : ''}`);
